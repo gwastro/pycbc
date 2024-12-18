@@ -19,6 +19,7 @@
 import logging
 import shlex
 from abc import ABCMeta
+from functools import wraps
 import numpy
 
 from pycbc import filter as pyfilter
@@ -35,6 +36,40 @@ from .base import ModelStats
 from .base_data import BaseDataModel
 from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
+
+
+def catch_waveform_error(method):
+    """Decorator that will catch no waveform errors.
+
+    This can be added to a method in an inference model. The decorator will
+    call the model's `_nowaveform_return` method if either of the following
+    happens when the wrapped method is executed:
+
+      * A `NoWaveformError` is raised.
+      * A `RuntimeError` or `FailedWaveformError` is raised and the model has
+        an `ignore_failed_waveforms` attribute that is set to True.
+
+    This requires the model to have a `_nowaveform_handler` method.
+    """
+    # the functools.wroaps decorator preserves the original method's name
+    # and docstring
+    @wraps(method)
+    def method_wrapper(self, *args, **kwargs):
+        try:
+            retval = method(self, *args, **kwargs)
+        except NoWaveformError:
+            retval = self._nowaveform_handler()
+        except (RuntimeError, FailedWaveformError) as e:
+            try:
+                ignore_failed = self.ignore_failed_waveforms
+            except AttributeError:
+                ignore_failed = False
+            if ignore_failed:
+                retval = self._nowaveform_handler()
+            else:
+                raise e
+        return retval
+    return method_wrapper
 
 
 class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
@@ -482,6 +517,18 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`."""
         return fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
 
+    def _nowaveform_handler(self):
+        """Method that gets called if a NoWaveformError or FailedWaveformError
+        is raised. See the :py:func:catch_waveform_error decorator for details.
+
+        Here, this will just raise a NotImplementedError, since how this should
+        be handled is model dependent. Models that wish to deal with this
+        scenario should override this method.
+        """
+        raise NotImplementedError(
+            f"A waveform could not be generated, but this model does not know "
+            f"how to handle that. The parameters were: {self.current_params}.")
+
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,
                     **kwargs):
@@ -872,7 +919,7 @@ class GaussianNoise(BaseGaussianNoise):
                ['{}_cplx_loglr'.format(det) for det in self._data] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
-    def _nowaveform_loglr(self):
+    def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated.
         """
         for det in self._data:
@@ -890,6 +937,7 @@ class GaussianNoise(BaseGaussianNoise):
         """
         return [type(self)]
 
+    @catch_waveform_error
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
@@ -931,6 +979,7 @@ class GaussianNoise(BaseGaussianNoise):
             self._current_wfs = wfs
         return self._current_wfs
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
@@ -947,16 +996,7 @@ class GaussianNoise(BaseGaussianNoise):
         float
             The value of the log likelihood ratio.
         """
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_loglr()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_loglr()
-            else:
-                raise e
-
+        wfs = self.get_waveforms()
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
