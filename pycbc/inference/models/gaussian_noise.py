@@ -38,6 +38,40 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
+def catch_waveform_error(method):
+    """Decorator that will catch no waveform errors.
+
+    This can be added to a method in an inference model. The decorator will
+    call the model's `_nowaveform_return` method if either of the following
+    happens when the wrapped method is executed:
+
+      * A `NoWaveformError` is raised.
+      * A `RuntimeError` or `FailedWaveformError` is raised and the model has
+        an `ignore_failed_waveforms` attribute that is set to True.
+
+    This requires the model to have a `_nowaveform_handler` method.
+    """
+    # the functools.wroaps decorator preserves the original method's name
+    # and docstring
+    @wraps(method)
+    def method_wrapper(self, *args, **kwargs):
+        try:
+            retval = method(self, *args, **kwargs)
+        except NoWaveformError:
+            retval = self._nowaveform_handler()
+        except (RuntimeError, FailedWaveformError) as e:
+            try:
+                ignore_failed = self.ignore_failed_waveforms
+            except AttributeError:
+                ignore_failed = False
+            if ignore_failed:
+                retval = self._nowaveform_handler()
+            else:
+                raise e
+        return retval
+    return method_wrapper
+
+
 class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
@@ -493,7 +527,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         """
         raise NotImplementedError(
             f"A waveform could not be generated, but this model does not know "
-            f"how to handle that. The parameters were: {self.current_params}".)
+            f"how to handle that. The parameters were: {self.current_params}.")
 
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,
@@ -1232,36 +1266,3 @@ def create_waveform_generator(
         recalib=recalibration, gates=gates,
         **static_params)
     return waveform_generator
-
-
-def catch_waveform_error(method):
-    """Decorator that will catch no waveform errors.
-
-    This can be added to a method in an inference model. The decorator will
-    call the model's `_nowaveform_return` method if either of the following
-    happens when the wrapped method is executed:
-
-      * A `NoWaveformError` is raised.
-      * A `RuntimeError` or `FailedWaveformError` is raised and the model has
-        an `ignore_failed_waveforms` attribute that is set to True.
-
-    This requires the model to have a `_nowaveform_return` method.
-    """
-    # the functools.wroaps decorator preserves the original method's name
-    # and docstring
-    @wraps(method)
-    def method_wrapper(self, *args, **kwargs):
-        try:
-            retval = method(self, *args, **kwargs)
-        except NoWaveformError:
-            retval = self._nowaveform_return()
-        except (RuntimeError, FailedWaveformError) as e:
-            try:
-                ignore_failed = self.ignore_failed_waveforms
-            except AttributeError:
-                ignore_failed = False
-            if ignore_failed:
-                retval = self._nowaveform_return()
-            raise e
-        return retval
-    return method_wrapper
