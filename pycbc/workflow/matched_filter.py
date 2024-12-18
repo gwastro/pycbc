@@ -250,7 +250,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                    cp.get('workflow', 'ra'))
             cp.set('inspiral', 'dec',
                    cp.get('workflow', 'dec'))
-        elif m_sg > 1:
+        elif n_sg > 1:
             msg = f'{datafind_outs} has {n_sg} sky-grid files, '
             msg += 'instead of only one.'
             raise RuntimeError(msg)
