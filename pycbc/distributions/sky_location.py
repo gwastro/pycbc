@@ -98,7 +98,7 @@ class FisherSky:
                 'The mean declination must be between '
                 f'-π/2 and π/2, {mean_dec} rad given'
             )
-        if sigma <= 0 or sigma > 2 * numpy.pi:
+        if sigma < 0 or sigma > 2 * numpy.pi:
             raise ValueError(
                 'Sigma must be positive and smaller than 2π '
                 '(preferably much smaller)'
