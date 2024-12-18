@@ -241,7 +241,7 @@ class HealpixSky:
             [self.healpix_map.boundaries(pi, step=1) for pi in indices]
         )
 
-    def normalize_azimuth(phi):
+    def normalize_azimuth(self, phi):
         """Helper function to ensure the azimuthal coordinate stays within
         [0,2π).
         """
@@ -269,7 +269,7 @@ class HealpixSky:
         # especially for MOC maps. For MOC maps, I obtain around one million
         # samples per minute.
 
-        boundaries_vec = pixel_corners(pix_indices)
+        boundaries_vec = self.pixel_corners(pix_indices)
 
         boundaries_z_min = boundaries_vec[:,2,:].min(axis=1)
         boundaries_z_max = boundaries_vec[:,2,:].max(axis=1)
@@ -289,7 +289,7 @@ class HealpixSky:
         # We will shift the corresponding samples back after drawing them.
         straddler_mask = (boundaries_phi_max - boundaries_phi_min) > numpy.pi / 2
         boundaries_phi[straddler_mask,:] -= numpy.pi / 2
-        boundaries_phi[straddler_mask,:] = normalize_azimuth(
+        boundaries_phi[straddler_mask,:] = self.normalize_azimuth(
             boundaries_phi[straddler_mask,:]
         )
         boundaries_phi_min[straddler_mask] = boundaries_phi[straddler_mask,:].min(axis=1)
@@ -310,7 +310,7 @@ class HealpixSky:
 
             # Now we can undo the shift for the straddlers. Ugly!
             random_phis[straddler_mask] += numpy.pi / 2
-            random_phis[straddler_mask] = normalize_azimuth(
+            random_phis[straddler_mask] = self.normalize_azimuth(
                 random_phis[straddler_mask]
             )
 
