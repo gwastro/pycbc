@@ -18,6 +18,7 @@ right ascension and declination.
 """
 
 import logging
+import warnings
 import numpy
 
 
@@ -194,7 +195,7 @@ class HealpixSky:
             # scale of the density function is much larger than the pixel area,
             # so that we can just scale the density by the pixel area.
             pix_areas = self.healpix_map.pixarea(
-                np.arange(self.healpix_map.npix)
+                numpy.arange(self.healpix_map.npix)
             )
             self.pix_probs = (self.healpix_map * pix_areas).data
         else:
@@ -203,9 +204,9 @@ class HealpixSky:
 
         # Sanity-check the probabilities, and ensure they are normalized
         # correctly (sum to one).
-        assert type(self.pix_probs) == np.ndarray
+        assert type(self.pix_probs) == numpy.ndarray
         sum_pix_probs = sum(self.pix_probs)
-        if not np.isclose(sum_pix_probs, 1):
+        if not numpy.isclose(sum_pix_probs, 1):
             warnings.warn(
                 f'Sum of probs in HEALPix map is {sum(self.pix_probs)}, '
                 'far from 1. Something might be wrong with that map'
@@ -236,7 +237,7 @@ class HealpixSky:
         # FIXME boundaries() works for an input array and is fast, but only for
         # single-resolution maps. It raises an exception with MOC maps. Another
         # bugfix for mhealpy?
-        return np.array(
+        return numpy.array(
             [self.healpix_map.boundaries(pi, step=1) for pi in indices]
         )
 
@@ -244,14 +245,14 @@ class HealpixSky:
         """Helper function to ensure the azimuthal coordinate stays within
         [0,2π).
         """
-        phi[phi < 0] += 2 * np.pi
-        phi[phi >= 2 * np.pi] -= 2 * np.pi
+        phi[phi < 0] += 2 * numpy.pi
+        phi[phi >= 2 * numpy.pi] -= 2 * numpy.pi
         return phi
 
     def rvs(self, size):
         # First of all, draw a random sample of pixel indices following the
         # given probabilities. This is the trivial part of the algorithm.
-        pix_indices = np.random.choice(
+        pix_indices = numpy.random.choice(
             self.healpix_map.npix, p=self.pix_probs, size=size
         )
 
@@ -276,18 +277,18 @@ class HealpixSky:
         # Find ranges of azimuthal angle. `arctan2()` produces angles in the
         # range [-π,π] which is not the right convention, so fix that right
         # away.
-        boundaries_phi = np.arctan2(
+        boundaries_phi = numpy.arctan2(
             boundaries_vec[:,1,:], boundaries_vec[:,0,:]
         )
         del boundaries_vec
-        boundaries_phi[boundaries_phi < 0] += 2 * np.pi
+        boundaries_phi[boundaries_phi < 0] += 2 * numpy.pi
         boundaries_phi_min = boundaries_phi.min(axis=1)
         boundaries_phi_max = boundaries_phi.max(axis=1)
         # Pixels that straddle phi = 0 need a special treatment :( Shift them
         # by 90 deg so that they are not straddlers for the time being.
         # We will shift the corresponding samples back after drawing them.
-        straddler_mask = (boundaries_phi_max - boundaries_phi_min) > np.pi / 2
-        boundaries_phi[straddler_mask,:] -= np.pi / 2
+        straddler_mask = (boundaries_phi_max - boundaries_phi_min) > numpy.pi / 2
+        boundaries_phi[straddler_mask,:] -= numpy.pi / 2
         boundaries_phi[straddler_mask,:] = normalize_azimuth(
             boundaries_phi[straddler_mask,:]
         )
@@ -295,20 +296,20 @@ class HealpixSky:
         boundaries_phi_max[straddler_mask] = boundaries_phi[straddler_mask,:].max(axis=1)
         del boundaries_phi
 
-        final_thetas = np.array([])
-        final_phis = np.array([])
+        final_thetas = numpy.array([])
+        final_phis = numpy.array([])
 
         # Here comes the rejection sampling.
         while len(pix_indices) > 0:
-            random_thetas = np.arccos(
-                np.random.uniform(boundaries_z_min, boundaries_z_max)
+            random_thetas = numpy.arccos(
+                numpy.random.uniform(boundaries_z_min, boundaries_z_max)
             )
-            random_phis = np.random.uniform(
+            random_phis = numpy.random.uniform(
                 boundaries_phi_min, boundaries_phi_max
             )
 
             # Now we can undo the shift for the straddlers. Ugly!
-            random_phis[straddler_mask] += np.pi / 2
+            random_phis[straddler_mask] += numpy.pi / 2
             random_phis[straddler_mask] = normalize_azimuth(
                 random_phis[straddler_mask]
             )
@@ -318,15 +319,15 @@ class HealpixSky:
                 random_thetas, random_phis
             )
             acceptance_mask = sampled_indices == pix_indices
-            final_thetas = np.concatenate(
+            final_thetas = numpy.concatenate(
                 (final_thetas, random_thetas[acceptance_mask])
             )
-            final_phis = np.concatenate(
+            final_phis = numpy.concatenate(
                 (final_phis, random_phis[acceptance_mask])
             )
 
             # Iterate if we are still missing some pixels.
-            rej_mask = np.logical_not(acceptance_mask)
+            rej_mask = numpy.logical_not(acceptance_mask)
             pix_indices = pix_indices[rej_mask]
             boundaries_z_min = boundaries_z_min[rej_mask]
             boundaries_z_max = boundaries_z_max[rej_mask]
