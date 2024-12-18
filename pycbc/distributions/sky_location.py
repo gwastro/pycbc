@@ -20,8 +20,6 @@ right ascension and declination.
 import logging
 import warnings
 import numpy
-
-
 from scipy.spatial.transform import Rotation
 
 from pycbc.distributions import angular
@@ -29,8 +27,6 @@ from pycbc import VARARGS_DELIM
 from pycbc.io import FieldArray
 from pycbc.types import angle_as_radians
 from pycbc.libutils import import_optional
-
-mhealpy = import_optional('mhealpy')
 
 
 logger = logging.getLogger('pycbc.distributions.sky_location')
@@ -186,6 +182,7 @@ class HealpixSky:
     def __init__(self, **params):
         # Read the map file.
         file_name = params['healpix_file']
+        mhealpy = import_optional('mhealpy')
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
 
         # Get the probabilities at each pixel.
@@ -234,9 +231,6 @@ class HealpixSky:
         more HEALPix pixels. Dimension 0 is the pixel index, 1 is the Cartesian
         coordinate, 2 is the corner index.
         """
-        # FIXME boundaries() works for an input array and is fast, but only for
-        # single-resolution maps. It raises an exception with MOC maps. Another
-        # bugfix for mhealpy?
         return numpy.array(
             [self.healpix_map.boundaries(pi, step=1) for pi in indices]
         )
