@@ -22,12 +22,15 @@ import numpy
 
 
 from scipy.spatial.transform import Rotation
-from mhealpy import HealpixMap
 
 from pycbc.distributions import angular
 from pycbc import VARARGS_DELIM
 from pycbc.io import FieldArray
 from pycbc.types import angle_as_radians
+from pycbc.libutils import import_optional
+
+mhealpy = import_optional('mhealpy')
+
 
 logger = logging.getLogger('pycbc.distributions.sky_location')
 
@@ -182,7 +185,7 @@ class HealpixSky:
     def __init__(self, **params):
         # Read the map file.
         file_name = params['healpix_file']
-        self.healpix_map = HealpixMap.read_map(file_name)
+        self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
 
         # Get the probabilities at each pixel.
         if self.healpix_map.density():
