@@ -23,14 +23,14 @@ import logging
 import numpy
 from scipy import special
 
-from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
 from pycbc.filter import highpass
-from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
+from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator,
+                             catch_waveform_error)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
 
@@ -134,8 +134,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         self._normalize = normalize
 
-    @staticmethod
-    def _nowaveform_logl():
+    def _nowaveform_handler(self):
         """Convenience function to set logl values if no waveform generated.
         """
         return -numpy.inf
@@ -329,20 +328,14 @@ class BaseGatedGaussian(BaseGaussianNoise):
 
     def get_gate_times_hmeco(self):
         """Gets the time to apply a gate based on the current sky position.
+
         Returns
         -------
         dict :
             Dictionary of detector names -> (gate start, gate width)
         """
         # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
+        wfs = self.get_waveforms()
         # get waveform parameters
         params = self.current_params
         spin1 = params['spin1z']
@@ -514,6 +507,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         """No extra stats are stored."""
         return []
 
+    @catch_waveform_error
     def _loglikelihood(self):
         r"""Computes the log likelihood after removing the power within the
         given time window,
@@ -530,14 +524,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
+        wfs = self.get_waveforms()
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
@@ -681,6 +668,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         """Adds the maxL polarization and corresponding likelihood."""
         return ['maxl_polarization', 'maxl_logl']
 
+    @catch_waveform_error
     def _loglikelihood(self):
         r"""Computes the log likelihood after removing the power within the
         given time window,
@@ -697,14 +685,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
+        wfs = self.get_waveforms()
         # get the gated waveforms and data
         gated_wfs = self.get_gated_waveforms()
         gated_data = self.get_gated_data()
