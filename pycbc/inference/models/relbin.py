@@ -37,6 +37,7 @@ from pycbc.detector import Detector
 from pycbc.types import Array, TimeSeries
 
 from .gaussian_noise import (BaseGaussianNoise, catch_waveform_error)
+from pycbc.waveform import FailedWaveformError
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_det_multi,
@@ -605,13 +606,15 @@ class Relative(DistMarg, BaseGaussianNoise):
         return results
 
     def _nowaveform_handler(self):
-        """Sets loglr values if no waveform generated.
+        """Returns -inf for loglr if no waveform generated.
+
+        If `return_sh_hh` is set to True, a FailedWaveformError will be raised.
         """
         if self.return_sh_hh:
-            results = (-numpy.inf, -numpy.inf)
-        else:
-            results = -numpy.inf
-        return results
+            raise FailedWaveformError("Waveform failed to generate and "
+                                      "return_sh_hh set to True! I don't know "
+                                      "what to return in this case.")
+        return -numpy.inf
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
