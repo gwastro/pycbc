@@ -1,0 +1,7 @@
+pycbc
+=====
+
+.. toctree::
+   :maxdepth: 4
+
+   pycbc
