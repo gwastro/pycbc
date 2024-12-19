@@ -64,7 +64,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: output_files
-        path: output/bank/*BANK2HDF-* output/segments/* output/full_data/*HDF_TRIGGER_MERGE*
+        path: output
     - name: store result page
       uses: actions/upload-artifact@v4
       with:
