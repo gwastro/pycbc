@@ -175,6 +175,7 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     max_z = z.max() if opts.max_z is None else opts.max_z
     if max_z / min_z > 10:
         cb_style['ticks'] = LogLocator(subs=range(10))
+    print(z)
     hb = ax.hexbin(x, y, C=z, reduce_C_function=np.max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
 else:
