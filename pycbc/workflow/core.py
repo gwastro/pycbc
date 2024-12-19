@@ -121,10 +121,8 @@ class Executable(pegasus_workflow.Executable):
         -----------
         cp : ConfigParser object
             The ConfigParser object holding the workflow configuration settings
-        exec_name : string
+        name : string
             Executable name
-        universe : string, optional
-            Condor universe to run the job in
         ifos : string or list, optional
             The ifo(s) that the Job is valid for. If the job is
             independently valid for multiple ifos it can be provided as a list.
@@ -135,6 +133,16 @@ class Executable(pegasus_workflow.Executable):
             The folder to store output files of this job.
         tags : list of strings
             A list of strings that is used to identify this job.
+        reuse_executable: boolean [default True]
+            If True, Pegasus simply uses the name of the (executable) script
+            to label the Executable instance, otherwise it also includes tags
+            in the labeling and, e.g., performance information is recorded
+            individually by job rather than being grouped together on the
+            basis of the script name.
+        set_submit_subdir: boolean [default True]
+            Place condor files associated with this executable under a
+            sub-directory (named according to the executable name) in the
+            submitdir.
         """
         if isinstance(ifos, str):
             self.ifo_list = [ifos]
