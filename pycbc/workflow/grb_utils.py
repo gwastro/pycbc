@@ -238,6 +238,28 @@ def get_sky_grid_scale(
     return out
 
 
+def make_skygrid_node(workflow, out_dir, tags=None):
+    """
+    Adds a job to the workflow to produce the PyGRB search skygrid."""
+
+    tags = [] if tags is None else tags
+
+    # Initialize job node
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name]
+    node = Executable(workflow.cp, 'make_sky_grid',
+                      ifos=workflow.ifos, out_dir=out_dir,
+                      tags=tags+extra_tags).create_node()
+    node.add_opt('--instruments', ' '.join(workflow.ifos))
+    node.new_output_file_opt(workflow.analysis_time, '.h5', '--output',
+                             tags=extra_tags, store_file=True)
+
+    # Add job node to the workflow
+    workflow += node
+
+    return node.output_files
+
+
 def generate_tc_prior(wflow, tc_path, buffer_seg):
     """
     Generate the configuration file for the prior on the coalescence

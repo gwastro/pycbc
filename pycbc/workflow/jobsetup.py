@@ -277,6 +277,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     curr_out_files = FileList([])
     ipn_sky_points = None
     bank_veto = None
+    skygrid_file = None
     input_files = FileList(datafind_outs)
     for f in datafind_outs:
         if 'IPN_SKY_POINTS' in f.description:
@@ -287,6 +288,9 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         elif 'INPUT_BANK_VETO_BANK' in f.description:
             bank_veto = f
             input_files.remove(f)
+        elif 'make_sky_grid' in f.description:
+            skygrid_file = f
+            input_files.remove(f)
 
     split_bank_counter = 0
 
@@ -296,7 +300,8 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             tag.append(split_bank.tag_str)
             node = curr_exe_job.create_node(data_seg, job_valid_seg,
                     parent=split_bank, dfParents=input_files,
-                    bankVetoBank=bank_veto, ipn_file=ipn_sky_points,
+                    bankVetoBank=bank_veto,
+                    skygrid_file=skygrid_file, ipn_file=ipn_sky_points,
                     slide=slide_dict, tags=tag)
             workflow.add_node(node)
             split_bank_counter += 1
@@ -310,7 +315,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                 node = curr_exe_job.create_node(data_seg, job_valid_seg,
                         parent=split_bank, inj_file=inj_file, tags=tag,
                         dfParents=input_files, bankVetoBank=bank_veto,
-                        ipn_file=ipn_sky_points)
+                        skygrid_file=skygrid_file, ipn_file=ipn_sky_points)
                 workflow.add_node(node)
                 split_bank_counter += 1
                 curr_out_files.extend(node.output_files)
@@ -670,7 +675,8 @@ class PyCBCMultiInspiralExecutable(Executable):
         self.num_threads = 1
 
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
-                    dfParents=None, bankVetoBank=None, ipn_file=None,
+                    dfParents=None, bankVetoBank=None,
+                    skygrid_file=None, ipn_file=None,
                     slide=None, tags=None):
         if tags is None:
             tags = []
@@ -717,6 +723,9 @@ class PyCBCMultiInspiralExecutable(Executable):
                 frame_arg += f" {frame_file.ifo}:{frame_file.name}"
                 node.add_input(frame_file)
             node.add_arg(frame_arg)
+
+        if skygrid_file is not None:
+            node.add_input_opt('--sky-grid', skygrid_file)
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
