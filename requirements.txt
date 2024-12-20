@@ -10,7 +10,7 @@ jinja2
 mpld3>=0.3
 beautifulsoup4>=4.6.0
 cython
-lalsuite!=7.2,!=7.25
+lalsuite!=7.2,<7.25
 lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
