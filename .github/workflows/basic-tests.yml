@@ -32,7 +32,7 @@ jobs:
         cd lalsuite-extra
         git lfs pull -I "data/lalsimulation/SEOBNRv2ROM_*.dat"
         git lfs pull -I "data/lalsimulation/*ChirpTime*.dat"
-        git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v*.hdf5"
+        git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
     - name: run pycbc test suite
