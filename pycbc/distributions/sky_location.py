@@ -18,15 +18,16 @@ right ascension and declination.
 """
 
 import logging
+import warnings
 import numpy
-
-
 from scipy.spatial.transform import Rotation
 
 from pycbc.distributions import angular
 from pycbc import VARARGS_DELIM
 from pycbc.io import FieldArray
 from pycbc.types import angle_as_radians
+from pycbc.libutils import import_optional
+
 
 logger = logging.getLogger('pycbc.distributions.sky_location')
 
@@ -163,12 +164,7 @@ class FisherSky:
 
 
 class HealpixSky:
-    """Sample the distribution given by a HEALPix map by using the rejection
-    sampling method.
-    To have an acceptable acceptance rate, a rectangle in (alpha,delta) is
-    first found, that encloses a given amount of probability (specified by
-    the `coverage` parameter). In order to do this the map is rasterized to a
-    resolution specified by `rasterization_nside`.
+    """Sky-location distribution given by a HEALPix map from an external file.
 
     The declination (delta) varies from π/2 to -π/2 and the right ascension
     (alpha) varies from 0 to 2π.
@@ -176,121 +172,43 @@ class HealpixSky:
     Parameters
     ----------
     healpix_file : str
-        Path to a fits file containing probability distribution encoded in a
+        Path to a FITS file containing a probability distribution encoded in a
         HEALPix scheme.
-    coverage : float
-        Fraction of the map covered by the method. Must be between 0 and 1.
-    rasterization_nside : int
-        Nside of the rasterized map used to determine the
-        boundaries of the input map. Must be a power of 2,
-        preferably between 64 and 256.
     """
 
     name = 'healpix_sky'
     _params = ['ra', 'dec']
 
     def __init__(self, **params):
-        import mhealpy
-
-        def boundaries(healpix_map, nside, coverage):
-            """Boundaries of the part of the celestial sphere which we are
-            looking to do the distribution.
-
-            Parameters
-            ----------
-            healpix_map : HealpixMap instance
-
-            nside : int
-                nside of the rasterized map used to determine the boundaries of
-                the input map.
-                must be a power of 2
-            coverage : float
-                percentage of the map covered by the method
-                must be betwen 0 and 1
-
-            Returns
-            -------
-            delta_min : float
-                minimum declination of the map in radians.
-            delta_max : float
-                maximum declination of the map in radians.
-            alpha_min : float
-                minimum right ascention of the map in radians.
-            alpha_max : float
-                maximum right ascention of the map in radians.
-
-            """
-
-            nside = min(nside, healpix_map.nside)
-
-            delta_max = -numpy.pi / 2
-            delta_min = numpy.pi / 2
-            alpha_max = 0
-            alpha_min = 2 * numpy.pi
-            # FIXME this only works with 'NESTED', why?
-            rasterized_map = healpix_map.rasterize(
-                scheme='NESTED', nside=nside
-            )
-            data = rasterized_map.data
-            renormalization_constant = data.sum()
-
-            normalized_data = data / renormalization_constant
-            sorter = numpy.argsort(-normalized_data)
-
-            map_coverage = 0
-
-            for i in range(len(data)):
-                j = sorter[i]
-                pix = rasterized_map.uniq[j] - 4 * nside * nside
-                delta, alpha = rasterized_map.pix2ang(pix, lonlat=False)
-                # converts colatitude to latitude
-                delta = numpy.pi / 2 - delta
-
-                map_coverage += normalized_data[j]
-                delta_max, delta_min = max(delta_max, delta), min(
-                    delta_min, delta
-                )
-                alpha_max, alpha_min = max(alpha_max, alpha), min(
-                    alpha_min, alpha
-                )
-
-                if map_coverage > coverage:
-                    break
-
-            # A safety margin is added to ensure that the pixels at the edges
-            # of the distribution are fully accounted for.
-            # width of one pixel : < π/4nside-1
-
-            margin = 2 * numpy.pi / (4 * nside - 1)
-
-            delta_max = min(delta_max + margin, numpy.pi / 2)
-            delta_min = max(delta_min - margin, -numpy.pi / 2)
-            alpha_max = min(alpha_max + margin, 2 * numpy.pi)
-            alpha_min = max(alpha_min - margin, 0)
-
-            return delta_min, delta_max, alpha_min, alpha_max
-
+        # Read the map file.
         file_name = params['healpix_file']
-
-        coverage = params['coverage']
-
-        if coverage > 1 or coverage < 0:
-            raise ValueError(
-                f'Coverage must be between 0 and 1, {coverage} is not correct'
-            )
-
-        rasterization_nside = params['rasterization_nside']
-
-        if bin(rasterization_nside).count('1') != 1:
-            raise ValueError(
-                f'Rasterization_nside must be a power of 2,'
-                f'{rasterization_nside} is not correct'
-            )
+        mhealpy = import_optional('mhealpy')
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
-        self.boundaries = boundaries(
-            self.healpix_map, rasterization_nside, coverage
-        )
-        logging.info('HealpixSky boundary is %s', self.boundaries)
+
+        # Get the probabilities at each pixel.
+        if self.healpix_map.density():
+            # If the map stores a probability density, then we must convert to
+            # a probability per pixel.  We assume that the angular variation
+            # scale of the density function is much larger than the pixel area,
+            # so that we can just scale the density by the pixel area.
+            pix_areas = self.healpix_map.pixarea(
+                numpy.arange(self.healpix_map.npix)
+            )
+            self.pix_probs = (self.healpix_map * pix_areas).data
+        else:
+            # The map stores directly a probability per pixel.
+            self.pix_probs = self.healpix_map.data
+
+        # Sanity-check the probabilities, and ensure they are normalized
+        # correctly (sum to one).
+        assert type(self.pix_probs) == numpy.ndarray
+        sum_pix_probs = sum(self.pix_probs)
+        if not numpy.isclose(sum_pix_probs, 1):
+            warnings.warn(
+                f'Sum of probs in HEALPix map is {sum(self.pix_probs)}, '
+                'far from 1. Something might be wrong with that map'
+            )
+        self.pix_probs /= sum_pix_probs
 
     @property
     def params(self):
@@ -306,91 +224,115 @@ class HealpixSky:
                 "included in tag portion of section name"
             )
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
-        coverage = 0.9999
-        if cp.has_option_tag(section, 'coverage', tag):
-            coverage = float(cp.get_opt_tag(section, 'coverage', tag))
+        return cls(healpix_file=healpix_file)
 
-        rasterization_nside = 64
-        if cp.has_option_tag(section, 'rasterization_nside', tag):
-            rasterization_nside = int(
-                cp.get_opt_tag(section, 'rasterization_nside', tag)
-            )
-        return cls(
-            healpix_file=healpix_file,
-            coverage=coverage,
-            rasterization_nside=rasterization_nside,
+    def pixel_corners(self, indices):
+        """Return the Cartesian vectors corresponding to the corners of one or
+        more HEALPix pixels. Dimension 0 is the pixel index, 1 is the Cartesian
+        coordinate, 2 is the corner index.
+        """
+        return numpy.array(
+            [self.healpix_map.boundaries(pi, step=1) for pi in indices]
         )
 
+    def normalize_azimuth(self, phi):
+        """Helper function to ensure the azimuthal coordinate stays within
+        [0,2π).
+        """
+        phi[phi < 0] += 2 * numpy.pi
+        phi[phi >= 2 * numpy.pi] -= 2 * numpy.pi
+        return phi
+
     def rvs(self, size):
-        def simple_rejection_sampling(healpix_map, size, boundaries):
-            """Start from a uniform distribution of points, and accepts those
-             whose values on the map are greater than a random value
-             following a uniform law
+        # First of all, draw a random sample of pixel indices following the
+        # given probabilities. This is the trivial part of the algorithm.
+        pix_indices = numpy.random.choice(
+            self.healpix_map.npix, p=self.pix_probs, size=size
+        )
 
-             Parameters
-             ----------
-             healpix_map  : HealpixMap instance
-             size : int
-                 number of points tested by the method
-             boundaries : list -> tuple of 4 floats
-                 delta_min,delta_max,alpha_min,alpha_max = boundaries
-                 delta is the declination in radians [-pi/2, pi/2]
-                 alpha is the right ascention in radians [0,2pi]
+        # Then comes the nasty part of the algorithm. For each selected pixel,
+        # we need to draw a random point uniformly distributed on the patch of
+        # the sky defined by that pixel. We cannot skip points, every pixel
+        # (index) needs precisely one point. We do this via rejection sampling:
+        # we find the (theta,phi) box that encloses the corners of a pixel,
+        # then draw a uniform point inside that box and repeat until the point
+        # falls inside the pixel. The acceptance rate is always around 50% due
+        # to the orientation of the HEALPix pixels. The result seems correct
+        # visually and by checking the acceptance rates. This method is
+        # relatively slow due to the calls to `boundaries()`, which is slow
+        # especially for MOC maps. For MOC maps, I obtain around one million
+        # samples per minute.
 
-             Returns
-             -------
-            coordinates of the accepted points,
-            following the mhealpy conventions
+        boundaries_vec = self.pixel_corners(pix_indices)
 
-            """
-            # The angles are in radians and follow the radec convention
-            delta_min, delta_max, alpha_min, alpha_max = boundaries
+        boundaries_z_min = boundaries_vec[:,2,:].min(axis=1)
+        boundaries_z_max = boundaries_vec[:,2,:].max(axis=1)
 
-            # draw points uniformly distributed inside the region delimited by
-            # boundaries
-            u = numpy.random.uniform(0, 1, size)
-            delta = numpy.arcsin(
-                (numpy.sin(delta_max) - numpy.sin(delta_min)) * u
-                + numpy.sin(delta_min)
+        # Find ranges of azimuthal angle. `arctan2()` produces angles in the
+        # range [-π,π] which is not the right convention, so fix that right
+        # away.
+        boundaries_phi = numpy.arctan2(
+            boundaries_vec[:,1,:], boundaries_vec[:,0,:]
+        )
+        del boundaries_vec
+        boundaries_phi[boundaries_phi < 0] += 2 * numpy.pi
+        boundaries_phi_min = boundaries_phi.min(axis=1)
+        boundaries_phi_max = boundaries_phi.max(axis=1)
+        # Pixels that straddle phi = 0 need a special treatment :( Shift them
+        # by 90 deg so that they are not straddlers for the time being.
+        # We will shift the corresponding samples back after drawing them.
+        straddler_mask = (boundaries_phi_max - boundaries_phi_min) > numpy.pi / 2
+        boundaries_phi[straddler_mask,:] -= numpy.pi / 2
+        boundaries_phi[straddler_mask,:] = self.normalize_azimuth(
+            boundaries_phi[straddler_mask,:]
+        )
+        boundaries_phi_min[straddler_mask] = boundaries_phi[straddler_mask,:].min(axis=1)
+        boundaries_phi_max[straddler_mask] = boundaries_phi[straddler_mask,:].max(axis=1)
+        del boundaries_phi
+
+        final_thetas = numpy.array([])
+        final_phis = numpy.array([])
+
+        # Here comes the rejection sampling.
+        while len(pix_indices) > 0:
+            random_thetas = numpy.arccos(
+                numpy.random.uniform(boundaries_z_min, boundaries_z_max)
             )
-            alpha = numpy.random.uniform(alpha_min, alpha_max, size)
-            # a conversion is required to use get_interp_val
-            theta, phi = numpy.pi / 2 - delta, alpha
-
-            data = healpix_map.data
-            random_data = numpy.random.uniform(0, data.max(), size)
-
-            # the version of mhealpy 0.3.4 or later is needed to run
-            # get_interp_val
-            # get_interp_val might return an astropy object depending on the
-            # units of the column of the fits file,
-            # hence the need to transform into an array
-            d_data = numpy.array(
-                healpix_map.get_interp_val(theta, phi, lonlat=False)
+            random_phis = numpy.random.uniform(
+                boundaries_phi_min, boundaries_phi_max
             )
 
-            dist_theta = theta[d_data > random_data]
-            dist_phi = phi[d_data > random_data]
-
-            return (dist_theta, dist_phi)
-
-        # Sampling method to generate the desired number of points
-        theta, phi = numpy.array([]), numpy.array([])
-        while len(theta) < size:
-            new_theta, new_phi = simple_rejection_sampling(
-                self.healpix_map, size, self.boundaries
+            # Now we can undo the shift for the straddlers. Ugly!
+            random_phis[straddler_mask] += numpy.pi / 2
+            random_phis[straddler_mask] = self.normalize_azimuth(
+                random_phis[straddler_mask]
             )
-            theta = numpy.concatenate((theta, new_theta), axis=0)
-            phi = numpy.concatenate((phi, new_phi), axis=0)
 
-        if len(theta) > size:
-            theta = theta[:size]
-            phi = phi[:size]
+            # Find which points fall inside their pixels.
+            sampled_indices = self.healpix_map.ang2pix(
+                random_thetas, random_phis
+            )
+            acceptance_mask = sampled_indices == pix_indices
+            final_thetas = numpy.concatenate(
+                (final_thetas, random_thetas[acceptance_mask])
+            )
+            final_phis = numpy.concatenate(
+                (final_phis, random_phis[acceptance_mask])
+            )
 
-        # convert back to the radec convention
+            # Iterate if we are still missing some pixels.
+            rej_mask = numpy.logical_not(acceptance_mask)
+            pix_indices = pix_indices[rej_mask]
+            boundaries_z_min = boundaries_z_min[rej_mask]
+            boundaries_z_max = boundaries_z_max[rej_mask]
+            boundaries_phi_min = boundaries_phi_min[rej_mask]
+            boundaries_phi_max = boundaries_phi_max[rej_mask]
+            straddler_mask = straddler_mask[rej_mask]
+
+        # Convert back to the radec convention
         radec = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
-        radec['ra'] = phi
-        radec['dec'] = numpy.pi / 2 - theta
+        radec['ra'] = final_phis
+        radec['dec'] = numpy.pi / 2 - final_thetas
         return radec
 
 
