@@ -367,7 +367,7 @@ offsource_trigs.reverse()
 
 # Calculate chirp masses of templates
 logging.info('Loading triggers template masses')
-bank_data = h5py.File(opts.bank_file, 'r')
+bank_data = HFile(opts.bank_file, 'r')
 template_mchirps = mchirp_from_mass1_mass2(
         bank_data['mass1'][...],
         bank_data['mass2'][...]
