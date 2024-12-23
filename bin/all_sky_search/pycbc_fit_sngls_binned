@@ -184,21 +184,20 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
 
 ### Functions for doing the pruning (removal of trigs at loudest times)
 
-def get_pars(args, tag, m1, m2, s1z, s2z):
+def get_pars(args, tag, bank, tid):
     # here used for both pruning and binning params
     paramarg = getattr(args, tag+'_param')
     try:
         # will fail if m1 is a float rather than a sequence
-        logging.info('Getting %s values for %i triggers' % (paramarg, len(m1)))
+        logging.info('Getting %s values for %i triggers' % (paramarg, len(bank['mass1'])))
     except:
         pass
-    return triggers.get_param(paramarg, args, m1, m2, s1z, s2z)
+    return triggers.get_param(paramarg, args, bank, tid)
 
 if args.prune_param:
     logging.info('Getting min and max param values')
-    prpars = get_pars(args, 'prune',
-                      templatef['mass1'][:], templatef['mass2'][:],
-                      templatef['spin1z'][:], templatef['spin2z'][:])
+    templateid = np.arange(len(templatef['template_hash'][:]))
+    prpars = get_pars(args, 'prune', templatef, templateid)
     minprpar = min(prpars)
     maxprpar = max(prpars)
     del prpars
@@ -232,8 +231,7 @@ if args.prune_param:
         lstat = statpruneall[loudest]
         ltid = tidpruneall[loudest]
         ltime = timepruneall[loudest]
-        m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, ltid)
-        lbin = trstats.which_bin(get_pars(args, 'prune', m1, m2, s1z, s2z),
+        lbin = trstats.which_bin(get_pars(args, 'prune', templatef, ltid),
                                  minprpar, maxprpar,
                                  args.prune_bins, log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
@@ -275,8 +273,7 @@ if args.prune_param:
 if trig_dur:
     binpars = tdur + args.min_duration
 else:
-    m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, tid)
-    binpars = get_pars(args, 'bin', m1, m2, s1z, s2z)
+    binpars = get_pars(args, 'bin', templatef, tid)
 logging.info("Parameter range of triggers: %f - %f" %
                                                   (min(binpars), max(binpars)))
 
