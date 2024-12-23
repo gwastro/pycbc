@@ -386,13 +386,12 @@ if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
 
 logging.info('Calculating template parameter values')
 bank = HFile(args.bank_file, 'r')
-m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
 parnames = []
 
 for param, slog in zip(args.fit_param, args.log_param):
-    data = triggers.get_param(param, args, m1, m2, s1z, s2z)
+    data = triggers.get_param(param, args, bank, tid)
     if slog in ['false', 'False', 'FALSE']:
         logging.info('Using param: %s', param)
         parvals.append(data)
