@@ -1331,11 +1331,17 @@ class _PhenomTemplate():
                 thetaJN, alpha0, tilt1, tilt2, phi12, a1, a2,
                 self.mass1*lal.MSUN_SI, self.mass2*lal.MSUN_SI, self.fref, phi0
             )
+        LALparams = lal.CreateDict()
+        # The flags below change the euler angles to Spin-Taylor
+        if self.flag == True:
+            lalsim.SimInspiralWaveformParamsInsertPhenomXPrecVersion(LALparams, 320)
+            lalsim.SimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(LALparams, 2)
+
         # generate hp, hc for given orientation with lalsimulation
-        return lalsim.SimInspiralChooseFDWaveform(
+        return lalsim.SimInspiralFD(
             self.mass1*lal.MSUN_SI, self.mass2*lal.MSUN_SI, spin1x, spin1y,
             spin1z, spin2x, spin2y, spin2z, 1.e6*lal.PC_SI, iota, phi0,
-            0, 0, 0, df, self.flow, f_final, self.fref, lal.CreateDict(),
+            0, 0, 0, df, self.flow, f_final, self.fref, LALparams,
             lalsim.GetApproximantFromString(self.approximant)
         )
 
@@ -1486,6 +1492,13 @@ class _PhenomTemplate():
             h3 = self.h3
             h4 = self.h4
             h5 = self.h5
+        # Try reversing waveforms if reverse_flag is present
+        try:
+            if self.reverse_flag:
+                h1, h2, h3, h4, h5 = h5, h4, h3, h2, h1
+        except AttributeError:
+            pass  # Skip reversal if reverse_flag is not present
+
         hs = [h1.copy()]
         if h2 is not None:
             hs += [h2.copy()]
@@ -1530,6 +1543,8 @@ class PhenomPv2Template(_PhenomTemplate):
 
 class PhenomXPTemplate(_PhenomTemplate):
     approximant = "IMRPhenomXP"
+    # Enable flags to change Euler angles: Default flag on to Spin-Taylor
+    flag = True
 
     def _model_parameters_from_source_frame(self, *args):
         return lalsim.SimIMRPhenomXPCalculateModelParametersFromSourceFrame(
