@@ -47,7 +47,7 @@ install_requires = setup_requires + [
     'gwdatafind',
     'pegasus-wms.api >= 5.0.8',
     'python-ligo-lw >= 1.7.0',
-    'ligo-segments',
+    'igwn-segments',
     'lalsuite!=7.2',
     'lscsoft-glue>=1.59.3',
     'pykerr',

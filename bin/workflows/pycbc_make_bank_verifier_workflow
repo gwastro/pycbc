@@ -27,7 +27,7 @@ import os
 import argparse
 import shutil
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version

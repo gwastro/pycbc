@@ -5,7 +5,7 @@ significant foreground, but leaves the background triggers alone.
 """
 
 import numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
-from ligo import segments
+import igwn_segments as segments
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)

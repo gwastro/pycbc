@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import copy, argparse, logging, numpy, numpy.random
 import shutil, uuid, os.path, atexit
-from ligo.segments import infinity
+from igwn_segments import infinity
 import pycbc
 from pycbc.events import veto, coinc, stat, ranking, cuts
 from pycbc.io import HFile

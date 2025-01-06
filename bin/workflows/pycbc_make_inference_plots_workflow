@@ -30,7 +30,7 @@ import sys
 import shlex
 import numpy
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc import results, init_logging, add_common_pycbc_options
 from pycbc.results import layout

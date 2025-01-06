@@ -19,7 +19,7 @@ import argparse
 import logging
 import numpy as np
 
-from ligo.segments import segment, segmentlist
+from igwn_segments import segment, segmentlist
 
 import pycbc
 from pycbc.io.hdf import HFile

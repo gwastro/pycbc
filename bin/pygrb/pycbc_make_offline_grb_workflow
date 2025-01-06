@@ -27,7 +27,7 @@ import logging
 import matplotlib
 matplotlib.use('agg')
 
-from ligo.segments import segment, segmentlistdict
+from igwn_segments import segment, segmentlistdict
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as _workflow

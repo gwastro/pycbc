@@ -14,7 +14,7 @@ cython
 #- pinning temporarily until it is
 lalsuite!=7.2,<7.25
 lscsoft-glue>=1.59.3
-ligo-segments
+igwn-segments
 tqdm
 gwdatafind>=1.1.3
 

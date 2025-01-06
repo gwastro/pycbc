@@ -23,7 +23,7 @@ import pylab
 import matplotlib as mpl
 mpl.use('Agg')
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.results

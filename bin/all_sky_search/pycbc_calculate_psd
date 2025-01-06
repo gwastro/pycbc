@@ -8,7 +8,7 @@ from pycbc.io import HFile
 from pycbc.pool import BroadcastPool as Pool
 from pycbc.fft.fftw import set_measure_level
 from pycbc.workflow import resolve_td_option
-from ligo.segments import segmentlist, segment
+from igwn_segments import segmentlist, segment
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)

@@ -25,7 +25,7 @@ import zipfile
 import codecs
 from jinja2 import Environment, FileSystemLoader
 
-from ligo import segments
+import igwn_segments as segments
 
 import pycbc.results
 from pycbc.results.render import get_embedded_config, render_workflow_html_template, setup_template_render

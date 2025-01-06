@@ -43,10 +43,10 @@ import random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
 
+import igwn_segments as segments
 import lal
 import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
-from ligo import segments
 from ligo.lw import lsctables, ligolw
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
@@ -964,7 +964,7 @@ class Node(pegasus_workflow.Node):
 
         Parameters
         -----------
-        valid_seg : ligo.segments.segment
+        valid_seg : igwn_segments.segment
             The time span over which the job is valid for.
         extension : string
             The extension to be used at the end of the filename.
@@ -1122,7 +1122,7 @@ class File(pegasus_workflow.File):
         exe_name: string
             A short description of the executable description, tagging
             only the program that ran this job.
-        segs : ligo.segments.segment or ligo.segments.segmentlist
+        segs : igwn_segments.segment or igwn_segments.segmentlist
             The time span that the OutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
@@ -1167,8 +1167,8 @@ class File(pegasus_workflow.File):
         elif isinstance(segs, (segments.segmentlist)):
             self.segment_list = segs
         else:
-            err = "segs input must be either ligo.segments.segment or "
-            err += "segments.segmentlist. Got %s." %(str(type(segs)),)
+            err = "segs input must be either igwn_segments.segment or "
+            err += "igwn_segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(err)
         if tags is None:
             tags = []
@@ -1440,7 +1440,7 @@ class FileList(list):
         -----------
         ifo : string
            Name of the ifo (or ifos) that the File should correspond to
-        current_segment : ligo.segments.segment
+        current_segment : igwn_segments.segment
            The segment of time that files must intersect.
 
         Returns
@@ -1741,7 +1741,7 @@ class SegFile(File):
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
         the optional segment_dict. NOTE that while segment_dict is a
-        ligo.segments.segmentlistdict rather than the usual dict[ifo]
+        igwn_segments.segmentlistdict rather than the usual dict[ifo]
         we key by dict[ifo:name].
 
         Parameters
@@ -1750,10 +1750,10 @@ class SegFile(File):
             See File.__init__
         description : string (required)
             See File.__init__
-        segment : ligo.segments.segment or ligo.segments.segmentlist
+        segment : igwn_segments.segment or igwn_segments.segmentlist
             See File.__init__
-        segment_dict : ligo.segments.segmentlistdict (optional, default=None)
-            A ligo.segments.segmentlistdict covering the times covered by the
+        segment_dict : igwn_segments.segmentlistdict (optional, default=None)
+            A igwn_segments.segmentlistdict covering the times covered by the
             segmentlistdict associated with this file.
             Can be added by setting self.segment_dict after initializing an
             instance of the class.
@@ -1776,13 +1776,13 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlist : ligo.segments.segmentslist
+        segmentlist : igwn_segments.segmentslist
             The segment list that will be stored in this file.
         name : str
             The name of the segment lists to be stored in the file.
         ifo : str
             The ifo of the segment lists to be stored in this file.
-        seg_summ_list : ligo.segments.segmentslist (OPTIONAL)
+        seg_summ_list : igwn_segments.segmentslist (OPTIONAL)
             Specify the segment_summary segmentlist that goes along with the
             segmentlist. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
@@ -1805,13 +1805,13 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlists : List of ligo.segments.segmentslist
+        segmentlists : List of igwn_segments.segmentslist
             List of segment lists that will be stored in this file.
         names : List of str
             List of names of the segment lists to be stored in the file.
         ifos : str
             List of ifos of the segment lists to be stored in this file.
-        seg_summ_lists : ligo.segments.segmentslist (OPTIONAL)
+        seg_summ_lists : igwn_segments.segmentslist (OPTIONAL)
             Specify the segment_summary segmentlists that go along with the
             segmentlists. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
@@ -1840,18 +1840,18 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlistdict : ligo.segments.segmentslistdict
+        segmentlistdict : igwn_segments.segmentslistdict
             See SegFile.__init__
         ifo_list : string or list (optional)
             See File.__init__, if not given a list of all ifos in the
             segmentlistdict object will be used
-        valid_segment : ligo.segments.segment or ligo.segments.segmentlist
+        valid_segment : igwn_segments.segment or igwn_segments.segmentlist
             See File.__init__, if not given the extent of all segments in the
             segmentlistdict is used.
         file_exists : boolean (default = False)
             If provided and set to True it is assumed that this file already
             exists on disk and so there is no need to write again.
-        seg_summ_dict : ligo.segments.segmentslistdict
+        seg_summ_dict : igwn_segments.segmentslistdict
             Optional. See SegFile.__init__.
         """
         if ifo_list is None:
@@ -1869,7 +1869,7 @@ class SegFile(File):
                     valid_segment = segmentlistdict.extent_all()
                 except:
                     # Numpty probably didn't supply a
-                    # ligo.segments.segmentlistdict
+                    # igwn_segments.segmentlistdict
                     segmentlistdict=segments.segmentlistdict(segmentlistdict)
                     try:
                         valid_segment = segmentlistdict.extent_all()
@@ -1893,7 +1893,7 @@ class SegFile(File):
     @classmethod
     def from_segment_xml(cls, xml_file, **kwargs):
         """
-        Read a ligo.segments.segmentlist from the file object file containing an
+        Read a igwn_segments.segmentlist from the file object file containing an
         xml segment table.
 
         Parameters
@@ -2214,12 +2214,12 @@ def get_full_analysis_chunk(science_segs):
 
     Parameters
     -----------
-    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of igwn_segments.segmentlist instances
         The list of times that are being analysed in this workflow.
 
     Returns
     --------
-    fullSegment : ligo.segments.segment
+    fullSegment : igwn_segments.segment
         The segment spanning the first and last time point contained in science_segs.
     """
     extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
