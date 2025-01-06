@@ -165,23 +165,20 @@ spher = cart_to_spher(rota)
 
 # Calculate the time delays between the Earth center
 # and each detector for each sky point
-time_delays = [
-    [
-        detectors[i].time_delay_from_earth_center(
-            spher[j][0], spher[j][1], args.trigger_time
+sky_grid = SkyGrid(
+        spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
         )
-        for j in range(len(spher))
-    ]
-    for i in range(len(detectors))
-]
+time_delays = sky_grid.calculate_time_delays()
 
-with HFile(args.output, 'w') as hf:
-    hf['ra'] = spher[:, 0]
-    hf['dec'] = spher[:, 1]
-    hf['trigger_ra'] = [args.ra]
-    hf['trigger_dec'] = [args.dec]
-    hf['sky_error'] = [args.sky_error]
-    hf['trigger_time'] = [args.trigger_time]
-    hf['timing_uncertainty'] = [args.timing_uncertainty]
-    hf['instruments'] = [d for d in args.instruments]
-    hf['time_delays'] = time_delays
+extra_attributes = {
+        'trigger_ra': args.ra,
+        'trigger_dec': args.dec,
+        'sky_error': args.sky_error,
+        'timing_uncertainty': args.timing_uncertainty
+        }
+
+extra_datasets = {
+        'time_delays': time_delays
+        }
+
+sky_grid.write_to_file(args.output, extra_attributes, extra_datasets)
