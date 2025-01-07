@@ -33,7 +33,6 @@ import pycbc
 import pycbc.psd
 import pycbc.strain
 import pycbc.version
-from pycbc.waveform import get_waveform_filter_length_in_time
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.io.hdf import HFile
 
