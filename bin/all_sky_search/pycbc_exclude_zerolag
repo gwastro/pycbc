@@ -5,7 +5,7 @@ coincidences from *any* coincidence type with ifar above a certain threshold
 """
 
 import numpy as np, argparse, logging, pycbc, pycbc.io
-from pycbc.events import veto, coinc, significance
+from pycbc.events import veto, significance
 import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()

@@ -3,7 +3,7 @@ import copy, argparse, logging, numpy, numpy.random
 import shutil, uuid, os.path, atexit
 from igwn_segments import infinity
 import pycbc
-from pycbc.events import veto, coinc, stat, ranking, cuts
+from pycbc.events import veto, coinc, stat, cuts
 from pycbc.io import HFile
 from pycbc import pool, init_logging
 from numpy.random import seed, shuffle

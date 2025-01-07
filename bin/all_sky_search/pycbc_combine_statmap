@@ -4,7 +4,7 @@ combinations at the time of coincidence. This clusters to find the most
 significant foreground, but leaves the background triggers alone.
 """
 
-import numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
+import numpy, argparse, logging, pycbc, pycbc.events, pycbc.io
 import igwn_segments as segments
 
 parser = argparse.ArgumentParser()
