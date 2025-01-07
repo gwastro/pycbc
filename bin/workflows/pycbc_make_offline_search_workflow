@@ -33,8 +33,8 @@ import numpy
 import datetime
 import itertools
 
+import igwn_segments as segments
 import lal
-from ligo import segments
 
 import pycbc.events
 import pycbc.workflow as wf

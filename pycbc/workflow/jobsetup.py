@@ -29,8 +29,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import math, os
+import igwn_segments as segments
 import lal
-from ligo import segments
 from pycbc.workflow.core import Executable, File, FileList, Node
 
 def int_gps_time_to_str(t):
@@ -169,7 +169,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         to this list, and it does not need to be empty when supplied.
     curr_exe_job : Job
         An instanced of the Job class that has a get_valid times method.
-    science_segs : ligo.segments.segmentlist
+    science_segs : igwn_segments.segmentlist
         The list of times that the jobs should cover
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
@@ -347,7 +347,7 @@ def identify_needed_data(curr_exe_job):
     dataLength : float
         The amount of data (in seconds) that each instance of the job must read
         in.
-    valid_chunk : ligo.segments.segment
+    valid_chunk : igwn_segments.segment
         The times within dataLength for which that jobs output **can** be
         valid (ie. for inspiral this is (72, dataLength-72) as, for a standard
         setup the inspiral job cannot look for triggers in the first 72 or
@@ -827,7 +827,7 @@ class PyCBCTmpltbankExecutable(Executable):
 
         Parameters
         -----------
-        valid_seg : ligo.segments.segment
+        valid_seg : igwn_segments.segment
             The segment over which to declare the node valid. Usually this
             would be the duration of the analysis.
 

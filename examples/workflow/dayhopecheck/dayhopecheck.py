@@ -46,7 +46,7 @@ __program__ = "dayhopecheck"
 import os
 import logging
 import argparse
-from ligo import segments
+import igwn_segments as segments
 import pycbc.workflow as _workflow
 
 from ligo.lw import ligolw

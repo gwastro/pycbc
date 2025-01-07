@@ -27,7 +27,7 @@ import socket
 import sys
 import numpy
 
-from ligo import segments
+import igwn_segments as segments
 
 import pycbc
 import pycbc.workflow.minifollowups as mini

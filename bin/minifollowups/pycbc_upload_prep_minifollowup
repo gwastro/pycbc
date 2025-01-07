@@ -23,7 +23,7 @@ import logging
 import re
 import numpy as np
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as wf

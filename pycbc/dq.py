@@ -28,7 +28,7 @@ gravitational-wave detectors from public sources and/or dqsegdb.
 import logging
 import json
 import numpy
-from ligo.segments import segmentlist, segment
+from igwn_segments import segmentlist, segment
 from pycbc.frame.gwosc import get_run
 from pycbc.io import get_file
 
@@ -152,7 +152,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
     Returns
     ---------
-    segments: ligo.segments.segmentlist
+    segments: igwn_segments.segmentlist
         List of segments
     """
     flag_segments = segmentlist([])
@@ -279,7 +279,7 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
 
     Returns
     ---------
-    segments: ligo.segments.segmentlist
+    segments: igwn_segments.segmentlist
         List of segments
     """
     total_segs = segmentlist([])

@@ -3,8 +3,8 @@ segment.
 """
 import logging
 import numpy
+from igwn_segments import segment, segmentlist
 from ligo.lw import table, lsctables, utils as ligolw_utils
-from ligo.segments import segment, segmentlist
 
 logger = logging.getLogger('pycbc.events.veto')
 

@@ -32,8 +32,8 @@ import shutil
 import itertools
 import logging
 
-from ligo import segments
-from ligo.segments import utils as segmentsUtils
+import igwn_segments as segments
+from igwn_segments import utils as segmentsUtils
 
 from pycbc.workflow.core import SegFile, make_analysis_dir
 from pycbc.workflow.core import resolve_url
@@ -161,10 +161,10 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     Returns
     --------
-    onsource : ligo.segments.segmentlistdict
+    onsource : igwn_segments.segmentlistdict
         A dictionary containing the on source segments for network IFOs
 
-    offsource : ligo.segments.segmentlistdict
+    offsource : igwn_segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
     """
 

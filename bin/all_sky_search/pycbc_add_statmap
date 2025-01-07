@@ -3,11 +3,11 @@
 with more than one ifo combination available. Cluster to keep foreground
 coincs with the highest stat value.
 """
+import igwn_segments as segments
 import numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
 import pycbc.version
 import pycbc.conversions as conv
 from pycbc.events import coinc, significance
-from ligo import segments
 import sys, copy
 
 def get_ifo_string(fi):

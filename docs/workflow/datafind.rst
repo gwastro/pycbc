@@ -34,7 +34,7 @@ Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate the segments (described below).
 * An initialized instance of the pycbc workflow class, containing the ConfigParser.
-* An ifo-keyed dictionary of ligo.segments.segmentlist instances containing the times that should be analysed for each ifo. See :ref:`workflowsegmentsmod` for documentation of the segments module, which in most cases should be used to obtain this input.
+* An ifo-keyed dictionary of igwn_segments.segmentlist instances containing the times that should be analysed for each ifo. See :ref:`workflowsegmentsmod` for documentation of the segments module, which in most cases should be used to obtain this input.
 
 -------------------------
 Configuration file setup

@@ -32,8 +32,8 @@ import h5py
 
 from gwdatafind.utils import (file_segment, filename_metadata)
 
-from ligo import segments
-from ligo.segments.utils import fromsegwizard
+import igwn_segments as segments
+from igwn_segments.utils import fromsegwizard
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id

@@ -31,7 +31,7 @@ import lal
 import lal.series
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.segments import segment, segmentlist
+from igwn_segments import segment, segmentlist
 
 import pycbc
 from pycbc.io import HFile

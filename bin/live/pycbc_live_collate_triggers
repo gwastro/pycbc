@@ -23,7 +23,7 @@ import os
 import logging
 from datetime import datetime, timedelta
 
-from ligo.segments import segmentlist, segment
+from igwn_segments import segmentlist, segment
 
 import pycbc
 from pycbc.io import live as liveio
