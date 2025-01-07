@@ -28,8 +28,6 @@ import socket
 import os
 import argparse
 import logging
-import configparser as ConfigParser
-import numpy
 import datetime
 import itertools
 
@@ -38,8 +36,7 @@ import lal
 
 import pycbc.events
 import pycbc.workflow as wf
-from pycbc.results import static_table, layout, save_fig_with_metadata
-from pycbc.results.metadata import html_escape
+from pycbc.results import layout, save_fig_with_metadata
 
 
 def symlink_path(f, path):
