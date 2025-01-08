@@ -27,7 +27,6 @@ import os
 import argparse
 import logging
 
-from pycbc import init_logging
 import pycbc.workflow as wf
 from pycbc.workflow.core import FileList, resolve_url_to_file
 import pycbc.workflow.minifollowups as mini
