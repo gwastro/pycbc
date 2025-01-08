@@ -21,7 +21,6 @@ import logging
 from matplotlib import use
 use('agg')
 import matplotlib.pyplot as plt
-import numpy
 import pycbc
 from pycbc import results
 from pycbc.inference import io

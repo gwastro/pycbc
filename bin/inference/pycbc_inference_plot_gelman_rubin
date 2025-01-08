@@ -17,7 +17,6 @@
 """ Plots the Gelman-Rubin convergence diagnositic statistic.
 """
 
-import argparse
 import logging
 import matplotlib
 matplotlib.use("Agg")
@@ -27,7 +26,7 @@ import sys
 from pycbc import (
     results, init_logging, add_common_pycbc_options
 )
-from pycbc.inference import (gelman_rubin, io, option_utils)
+from pycbc.inference import (gelman_rubin, io)
 
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=['walkers'])
