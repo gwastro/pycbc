@@ -25,13 +25,11 @@
 These are the unittests for the pycbc frequencyseries type
 '''
 
-import pycbc
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy
 import lal
-import sys
 import os
 import tempfile
 from utils import array_base, parse_args_all_schemes, simple_exit

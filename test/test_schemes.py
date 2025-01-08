@@ -30,13 +30,10 @@ arithemtic operation, and one that should *not* move its data (regardless of sch
 We do not specifically test that the lalwrapped functions raise exceptions from the
 GPU, because that test is done in the test_lalwrap unit tests.
 '''
-import pycbc
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
-import numpy
-from numpy import dtype, float32, float64, complex64, complex128
-import lal
+from numpy import float32, float64, complex64, complex128
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Scheme")

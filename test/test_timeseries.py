@@ -25,14 +25,12 @@
 These are the unittests for the pycbc timeseries type
 '''
 
-import pycbc
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy
 import lal
 from utils import array_base, parse_args_all_schemes, simple_exit
-import sys
 import os
 import tempfile
 

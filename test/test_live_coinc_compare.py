@@ -3,13 +3,10 @@
 import unittest
 from types import SimpleNamespace
 import numpy as np
-# Some duplicate imports, but I want to copy code without changing it!
-import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
-import cProfile
+import logging
 from astropy.utils.data import download_file
 from pycbc import gps_now
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
-import pycbc.events.coinc
 from utils import simple_exit
 import validation_code.old_coinc as old_coinc
 
@@ -145,7 +142,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                     if type(newout[key]) is np.ndarray:
                         self.assertTrue(len(newout[key]) == len(oldout[key]))
                         self.assertTrue(
-                            numpy.isclose(newout[key], oldout[key]).all()
+                            np.isclose(newout[key], oldout[key]).all()
                         )
                     else:
                         self.assertTrue(newout[key] == oldout[key])
@@ -161,7 +158,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         new_coincer = self.new_coincer
         old_coincer = self.old_coincer
         self.assertTrue(len(new_coincer.coincs.data) == len(old_coincer.coincs.data))
-        self.assertTrue(numpy.isclose(new_coincer.coincs.data, old_coincer.coincs.data, rtol=1e-06).all())
+        self.assertTrue(np.isclose(new_coincer.coincs.data, old_coincer.coincs.data, rtol=1e-06).all())
 
         for ifo in new_coincer.singles:
             lgc = True

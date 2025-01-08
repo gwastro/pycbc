@@ -26,14 +26,11 @@ These are the unittests for the pycbc array type
 '''
 
 
-import pycbc
 import unittest
-import itertools
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy
 from utils import array_base, parse_args_all_schemes, simple_exit
-import sys
 import os
 import tempfile
 
