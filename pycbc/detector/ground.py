@@ -31,7 +31,7 @@ between ground-based observatories.
 import os
 import logging
 import numpy as np
-from numpy import cos, sin, pi
+from numpy import cos, sin
 
 import lal
 from astropy.time import Time

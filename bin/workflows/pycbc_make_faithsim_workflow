@@ -6,7 +6,6 @@ and generate files containing the match between them and plots.
 """
 
 import pycbc.workflow as wf
-import logging
 import argparse
 
 from pycbc import add_common_pycbc_options, init_logging

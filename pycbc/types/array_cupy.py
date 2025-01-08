@@ -25,8 +25,6 @@
 """
 import cupy as cp
 from pycbc.types.array import common_kind, complex128, float64
-from scipy.linalg import blas
-from pycbc.types import real_same_precision_as
 
 def zeros(length, dtype=cp.float64):
     return cp.zeros(length, dtype=dtype)
