@@ -91,19 +91,18 @@ class SkyGrid:
             ref_gps_time = hf.attrs['ref_gps_time']
         return cls(ra, dec, detectors, ref_gps_time)
 
-    def write_to_file(self, path, extra_attrs, extra_datasets):
+    def write_to_file(self, path, extra_attrs=None, extra_datasets=None):
         """Writes a sky grid to an HDF5 file."""
         with h5py.File(path, 'w') as hf:
+            breakpoint()
             hf['ra'] = self.ras
             hf['dec'] = self.decs
             hf.attrs['detectors'] = self.detectors
             hf.attrs['ref_gps_time'] = self.ref_gps_time
-            if extra_attrs is not None:
-                for attribute in extra_attrs:
-                    hf.attrs[attribute] = extra_attrs[attribute]
-            if extra_datasets is not None:
-                for datasets in extra_datasets:
-                    hf[datasets] = extra_datasets[datasets]
+            for attribute in (extra_attrs or {}):
+                hf.attrs[attribute] = extra_attrs[attribute]
+            for datasets in (extra_datasets or {}):
+                hf[datasets] = extra_datasets[datasets]
 
     def calculate_antenna_patterns(self):
         """Calculate the antenna pattern functions at each point in the grid
