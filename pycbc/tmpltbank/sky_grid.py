@@ -94,7 +94,6 @@ class SkyGrid:
     def write_to_file(self, path, extra_attrs=None, extra_datasets=None):
         """Writes a sky grid to an HDF5 file."""
         with h5py.File(path, 'w') as hf:
-            breakpoint()
             hf['ra'] = self.ras
             hf['dec'] = self.decs
             hf.attrs['detectors'] = self.detectors

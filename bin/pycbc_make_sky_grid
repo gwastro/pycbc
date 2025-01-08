@@ -20,7 +20,7 @@ import pycbc
 from pycbc.detector import Detector
 from pycbc.io.hdf import HFile
 from pycbc.types import angle_as_radians
-
+from pycbc.tmpltbank import sky_grid
 
 def spher_to_cart(sky_points):
     """Convert spherical coordinates to cartesian coordinates."""
@@ -58,11 +58,11 @@ parser.add_argument(
     "otherwise radians are assumed.",
 )
 parser.add_argument(
-    '--detectors',
+    '--instruments',
     nargs="+",
     type=str,
     required=True,
-    help="List of detectors to analyze.",
+    help="List of instuments to analyze.",
 )
 parser.add_argument(
     '--sky-error',
@@ -92,11 +92,11 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-if len(args.detectors) == 1:
+if len(args.instruments) == 1:
     parser.error('Can not make a sky grid for only one detector.')
 
-args.detectors.sort()  # Put the ifos in alphabetical order
-detectors = args.detectors
+args.instruments.sort()  # Put the ifos in alphabetical order
+detectors = args.instruments
 detectors = [Detector(d) for d in detectors]
 detector_pairs = list(itertools.combinations(detectors, 2))
 
@@ -165,8 +165,8 @@ spher = cart_to_spher(rota)
 
 # Calculate the time delays between the Earth center
 # and each detector for each sky point
-sky_grid = SkyGrid(
-        spher[:, 0], spher[:, 1], args.detectors, args.trigger_time
+sky_grid = sky_grid.SkyGrid(
+        spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
         )
 time_delays = sky_grid.calculate_time_delays()
 
@@ -177,4 +177,4 @@ extra_attributes = {
     'timing_uncertainty': args.timing_uncertainty
 }
 
-sky_grid.write_to_file(args.output, extra_attributes, extra_datasets)
+sky_grid.write_to_file(args.output, extra_attributes)
