@@ -62,7 +62,7 @@ parser.add_argument(
     nargs="+",
     type=str,
     required=True,
-    help="List of instuments to analyze.",
+    help="List of instruments to analyze.",
 )
 parser.add_argument(
     '--sky-error',
@@ -163,12 +163,9 @@ rota = r.apply(cart)
 # Convert cartesian coordinates back to spherical coordinates
 spher = cart_to_spher(rota)
 
-# Calculate the time delays between the Earth center
-# and each detector for each sky point
 sky_grid = sky_grid.SkyGrid(
-        spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
-        )
-time_delays = sky_grid.calculate_time_delays()
+    spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
+)
 
 extra_attributes = {
     'trigger_ra': args.ra,

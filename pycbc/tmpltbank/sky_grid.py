@@ -100,8 +100,8 @@ class SkyGrid:
             hf.attrs['ref_gps_time'] = self.ref_gps_time
             for attribute in (extra_attrs or {}):
                 hf.attrs[attribute] = extra_attrs[attribute]
-            for datasets in (extra_datasets or {}):
-                hf[datasets] = extra_datasets[datasets]
+            for dataset in (extra_datasets or {}):
+                hf[dataset] = extra_datasets[dataset]
 
     def calculate_antenna_patterns(self):
         """Calculate the antenna pattern functions at each point in the grid
