@@ -13,7 +13,6 @@ from argparse import ArgumentParser
 
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw import table
 
 import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler

@@ -18,14 +18,13 @@ from matplotlib import use as mpl_use_backend
 mpl_use_backend('agg')
 
 import numpy as np
-import h5py
 
 from ligo.gracedb.rest import GraceDb
 
 import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import gracedb as pycbc_gracedb, WaveformArray
-from pycbc.types import (TimeSeries, FrequencySeries, load_timeseries,
+from pycbc.types import (load_timeseries,
                          load_frequencyseries, MultiDetMultiColonOptionAction,
                          MultiDetOptionAction, MultiDetOptionAppendAction)
 from pycbc.pnutils import nearest_larger_binary_number

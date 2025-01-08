@@ -52,7 +52,6 @@ def mkdir(dir_name):
         pass
 
 def matches_in_list(slist, match):
-    import re
     matches = []
     for st in slist:
         if st.startswith(match):

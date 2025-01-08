@@ -23,7 +23,6 @@ smaller banks where the number of smaller banks is a user input
 
 import argparse
 import numpy
-import h5py
 import logging
 from numpy import random
 
@@ -92,7 +91,6 @@ if args.random_sort:
     tmplt_bank.table = templates
 
 if args.mchirp_sort:
-    from pycbc import pnutils
     mcsort = numpy.argsort(templates.mchirp)
     templates = templates[mcsort]
     tmplt_bank.table = templates

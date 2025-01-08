@@ -44,7 +44,6 @@ from pycbc import (
     add_common_pycbc_options,
 )
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
-from pycbc.io.hdf import HFile
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import zeros, float32, complex64, angle_as_radians
 from pycbc.vetoes import sgchisq

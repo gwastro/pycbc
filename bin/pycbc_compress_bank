@@ -28,17 +28,12 @@ hdf file."""
 
 import argparse
 import numpy
-import h5py
 import logging
 
 import pycbc
-from pycbc import psd, DYN_RANGE_FAC
 from pycbc.waveform import compress
 from pycbc import waveform
 from pycbc.types import FrequencySeries, real_same_precision_as
-from pycbc import pnutils
-from pycbc import filter
-
 
 parser = argparse.ArgumentParser(description=__description__)
 pycbc.add_common_pycbc_options(parser)

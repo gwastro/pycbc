@@ -3,7 +3,6 @@
 Compute source probabilities using mchirp estimation method for all events
 in a chunk with an IFAR above certain threshold.
 """
-import h5py
 import json
 import tqdm
 import argparse
