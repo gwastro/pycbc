@@ -37,6 +37,7 @@ def cart_to_spher(sky_points):
     spher = np.zeros((len(sky_points), 2))
     spher[:, 0] = np.arctan2(sky_points[:, 1], sky_points[:, 0])
     spher[:, 1] = np.arcsin(sky_points[:, 2])
+    spher[spher[:, 0] <0, 0] += 2 * np.pi
     return spher
 
 
