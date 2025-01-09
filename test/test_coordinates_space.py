@@ -153,7 +153,7 @@ class TestParams(unittest.TestCase):
         """
         from pycbc.waveform import get_fd_det_waveform
 
-        from pycbc.detector import Detector, add_detector_on_earth,
+        from pycbc.detector import Detector, add_detector_on_earth
         from pycbc.waveform import get_td_waveform
         import importlib
 
