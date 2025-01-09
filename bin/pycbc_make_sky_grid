@@ -18,7 +18,6 @@ from scipy.spatial.transform import Rotation as R
 
 import pycbc
 from pycbc.detector import Detector
-from pycbc.io.hdf import HFile
 from pycbc.types import angle_as_radians
 from pycbc.tmpltbank import sky_grid
 

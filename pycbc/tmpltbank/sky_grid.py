@@ -8,7 +8,7 @@ import numpy as np
 import h5py
 
 from pycbc.detector import Detector
-
+from pycbc.conversion import ensurearray
 
 class SkyGrid:
     def __init__(self, ra, dec, detectors, ref_gps_time):
@@ -34,9 +34,10 @@ class SkyGrid:
         # We store the points in a 2D array internally, first dimension runs
         # over the list of points, second dimension is RA/dec.
         # Question: should we use Astropy sky positions instead?
-        if (self.ra < 0).any() or (self.ra > 2 * np.pi).any():
+        ra, dec, _ = ensurearray(ra,dec)
+        if (ra < 0).any() or (ra > 2 * np.pi).any():
             raise ValueError('RA must be in the range [0,2π]')
-        if (self.dec < -np.pi/2).any() or (ra > np.pi/2).any():
+        if (dec < -np.pi/2).any() or (dec > np.pi/2).any():
             raise ValueError('DEC must be in the range [-π/2, π/2]')
         self.positions = np.vstack([ra, dec]).T
         self.detectors = sorted(detectors)
