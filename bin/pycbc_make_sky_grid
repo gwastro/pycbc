@@ -19,7 +19,7 @@ from scipy.spatial.transform import Rotation as R
 import pycbc
 from pycbc.detector import Detector
 from pycbc.types import angle_as_radians
-from pycbc.tmpltbank import sky_grid
+from pycbc.tmpltbank.sky_grid import SkyGrid
 
 
 def spher_to_cart(sky_points):
@@ -164,7 +164,7 @@ rota = r.apply(cart)
 # Convert cartesian coordinates back to spherical coordinates
 spher = cart_to_spher(rota)
 
-sky_grid = sky_grid.SkyGrid(
+sky_grid = SkyGrid(
     spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
 )
 

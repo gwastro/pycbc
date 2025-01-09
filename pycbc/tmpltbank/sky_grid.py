@@ -8,7 +8,8 @@ import numpy as np
 import h5py
 
 from pycbc.detector import Detector
-from pycbc.conversion import ensurearray
+from pycbc.conversions import ensurearray
+
 
 class SkyGrid:
     def __init__(self, ra, dec, detectors, ref_gps_time):
