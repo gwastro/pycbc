@@ -28,17 +28,13 @@ hdf file."""
 
 import argparse
 import numpy
-import h5py
 import logging
 
 import pycbc
-from pycbc import psd, DYN_RANGE_FAC
+from pycbc import psd
 from pycbc.waveform import compress
 from pycbc import waveform
 from pycbc.types import FrequencySeries, real_same_precision_as
-from pycbc import pnutils
-from pycbc import filter
-
 
 parser = argparse.ArgumentParser(description=__description__)
 pycbc.add_common_pycbc_options(parser)
@@ -111,7 +107,7 @@ pycbc.init_logging(args.verbose)
 # using a PSD is not desired, this check would prevent raising an error
 # asking for PSD options.
 if args.psd_model or args.psd_file or args.asd_file :
-    psd.verify_psd_options(args, parser)
+    pycbc.psd.verify_psd_options(args, parser)
 
 if args.sample_rate % 2 != 0:
     raise ValueError("sample rate must be a power of 2")

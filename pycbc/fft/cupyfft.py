@@ -26,7 +26,6 @@ This module provides the cupy backend of the fast Fourier transform
 for the PyCBC package.
 """
 
-import logging
 import cupy.fft
 from .core import _check_fft_args
 from .core import _BaseFFT, _BaseIFFT

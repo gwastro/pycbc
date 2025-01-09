@@ -26,7 +26,6 @@ import cupy as cp
 import functools
 import mako.template
 from .eventmgr import _BaseThresholdCluster
-import pycbc.scheme
 
 val = None
 loc = None

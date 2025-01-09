@@ -28,7 +28,6 @@ import sys
 
 from pycbc import results, init_logging, add_common_pycbc_options
 from pycbc.results import layout
-from pycbc.results import metadata
 from pycbc.workflow import configuration
 from pycbc.workflow import core
 from pycbc.workflow.jobsetup import (PycbcCreateInjectionsExecutable,

@@ -9,13 +9,11 @@ import argparse
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.cm
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import MultipleLocator
 import pylab
 import numpy as np
 
-from ligo.lw import utils, table, lsctables
-
-from pycbc import pnutils, init_logging, add_common_pycbc_options
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.conversions import (
     mtotal_from_mass1_mass2,
     q_from_mass1_mass2,

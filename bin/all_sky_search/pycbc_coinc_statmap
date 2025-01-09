@@ -7,8 +7,8 @@ the capability of doing hierarchical removal of foreground triggers that are
 louder than all of the background triggers. We use this to properly assess
 the FANs of any other gravitational waves in the dataset.
 """
-import argparse, itertools
-import lal, logging, numpy
+import argparse
+import logging, numpy
 from pycbc.events import veto, coinc, significance
 import pycbc.pnutils, pycbc.io
 import sys

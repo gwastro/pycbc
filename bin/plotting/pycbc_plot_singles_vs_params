@@ -28,7 +28,6 @@ matplotlib.use('agg')
 import pylab as pl
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-import h5py
 import sys
 from packaging.version import Version
 

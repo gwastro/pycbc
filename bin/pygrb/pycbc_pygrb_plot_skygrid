@@ -26,7 +26,6 @@ import sys
 import os
 import logging
 import numpy
-import h5py
 from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version

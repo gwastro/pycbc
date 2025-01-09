@@ -30,7 +30,6 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 
 import math, os
 import igwn_segments as segments
-import lal
 from pycbc.workflow.core import Executable, File, FileList, Node
 
 def int_gps_time_to_str(t):

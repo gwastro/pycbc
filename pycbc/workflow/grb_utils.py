@@ -28,7 +28,6 @@ generation of pygrb workflows. For details about pycbc.workflow see here:
 http://pycbc.org/pycbc/latest/html/workflow.html
 """
 
-import glob
 import os
 import logging
 import numpy as np

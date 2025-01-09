@@ -25,7 +25,6 @@ import operator
 import os
 import re
 from collections import defaultdict
-from itertools import compress
 from functools import reduce
 
 import tqdm

@@ -22,15 +22,14 @@ import copy
 import logging
 import argparse
 import numpy
-import itertools
 import time
 from pycbc.pool import BroadcastPool as Pool
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
-from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
-from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from pycbc.filter import MatchedFilterControl, qtransform
+from pycbc.types import zeros, float32, complex64
 import pycbc.opt
 import pycbc.inject
 

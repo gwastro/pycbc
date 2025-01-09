@@ -40,7 +40,7 @@ from pycbc.io.ligolw import (
     snr_series_to_xml,
 )
 from pycbc.psd import interpolate
-from pycbc.types import FrequencySeries, TimeSeries, load_timeseries
+from pycbc.types import FrequencySeries, load_timeseries
 from pycbc.types import MultiDetOptionAction
 from pycbc.results import generate_asd_plot, generate_snr_plot
 

@@ -21,7 +21,6 @@ Reduce a template bank using some input parameter cuts
 """
 
 
-import numpy
 import logging
 import argparse
 import pycbc

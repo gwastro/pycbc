@@ -8,7 +8,6 @@ import numpy as np
 from math import cos, sin, pi, exp
 import unittest
 from utils import parse_args_all_schemes, simple_exit
-import time
 
 _scheme, _context = parse_args_all_schemes("Auto Chi-squared Veto")
 

@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-import argparse, logging, h5py, numpy as np
-from igwn_segments import infinity
+import argparse, logging, numpy as np
 from numpy.random import seed, shuffle
 
 import pycbc
 from pycbc.events import veto, coinc, stat
-import pycbc.conversions as conv
 from pycbc import io
-from pycbc.events import cuts, trigger_fits as trfits
-from pycbc.events.veto import indices_outside_times
+from pycbc.events import cuts
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc import init_logging
 

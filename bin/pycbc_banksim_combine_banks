@@ -22,10 +22,8 @@ files. It is assumed that input files have analysed the same set of injections.
 Concatenation of injections is done separately.
 """
 
-from os.path import isfile
 import argparse
-import logging
-from numpy import *
+from numpy import dtype, array
 
 import pycbc
 

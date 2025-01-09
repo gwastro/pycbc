@@ -9,7 +9,7 @@ from matplotlib import use
 use('Agg')
 import pylab
 
-from scipy.stats import gaussian_kde, ks_2samp
+from scipy.stats import ks_2samp
 
 from pycbc.distributions.utils import prior_from_config
 from pycbc.inference import models, io

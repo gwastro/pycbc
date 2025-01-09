@@ -40,7 +40,6 @@ import pycbc.strain
 import pycbc.version
 import pycbc.tmpltbank
 import pycbc.workflow as wf
-import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.workflow.core import resolve_url_to_file
 from pycbc.io.ligolw import create_process_table

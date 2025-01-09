@@ -7,14 +7,13 @@ the duration of time domain waveforms.
 __prog__ = 'pycbc_get_ffinal'
 __author__ = 'Collin Capano <collin.capano@ligo.org>'
 
-import os, sys
+import sys
 import numpy
 import argparse
 
 import pycbc
 from pycbc import waveform
 
-from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import table
 from ligo.lw.utils import process

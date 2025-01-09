@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """ Plot PyCBC's background coinc triggers
 """
-import numpy
 import argparse
 import matplotlib
 matplotlib.use('Agg')

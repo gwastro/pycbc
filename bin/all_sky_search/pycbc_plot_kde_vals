@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.io import HFile
-import logging
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
