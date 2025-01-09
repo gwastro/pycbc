@@ -184,7 +184,9 @@ class Stat(object):
             The array of single detector values
         """
         return ranking.get_sngls_ranking_from_trigs(
-            trigs, self.sngl_ranking, **self.sngl_ranking_kwargs
+            trigs,
+            self.sngl_ranking,
+            **self.sngl_ranking_kwargs
         )
 
     def single(self, trigs):  # pylint:disable=unused-argument
@@ -332,7 +334,7 @@ class QuadratureSumStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        cstat = sum(sngl[1] ** 2.0 for sngl in sngls_list) ** 0.5
+        cstat = sum(sngl[1] ** 2. for sngl in sngls_list) ** 0.5
         # For single-detector "cuts" the single ranking is set to -1
         for sngls in sngls_list:
             cstat[sngls == -1] = 0
@@ -367,9 +369,9 @@ class QuadratureSumStatistic(Stat):
         allowed_names = ["QuadratureSumStatistic"]
         self._check_coinc_lim_subclass(allowed_names)
 
-        s0 = thresh**2.0 - sum(sngl[1] ** 2.0 for sngl in s)
+        s0 = thresh ** 2. - sum(sngl[1] ** 2. for sngl in s)
         s0[s0 < 0] = 0
-        return s0**0.5
+        return s0 ** 0.5
 
 
 class PhaseTDStatistic(QuadratureSumStatistic):
@@ -422,7 +424,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # Assign attribute so that it can be replaced with other functions
         self.has_hist = False
         self.hist_ifos = None
-        self.ref_snr = 5.0
+        self.ref_snr = 5.
         self.relsense = {}
         self.swidth = self.pwidth = self.twidth = None
         self.srbmin = self.srbmax = None
@@ -522,7 +524,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         n_ifos = len(self.hist_ifos)
 
         bin_volume = (self.twidth * self.pwidth * self.swidth) ** (n_ifos - 1)
-        self.hist_max = -1.0 * numpy.inf
+        self.hist_max = -1. * numpy.inf
 
         # Read histogram for each ifo, to use if that ifo has smallest SNR in
         # the coinc
@@ -645,8 +647,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
     def logsignalrate(self, stats, shift, to_shift):
         """
-        Calculate the normalized log rate density of coincident signals
-        via lookup
+        Calculate the normalized log rate density of coinc signals via lookup
 
         Parameters
         ----------
@@ -787,7 +788,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 )[0]
                 rate[rtype[missed]] = self.max_penalty
                 # Scale by signal population SNR
-                rate[rtype] *= (sref[rtype] / self.ref_snr) ** -4.0
+                rate[rtype] *= (sref[rtype] / self.ref_snr) ** -4.
 
         return numpy.log(rate)
 
@@ -846,7 +847,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         [Nitz et al, 2017](https://doi.org/10.3847/1538-4357/aa8f50).
         """
         rstat = sum(s[1]["snglstat"] ** 2 for s in sngls_list)
-        cstat = rstat + 2.0 * self.logsignalrate(
+        cstat = rstat + 2. * self.logsignalrate(
             dict(sngls_list), slide * step, to_shift
         )
         cstat[cstat < 0] = 0
@@ -872,7 +873,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         )
         s1 = thresh ** 2. - fixed_stat_sq
         # Assume best case scenario and use maximum signal rate
-        s1 -= 2.0 * self.hist_max
+        s1 -= 2. * self.hist_max
         s1[s1 < 0] = 0
         return s1**0.5
 
@@ -946,7 +947,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             self.kwargs.get("benchmark_lograte", -14.6)
         )
         self.min_stat = float(
-            self.kwargs.get("minimum_statistic_cutoff", -30.0)
+            self.kwargs.get("minimum_statistic_cutoff", -30.)
         )
 
         # Modifier to get a sensible value of the fit slope below threshold
@@ -968,7 +969,7 @@ class ExpFitStatistic(PhaseTDStatistic):
                 [self.fits_by_tid[ifo]["median_sigma"] for ifo in ref_ifos],
                 axis=0,
             )
-            self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+            self.benchmark_logvol = 3. * numpy.log(hl_net_med_sigma)
 
         if self.kwargs["dq"]:
             # Reweight the noise rate by the dq reweighting factor
@@ -1539,7 +1540,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             else:
                 # curr_mchirp will be a number
                 mchirp = min(self.curr_mchirp, self.mcm)
-            sr_factor += numpy.log((mchirp / 20.0) ** (11.0 / 3.0))
+            sr_factor += numpy.log((mchirp / 20.) ** (11. / 3.))
 
         if self.kwargs["kde"]:
             # KDE reweighting
@@ -1642,7 +1643,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             # dimensions for both phase and SNR
             n_ifos = len(self.hist_ifos)
             snr_range = (self.srbmax - self.srbmin) * self.swidth
-            hist_vol = noise_twindow * (2.0 * numpy.pi * snr_range) ** (
+            hist_vol = noise_twindow * (2. * numpy.pi * snr_range) ** (
                 n_ifos - 1
             )
             # Noise PDF is 1/volume, assuming a uniform distribution of noise
@@ -1729,7 +1730,7 @@ class ExpFitStatistic(PhaseTDStatistic):
                 self.get_hist()
             # Assume best-case scenario and use maximum signal rate
             ln_s = numpy.log(
-                self.hist_max * (self.min_snr / self.ref_snr) ** -4.0
+                self.hist_max * (self.min_snr / self.ref_snr) ** -4.
             )
 
         # Shared info is the same as in the coinc calculation
@@ -1771,7 +1772,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             self, sngl_ranking, files=files, ifos=ifos, **kwargs
         )
         # for low-mass templates the exponential slope alpha \approx 6
-        self.alpharef = 6.0
+        self.alpharef = 6.
         self.single_increasing = True
         self.single_dtype = numpy.float32
 
@@ -1797,7 +1798,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         logr_n = self.lognoiserate(trigs)
         _, _, thresh = self.find_fits(trigs)
         # shift by log of reference slope alpha
-        logr_n += -1.0 * numpy.log(self.alpharef)
+        logr_n += -1. * numpy.log(self.alpharef)
         # add threshold and rescale by reference slope
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
@@ -1820,7 +1821,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         if self.single_increasing:
             sngl_multiifo = single_info[1]
         else:
-            sngl_multiifo = -1.0 * single_info[1]
+            sngl_multiifo = -1. * single_info[1]
         return sngl_multiifo
 
     def rank_stat_coinc(
