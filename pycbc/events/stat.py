@@ -1450,8 +1450,9 @@ class ExpFitStatistic(PhaseTDStatistic):
             singles["benchmark_logvol"] = self.benchmark_logvol[self.curr_tnum]
 
             # Save info about the best-case scenario for use later:
-            max_sigsq = numpy.max(singles["sigmasq"])
-            self.max_sigmasq = max(max_sigsq, self.max_sigmasq)
+            if singles["sigmasq"].size:
+                max_sigsq = numpy.max(singles["sigmasq"])
+                self.max_sigmasq = max(max_sigsq, self.max_sigmasq)
 
         if self.kwargs["chirp_mass"]:
             from pycbc.conversions import mchirp_from_mass1_mass2
