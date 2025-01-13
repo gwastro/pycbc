@@ -442,7 +442,12 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.pbin = numpy.zeros(128, dtype=numpy.int32)
         self.sbin = numpy.zeros(128, dtype=numpy.int32)
 
-        if pregenerate_hist and not len(ifos) == 1:
+        # Is the histogram needed to be pre-generated?
+        hist_needed = pregenerate_hist
+        hist_needed &= not len(ifos) == 1
+        hist_needed &= (type(self).__name__ == "PhaseTD" or self.kwargs["phasetd"])
+
+        if hist_needed:
             self.get_hist()
         elif len(ifos) == 1:
             # remove all phasetd files from self.files and self.file_hashes,
@@ -1628,6 +1633,8 @@ class ExpFitStatistic(PhaseTDStatistic):
         ln_s = 0
 
         if self.kwargs["phasetd"]:
+            if not self.has_hist:
+                self.get_hist()
             # Find total volume of phase-time-amplitude space occupied by
             # noise coincs, so that the logsignalrate function is properly
             # normalized
