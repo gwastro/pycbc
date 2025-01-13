@@ -1439,7 +1439,8 @@ class ExpFitStatistic(PhaseTDStatistic):
         singles["end_time"] = trigs["end_time"][:]
         singles["snr"] = trigs["snr"][:]
         # Save info about best-case scenario for use later
-        self.min_snr = min(singles["snr"].min(), self.min_snr)
+        if singles["snr"].size:
+            self.min_snr = min(singles["snr"].min(), self.min_snr)
 
         if self.kwargs["sensitive_volume"]:
             # populate fields to allow sensitive volume factor calculation
