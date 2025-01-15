@@ -195,7 +195,7 @@ for ifo in args.ifos:
         mean_alpha = c[valid].mean() / invalphan.mean()
         cons_count = np.percentile(
             c[valid],
-            args.conservative_percentile
+            100 - args.conservative_percentile
         )
         cons_invalphan = np.percentile(
             invalphan,
@@ -207,7 +207,7 @@ for ifo in args.ifos:
 
         # To get the count values, we need to convert to rates and back again
         r = c[valid]/ l_times[ad_order][valid]
-        cons_rate = cons_count / l_times[ad_order][valid]
+        cons_rate = np.percentile(r, args.conservative_percentile)
         cons_counts_out[ifo][counter] = cons_rate * total_time
         counts_out[ifo][counter] = np.mean(r) * total_time
 
