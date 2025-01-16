@@ -40,6 +40,7 @@ from pycbc.types import FrequencySeries, zeros
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
 import hashlib
+import warnings
 
 
 def sigma_cached(self, psd):
@@ -782,7 +783,14 @@ class FilterBank(TemplateBank):
                                                     f_lower=low_frequency_cutoff,
                                                     approximant=approximant,
                                                     df=delta_f)
-        except (ValueError, KeyError) :
+        except (ValueError, KeyError) as e:
+            if isinstance(e, KeyError):
+                warnings.warn(
+                    "self.get_decompressed_waveform has raised a KeyError. "
+                    "This may be as the compressed waveform has not been "
+                    "generated for this approximant, but it could indicate "
+                    "a more serious issue. Approximant: %s" % approximant
+                )
             htilde = pycbc.waveform.get_waveform_filter(
                 cached_mem, self.table[t_num], approximant=approximant,
                 f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
@@ -821,7 +829,14 @@ class FilterBank(TemplateBank):
             htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
                                                     approximant=approximant, df=None)
 
-        except (ValueError, KeyError) :
+        except (ValueError, KeyError) as e:
+            if isinstance(e, KeyError):
+                warnings.warn(
+                    "self.get_decompressed_waveform has raised a KeyError. "
+                    "This may be as the compressed waveform has not been "
+                    "generated for this approximant, but it could indicate "
+                    "a more serious issue. Approximant: %s" % approximant
+                )
             htilde = pycbc.waveform.get_waveform_filter(
                 tempout[0:self.filter_length], self.table[index],
                 approximant=approximant, f_lower=f_low, f_final=f_end,
