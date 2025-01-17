@@ -2,8 +2,8 @@ from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
 from pycbc.filter import  matched_filter_core
 from pycbc.types import Array, TimeSeries, FrequencySeries
-from pycbc.waveform import *
-from pycbc.vetoes import *
+from pycbc.waveform import get_td_waveform
+from pycbc.vetoes import make_frequency_series, autochisq_from_precomputed
 import numpy as np
 from math import cos, sin, pi, exp
 import unittest

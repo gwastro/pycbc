@@ -27,8 +27,7 @@ These are the unittests for the pycbc array type
 
 
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
+from pycbc.types import float32, complex64, float64, complex128, Array, zeros
 import numpy
 from utils import array_base, parse_args_all_schemes, simple_exit
 import os
