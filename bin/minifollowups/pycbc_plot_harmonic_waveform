@@ -1,0 +1,191 @@
+#!/bin/env python
+# Copyright (C) 2025 Rahul Dhurkunde
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+""" Plot the single detector trigger timeseries """
+import argparse
+import logging
+import sys
+import h5py
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+import numpy
+
+from pycbc import init_logging, add_common_pycbc_options
+import pycbc.results
+from pycbc.types import MultiDetOptionAction
+from pycbc.events import ranking
+from pycbc.filter.matchedfilter import sigma
+from pycbc.io import HFile, SingleDetTriggers
+from pycbc.waveform.bank import PhenomXPTemplate, compute_beta
+import pycbc.waveform.bank as bank
+
+class template_params:
+    def __init__(self, bank, x):
+        for key in bank.keys():
+            setattr(self, key, bank[key][x])
+
+def _make_waveform_from_precessing_harmonics(
+    phenom_object, harmonic_dict, amplitudes_dict=None, phases_dict=None
+):
+    #Compute the antenna pattern functions
+    phase = phenom_object.orb_phase
+    psi = phenom_object.psi
+    thetaJN = phenom_object.thetaJN
+    alpha0 = phenom_object.alpha0
+    beta = phenom_object.beta
+    dpsi = bank._dpsi(thetaJN, alpha0, beta)
+    fp = numpy.cos(2 * (psi - dpsi))
+    fc = -1. * numpy.sin(2 * (psi - dpsi))
+
+    A = amplitudes_dict
+    h_app = None
+    for k, harm in harmonic_dict.items():
+        if h_app is not None:
+            h_app += A[k] * harm * numpy.exp(1j * phases_dict[k])
+        else:
+            h_app = A[k] * harm * numpy.exp(1j * phases_dict[k])
+    return h_app
+
+
+def obtain_trigger_amp_phase(trigs, special_idx):
+    norm_snr = 0.0
+    #Get the total SNR
+    for i in range(5):
+        key = 'snr_comp_{}'.format(i+1)
+        norm_snr += trigs.trigs[key][special_idx]**2
+    norm_snr = numpy.sqrt(norm_snr)
+
+    amplitudes_dict = {}
+    phases_dict = {}
+    
+    for i in range(5):
+        key = 'snr_comp_{}'.format(i+1)
+        phase_key = 'coa_phase_comp_{}'.format(i+1)
+        amplitudes_dict[i] = trigs.trigs[key][special_idx]/norm_snr
+        phases_dict[i] = trigs.trigs[phase_key][special_idx]
+    return amplitudes_dict, phases_dict
+
+def compute_harmonic_waveform(trigs, special_idx):
+    bad_tempid = trigs.trigs['template_id'][special_idx]
+    
+    amplitudes_dict, phases_dict = obtain_trigger_amp_phase(trigs, special_idx)
+
+    #Create the template PhenomObject
+    #### Hard-coded stuff change!! Get it from the triggers SOMEHOW?
+    sample_rate = 2048.0
+    sample_freq = 32.0
+    f_lower = 30.0
+    flen = int(sample_rate * sample_freq/2+1)
+
+    phenom_object = PhenomXPTemplate(params, sample_rate, f_lower)
+
+    harmonics = phenom_object.compute_waveform_five_comps(1.0/sample_freq, 1024.0, num_comps = 5)
+
+    ncomp = trigs.bank['num_comps'][bad_tempid]
+    reverse_flag = trigs.bank['reverse_flag'][bad_tempid]
+    logging.info("Template id: {}, mass1: {}, mass2: {}, SNR: {}, ncomp: {}".format(bad_tempid, 
+                                                                        trigs.bank['mass1'][bad_tempid],
+                                                                        trigs.bank['mass2'][bad_tempid],
+                                                                        trigs.trigs['snr'][special_idx],
+                                                                        ncomp) )
+
+    harmonics_dict = {}
+    for i in range(ncomp):
+        if reverse_flag == 1:
+            harmonics_dict[i] = harmonics[4-i]
+        else: 
+            harmonics_dict[i] = harmonics[i]
+
+    p_det = _make_waveform_from_precessing_harmonics(phenom_object, harmonics_dict, amplitudes_dict, phases_dict)
+
+    #Time-shift needed to wrap around the IFFT
+    ####Hard-coded to 10, need to change this
+    pt_det = p_det.to_timeseries()
+    shifted_t = pt_det.cyclic_time_shift(10)
+
+    #Amplify the template
+    amp_factor = sigma(harmonics_dict[0], low_frequency_cutoff=f_lower)
+    shifted_t /= amp_factor
+    return shifted_t, ncomp
+    
+
+parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
+#parser.add_argument('--verbose')
+parser.add_argument('--single-trigger-files', nargs='+',
+    action=MultiDetOptionAction, metavar="IFO:FILE",
+    help="The HDF format single detector merged trigger files, in "
+         "multi-ifo argument format, H1:file1.hdf L1:file2.hdf, etc")
+parser.add_argument('--bank-file', 
+    help="The bank file in HDF format")
+parser.add_argument('--veto-file',
+    help="The bank file in XML format")
+parser.add_argument('--special-trigger-ids', nargs='+', type=int,
+    action=MultiDetOptionAction, metavar="IFO:trigger_id",required=True,
+    help="The set of special trigger ids to plot a star at")
+parser.add_argument('--plot-type',
+    choices=ranking.sngls_ranking_function_dict, default='snr',
+    help="Which single-detector ranking statistic to plot.")
+parser.add_argument('--output-file')
+
+args = parser.parse_args()
+init_logging(args.verbose)
+
+fig = pylab.figure()
+
+bankf = h5py.File(args.bank_file, 'r')
+
+fig, axs = pylab.subplots(2,1, figsize=(14,8))
+axs_count=0
+
+for ifo in args.single_trigger_files.keys():
+    logging.info("Getting %s triggers", ifo)
+
+    trigs = SingleDetTriggers(
+        args.single_trigger_files[ifo],
+        ifo,
+        bank_file=args.bank_file,
+        veto_file=args.veto_file,
+    )
+
+    special_idx = args.special_trigger_ids[ifo]
+    logging.info("Special idx %d for ifo %s", args.special_trigger_ids[ifo], ifo)
+    
+    params = template_params(bankf, trigs.trigs['template_id'][special_idx])
+
+    shifted_t, ncomp = compute_harmonic_waveform(trigs, special_idx)
+
+    ###Zoom-in automatically. Again a crappy way! Improve it !!
+    threshold = 1e-2  # or something data-specific
+    nonzero_indices = numpy.where(numpy.abs(shifted_t) > threshold)[0]
+    i_min, i_max = nonzero_indices[0], nonzero_indices[-1]
+
+    axs[axs_count].plot(shifted_t.sample_times[i_min:i_max], shifted_t[i_min:i_max])
+    axs[axs_count].set_title('{}: {}-harmonic plot'.format(ifo, ncomp))
+    axs[axs_count].set_xlabel('time (s)')
+    axs[axs_count].set_ylabel("Scaled $h(t)$")
+    axs[axs_count].grid()
+    axs_count += 1
+
+logging.info("Saving figure")
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
+            cmd = ' '.join(sys.argv),
+            title = '{}-harmonic plot'.format(ncomp),
+            caption = '', fig_kwds={'dpi': 300}
+         )
+logging.info("Done!")

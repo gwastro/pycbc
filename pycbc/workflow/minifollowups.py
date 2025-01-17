@@ -23,6 +23,8 @@ from pycbc.events import coinc
 from pycbc.workflow.core import Executable, FileList
 from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
+from pycbc.waveform.bank import PhenomXPTemplate, compute_beta
+
 try:
     # Python 3
     from itertools import zip_longest
@@ -353,6 +355,13 @@ class SingleTimeFreqExecutable(PlotExecutable):
     """
     time_dependent_options = ['--channel-name', '--frame-type']
 
+class HarmonicPlotExecutable(PlotExecutable):
+    """Class to be used for to create workflow.Executable instances for the
+    pycbc_plot_harmonic_waveform executable. Basically inherits directly from
+    PlotExecutable.
+    """
+    time_dependent_options = ['--channel-name', '--frame-type']
+
 
 class PlotQScanExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
@@ -534,6 +543,27 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
                              '--output-file', store_file=store_file)
     workflow += node
     return node.output_files
+
+
+def make_harmonic_waveform(workflow, singles, bank_file, veto_file=None, special_tids=None,
+                            exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'plot_harmonic_waveform'
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        node.add_multiifo_input_list_opt('--single-trigger-files', singles)
+        node.add_opt('--bank-file', bank_file)
+        node.add_opt('--veto-file', veto_file)
+        node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+        node.add_opt('--special-trigger-ids', special_tids)
+
+        workflow += node
+        files += node.output_files
+    return files
+
 
 
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,

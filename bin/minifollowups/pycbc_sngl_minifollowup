@@ -270,6 +270,10 @@ for rank, num_event in enumerate(order):
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
                               tags=args.tags + [str(rank)])
+
+    files += mini.make_harmonic_waveform(workflow, [sngl_file], tmpltbank_file,
+                              args.output_dir, veto_file=veto_file, special_tids=ifo_tid,
+                              tags=args.tags + [str(rank)])
     curr_params = {}
     curr_params['mass1'] = trigs.mass1[num_event]
     curr_params['mass2'] = trigs.mass2[num_event]
