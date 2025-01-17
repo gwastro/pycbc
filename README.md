@@ -1,5 +1,7 @@
 ![GW150914](https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png)
 
+BLAAAGGHHH!!!
+
 [PyCBC](http://pycbc.org) is a software package used to explore astrophysical sources of gravitational waves.
 It contains algorithms to analyze gravitational-wave data,
 detect coalescing compact binaries, and make bayesian inferences from gravitational-wave data.
