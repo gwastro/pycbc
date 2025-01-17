@@ -154,7 +154,7 @@ class CUPYScheme(Scheme):
 
     def __exit__(self, *args):
         super().__exit__(*args)
-        self.cuda.device.__exit__(*args)
+        self.cuda_device.__exit__(*args)
 
 
 class CPUScheme(Scheme):
