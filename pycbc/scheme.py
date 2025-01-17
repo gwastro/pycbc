@@ -143,7 +143,7 @@ class CUPYScheme(Scheme):
             # Logical device numbers will always be 0, 1, 2, ... etc. irrespective
             # of the physical device numbers.
             device_num = rank % cupy.cuda.runtime.getDeviceCount()
-            logging.debug("MPI enabled, using CUDA device %s", device_num)
+            logger.debug("MPI enabled, using CUDA device %s", device_num)
 
         self.device_num = device_num
         self.cuda_device = cupy.cuda.Device(self.device_num)
