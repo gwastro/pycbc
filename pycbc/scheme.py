@@ -151,6 +151,13 @@ class CUPYScheme(Scheme):
     def __enter__(self):
         super().__enter__()
         self.cuda_device.__enter__()
+        logger.warning(
+            "You are using the CUPY GPU backend for PyCBC. This backend is "
+            "still only a prototype. It may be useful for your application "
+            "but it may fail unexpectedly, run slowly, or not give correct "
+            "output. Please do contribute to the effort to develop this "
+            "further."
+        )
 
     def __exit__(self, *args):
         super().__exit__(*args)
