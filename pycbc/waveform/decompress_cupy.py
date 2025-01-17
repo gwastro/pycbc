@@ -279,7 +279,6 @@ class CUPYLinearInterpolate(object):
             (self.nb,), (self.nt,),
             (self.output, self.df, self.hlen, flow, fmax, texlen, freqs_gpu, amps_gpu, phases_gpu, self.lower, self.upper)
         )
-        cp.cuda.runtime.deviceSynchronize()
         return
 
 def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_index):
@@ -309,5 +308,4 @@ def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_inde
         (nb,), (nt,),
         (g_out, df, hlen, flow, fmax, texlen, freqs_gpu, amps_gpu, phases_gpu, lower, upper)
     )
-    cp.cuda.runtime.deviceSynchronize()
     return output
