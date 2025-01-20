@@ -776,25 +776,34 @@ class FilterBank(TemplateBank):
             wav_len = int(max_freq / delta_f) + 1
             cached_mem = zeros(wav_len, dtype=np.complex64)
 
-        try :
-            if not (self.has_compressed_waveforms and self.enable_compressed_waveforms):
-                raise ValueError
-            htilde = self.get_decompressed_waveform(cached_mem, t_num,
-                                                    f_lower=low_frequency_cutoff,
-                                                    approximant=approximant,
-                                                    df=delta_f)
-        except (ValueError, KeyError) as e:
-            if isinstance(e, KeyError):
+        full_calculate_waveform = True
+        if (self.has_compressed_waveforms and self.enable_compressed_waveforms):
+            try:
+                htilde = self.get_decompressed_waveform(
+                    tempout,
+                    index,
+                    f_lower=f_low,
+                    approximant=approximant,
+                    df=None
+                )
+                full_calculate_waveform = False
+            except KeyError:
+                # This is the error caused when the compressed waveform is
+                # not in the bank.
                 warnings.warn(
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
                     "a more serious issue. Approximant: %s" % approximant
                 )
+
+        if full_calculate_waveform:
             htilde = pycbc.waveform.get_waveform_filter(
                 cached_mem, self.table[t_num], approximant=approximant,
                 f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
-                distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
+                distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq)
+            )
+
         return htilde
 
     def __getitem__(self, index):
@@ -822,26 +831,34 @@ class FilterBank(TemplateBank):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        try:
-            if not (self.has_compressed_waveforms and self.enable_compressed_waveforms):
-                raise ValueError
-
-            htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
-                                                    approximant=approximant, df=None)
-
-        except (ValueError, KeyError) as e:
-            if isinstance(e, KeyError):
+        full_calculate_waveform = True
+        if (self.has_compressed_waveforms and self.enable_compressed_waveforms):
+            try:
+                htilde = self.get_decompressed_waveform(
+                    tempout,
+                    index,
+                    f_lower=f_low,
+                    approximant=approximant,
+                    df=None
+                )
+                full_calculate_waveform = False
+            except KeyError:
+                # This is the error caused when the compressed waveform is
+                # not in the bank.
                 warnings.warn(
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
                     "a more serious issue. Approximant: %s" % approximant
                 )
+
+        if full_calculate_waveform:
             htilde = pycbc.waveform.get_waveform_filter(
                 tempout[0:self.filter_length], self.table[index],
                 approximant=approximant, f_lower=f_low, f_final=f_end,
                 delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
-                **self.extra_args)
+                **self.extra_args,
+            )
 
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be
