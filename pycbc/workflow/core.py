@@ -1164,12 +1164,20 @@ class File(pegasus_workflow.File):
 
         if isinstance(segs, segments.segment):
             self.segment_list = segments.segmentlist([segs])
-        elif isinstance(segs, (segments.segmentlist)):
+        elif isinstance(segs, segments.segmentlist):
             self.segment_list = segs
         else:
-            err = "segs input must be either igwn_segments.segment or "
-            err += "igwn_segments.segmentlist. Got %s." %(str(type(segs)),)
-            raise ValueError(err)
+            if not isinstance(segs, list):
+                segs = [segs]
+            try:
+                self.segment_list = segments.segmentlist(map(segments.segment, segs))
+            except ValueError as exc:
+                exc.args = (
+                    "segs input must be either igwn_segments.segment or "
+                    f"igwn_segments.segmentlist. Got {type(segs).__name__}.",
+                )
+                raise
+
         if tags is None:
             tags = []
         if '' in tags:
