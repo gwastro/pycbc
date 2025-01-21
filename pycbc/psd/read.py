@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright (C) 2012 Alex Nitz, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -31,15 +30,15 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     Parameters
     ----------
     freq_data : array
-        Array of frequencies.
+        Array of frequencies in hertz.
     noise_data : array
         PSD values corresponding to frequencies in freq_arr.
     length : int
         Length of the frequency series in samples.
     delta_f : float
-        Frequency resolution of the frequency series in Herz.
+        Frequency resolution of the frequency series in hertz.
     low_freq_cutoff : float
-        Frequencies below this value are set to zero.
+        Frequencies below this value (in hertz) are set to zero.
 
     Returns
     -------
@@ -48,8 +47,10 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     """
     # Only include points above the low frequency cutoff
     if freq_data[0] > low_freq_cutoff:
-        raise ValueError('Lowest frequency in input data '
-          ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
+        raise ValueError(
+            f'Lowest frequency in input PSD data ({freq_data[0]} Hz) is '
+            f'higher than requested low-frequency cutoff ({low_freq_cutoff} Hz)'
+        )
 
     kmin = int(low_freq_cutoff / delta_f)
     flow = kmin * delta_f
@@ -94,14 +95,14 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
     ----------
     filename : string
         Path to a two-column ASCII file. The first column must contain
-        the frequency (positive frequencies only) and the second column
+        the frequency in hertz (positive frequencies only) and the second column
         must contain the amplitude density OR power spectral density.
     length : int
         Length of the frequency series in samples.
     delta_f : float
-        Frequency resolution of the frequency series in Herz.
+        Frequency resolution of the frequency series in hertz.
     low_freq_cutoff : float
-        Frequencies below this value are set to zero.
+        Frequencies below this value (in hertz) are set to zero.
     is_asd_file : Boolean
         If false assume that the second column holds power spectral density.
         If true assume that the second column holds amplitude spectral density.
@@ -147,7 +148,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     length : int
         Length of the frequency series in samples.
     delta_f : float
-        Frequency resolution of the frequency series in Herz.
+        Frequency resolution of the frequency series in hertz.
     low_freq_cutoff : float
         Frequencies below this value are set to zero.
     ifo_string : string
