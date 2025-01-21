@@ -26,7 +26,7 @@ These are the unittests for the pycbc.filter.matchedfilter module
 """
 import unittest
 from pycbc.types import *
-from pycbc.scheme import *
+#from pycbc.scheme import *
 from pycbc.filter import *
 from math import sqrt
 import numpy

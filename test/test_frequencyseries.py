@@ -26,8 +26,9 @@ These are the unittests for the pycbc frequencyseries type
 '''
 
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
+from pycbc.types import (
+    Array, FrequencySeries, float32, complex64, float64, complex128,
+)
 import numpy
 import lal
 import os
