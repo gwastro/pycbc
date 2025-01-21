@@ -411,7 +411,7 @@ def process_template(tnum):
             # with any trigger in the fixed network
             tidx = len(threshes)
             for i in range(1, len(threshes)):
-                if pivot_stat[-1] >= pivot_lower[kidx]:
+                if pivot_stat[-1] >= pivot_lower[i]:
                     tidx = i
                     break
 
