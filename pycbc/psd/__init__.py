@@ -45,7 +45,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     delta_f : float
         The frequency step of the output PSD in herz.
     low_frequency_cutoff: float
-        The low frequncy cutoff to use when calculating the PSD, in herz.
+        The low frequency cutoff to use when calculating the PSD, in herz.
     strain : {None, TimeSeries}
         Time series containing the data from which the PSD should be measured,
         when psd_estimation is in use.
@@ -434,7 +434,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     delta_f : float
         The frequency step of the output PSDs in herz.
     flow: float
-        The low frequncy cutoff to use when calculating the PSD, in herz.
+        The low frequency cutoff to use when calculating the PSD, in herz.
     dyn_range_factor : {1, float}
         For PSDs taken from models or text files, if `dyn_range_factor` is
         not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
@@ -524,7 +524,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
     delta_f : float
         The frequency step of the output PSDs.
     flow: float
-        The low frequncy cutoff to use when calculating the PSD.
+        The low frequency cutoff to use when calculating the PSD.
     dyn_range_factor : {1, float}
         For PSDs taken from models or text files, if `dyn_range_factor` is
         not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
