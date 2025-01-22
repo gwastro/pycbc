@@ -16,7 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Create GRB info table."""
+"""Create GRB info table.
+
+Please refer to help(pycbc.types.angle_as_radians) for the recommended
+configuration file syntax for angle arguments.
+"""
 
 # =============================================================================
 # Preamble

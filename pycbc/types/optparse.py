@@ -545,6 +545,11 @@ def angle_as_radians(s):
     (e.g. 12deg, 1rad), "<value> <unit>" (e.g. 12 deg, 1 rad) or just
     "<value>", in which case the unit will be assumed to be radians.
 
+    When writing angles in configuration files, the format "<value> <unit>"
+    prevents errors with negative values when Pegasus generates the .sh
+    file for executables that rely on this function and require angles
+    in their command line.
+
     To be used as type in argparse arguments.
     """
     # if `s` converts to a float then there is no unit, so assume radians

@@ -9,6 +9,9 @@ statistics.
 
 The grid is constructed following the method described in Section V of
 https://arxiv.org/abs/1410.6042.
+
+Please refer to help(pycbc.types.angle_as_radians) for the recommended
+configuration file syntax for angle arguments.
 """
 
 import numpy as np
