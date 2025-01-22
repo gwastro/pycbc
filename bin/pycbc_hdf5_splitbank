@@ -76,7 +76,6 @@ if args.output_filenames is None and args.output_prefix is None:
 if args.output_filenames and args.output_prefix:
     raise RuntimeError("Can't specify both output filenames and a prefix")
 
-pycbc.init_logging(args.verbose)
 logging.info("Loading bank")
 
 tmplt_bank = bank.TemplateBank(args.bank_file)
