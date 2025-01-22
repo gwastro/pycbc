@@ -22,10 +22,10 @@ import numpy
 import os
 import sys
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import table
-from ligo.lw import utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import table
+from igwn_ligolw import utils
 
 import pycbc
 import pycbc.version

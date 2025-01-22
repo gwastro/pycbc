@@ -40,7 +40,7 @@ def timestr(s):
     return t
 
 def get_name(segment_file):
-    from ligo.lw import table, utils as ligolw_utils
+    from igwn_ligolw import table, utils as ligolw_utils
     from pycbc.io.ligolw import LIGOLWContentHandler
 
     indoc = ligolw_utils.load_filename(

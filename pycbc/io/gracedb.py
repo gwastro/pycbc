@@ -10,9 +10,9 @@ import copy
 from multiprocessing.dummy import threading
 
 import lal
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc import version as pycbc_version

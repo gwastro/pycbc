@@ -29,7 +29,7 @@ waves.
 """
 
 import types, re, copy, numpy, inspect
-from ligo.lw import types as ligolw_types
+from igwn_ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
 from pycbc.population import population_models
 from pycbc.waveform import parameters

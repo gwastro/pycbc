@@ -25,7 +25,7 @@ import logging
 import glob
 import argparse
 import numpy
-from ligo.lw import utils
+from igwn_ligolw import utils
 from pycbc import tmpltbank
 # Old ligolw output functions no longer imported at package level
 import pycbc.tmpltbank.bank_output_utils as bank_output

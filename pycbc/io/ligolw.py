@@ -18,16 +18,16 @@
 import os
 import sys
 import numpy
-from ligo.lw import lsctables
-from ligo.lw import ligolw
-from ligo.lw.ligolw import Param, LIGOLWContentHandler \
+from igwn_ligolw import lsctables
+from igwn_ligolw import ligolw
+from igwn_ligolw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
-from ligo.lw.lsctables import TableByName
-from ligo.lw.table import Column, TableStream
-from ligo.lw.types import FormatFunc, FromPyType, ToPyType
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.param import Param as LIGOLWParam
-from ligo.lw.array import Array as LIGOLWArray
+from igwn_ligolw.lsctables import TableByName
+from igwn_ligolw.table import Column, TableStream
+from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
+from igwn_ligolw.utils import process as ligolw_process
+from igwn_ligolw.param import Param as LIGOLWParam
+from igwn_ligolw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
 

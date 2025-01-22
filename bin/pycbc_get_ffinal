@@ -14,9 +14,9 @@ import argparse
 import pycbc
 from pycbc import waveform
 
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import table
-from ligo.lw.utils import process
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw import table
+from igwn_ligolw.utils import process
 
 appx_options = waveform.td_approximants() + waveform.fd_approximants()
 
