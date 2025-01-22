@@ -20,13 +20,12 @@ import sys
 import numpy
 from igwn_ligolw import lsctables
 from igwn_ligolw import ligolw
-from igwn_ligolw.ligolw import Param, LIGOLWContentHandler \
+from igwn_ligolw.ligolw import LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
 from igwn_ligolw.lsctables import TableByName
 from igwn_ligolw.table import Column, TableStream
 from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
 from igwn_ligolw.utils import process as ligolw_process
-from igwn_ligolw.param import Param as LIGOLWParam
 from igwn_ligolw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
@@ -183,7 +182,7 @@ def legacy_row_id_converter(ContentHandler):
     def endElementNS(self, uri_localname, qname,
                      __orig_endElementNS=ContentHandler.endElementNS):
         """Convert values of <Param> elements from ilwdchar to int."""
-        if isinstance(self.current, Param) and self.current.Type in IDTypes:
+        if isinstance(self.current, ligolw.Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
             old_val = str(old_type(self.current.pcdata))
             new_value = ROWID_PYTYPE(old_val.split(":")[-1])
@@ -265,7 +264,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
-    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
+    elem.appendChild(ligolw.Param.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((
@@ -308,7 +307,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
             's^-1'
         )
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
+        fs.appendChild(ligolw.Param.from_pyvalue('instrument', instrument))
     return xmldoc
 
 def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
@@ -326,7 +325,7 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
         's'
     )
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
+    eid_param = ligolw.Param.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def get_table_columns(table):
