@@ -25,8 +25,8 @@ from utils import parse_args_cpu_only, simple_exit
 from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 from lal import series as lalseries
 
 # if we have the GraceDb module then we can do deeper tests,

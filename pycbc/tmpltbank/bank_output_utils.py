@@ -2,7 +2,7 @@ import logging
 import numpy
 
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
-from ligo.lw import ligolw, lsctables, utils as ligolw_utils
+from igwn_ligolw import ligolw, lsctables, utils as ligolw_utils
 
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string

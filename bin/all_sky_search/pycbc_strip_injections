@@ -2,7 +2,7 @@
 import numpy, argparse, pycbc.pnutils, logging
 from pycbc.events import veto
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import ligolw, table, utils as ligolw_utils
+from igwn_ligolw import ligolw, table, utils as ligolw_utils
 
 
 effd = {"H1":"eff_dist_h", "L1":"eff_dist_l", "V1":"eff_dist_v"}
