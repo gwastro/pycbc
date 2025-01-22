@@ -144,7 +144,7 @@ def create_process_table(document, program_name=None, detectors=None,
     if options is None:
         options = {}
 
-    # ligo.lw does not like `cvs_entry_time` being an empty string
+    # igwn_ligolw does not like `cvs_entry_time` being an empty string
     cvs_entry_time = pycbc_version.date or None
 
     opts = options.copy()
