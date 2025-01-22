@@ -1026,8 +1026,9 @@ class PycbcSplitBankExecutable(Executable):
 
         # Get the output (taken from inspiral.py)
         out_files = FileList([])
+        n_dp = math.ceil(math.log10(self.num_banks))
         for i in range( 0, self.num_banks):
-            curr_tag = 'bank%d' %(i)
+            curr_tag = (f'bank%0{n_dp}d') % (i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag] + tags
