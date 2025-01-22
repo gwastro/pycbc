@@ -70,6 +70,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             ranking_statistic="phasetd",
             statistic_files=[stat_file_paths],
             statistic_keywords=None,
+            statistic_features=None,
             timeslide_interval=0.1,
             background_ifar_limit=100,
             store_background=True,
