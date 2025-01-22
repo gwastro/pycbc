@@ -709,7 +709,7 @@ with ctx:
                     # indices from that IFO, i.e., IFO 0; otherwise, this
                     # method finds coincidences and applies the single IFO cut,
                     # namely, triggers must have at least 2 IFO SNRs above
-                    # args.sngl_snr_threshold.
+                    # args.sngl_snr_threshold when 3 or more IFOs are involved.
                     if nifo > 1:
                         coinc_idx = coh.get_coinc_indexes(
                             idx_dict, time_delay_idx[slide][position_index]
