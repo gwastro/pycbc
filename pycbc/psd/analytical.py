@@ -100,9 +100,9 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
     length : int
         Length of the frequency series in samples.
     delta_f : float
-        Frequency resolution of the frequency series, in herz.
+        Frequency resolution of the frequency series, in hertz.
     low_freq_cutoff : float
-        Frequencies below this value (in herz) are set to zero.
+        Frequencies below this value (in hertz) are set to zero.
     **kwargs :
         All other keyword arguments are passed to the PSD model.
 
@@ -156,9 +156,9 @@ def flat_unity(length, delta_f, low_freq_cutoff):
     length : int
         Length of output Frequencyseries.
     delta_f : float
-        Frequency step for output FrequencySeries, in herz.
+        Frequency step for output FrequencySeries, in hertz.
     low_freq_cutoff : int
-        Low-frequency cutoff for output FrequencySeries, in herz.
+        Low-frequency cutoff for output FrequencySeries, in hertz.
 
     Returns
     -------
