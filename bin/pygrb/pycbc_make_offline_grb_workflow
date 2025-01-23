@@ -30,6 +30,7 @@ matplotlib.use('agg')
 from igwn_segments import segment, segmentlistdict
 
 from pycbc import init_logging, add_common_pycbc_options
+from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
 from pycbc.workflow.core import configparser_value_to_file
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
@@ -247,6 +248,15 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
                                             seg_dir,
                                             tags=['veto'])
     datafind_veto_files.append(veto_file)
+# Check that the onsource is free from vetoes
+for ifo in ifos:
+    segs = select_segments_by_definer(veto_file.storage_path, ifo=ifo)
+    segs.coalesce()
+    if onSrc[ifo].intersects(offSrc[ifo]-segs):
+        logging.warning("The onsource %s overlaps with vetoed time in %s.",
+                        onSrc[ifo], ifo)
+        sys.exit()
+sys.exit()
 
 # Generate sky grid if needed
 skygrid_file = None
