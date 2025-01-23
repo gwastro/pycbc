@@ -519,17 +519,13 @@ logging.info("Merging events")
 if args.short_slides and args.long_slides:
     raise NotImplementedError
 
-else:
-    outfilename = "{}-{}_ALL_TIMES-{}-{}.h5".format(
-        args.ifo_tag, args.user_tag, start, end-start,
-    )
-    outfile = os.path.join(args.output_dir, outfilename)
-    merge_hdf5_files(
-        args.input_files,
-        outfile,
-        verbose=args.verbose,
-        **compression_kw
-    )
+outfilename = "{}-{}_ALL_TIMES-{}-{}.h5".format(
+    args.ifo_tag, args.user_tag, start, end-start,
+)
+outfile = os.path.join(args.output_dir, outfilename)
+merge_hdf5_files(
+    args.input_files, outfile, verbose=args.verbose, **compression_kw
+)
 
 logging.info("Binning events")
 bin_events(outfile, bins, args.output_dir, args.user_tag, verbose=args.verbose)
