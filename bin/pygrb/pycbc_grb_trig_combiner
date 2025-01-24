@@ -474,12 +474,13 @@ bins = {
     "OFFSOURCE": analysis - segments.segmentlist([segs["buffer"]]),
 }
 logging.info("Parsed parameters and generated off-source trials:")
-logging.info("           trial time : {} seconds".format(trialtime))
-logging.info("    on-source segment : {}".format(bins["ONSOURCE"]))
-logging.info("       buffer segment : {}".format(segs["buffer"]))
-logging.info("  off-source segments : [{}]".format(
-    ", \n                         ".join(map(str, bins["OFFSOURCE"])),
-))
+logging.info("           trial time : %d seconds", trialtime)
+logging.info("    on-source segment : %s", bins["ONSOURCE"])
+logging.info("       buffer segment : %s", segs["buffer"])
+logging.info(
+    "  off-source segments : [%s]",
+    ", \n                         ".join(map(str, bins["OFFSOURCE"]))
+)
 
 # The onsource should never be the first or the last bin:
 # there should always be two segments in the offsource bins,
