@@ -86,10 +86,9 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
 
 
 def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
-    """Read an ASCII file containing one-sided ASD or PSD  data and generate
+    """Read an ASCII file containing one-sided ASD or PSD data and generate
     a frequency series with the corresponding PSD. The ASD or PSD data is
-    interpolated in order to match the desired resolution of the
-    generated frequency series.
+    interpolated in order to match the desired frequency resolution.
 
     Parameters
     ----------
@@ -134,27 +133,24 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
 
 def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
              root_name='psd'):
-    """Read an ASCII file containing one-sided ASD or PSD  data and generate
-    a frequency series with the corresponding PSD. The ASD or PSD data is
-    interpolated in order to match the desired resolution of the
-    generated frequency series.
+    """Read a LIGOLW XML file containing one-sided PSD data and generate
+    a frequency series with the corresponding PSD. The data is interpolated in
+    order to match the desired frequency resolution.
 
     Parameters
     ----------
     filename : string
-        Path to a two-column ASCII file. The first column must contain
-        the frequency (positive frequencies only) and the second column
-        must contain the amplitude density OR power spectral density.
+        Path to a LIGOLW XML file.
     length : int
         Length of the frequency series in samples.
     delta_f : float
         Frequency resolution of the frequency series in hertz.
     low_freq_cutoff : float
-        Frequencies below this value are set to zero.
+        Frequencies below this value (in hertz) are set to zero.
     ifo_string : string
         Use the PSD in the file's PSD dictionary with this ifo string.
-        If not given and only one PSD present in the file return that, if not
-        given and multiple (or zero) PSDs present an exception will be raised.
+        If not given, and only one PSD present in the file, return that; if not
+        given, and multiple (or zero) PSDs present, then an exception is raised.
     root_name : string (default='psd')
         If given use this as the root name for the PSD XML file. If this means
         nothing to you, then it is probably safe to ignore this option.
@@ -163,7 +159,6 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     -------
     psd : FrequencySeries
         The generated frequency series.
-
     """
     import lal.series
     from ligo.lw import utils as ligolw_utils
@@ -179,9 +174,10 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     elif len(psd_dict.keys()) == 1:
         psd_freq_series = psd_dict[tuple(psd_dict.keys())[0]]
     else:
-        err_msg = "No ifo string given and input XML file contains not "
-        err_msg += "exactly one PSD. Specify which PSD you want to use."
-        raise ValueError(err_msg)
+        raise ValueError(
+            "No ifo string given and input XML file contains not "
+            "exactly one PSD. Specify which PSD you want to use."
+        )
 
     noise_data = psd_freq_series.data.data[:]
     freq_data = numpy.arange(len(noise_data)) * psd_freq_series.deltaF

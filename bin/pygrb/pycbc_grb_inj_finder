@@ -23,6 +23,7 @@
 import argparse
 import operator
 import os
+import logging
 import re
 from collections import defaultdict
 from functools import reduce
@@ -212,9 +213,6 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-vprint = print if args.verbose else str
-win = args.time_window
-
 # -- find injections ----------------------------
 
 exclude = read_segment_files(args.exclude_segments)
@@ -352,5 +350,4 @@ with HFile(outfilename, "w") as h5out:
         compression="gzip",
         compression_opts=9,
     )
-if args.verbose:
-    print("Found/missed written to {}".format(outfilename))
+logging.info("Found/missed written to %s", outfilename)
