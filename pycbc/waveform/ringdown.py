@@ -99,7 +99,7 @@ def format_lmns(lmns):
         raise ValueError('Format of parameter lmns not recognized. See '
                          'approximant documentation for more info.')
 
-    out = []
+    outl, outq = [], []
     # Cycle over the lmns to ensure that we get back a list of strings that
     # are three digits long, and that nmodes!=0
     for lmn in lmns:
@@ -108,16 +108,23 @@ def format_lmns(lmns):
         # to a string
         # lmn = lmn.strip(" b'")
         # Try to convert to int and then str, to ensure the right format
-        lmn = str(int(lmn))
-        if len(lmn) != 3:
-            raise ValueError('Format of parameter lmns not recognized. See '
-                             'approximant documentation for more info.')
-        elif int(lmn[2]) == 0:
-            raise ValueError('Number of overtones (nmodes) must be greater '
-                             'than zero in lmn={}.'.format(lmn))
-        out.append(lmn)
+        if '=' in lmn and 'x' in lmn:
+            # Quadratic mode format: child=parent1xparent2
+            qlmn, lmnspair = lmn.split('=')
+            lmn1, lmn2 = lmnspair.split('x')
+            outq.append((qlmn.strip(), lmn1.strip(), lmn2.strip()))
+        else:
+            lmn = str(int(lmn))
+            if len(lmn) != 3:
+                raise ValueError('Format of parameter lmns not recognized. See '
+                                 'approximant documentation for more info.')
+            elif int(lmn[2]) == 0:
+                raise ValueError('Number of overtones (nmodes) must be greater '
+                                 'than zero in lmn={}.'.format(lmn))
+            outl.append(lmn)
 
-    return out
+    return outl, outq
+
 
 def parse_mode(lmn):
     """Extracts overtones from an lmn.
@@ -137,7 +144,7 @@ def lm_amps_phases(**kwargs):
     without a mode suffix) are provided, they will be used for all modes that
     don't explicitly set a ``(dphi|dbeta){lmn}``.
     """
-    lmns = format_lmns(kwargs['lmns'])
+    lmns, _ = format_lmns(kwargs['lmns'])
     amps = {}
     phis = {}
     dbetas = {}
@@ -161,7 +168,7 @@ def lm_amps_phases(**kwargs):
                              "mode {}".format(ref_amp))
     else:
         ref_mode = None
-    # Get amplitudes and phases of the modes
+    # Get amplitudes and phases of thelinear modes
     for lmn in lmns:
         overtones = parse_mode(lmn)
         for mode in overtones:
@@ -177,7 +184,40 @@ def lm_amps_phases(**kwargs):
                 raise ValueError('phi{} is required'.format(mode))
             dphis[mode] = kwargs.pop('dphi'+mode, ref_dphi)
             dbetas[mode] = kwargs.pop('dbeta'+mode, ref_dbeta)
-    return amps, phis, dbetas, dphis
+    #Get amplitudes and phases of the quadratic modes
+    if kwargs.get('qlmns', None) is None:
+        return amps, phis, dbetas, dphis
+    else:
+        ref_amp_quad = kwargs.pop('ref_amp_quad', None)
+        ref_phi_quad = kwargs.pop('ref_phi_quad', None)
+        if ref_amp_quad is None:
+            # default to the 220 mode
+            ref_amp_quad = ref_amp
+        for qlmn, lmn1, lmn2 in kwargs['qlmns']:
+            overtones_qlmn = parse_mode(qlmn)
+            overtones_lmn1, overtones_lmn2 = parse_mode(lmn1), parse_mode(lmn2)
+            for modeq, mode1, mode2 in zip(overtones_qlmn, overtones_lmn1,
+                                           overtones_lmn2):
+                try:
+                    if mode1 != ref_mode and mode2 != ref_mode:
+                        amps[modeq] = ref_amp_quad * kwargs['amp' + mode1] * kwargs['amp' + mode2]
+                    elif mode1 == ref_mode and mode2 != ref_mode:
+                        amps[modeq] = ref_amp_quad * ref_amp * kwargs['amp' + mode2]
+                    elif mode1 != ref_mode and mode2 == ref_mode:
+                        amps[modeq] = ref_amp_quad * kwargs['amp' + mode1] * ref_amp
+                    else:
+                        amps[modeq] = ref_amp_quad * ref_amp * ref_amp
+                except KeyError:
+                    raise ValueError('Must provide reference amplitude for quadratic modes, and \
+                                        amp{} and amp{} are required'.format(mode1, mode2))
+                try:
+                    phis[modeq] = kwargs['phi' + mode1] + kwargs['phi' + mode2] + ref_phi_quad
+                except KeyError:
+                    raise ValueError('Must provide reference phi for quadratic modes, and \
+                                     phi{} and phi{} are required'.format(mode1, mode2))
+                dphis[modeq] = kwargs.pop('dphi'+qlmn, ref_dphi)
+                dbetas[modeq] = kwargs.pop('dbeta'+qlmn, ref_dbeta)                
+        return amps, phis, dbetas, dphis
 
 
 def lm_freqs_taus(**kwargs):
@@ -185,7 +225,7 @@ def lm_freqs_taus(**kwargs):
     times of each overtone of a specific lm mode, checking that all of them
     are given.
     """
-    lmns = format_lmns(kwargs['lmns'])
+    lmns, _ = format_lmns(kwargs['lmns'])
     freqs, taus = {}, {}
     for lmn in lmns:
         overtones = parse_mode(lmn)
@@ -201,11 +241,49 @@ def lm_freqs_taus(**kwargs):
     return freqs, taus
 
 
+def get_lm_f0tau_qmodes(final_mass, final_spin, qlmns, freqs, taus):
+    """Return the frequencies and damping times of the modes given.
+
+    Parameters
+    ----------
+    final_mass : float
+        Mass of the final black hole in solar masses.
+    final_spin : float
+        Dimensionless spin of the final black hole.
+    qlmns : list
+        Desired quadratic modes as tuples of strings of derived modes.
+
+    Returns
+    -------
+    freqs : dict
+        A dictionary of the frequencies of the modes given.
+    taus : dict
+        A dictionary of the damping times of the modes given.
+    """
+    for qlmn, lmn1, lmn2 in qlmns:
+                overtones_qlmn = parse_mode(qlmn)
+                overtones_lmn1, overtones_lmn2 = parse_mode(lmn1), parse_mode(lmn2)
+                for modeq, mode1, mode2 in zip(overtones_qlmn, overtones_lmn1,
+                                            overtones_lmn2):
+                    try:
+                        freqs[modeq] = freqs[mode1] + freqs[mode2]
+                    except KeyError:
+                        raise ValueError('f_{} and f_{} are required'.format(
+                                        mode1, mode2))
+                    try:
+                        taus[modeq] = (taus[mode1] * taus[mode2]) / \
+                                        (taus[mode1] + taus[mode2])
+                    except KeyError:
+                        raise ValueError('tau_{} and tau_{} are required'.format(
+                                        mode1, mode2))
+    return freqs, taus
+
+
 def lm_arbitrary_harmonics(**kwargs):
     """Take input_params and return dictionaries with arbitrary harmonics
     for each mode.
     """
-    lmns = format_lmns(kwargs['lmns'])
+    lmns, _ = format_lmns(kwargs['lmns'])
     pols = {}
     polnms = {}
     for lmn in lmns:
@@ -213,7 +291,15 @@ def lm_arbitrary_harmonics(**kwargs):
         for mode in overtones:
             pols[mode] = kwargs.pop('pol{}'.format(mode), None)
             polnms[mode] = kwargs.pop('polnm{}'.format(mode), None)
-    return pols, polnms
+    if kwargs.get('qlmns', None) is None:
+        return pols, polnms
+    else:
+        for qlmn, _, _ in kwargs['qlmns']:
+            overtones_qlmn = parse_mode(qlmn)
+            for modeq in overtones_qlmn:
+                pols[modeq] = kwargs.pop('pol{}'.format(modeq), None)
+                polnms[modeq] = kwargs.pop('polnm{}'.format(modeq), None)
+        return pols, polnms
 
 
 # Functions to obtain t_final, f_final and output vector ######################
@@ -729,7 +815,10 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
         The cross phase of a ringdown with the lm modes specified and
         n overtones in the chosen domain (time or frequency).
     """
-    input_params['lmns'] = format_lmns(input_params['lmns'])
+    linear_lmns, quadratic_lmns = format_lmns(input_params['lmns'])
+    input_params['lmns'] = linear_lmns
+    if quadratic_lmns:
+        input_params['qlmns'] = quadratic_lmns
     amps, phis, dbetas, dphis = lm_amps_phases(**input_params)
     pols, polnms = lm_arbitrary_harmonics(**input_params)
     # get harmonics argument
@@ -754,6 +843,10 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
     else:
         freqs, taus = get_lm_f0tau_allmodes(input_params['final_mass'],
                         input_params['final_spin'], input_params['lmns'])
+        if quadratic_lmns:
+            freqs, taus = get_lm_f0tau_qmodes(input_params['final_mass'],
+                                input_params['final_spin'], input_params['qlmns'],
+                                freqs, taus)
         norm = Kerr_factor(input_params['final_mass'],
             input_params['distance']) if 'distance' in input_params.keys() \
             else 1.
@@ -778,7 +871,8 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
         raise ValueError('unrecognised domain argument {}; '
                          'must be either fd or td'.format(domain))
     # cyclce over the modes, generating the waveforms
-    for lmn in freqs:
+    all_modes = list(freqs.keys())
+    for lmn in all_modes:
         if amps[lmn] == 0.:
             # skip
             continue
