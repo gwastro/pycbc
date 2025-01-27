@@ -404,8 +404,6 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
                 dict.fromkeys(keep_keys, numpy.array([])),
                 None, None)
 
-    found_after_vetoes = found_injs
-    missed_after_vetoes = dict.fromkeys(keep_keys, numpy.array([]))
     found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
     veto_idx = numpy.array([], dtype=numpy.int64)
 
@@ -422,14 +420,14 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
         logging.info("%d injections vetoed.", len(veto_idx))
         logging.info("%d injections surviving vetoes.", len(found_idx))
 
-        found_after_vetoes = {}
-        missed_after_vetoes = {}
-        for key in keep_keys:
-            if key == 'network/coincident_snr':
-                found_injs[key] = get_coinc_snr(found_injs)
-            if isinstance(found_injs[key], numpy.ndarray):
-                found_after_vetoes[key] = found_injs[key][found_idx]
-                missed_after_vetoes[key] = found_injs[key][veto_idx]
+    found_after_vetoes = {}
+    missed_after_vetoes = {}
+    for key in keep_keys:
+        if key == 'network/coincident_snr':
+            found_injs[key] = get_coinc_snr(found_injs)
+        if isinstance(found_injs[key], numpy.ndarray):
+            found_after_vetoes[key] = found_injs[key][found_idx]
+            missed_after_vetoes[key] = found_injs[key][veto_idx]
 
     return found_after_vetoes, missed_after_vetoes, found_idx, veto_idx
 
