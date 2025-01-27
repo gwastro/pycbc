@@ -309,6 +309,7 @@ if opts.newsnr_threshold:
         found_inj[key] = found_inj[key][~rw_snr_cut]
     for ifo in ifos:
         found_inj[ifo+'/end_time'] = found_inj[ifo+'/end_time'][~rw_snr_cut]
+    found_inj['reweighted_snr'] = found_inj['reweighted_snr'][~rw_snr_cut]
     msg = f"After applying reweighted SNR cut at {opts.newsnr_threshold}: "
     msg += f"{len(found_inj[x_qty])} found injections and "
     msg += f"{len(missed_inj[x_qty])} missed injections"
