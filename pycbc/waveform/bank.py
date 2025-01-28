@@ -1266,6 +1266,7 @@ class _PhenomTemplate():
         self.psi = float(template_params.polarization)
         self.orb_phase = float(template_params.orbital_phase)
         self.fref = self.flow
+        self.reverse_flag = int(template_params.reverse_flag)
 
         self.duration = get_imr_duration(self.mass1, self.mass2, self.spin1z,
                                          self.spin2z, self.flow, "IMRPhenomD")
@@ -1479,25 +1480,25 @@ class _PhenomTemplate():
         """
         # Generate a new wf
         if not self.has_comps:
-            h1, h2, h3, h4, h5 = self.compute_waveform_five_comps(df, self.f_final, num_comps=num_comps)
-            self.h1 = h1
-            self.h2 = h2
-            self.h3 = h3
-            self.h4 = h4
-            self.h5 = h5
+            ##Generating five harmonics, then manually assigned the rest to None after reversing!!! Hard-coded
+            h1, h2, h3, h4, h5 = self.compute_waveform_five_comps(df, self.f_final, num_comps=5)
+            waveforms = [h1, h2, h3, h4, h5]
+
+            if self.reverse_flag == 1:
+                waveforms.reverse()
+
+            for i in range(num_comps, 5):
+                waveforms[i] = None
+
+            self.h1, self.h2, self.h3, self.h4, self.h5 = waveforms
             self.has_comps = True
+
         else:
-            h1 = self.h1
-            h2 = self.h2
-            h3 = self.h3
-            h4 = self.h4
-            h5 = self.h5
-        # Try reversing waveforms if reverse_flag is present
-        try:
-            if self.reverse_flag:
-                h1, h2, h3, h4, h5 = h5, h4, h3, h2, h1
-        except AttributeError:
-            pass  # Skip reversal if reverse_flag is not present
+            pass
+
+        # Regardless of whether newly computed or reused,
+        # make local aliases for convenience:
+        h1, h2, h3, h4, h5 = self.h1, self.h2, self.h3, self.h4, self.h5
 
         hs = [h1.copy()]
         if h2 is not None:
