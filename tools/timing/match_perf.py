@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from pycbc.scheme import *
-from pycbc.types import *
-from pycbc.filter import *
-from pycbc.psd import *
+from pycbc.scheme import CPUScheme, CUDAScheme
+from pycbc.types import TimeSeries, zeros, float32, complex64
+from pycbc.filter import make_frequency_series, match, matched_filter_core, overlap_cplx
 import pycbc
 from math import log
 import numpy

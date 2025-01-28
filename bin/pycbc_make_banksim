@@ -273,7 +273,7 @@ f = open("scripts/pycbc_banksim_match_combine", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 from optparse import OptionParser
-from numpy import *
+from numpy import array
 import glob
 parser = OptionParser()
 
@@ -302,7 +302,7 @@ os.chmod('scripts/pycbc_banksim_match_combine', 0o0777)
 f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
-from numpy import *
+import numpy as np
 from ligo.lw import utils, table
 import glob
 
@@ -316,9 +316,9 @@ dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'), 'format
 res = None
 for fil in fils:
     if res is not None:
-        res = append(res, loadtxt(fil, dtype=dtypem))
+        res = np.append(res, loadtxt(fil, dtype=dtypem))
     else:
-        res = loadtxt(fil, dtype=dtypem)
+        res = np.loadtxt(fil, dtype=dtypem)
 
 btables = {}
 itables = {}
