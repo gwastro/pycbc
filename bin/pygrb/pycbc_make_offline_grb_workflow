@@ -256,7 +256,7 @@ for ifo in ifos:
     if onSrc[ifo].intersects(vetoed_segs):
         intersection = onSrc[ifo] & vetoed_segs
         logging.error("The onsource %s contains the time %s that is vetoed" +
-                      " in %s.", onSrc[ifo][0][:], intersection[0][:], ifo)
+                      " in %s.", onSrc[ifo][0][:], intersection, ifo)
         sys.exit()
 
 # Generate sky grid if needed
