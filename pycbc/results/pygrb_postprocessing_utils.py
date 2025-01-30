@@ -356,7 +356,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                         dset[:][ifo_ids_above_thresh_locations[ifo]]
                 else:
                     trigs_dict[path] = numpy.array([])
-            # The dataset trig/inj network info: cut it before copying
+            # The dataset is trig/inj network info: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
 
