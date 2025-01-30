@@ -430,6 +430,11 @@ if lofft_outfile:
     th.extend([ifo+' time shift (s)' for ifo in ifos])
     th.append('BestNR')
 
+    # When len(offsource_trigs) == 0, the loop above leaves td = [] unchanged
+    # and this case needs to be handled adequately prior to moving on
+    if not td:
+        td = [[]] * len(th)
+
     # To ensure desired formatting in the h5 file and html table:
     # 1) "transpose" the data preserving its dtype
     td = list(zip(*td))
@@ -497,10 +502,10 @@ if onsource_file:
         on_trigs_bestnrs = on_trigs['network/reweighted_snr'][...]
 
         # Gather bestNR index
-        bestNR_event = np.argmax(on_trigs_bestnrs)
-        loud_on_bestnr_trigs, loud_on_bestnr = \
-            (on_trigs['network/event_id'][bestNR_event],
-             on_trigs_bestnrs[bestNR_event])
+        if on_trigs_bestnrs.size > 0:
+            bestNR_event = np.argmax(on_trigs_bestnrs)
+            loud_on_bestnr_trigs = on_trigs['network/event_id'][bestNR_event]
+            loud_on_bestnr =  on_trigs_bestnrs[bestNR_event]
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
@@ -536,9 +541,6 @@ if onsource_file:
             [on_trigs[ifo+'/snr'][ifo_trig_index[ifo]] for ifo in ifos] + \
             [loud_on_bestnr]
         td.append(d)
-    else:
-        td.append(["There are no events"] + [0 for number in range(11)] +
-                  [0 for ifo in ifos] + [0])
 
     # Table header
     th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
@@ -546,6 +548,10 @@ if onsource_file:
           'Null SNR'] + [ifo+' SNR' for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
+
+    # Handle the case in which there is no data to be placed in the table
+    if not td:
+        td = [[]] * len(th)
 
     # Write to h5 file
     logging.info("Writing loudest onsource trigger to h5 file.")
@@ -562,7 +568,10 @@ if onsource_file:
     format_strings.extend(['##.##' for ifo in ifos])
     format_strings.extend(['##.##'])
 
-    # Table data
+    # Table data: assemble human readable message when no trigger is recovered
+    if not loud_on_bestnr_trigs:
+        td = [list("-" * len(format_strings))]
+        td[0][0] = "There are no events"
     td = [np.asarray(d) for d in td]
     html_table = pycbc.results.html_table(td, th,
                                           format_strings=format_strings,
@@ -645,6 +654,10 @@ if found_missed_file is not None:
     logging.info("Writing %d quiet-found injections to h5 and html files.",
                  len(td))
     td = list(zip(*td))
+
+    # Handle the case in which there is no data to be placed in the table
+    if not td:
+        td = [[]] * len(th)
 
     # Write to h5 file
     with HFile(qf_h5_outfile, 'w') as qf_h5_fp:
