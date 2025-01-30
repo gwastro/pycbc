@@ -551,7 +551,7 @@ if onsource_file:
 
     # Handle the case in which there is no data to be placed in the table
     if not td:
-        td = [[] for i in np.arange(len(th))]
+        td = [[]] * len(th)
 
     # Write to h5 file
     logging.info("Writing loudest onsource trigger to h5 file.")
