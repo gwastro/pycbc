@@ -430,6 +430,11 @@ if lofft_outfile:
     th.extend([ifo+' time shift (s)' for ifo in ifos])
     th.append('BestNR')
 
+    # When len(offsource_trigs) == 0, the loop above leaves td = [] unchanged
+    # and this case needs to be handled adequately prior to moving on
+    if not td:
+        td = [[] for i in np.arange(len(th))]
+
     # To ensure desired formatting in the h5 file and html table:
     # 1) "transpose" the data preserving its dtype
     td = list(zip(*td))
