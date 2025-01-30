@@ -433,7 +433,7 @@ if lofft_outfile:
     # When len(offsource_trigs) == 0, the loop above leaves td = [] unchanged
     # and this case needs to be handled adequately prior to moving on
     if not td:
-        td = [[] for i in np.arange(len(th))]
+        td = [[]] * len(th)
 
     # To ensure desired formatting in the h5 file and html table:
     # 1) "transpose" the data preserving its dtype
@@ -658,7 +658,7 @@ if found_missed_file is not None:
 
     # Handle the case in which there is no data to be placed in the table
     if not td:
-        td = [[] for i in np.arange(len(th))]
+        td = [[]] * len(th)
 
     # Write to h5 file
     with HFile(qf_h5_outfile, 'w') as qf_h5_fp:
