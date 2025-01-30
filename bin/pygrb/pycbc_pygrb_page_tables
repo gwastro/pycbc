@@ -504,9 +504,8 @@ if onsource_file:
         # Gather bestNR index
         if on_trigs_bestnrs.size > 0:
             bestNR_event = np.argmax(on_trigs_bestnrs)
-            loud_on_bestnr_trigs, loud_on_bestnr = \
-                (on_trigs['network/event_id'][bestNR_event],
-                 on_trigs_bestnrs[bestNR_event])
+            loud_on_bestnr_trigs = on_trigs['network/event_id'][bestNR_event]
+            loud_on_bestnr =  on_trigs_bestnrs[bestNR_event]
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
