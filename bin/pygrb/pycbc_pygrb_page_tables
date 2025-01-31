@@ -494,7 +494,7 @@ if onsource_file:
     # Get trigs
     on_trigs = ppu.load_data(onsource_file, ifos, data_tag=None,
                              rw_snr_threshold=opts.newsnr_threshold,
-                             slide_id='all')
+                             slide_id=0)
 
     # Record loudest trig by BestNR
     loud_on_bestnr = 0

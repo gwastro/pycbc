@@ -344,11 +344,12 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
         for (path, dset) in _dataset_iterator(trigs):
-            # The dataset contains information other than trig/inj properties:
+            # The dataset contains search information or missed injections
+            # information, not properties of triggers or found injections:
             # just copy it
-            if len(dset) != num_orig_pts:
+            if 'search' in path or 'missed' in path:
                 trigs_dict[path] = dset[:]
-            # The dataset is relative to an IFO: cut with the correct index
+            # The dataset is trig/inj info at an IFO: cut with the correct index
             elif path[:2] in ifos:
                 ifo = path[:2]
                 if ifo_ids_above_thresh_locations[ifo].size != 0:
@@ -356,7 +357,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                         dset[:][ifo_ids_above_thresh_locations[ifo]]
                 else:
                     trigs_dict[path] = numpy.array([])
-            # The dataset is relative to the network: cut it before copying
+            # The dataset is trig/inj network info: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
 
