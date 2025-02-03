@@ -31,8 +31,8 @@ We do not specifically test that the lalwrapped functions raise exceptions from 
 GPU, because that test is done in the test_lalwrap unit tests.
 '''
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
+from pycbc.types import Array
+from pycbc.scheme import CUDAScheme, CPUScheme, DefaultScheme
 from numpy import float32, float64, complex64, complex128
 from utils import parse_args_all_schemes, simple_exit
 
@@ -48,7 +48,6 @@ elif isinstance(_context,CPUScheme):
     from numpy import ndarray as SchemeArray
 
 from numpy import ndarray as CPUArray
-
 
 class SchemeTestBase(unittest.TestCase):
     __test__ = False

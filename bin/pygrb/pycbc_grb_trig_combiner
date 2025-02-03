@@ -22,6 +22,7 @@
 
 import argparse
 import os
+import logging
 from collections import defaultdict
 
 import numpy
@@ -158,11 +159,11 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
             h5f.visititems(_scan_dataset)
 
     # print summary of what we found
-    if verbose:
-        print("Found {} events across {} files".format(
-            datasets["network/event_id"][0][0],
-            nfiles,
-        ))
+    logging.info(
+        "Found %d events across %d files",
+        datasets["network/event_id"][0][0],
+        nfiles,
+    )
 
     def _network_first(name):
         """Key function to sort datasets in the network group first
@@ -227,14 +228,15 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
             while search_datasets:
                 dataset_names.remove(search_datasets.pop())
 
-        template_ids = template_hash_to_id(trigger_file=h5out, bank_path=args.bank_file)
+        template_ids = template_hash_to_id(
+            trigger_file=h5out, bank_path=args.bank_file
+        )
         h5out.create_dataset("network/template_id",
                              data=template_ids,
                              compression="gzip",
                              compression_opts=9)
 
-    if verbose:
-        print("Merged triggers written to {}".format(outputfile))
+    logging.info("Merged triggers written to %s", outputfile)
     return outputfile
 
 
@@ -315,8 +317,7 @@ def bin_events(inputfile, bins, outdir, filetag,
                                 h5in.copy(h5in[old.name], h5out, old.name)
                                 bar.update()
             bar.close()
-            if verbose:
-                print("{} written to {}".format(bin_, outf))
+            logging.info("%s written to %s", bin_, outf)
 
 
 def read_segment_files(segdir):
@@ -337,9 +338,7 @@ def read_segment_files(segdir):
 
 # -- parse command line -------------------------
 
-parser = argparse.ArgumentParser(
-    description=__doc__,
-)
+parser = argparse.ArgumentParser(description=__doc__)
 
 add_common_pycbc_options(parser)
 
@@ -448,9 +447,7 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-vprint = print if args.verbose else str
-
-vprint("-- Welcome to the PyGRB trigger combiner")
+logging.info("Welcome to the PyGRB trigger combiner")
 
 if args.grb_name:
     args.user_tag += "_GRB{}".format(args.grb_name)
@@ -476,13 +473,14 @@ bins = {
     "ONSOURCE": segs["on"],
     "OFFSOURCE": analysis - segments.segmentlist([segs["buffer"]]),
 }
-vprint("Parsed parameters and generated off-source trials:")
-vprint("           trial time : {} seconds".format(trialtime))
-vprint("    on-source segment : {}".format(bins["ONSOURCE"]))
-vprint("       buffer segment : {}".format(segs["buffer"]))
-vprint("  off-source segments : [{}]".format(
-    ", \n                         ".join(map(str, bins["OFFSOURCE"])),
-))
+logging.info("Parsed parameters and generated off-source trials:")
+logging.info("           trial time : %d seconds", trialtime)
+logging.info("    on-source segment : %s", bins["ONSOURCE"])
+logging.info("       buffer segment : %s", segs["buffer"])
+logging.info(
+    "  off-source segments : [%s]",
+    ", \n                         ".join(map(str, bins["OFFSOURCE"]))
+)
 
 # The onsource should never be the first or the last bin:
 # there should always be two segments in the offsource bins,
@@ -494,7 +492,9 @@ offsource_ntrials = [int(numpy.trunc(abs(b)/trialtime)) for b in bins["OFFSOURCE
 numpy.random.seed(args.seed)
 
 # Randomly pick num_trials offsource trials
-offtrials = numpy.random.choice(range(sum(offsource_ntrials)), args.num_trials, replace=False)
+offtrials = numpy.random.choice(
+    range(sum(offsource_ntrials)), args.num_trials, replace=False
+)
 offtrials.sort()
 for i, j in enumerate(offtrials):
     if j < offsource_ntrials[0]:
@@ -511,28 +511,24 @@ for i, j in enumerate(offtrials):
     if seg not in bins["OFFSOURCE"]:
         raise ValueError(f"off-trial {i+1} not in off-source segments\n"
                          f"off-trial {i+1} : {seg}\n")
-    vprint("          off-trial {} : {}".format(i+1, seg))
+    logging.info("          off-trial %d : %s", i + 1, seg)
 
 # -- read triggers ------------------------------
 
-vprint("-- Merging events")
+logging.info("Merging events")
 
 if args.short_slides and args.long_slides:
     raise NotImplementedError
 
-else:
-    outfilename = "{}-{}_ALL_TIMES-{}-{}.h5".format(
-        args.ifo_tag, args.user_tag, start, end-start,
-    )
-    outfile = os.path.join(args.output_dir, outfilename)
-    merge_hdf5_files(
-        args.input_files,
-        outfile,
-        verbose=args.verbose,
-        **compression_kw
-    )
+outfilename = "{}-{}_ALL_TIMES-{}-{}.h5".format(
+    args.ifo_tag, args.user_tag, start, end-start,
+)
+outfile = os.path.join(args.output_dir, outfilename)
+merge_hdf5_files(
+    args.input_files, outfile, verbose=args.verbose, **compression_kw
+)
 
-vprint("-- Binning events")
+logging.info("Binning events")
 bin_events(outfile, bins, args.output_dir, args.user_tag, verbose=args.verbose)
 
-vprint("-- All done")
+logging.info("All done")

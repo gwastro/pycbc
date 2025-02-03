@@ -344,11 +344,12 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
         for (path, dset) in _dataset_iterator(trigs):
-            # The dataset contains information other than trig/inj properties:
+            # The dataset contains search information or missed injections
+            # information, not properties of triggers or found injections:
             # just copy it
-            if len(dset) != num_orig_pts:
+            if 'search' in path or 'missed' in path:
                 trigs_dict[path] = dset[:]
-            # The dataset is relative to an IFO: cut with the correct index
+            # The dataset is trig/inj info at an IFO: cut with the correct index
             elif path[:2] in ifos:
                 ifo = path[:2]
                 if ifo_ids_above_thresh_locations[ifo].size != 0:
@@ -356,7 +357,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                         dset[:][ifo_ids_above_thresh_locations[ifo]]
                 else:
                     trigs_dict[path] = numpy.array([])
-            # The dataset is relative to the network: cut it before copying
+            # The dataset is trig/inj network info: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
 
@@ -404,8 +405,6 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
                 dict.fromkeys(keep_keys, numpy.array([])),
                 None, None)
 
-    found_after_vetoes = found_injs
-    missed_after_vetoes = dict.fromkeys(keep_keys, numpy.array([]))
     found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
     veto_idx = numpy.array([], dtype=numpy.int64)
 
@@ -422,14 +421,14 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
         logging.info("%d injections vetoed.", len(veto_idx))
         logging.info("%d injections surviving vetoes.", len(found_idx))
 
-        found_after_vetoes = {}
-        missed_after_vetoes = {}
-        for key in keep_keys:
-            if key == 'network/coincident_snr':
-                found_injs[key] = get_coinc_snr(found_injs)
-            if isinstance(found_injs[key], numpy.ndarray):
-                found_after_vetoes[key] = found_injs[key][found_idx]
-                missed_after_vetoes[key] = found_injs[key][veto_idx]
+    found_after_vetoes = {}
+    missed_after_vetoes = {}
+    for key in keep_keys:
+        if key == 'network/coincident_snr':
+            found_injs[key] = get_coinc_snr(found_injs)
+        if isinstance(found_injs[key], numpy.ndarray):
+            found_after_vetoes[key] = found_injs[key][found_idx]
+            missed_after_vetoes[key] = found_injs[key][veto_idx]
 
     return found_after_vetoes, missed_after_vetoes, found_idx, veto_idx
 

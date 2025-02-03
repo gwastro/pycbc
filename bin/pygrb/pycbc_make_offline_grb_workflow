@@ -30,6 +30,7 @@ matplotlib.use('agg')
 from igwn_segments import segment, segmentlistdict
 
 from pycbc import init_logging, add_common_pycbc_options
+from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
 from pycbc.workflow.core import configparser_value_to_file
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
@@ -111,7 +112,7 @@ single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
                                       triggername, seg_dir)
-    logging.warning("No science segments available.")
+    logging.error("No science segments available.")
     sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
@@ -120,7 +121,7 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
-    logging.warning(msg)
+    logging.error(msg)
     sys.exit()
 else:
     onSrc, offSrc, bufferSeg = _workflow.generate_triggered_segment(wflow,
@@ -247,6 +248,20 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
                                             seg_dir,
                                             tags=['veto'])
     datafind_veto_files.append(veto_file)
+# Check that the onsource is free from vetoes
+for ifo in ifos:
+    avail_segs = select_segments_by_definer(veto_file.storage_path, ifo=ifo)
+    avail_segs.coalesce()
+    vetoed_segs = offSrc[ifo] - avail_segs
+    if onSrc[ifo].intersects(vetoed_segs):
+        intersection = onSrc[ifo] & vetoed_segs
+        logging.error(
+            "The onsource %s contains the time %s that is vetoed in %s.",
+            onSrc[ifo][0][:],
+            intersection,
+            ifo
+        )
+        sys.exit()
 
 # Generate sky grid if needed
 skygrid_file = None

@@ -576,7 +576,7 @@ class SingleDetTriggers(object):
             logger.info("Applying threshold of %.3f on %s",
                         filter_threshold, filter_rank)
             fcn_dsets = (ranking.sngls_ranking_function_dict[filter_rank],
-                         ranking.required_datasets[filter_rank])
+                         ranking.reqd_datasets[filter_rank])
             idx, _ = self.trigs_f.select(
                  lambda rank: rank > filter_threshold,
                  filter_rank,
@@ -724,7 +724,7 @@ class SingleDetTriggers(object):
                                            statistic_threshold=None,
                                            n_loudest=10,
                                            cluster_window=10,
-                                           statistic_kwargs=None):
+                                           ):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
@@ -733,12 +733,9 @@ class SingleDetTriggers(object):
         statistic using statistic_threshold
         """
 
-        if statistic_kwargs is None:
-            statistic_kwargs = {}
         sds = rank_method.single(self.trig_dict())
         stat = rank_method.rank_stat_single(
             (self.ifo, sds),
-            **statistic_kwargs
         )
         if len(stat) == 0:
             # No triggers at all, so just return here

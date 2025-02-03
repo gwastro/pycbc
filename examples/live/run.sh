@@ -186,7 +186,14 @@ python -m mpi4py `which pycbc_live` \
 --output-path output \
 --day-hour-output-prefix \
 --sngl-ranking newsnr_sgveto_psdvar_threshold \
---ranking-statistic phasetd_exp_fit_fgbg_norm \
+--ranking-statistic \
+  exp_fit \
+--statistic-features \
+  phasetd \
+  sensitive_volume \
+  normalize_fit_rate \
+--statistic-keywords \
+  alpha_below_thresh:6 \
 --statistic-files \
   statHL.hdf \
   statHV.hdf \
