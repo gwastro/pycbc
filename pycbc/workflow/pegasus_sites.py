@@ -225,8 +225,10 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(IS_GLIDEIN =?= True)")
-    cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
-    cvmfs_loc += sing_version + '"'
+    cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v2.3.8'
+    # HARCODING IMAGE TO v2.3.8 BECAUSE v2.3.9 WILL NOT WORK WITH THE CURRENT
+    # PEGASUS RELEASE!
+    #cvmfs_loc += sing_version + '"'
     site.add_profiles(Namespace.CONDOR, key="My.SingularityImage",
                       value=cvmfs_loc)
     # On OSG failure rate is high
