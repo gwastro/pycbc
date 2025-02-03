@@ -59,9 +59,11 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
                 [coinc_list, idx_dict[ifo] - time_delay_idx[ifo]]
             )
     # Search through coinc_idx for repeated indexes. These must have been loud
-    # in at least 2 detectors.
+    # in at least 2 detectors if the analysis uses more than 2 detectors.
     counts = np.unique(coinc_list, return_counts=True)
-    coinc_idx = counts[0][counts[1] > 1]
+    coinc_idx = (
+        counts[0][counts[1] > 1] if len(idx_dict.keys()) > 2 else counts[0]
+    )
     return coinc_idx
 
 
