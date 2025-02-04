@@ -504,7 +504,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         # store the maxl polarization
         setattr(self._current_stats,
                 'maxl_polarization',
-                params['polarization'])
+                params['polarization'][idx])
         setattr(self._current_stats, 'maxl_loglr', maxl)
 
         # just store the maxl optimal snrsq
