@@ -233,6 +233,9 @@ def add_osg_site(sitecat, cp):
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="My.SingularityCleanEnv",
                       value="True")
+    # These numbers below correspond to the codes in table B.2 here:
+    # https://htcondor.readthedocs.io/en/24.0/codes-other-values/job-event-log-codes.html
+    # Values recommended by a condor expert
     site.add_profiles(Namespace.CONDOR, key="My.DAGManNodesMask",
                       value=r"\"0,1,2,4,5,7,8,9,10,11,12,13,16,17,24,27,35,36,40\"")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
