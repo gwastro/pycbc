@@ -15,7 +15,7 @@ import pycbc
 from pycbc import waveform
 
 from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw import table
+from igwn_ligolw import ligolw
 from igwn_ligolw.utils import process
 
 appx_options = waveform.td_approximants() + waveform.fd_approximants()
@@ -128,7 +128,7 @@ if infile is not None:
         verbose=opts.verbose
     )
     this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
-    sngl_insp_table = table.Table.get_table(xmldoc, 'sngl_inspiral')
+    sngl_insp_table = ligolw.Table.get_table(xmldoc, 'sngl_inspiral')
 else:
     # FIXME: try to get this from the waveform_opts group
     tmplt_args = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
