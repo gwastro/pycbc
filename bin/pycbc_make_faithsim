@@ -147,7 +147,7 @@ dag.add_node(pnode)
 f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 import numpy as np
-from igwn_ligolw import utils, table, lsctables
+from igwn_ligolw import utils, lsctables
 import glob
 from pycbc.io.ligolw import LIGOLWContentHandler
 
@@ -218,8 +218,7 @@ matplotlib.use('Agg')
 import matplotlib.cm
 import pylab
 import numpy as np
-from igwn_ligolw import utils, table, lsctables
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import MultipleLocator
 import glob
 
 from pycbc import pnutils

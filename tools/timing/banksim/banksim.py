@@ -27,7 +27,7 @@ import sys
 from numpy import complex64,float32
 from optparse import OptionParser
 from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw import table, lsctables
+from igwn_ligolw import lsctables
 
 from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants

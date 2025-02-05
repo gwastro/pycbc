@@ -24,7 +24,6 @@ import sys
 
 from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
-from igwn_ligolw import table
 from igwn_ligolw import utils
 
 import pycbc
@@ -296,7 +295,7 @@ if opts.dquad_mon2 is not None:
 # You'd think that would it to redefine the table columns, but wait, it gets
 # worse!
 class SimInspiralNew(lsctables.SimInspiral):
-    __slots__ = tuple(map(table.Column.ColumnName,
+    __slots__ = tuple(map(ligolw.Column.ColumnName,
                           lsctables.SimInspiralTable.validcolumns))
 lsctables.SimInspiral = SimInspiralNew
 lsctables.SimInspiralTable.RowType = SimInspiralNew

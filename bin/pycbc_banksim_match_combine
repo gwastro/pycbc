@@ -25,7 +25,7 @@ bank files, and the number of injections in each must correspond one-to-one.
 import argparse
 import numpy as np
 
-from igwn_ligolw import utils, table
+from igwn_ligolw import utils, ligolw
 
 import pycbc
 from pycbc import pnutils
@@ -111,7 +111,7 @@ for idx, row in enumerate(res):
     if row['sim'] not in itables:
         indoc = utils.load_filename(row['sim'], False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral") 
+        itables[row['sim']] = ligolw.Table.get_table(indoc, "sim_inspiral") 
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
