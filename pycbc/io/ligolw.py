@@ -20,13 +20,10 @@ import sys
 import numpy
 from igwn_ligolw import lsctables
 from igwn_ligolw import ligolw
-from igwn_ligolw.ligolw import LIGOLWContentHandler \
-    as OrigLIGOLWContentHandler
+from igwn_ligolw.ligolw import LIGOLWContentHandler as OrigLIGOLWContentHandler
 from igwn_ligolw.lsctables import TableByName
-from igwn_ligolw.table import Column, TableStream
 from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
 from igwn_ligolw.utils import process as ligolw_process
-from igwn_ligolw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
 
@@ -83,7 +80,7 @@ def return_empty_sngl(nones=False):
     sngl = lsctables.SnglInspiral()
     cols = lsctables.SnglInspiralTable.validcolumns
     for entry in cols:
-        col_name = Column.ColumnName(entry)
+        col_name = ligolw.Column.ColumnName(entry)
         value = None if nones else default_null_value(col_name, cols[entry])
         setattr(sngl, col_name, value)
     return sngl
@@ -111,7 +108,7 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
     search_summary = lsctables.SearchSummary()
     cols = lsctables.SearchSummaryTable.validcolumns
     for entry in cols:
-        col_name = Column.ColumnName(entry)
+        col_name = ligolw.Column.ColumnName(entry)
         value = default_null_value(col_name, cols[entry])
         setattr(search_summary, col_name, value)
 
@@ -220,7 +217,9 @@ def legacy_row_id_converter(ContentHandler):
             validcolumns = TableByName[parent.Name].validcolumns
             if result.Name not in validcolumns:
                 stripped_column_to_valid_column = {
-                    Column.ColumnName(name): name for name in validcolumns}
+                    ligolw.Column.ColumnName(name): name
+                    for name in validcolumns
+                }
                 if result.Name in stripped_column_to_valid_column:
                     result.setAttribute(
                         'Name', stripped_column_to_valid_column[result.Name])
@@ -238,7 +237,7 @@ def legacy_row_id_converter(ContentHandler):
 
         """
         result = __orig_startStream(self, parent, attrs)
-        if isinstance(result, TableStream):
+        if isinstance(result, ligolw.Table.Stream):
             loadcolumns = set(parent.columnnames)
             if parent.loadcolumns is not None:
                 # FIXME:  convert loadcolumns attributes to sets to
@@ -277,7 +276,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
             numpy.arange(len(series.data.data)) * delta,
             series.data.data
         ))
-    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
+    a = ligolw.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
