@@ -131,11 +131,11 @@ for event in coinc_table:
 else:
     raise ValueError(f"event {args.event_id} not found in coinc table")
 
-coinc_event_table_curr = lsctables.New(lsctables.CoincTable)
+coinc_event_table_curr = lsctables.CoincTable.new()
 coinc_event_table_curr.append(event)
-coinc_inspiral_table_curr = lsctables.New(lsctables.CoincInspiralTable)
-coinc_event_map_table_curr = lsctables.New(lsctables.CoincMapTable)
-sngl_inspiral_table_curr = lsctables.New(lsctables.SnglInspiralTable)
+coinc_inspiral_table_curr = lsctables.CoincInspiralTable.new()
+coinc_event_map_table_curr = lsctables.CoincMapTable.new()
+sngl_inspiral_table_curr = lsctables.SnglInspiralTable.new()
 
 for coinc_insp in coinc_inspiral_table:
     if coinc_insp.coinc_event_id == event.coinc_event_id:

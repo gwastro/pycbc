@@ -44,7 +44,7 @@ xmlroot.removeChild(allinjs)
 num_splits = args.num_splits or len(args.output_files)
 
 new_inj_tables = [
-    lsctables.New(tabletype, columns=get_table_columns(allinjs))
+    tabletype.new(columns=get_table_columns(allinjs))
     for _ in range(num_splits)
 ]
 
