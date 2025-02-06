@@ -320,6 +320,10 @@ for rank, num_event in enumerate(order):
                                   args.output_dir,
                                   data_segments=insp_data_seglists,
                                   tags=args.tags + [str(rank)])
+   
+    #files += mini.make_harmonic_waveform(workflow, args.output_dir, [sngl_file], tmpltbank_file,
+    #                          veto_file=veto_file, special_tids=ifo_tid,
+    #                          tags=args.tags + [str(rank)])
 
     layouts += list(layout.grouper(files, 2))
 
