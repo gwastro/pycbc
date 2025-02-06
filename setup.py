@@ -217,7 +217,7 @@ cythonext = ['waveform.spa_tmplt',
              'vetoes.chisq']
 ext = []
 cython_compile_args = ['-O3', '-w', '-ffast-math',
-                       '-ffinite-math-only']
+                       '-fno-finite-math-only']
 
 if platform.machine() == 'x86_64':
     cython_compile_args.append('-msse4.2')
