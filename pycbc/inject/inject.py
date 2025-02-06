@@ -313,7 +313,7 @@ class _XMLInjectionSet(object):
         """
         xmldoc = ligolw.Document()
         xmldoc.appendChild(ligolw.LIGO_LW())
-        simtable = lsctables.New(lsctables.SimInspiralTable)
+        simtable = lsctables.SimInspiralTable.new()
         xmldoc.childNodes[0].appendChild(simtable)
         if static_args is None:
             static_args = {}

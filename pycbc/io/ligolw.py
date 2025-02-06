@@ -327,10 +327,10 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
 
 def get_table_columns(table):
     """Return a list of columns that are present in the given table, in a
-    format that can be passed to `lsctables.New()`.
+    format that can be passed to `igwn_ligolw.Table.new()`.
 
     The split on ":" is needed for columns like `process:process_id`, which
-    must be listed as `process:process_id` in `lsctables.New()`, but are
+    must be listed as `process:process_id` in `igwn_ligolw.Table.new()`, but are
     listed as just `process_id` in the `columnnames` attribute of the given
     table.
     """

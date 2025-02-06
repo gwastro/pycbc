@@ -1119,7 +1119,7 @@ class ForegroundTriggers(object):
         )
         proc_id = proc_table.process_id
 
-        search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
+        search_summ_table = lsctables.SearchSummaryTable.new()
         coinc_h5file = self.coinc_file.h5file
         try:
             start_time = coinc_h5file['segments']['coinc']['start'][:].min()
@@ -1141,12 +1141,12 @@ class ForegroundTriggers(object):
         search_summ_table.append(search_summary)
         outdoc.childNodes[0].appendChild(search_summ_table)
 
-        sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
-        coinc_def_table = lsctables.New(lsctables.CoincDefTable)
-        coinc_event_table = lsctables.New(lsctables.CoincTable)
-        coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
-        coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
-        time_slide_table = lsctables.New(lsctables.TimeSlideTable)
+        sngl_inspiral_table = lsctables.SnglInspiralTable.new()
+        coinc_def_table = lsctables.CoincDefTable.new()
+        coinc_event_table = lsctables.CoincTable.new()
+        coinc_inspiral_table = lsctables.CoincInspiralTable.new()
+        coinc_event_map_table = lsctables.CoincMapTable.new()
+        time_slide_table = lsctables.TimeSlideTable.new()
 
         # Set up time_slide table
         time_slide_id = lsctables.TimeSlideID(0)

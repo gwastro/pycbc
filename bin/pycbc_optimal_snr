@@ -298,8 +298,7 @@ if __name__ == '__main__':
     inj_table = sorted(inj_table, key=sort_func)
 
     if ligolw:
-        new_inj_table = lsctables.New(
-            lsctables.SimInspiralTable,
+        new_inj_table = lsctables.SimInspiralTable.new(
             columns=get_table_columns(injections.table)
         )
     else:

@@ -116,7 +116,7 @@ class TestInjection(unittest.TestCase):
         xmldoc.appendChild(ligolw.LIGO_LW())
 
         # create sim inspiral table, link it to document and fill it
-        sim_table = lsctables.New(lsctables.SimInspiralTable)
+        sim_table = lsctables.SimInspiralTable.new()
         xmldoc.childNodes[-1].appendChild(sim_table)
         for i in range(len(self.injections)):
             row = sim_table.RowType()
