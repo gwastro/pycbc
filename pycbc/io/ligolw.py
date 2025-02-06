@@ -345,6 +345,5 @@ def get_table_columns(table):
 
 
 @legacy_row_id_converter
-@lsctables.use_in
 class LIGOLWContentHandler(OrigLIGOLWContentHandler):
     "Dummy class needed for loading LIGOLW files"
