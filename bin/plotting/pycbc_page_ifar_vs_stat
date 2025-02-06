@@ -25,16 +25,6 @@ parser.add_argument('--ifo-combos', nargs='+',
                     help='Which event types (detector combinations) to plot.')
 parser.add_argument('--output-file', required=True,
                     help='Path to output plot.')
-parser.add_argument("--loudest-keep-values",
-                    default='[6:1]',
-                    help="Apply successive multiplicative levels of"
-                         " decimation to coincs with stat value below the"
-                         " given thresholds. Supply as a comma-separated list"
-                         " of threshold:decimation value pairs surrounded by"
-                         " square brackets (no spaces!). Decimation values must"
-                         " be positive integers."
-                         " Ex. [15:5,10:30,5:30,0:30]."
-                         " Default: no decimation")
 opts = parser.parse_args()
 init_logging(opts.verbose)
 
@@ -59,46 +49,18 @@ coinc_line_map = {
     'HLV':'-'
 }
 
-exc_zlag_filenames = []
-# Not sure what this step does precisely - select the first matching file ?
-for coinc_key in [f'/{k}-' for k in opts.ifo_combos]:
-    exc_zlag_filenames.append([f for f in opts.trigger_files if coinc_key in f][0])
-logging.info('Got files: ', ', '.join(exc_zlag_filenames))
-
-loudest_keep_vals = opts.loudest_keep_values.strip('[]').split(',')
-threshes = []
-factors = []
-for decstr in loudest_keep_vals:
-    thresh, factor = decstr.split(':')
-    if float(factor) % 1:
-        raise RuntimeError("Non-integer decimation is not supported")
-    if int(factor) < 1:
-        raise RuntimeError("Negative or zero decimation does not make sense")
-    if int(factor) == 1:
-        continue
-    threshes.append(float(thresh))
-    factors.append(int(factor))
-
-# Sort the threshes into descending order
-# - allows decimation factors to be given in any order
-threshorder = np.argsort(threshes)[::-1]
-decimation_stat = np.array(threshes)[threshorder]
-decimation_fact = np.array(factors)[threshorder]
-
 fig = plt.figure(figsize=(9, 6))
 ax = fig.add_subplot(111)
 
-ifar_calc_points = np.linspace(-10, 30, 100)
+ifar_calc_points = np.linspace(-10, 30, 200)
 
 singles = []
-for exc_zlag_filename in exc_zlag_filenames:
-    logging.info(f"opening file {exc_zlag_filename}")
-    with h5py.File(exc_zlag_filename,'r') as exc_zlag_f:
+for f in opts.trigger_files:
+    logging.info(f"Opening {f}")
+    with h5py.File(f, 'r') as exc_zlag_f:
         event_ifos = exc_zlag_f.attrs['ifos'].split()
         coinc_key = ''.join(event_ifos).replace('1', '')
         stat_exc = exc_zlag_f['background_exc']['stat'][:]
-        stat = exc_zlag_f['background']['stat'][:]
-        dec_fac = exc_zlag_f['background']['decimation_factor'][:]
         dec_fac_exc = exc_zlag_f['background_exc']['decimation_factor'][:]
         bg_time = convert_s_to_y(exc_zlag_f.attrs['background_time_exc'])
         ifar_file = exc_zlag_f['background_exc']['ifar'][:]
@@ -109,11 +71,12 @@ for exc_zlag_filename in exc_zlag_filenames:
         ifo = event_ifos[0]
         singles.append(ifo)
         fit_thresh = sig_dict[ifo]['fit_threshold']
-        _, far, _ = significance.get_far(stat_exc,
-                                        ifar_calc_points,
-                                        dec_fac_exc,
-                                        bg_time,
-                                        **sig_dict[ifo])
+        far_tuple = significance.get_far(stat_exc,
+                                         ifar_calc_points,
+                                         dec_fac_exc,
+                                         bg_time,
+                                         **sig_dict[ifo])
+        far = far_tuple[1]  # Version-proof: get_far returns 2 or 3 values
 
         # Plot n-louder points with a solid line and sngl fits with dashed
         ax.plot(ifar_calc_points[ifar_calc_points < fit_thresh],
@@ -123,19 +86,19 @@ for exc_zlag_filename in exc_zlag_filenames:
                 far[ifar_calc_points > fit_thresh],
                 coinc_line_map[coinc_key],
                 c=coinc_color_map[coinc_key], label=coinc_key, zorder=-5)
-        del ifo, fit_thresh  # avoid variables hanging around
+        del ifo, fit_thresh, far  # avoid variables hanging around
 
     else:
-        _, far = significance.get_far(stat_exc,
+        far_tuple = significance.get_far(stat_exc,
                                       ifar_calc_points,
                                       dec_fac_exc,
                                       bg_time,
                                       method='n_louder')
 
-        ax.plot(ifar_calc_points, far, '-',
+        ax.plot(ifar_calc_points, far_tuple[1], '-',
                 c=coinc_color_map[coinc_key], label=coinc_key, zorder=-5)
 
-    del far  # avoid variable hanging around
+    del far_tuple  # avoid variable hanging around
 
 # Plot the thresholds
 for ifo in singles:
