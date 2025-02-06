@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 import sys, h5py
 import matplotlib
 matplotlib.use('agg')
@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 import argparse, logging
 from pycbc import init_logging, add_common_pycbc_options, results
-from pycbc.events import significance, trigger_fits as trstats
-from pycbc import conversions as conv
+from pycbc.events import significance
+from pycbc.conversions import sec_to_year as convert_s_to_y
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -41,29 +41,28 @@ init_logging(opts.verbose)
 sig_dict = significance.digest_significance_options(opts.ifo_combos, opts)
 
 coinc_color_map = {
-    'H': '#ee0000',  # red
-    'L': '#4ba6ff',  # blue
-    'V': '#9b59b6',  # magenta/purple
-    'HL':'#0000DD',
-    'LV':'#FFCC33',
-    'HV':'#990000',
+    'H':  '#ee0000',  # red
+    'L':  '#4ba6ff',  # blue
+    'V':  '#9b59b6',  # magenta/purple
+    'HL': '#0000DD',
+    'LV': '#FFCC33',
+    'HV': '#990000',
     'HLV': np.array([20, 120, 20]) / 255.}
 
 coinc_line_map = {
-    'H': '--',  # red
-    'L': '--',  # blue
-    'V': '--',  # magenta/purple
-    'HL':'-',
-    'LV':'-',
-    'HV':'-',
+    'H':  '--',
+    'L':  '--',
+    'V':  '--',
+    'HL': '-',
+    'LV': '-',
+    'HV': '-',
     'HLV':'-'
 }
 
 exc_zlag_filenames = []
-# not sure what this step does precisely - seems to be select the first matching file ? 
+# Not sure what this step does precisely - select the first matching file ?
 for coinc_key in [f'/{k}-' for k in opts.ifo_combos]:
     exc_zlag_filenames.append([f for f in opts.trigger_files if coinc_key in f][0])
-#exc_zlag_filenames = opts.trigger_files
 logging.info('Got files: ', ', '.join(exc_zlag_filenames))
 
 loudest_keep_vals = opts.loudest_keep_values.strip('[]').split(',')
@@ -72,7 +71,7 @@ factors = []
 for decstr in loudest_keep_vals:
     thresh, factor = decstr.split(':')
     if float(factor) % 1:
-        raise RuntimeError("Non-integer decimation is not supported") 
+        raise RuntimeError("Non-integer decimation is not supported")
     if int(factor) < 1:
         raise RuntimeError("Negative or zero decimation does not make sense")
     if int(factor) == 1:
@@ -93,7 +92,7 @@ ifar_calc_points = np.linspace(-10, 30, 100)
 
 singles = []
 for exc_zlag_filename in exc_zlag_filenames:
-    print("opening file %s" % exc_zlag_filename)
+    logging.info(f"opening file {exc_zlag_filename}")
     with h5py.File(exc_zlag_filename,'r') as exc_zlag_f:
         event_ifos = exc_zlag_f.attrs['ifos'].split()
         coinc_key = ''.join(event_ifos).replace('1', '')
@@ -101,49 +100,22 @@ for exc_zlag_filename in exc_zlag_filenames:
         stat = exc_zlag_f['background']['stat'][:]
         dec_fac = exc_zlag_f['background']['decimation_factor'][:]
         dec_fac_exc = exc_zlag_f['background_exc']['decimation_factor'][:]
-        bg_time = conv.sec_to_year(exc_zlag_f.attrs['background_time_exc'])
+        bg_time = convert_s_to_y(exc_zlag_f.attrs['background_time_exc'])
         ifar_file = exc_zlag_f['background_exc']['ifar'][:]
 
-    print("Min %s IFAR: %.3e" % (coinc_key, min(ifar_file)))
-    print("%s background time: %f" % (coinc_key, bg_time))
+    logging.info(f"Min {coinc_key} IFAR: {min(ifar_file)}")
+    logging.info(f"{coinc_key} background time (y): {bg_time}")
     if len(event_ifos) == 1:
         ifo = event_ifos[0]
         singles.append(ifo)
         fit_thresh = sig_dict[ifo]['fit_threshold']
-        #_, ifar = significance.significance_trig_fit(stat_exc,
-        #                                   ifar_calc_points, dec_fac_exc,
-        #                                   bg_time, fit_func='exponential',
-        #                                   fit_thresh=fit_thresh[coinc_key])
-        _, far = significance.get_far(stat_exc,
-                                      ifar_calc_points,
-                                      dec_fac_exc,
-                                      bg_time,
-                                      **sig_dict[ifo])
+        _, far, _ = significance.get_far(stat_exc,
+                                        ifar_calc_points,
+                                        dec_fac_exc,
+                                        bg_time,
+                                        **sig_dict[ifo])
 
-        print(len(stat))
-        stat_final = []
-        dec_fac_final = []
-        for i in range(len(decimation_stat) - 1):
-            idx_keep = np.logical_and(decimation_stat[i] > stat,
-                                      decimation_stat[i+1] < stat)
-            stat_keep = list(stat[idx_keep])
-            stat_keep = stat_keep[::decimation_fact[i]]
-            stat_final += stat_keep
-            dec_fac_final += list(np.ones_like(np.array(stat_keep)) * decimation_fact[i])
-
-        stat_final = np.array(stat_final)
-        dec_fac_final = np.array(dec_fac_final)
-
-        print(len(stat_final))
-
-        _, bg_far_nlouder = significance.get_far(stat_final,
-                                                 stat_final,
-                                                 dec_fac_final,
-                                                 bg_time,
-                                                 method='n_louder')
-
-        #ax.scatter(stat_final, bg_far_nlouder, marker='x',
-        #           s=10, c=coinc_color_map[coinc_key], zorder=0)
+        # Plot n-louder points with a solid line and sngl fits with dashed
         ax.plot(ifar_calc_points[ifar_calc_points < fit_thresh],
                 far[ifar_calc_points < fit_thresh],
                 '-', c=coinc_color_map[coinc_key], zorder=-5)
@@ -165,7 +137,7 @@ for exc_zlag_filename in exc_zlag_filenames:
 
     del far  # avoid variable hanging around
 
-# plot the thresholds
+# Plot the thresholds
 for ifo in singles:
     ax.axvline(sig_dict[ifo]['fit_threshold'], ls='--', zorder=-10,
                c=coinc_color_map[ifo.rstrip('1')])
@@ -182,7 +154,7 @@ ax.set_xticklabels(['%d' % t for t in xticks], fontsize=14)
 ax.set_xlabel('Ranking Statistic', fontsize=16)
 ax.set_ylabel('Cumulative Event Rate [y$^{-1}$]', fontsize=16)
 
-# save
+# Save
 caption = 'Cumulative rates of noise events for separate event types. Solid ' \
           'lines represent estimates from counts of louder (zerolag or time ' \
           'shifted) events. Dashed lines represent estimates from fit ' \
