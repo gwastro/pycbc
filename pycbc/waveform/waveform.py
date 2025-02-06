@@ -396,30 +396,42 @@ def parse_mode_array(input_params):
     """Ensures mode_array argument in a dictionary of input parameters is
     a list of tuples of (l, m), where l and m are ints.
 
-    Accepted formats for the ``mode_array`` argument is a list of tuples of
-    ints (e.g., ``[(2, 2), (3, 3), (4, 4)]``), a space-separated string giving
-    the modes (e.g., ``22 33 44``), or an array of ints or floats (e.g.,
-    ``[22., 33., 44.]``.
+    Accepted formats for the ``mode_array`` argument:
+    - List of tuples of ints: ``[(2, 2), (3, 3), (4, 4)]``
+    - Space-separated string: ``"22 33 44 2-2 4-4"``
+    - Array of ints or floats: ``[22., 33., 44., -22., -44.]``
     """
     if 'mode_array' in input_params and input_params['mode_array'] is not None:
         mode_array = input_params['mode_array']
+        
+        # Convert string to list (splitting on spaces)
         if isinstance(mode_array, str):
             mode_array = mode_array.split()
+        
+        # Ensure mode_array is iterable (list or numpy array)
         if not isinstance(mode_array, (numpy.ndarray, list)):
             mode_array = [mode_array]
-        for ii, ma in enumerate(mode_array):
-            # if ma is a float or int, convert to str (e.g., 22. -> '22'), so
-            # that...
-            if isinstance(ma, (float, int)):
-                ma = str(int(ma))
-            # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
-            if isinstance(ma, str):
-                l, m = ma
-                ma = (int(l), int(m))
-            mode_array[ii] = ma
-        input_params['mode_array'] = mode_array
-    return input_params
 
+        parsed_modes = []
+        for ma in mode_array:
+            if isinstance(ma, (float, int)):  
+                # Convert numeric form (e.g., 22 -> "22", -22 -> "2-2")
+                ma = str(int(ma))
+            
+            if isinstance(ma, str):
+                if '-' in ma:
+                    # Handle cases like "2-2" -> (2, -2)
+                    l, m = ma.split('-')
+                    ma = (int(l), -int(m))  # Ensure m is negative
+                else:
+                    # Handle cases like "22" -> (2,2)
+                    l, m = ma[0], ma[1]
+                    ma = (int(l), int(m))
+            
+            parsed_modes.append(ma)
+
+        input_params['mode_array'] = parsed_modes
+    return input_params
 
 def props(obj, **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
