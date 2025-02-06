@@ -55,5 +55,4 @@ jobs:
 
     - name: Run basic pycbc test suite
       run: |
-        sudo chmod -R 777 /usr/local/miniconda/
         tox -e py-unittest
