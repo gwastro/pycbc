@@ -23,7 +23,6 @@ from igwn_ligolw import ligolw
 from igwn_ligolw.ligolw import LIGOLWContentHandler as OrigLIGOLWContentHandler
 from igwn_ligolw.lsctables import TableByName
 from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
-from igwn_ligolw.utils import process as ligolw_process
 import pycbc.version as pycbc_version
 
 
@@ -152,8 +151,7 @@ def create_process_table(document, program_name=None, detectors=None,
         for key in key_del:
             opts.pop(key)
 
-    process = ligolw_process.register_to_xmldoc(
-        document,
+    process = document.register_process(
         program_name,
         opts,
         version=pycbc_version.version,
