@@ -50,7 +50,7 @@ install_requires = setup_requires + [
     'pegasus-wms.api >= 5.0.6',
     'python-ligo-lw >= 1.7.0',
     'ligo-segments',
-    'lalsuite!=7.2',
+    'lalsuite!=7.2,<7.25',
     'lscsoft-glue>=1.59.3',
     'pykerr',
 ]
