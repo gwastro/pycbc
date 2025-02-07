@@ -419,6 +419,12 @@ def get_single_template_params(curr_idx, times, bank_data,
         params['inclination'] = bank_data['inclination'][bank_id]
     except KeyError:
         pass
+    # optional eccentric parameters, only present when using SEOBNRv4/5E
+    try:
+        params['eccentricity'] = bank_data['eccentricity'][bank_id]
+        params['rel_anomaly'] = bank_data['rel_anomaly'][bank_id]
+    except KeyError:
+        pass
     return params
 
 
