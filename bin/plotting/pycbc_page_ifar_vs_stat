@@ -54,28 +54,28 @@ ax = fig.add_subplot(111)
 
 ifar_calc_points = np.linspace(-10, 30, 200)
 
-singles = []
+fitted = []  # List of combos for which a fit is used
 for f in opts.trigger_files:
     logging.info(f"Opening {f}")
     with h5py.File(f, 'r') as exc_zlag_f:
-        event_ifos = exc_zlag_f.attrs['ifos'].split()
-        coinc_key = ''.join(event_ifos).replace('1', '')
+        logging.info(f"Ifos {exc_zlag_f.attrs['ifos']}")  # eg 'H1 L1'
+        sig_key = exc_zlag_f.attrs['ifos'].replace(' ', '')  # eg 'H1L1'
+        coinc_key = sig_key.replace('1', '')  # eg 'HL'
         stat_exc = exc_zlag_f['background_exc']['stat'][:]
         dec_fac_exc = exc_zlag_f['background_exc']['decimation_factor'][:]
         bg_time = convert_s_to_y(exc_zlag_f.attrs['background_time_exc'])
         ifar_file = exc_zlag_f['background_exc']['ifar'][:]
-
-    logging.info(f"Min {coinc_key} IFAR: {min(ifar_file)}")
     logging.info(f"{coinc_key} background time (y): {bg_time}")
-    if len(event_ifos) == 1:
-        ifo = event_ifos[0]
-        singles.append(ifo)
-        fit_thresh = sig_dict[ifo]['fit_threshold']
+
+    # If fitting / extrapolation is done
+    if sig_dict[sig_key]['method'] == 'trigger_fit':
+        fitted.append(sig_key)
+        fit_thresh = sig_dict[sig_key]['fit_threshold']
         far_tuple = significance.get_far(stat_exc,
                                          ifar_calc_points,
                                          dec_fac_exc,
                                          bg_time,
-                                         **sig_dict[ifo])
+                                         **sig_dict[sig_key])
         far = far_tuple[1]  # Version-proof: get_far returns 2 or 3 values
 
         # Plot n-louder points with a solid line and sngl fits with dashed
@@ -86,7 +86,7 @@ for f in opts.trigger_files:
                 far[ifar_calc_points > fit_thresh],
                 coinc_line_map[coinc_key],
                 c=coinc_color_map[coinc_key], label=coinc_key, zorder=-5)
-        del ifo, fit_thresh, far  # avoid variables hanging around
+        del fit_thresh  # avoid variable hanging around
 
     else:
         far_tuple = significance.get_far(stat_exc,
@@ -98,12 +98,12 @@ for f in opts.trigger_files:
         ax.plot(ifar_calc_points, far_tuple[1], '-',
                 c=coinc_color_map[coinc_key], label=coinc_key, zorder=-5)
 
-    del far_tuple  # avoid variable hanging around
+    del sig_key, coinc_key, far_tuple  # avoid variables hanging around
 
 # Plot the thresholds
-for ifo in singles:
-    ax.axvline(sig_dict[ifo]['fit_threshold'], ls='--', zorder=-10,
-               c=coinc_color_map[ifo.rstrip('1')])
+for combo in fitted:
+    ax.axvline(sig_dict[combo]['fit_threshold'], ls='-.', zorder=-10,
+               c=coinc_color_map[combo.replace('1', '')])
 
 ax.semilogy()
 ax.legend(ncol=2, fontsize=12)
@@ -120,8 +120,8 @@ ax.set_ylabel('Cumulative Event Rate [y$^{-1}$]', fontsize=16)
 # Save
 caption = 'Cumulative rates of noise events for separate event types. Solid ' \
           'lines represent estimates from counts of louder (zerolag or time ' \
-          'shifted) events. Dashed lines represent estimates from fit ' \
-          'extrapolation for single-detector events.'
+          'shifted) events. Dashed lines represent estimates from fitting / ' \
+          'extrapolation.'
 
 results.save_fig_with_metadata(fig, opts.output_file,
      fig_kwds={'bbox_inches': 'tight'},
