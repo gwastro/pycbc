@@ -50,7 +50,7 @@ install_requires = setup_requires + [
     'pegasus-wms.api >= 5.0.6',
     'python-ligo-lw >= 1.7.0',
     'ligo-segments',
-    'lalsuite!=7.2',
+    'lalsuite!=7.2,<7.25',
     'lscsoft-glue>=1.59.3',
     'pykerr',
 ]
@@ -119,7 +119,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.3.8'
+        vinfo.version = '2.3.9'
         vinfo.release = 'True'
 
     version_script = f"""# coding: utf-8
@@ -217,7 +217,7 @@ cythonext = ['waveform.spa_tmplt',
              'vetoes.chisq']
 ext = []
 cython_compile_args = ['-O3', '-w', '-ffast-math',
-                       '-ffinite-math-only']
+                       '-fno-finite-math-only']
 
 if platform.machine() == 'x86_64':
     cython_compile_args.append('-msse4.2')

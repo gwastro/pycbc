@@ -310,14 +310,14 @@ if injection_style:
     for bg_fname in args.background_files:
         bg_f = h5py.File(bg_fname, 'r')
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
-        _, far[ifo_combo_key] = significance.get_far(
+        _, far[ifo_combo_key], _ = significance.get_far(
                 bg_f['background/stat'][:],
                 f['foreground/stat'][:],
                 bg_f['background/decimation_factor'][:],
                 bg_f.attrs['background_time'],
                 **significance_dict[ifo_combo_key])
 
-        _, far_exc[ifo_combo_key] = \
+        _, far_exc[ifo_combo_key], _ = \
             significance.get_far(
                 bg_f['background_exc/stat'][:],
                 f['foreground/stat'][:],
@@ -329,7 +329,7 @@ else:
     # background included
     for f_in in files:
         ifo_combo_key = get_ifo_string(f_in).replace(' ','')
-        _, far[ifo_combo_key] = \
+        _, far[ifo_combo_key], _ = \
             significance.get_far(
                 f_in['background/stat'][:],
                 f['foreground/stat'][:],
@@ -337,7 +337,7 @@ else:
                 f_in.attrs['background_time'],
                 **significance_dict[ifo_combo_key])
 
-        _, far_exc[ifo_combo_key] = \
+        _, far_exc[ifo_combo_key], _ = \
             significance.get_far(
                 f_in['background_exc/stat'][:],
                 f['foreground/stat'][:],
@@ -608,7 +608,7 @@ while True:
         fg_time_ct[key] -= args.cluster_window
         bg_t_y = conv.sec_to_year(bg_time_ct[key])
         fg_t_y = conv.sec_to_year(fg_time_ct[key])
-        bg_far, fg_far = significance.get_far(
+        bg_far, fg_far, _ = significance.get_far(
             sep_bg_data[key].data['stat'],
             sep_fg_data[key].data['stat'],
             sep_bg_data[key].data['decimation_factor'],
@@ -632,7 +632,7 @@ while True:
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
-        _, far[key] = significance.get_far(
+        _, far[key], _ = significance.get_far(
             sep_bg_data[key].data['stat'],
             combined_fg_data.data['stat'],
             sep_bg_data[key].data['decimation_factor'],
