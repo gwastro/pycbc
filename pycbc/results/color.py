@@ -5,7 +5,7 @@ _ifo_color_map = {
     'G1': '#222222',  # dark gray
     'K1': '#ffb200',  # yellow/orange
     'H1': '#ee0000',  # red
-    'I1': '#b0dd8b',  # light green
+    'A1': '#b0dd8b',  # light green
     'L1': '#4ba6ff',  # blue
     'V1': '#9b59b6',  # magenta/purple
 }

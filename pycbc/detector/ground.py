@@ -219,7 +219,7 @@ class Detector(object):
         Parameters
         ----------
         detector_name: str
-            The two-character detector string, i.e. H1, L1, V1, K1, I1
+            The two-character detector string, i.e. H1, L1, V1, K1, A1
         reference_time: float
             Default is time of GW150914. In this case, the earth's rotation
         will be estimated from a reference time. If 'None', we will

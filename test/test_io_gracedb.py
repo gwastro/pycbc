@@ -52,7 +52,7 @@ class TestIOGraceDB(unittest.TestCase):
                          'spin2y': 0,
                          'spin2z': 0}
 
-        self.possible_ifos = 'H1 L1 V1 K1 I1'.split()
+        self.possible_ifos = 'H1 L1 V1 K1 A1'.split()
 
     def do_test(self, n_ifos, n_ifos_extra):
         # choose a random selection of interferometers
