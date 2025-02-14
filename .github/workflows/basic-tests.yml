@@ -29,12 +29,17 @@ jobs:
     - name: installing auxiliary data files
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
+        GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/waveforms/software/lalsuite-waveform-data
         cd lalsuite-extra
         git lfs pull -I "data/lalsimulation/SEOBNRv2ROM_*.dat"
         git lfs pull -I "data/lalsimulation/*ChirpTime*.dat"
         git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
+        cd lalsuite-waveform-data
+        git lfs pull -I "waveform_data/SEOBNRv4ROM_v3.0.hdf5"
+        mv waveform_data/SEOBNRv4ROM_v3.0.hdf5 ../
+        cd ..
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
