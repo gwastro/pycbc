@@ -234,7 +234,10 @@ def _extract_vetoes(veto_file, ifos, offsource):
         for ifo in ifos:
             segs = veto.select_segments_by_definer(veto_file, ifo=ifo)
             segs.coalesce()
-            clean_segs[ifo] = segs
+            if len(segs)>0:
+                clean_segs[ifo] = segs
+            else:
+                clean_segs[ifo] = segments.segmentlist([offsource])
 
     if clean_segs:
         for ifo in ifos:
