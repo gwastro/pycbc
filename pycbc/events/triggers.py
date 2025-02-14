@@ -130,8 +130,12 @@ def get_param(par, args, bank, tid):
         parvals = m1 + m2
     elif par == 'eta':
         parvals = conversions.eta_from_mass1_mass2(m1, m2)
+    elif par == 'q':
+        parvals = conversions.q_from_mass1_mass2(m1, m2)
     elif par in ['chi_eff', 'effective_spin']:
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
+    elif par == 'eccentricity':
+        parvals = bank['eccentricity'][:][tid]
     elif par == 'template_duration':
         if 'template_duration' in bank:
             parvals = bank['template_duration'][:][tid]
