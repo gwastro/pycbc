@@ -415,11 +415,14 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
         logging.info("Applying data vetoes to found injections...")
         for ifo in ifos:
             inj_time = found_injs[ifo+'/end_time'][:]
-            idx, _ = veto.indices_outside_segments(inj_time, [veto_file], ifo, None)
-            veto_idx = numpy.append(veto_idx, idx)
-            logging.info("%d injections vetoed due to %s.", len(idx), ifo)
-            idx, _ = veto.indices_within_segments(inj_time, [veto_file], ifo, None)
-            found_idx = numpy.intersect1d(found_idx, idx)
+            segs = veto.select_segments_by_definer(veto_file, segment_name=None, ifo=ifo)
+            if len(segs)>0:
+                idx, _ = veto.indices_outside_segments(inj_time, [veto_file], ifo, None)
+                veto_idx = numpy.append(veto_idx, idx)
+                logging.info("%d injections vetoed due to %s.", len(idx), ifo)
+                idx, _ = veto.indices_within_segments(inj_time, [veto_file], ifo, None)
+                found_idx = numpy.intersect1d(found_idx, idx)
+
         veto_idx = numpy.unique(veto_idx)
         logging.info("%d injections vetoed.", len(veto_idx))
         logging.info("%d injections surviving vetoes.", len(found_idx))
