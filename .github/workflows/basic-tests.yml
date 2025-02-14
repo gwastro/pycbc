@@ -28,8 +28,8 @@ jobs:
         pip install tox pip setuptools --upgrade
     - name: installing auxiliary data files
       run: |
-        curl --show-error --silent --remote-name https://git.ligo.org/lscsoft/lalsuite-extra/-/raw/master/data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5 > SEOBNRv4ROM_v2.0.hdf5
-        curl --show-error --silent --remote-name  https://git.ligo.org/waveforms/software/lalsuite-waveform-data/-/raw/main/waveform_data/SEOBNRv4ROM_v3.0.hdf5 > SEOBNRv4ROM_v3.0.hdf5
+        curl --show-error --silent --remote-name https://git.ligo.org/lscsoft/lalsuite-extra/-/raw/master/data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
+        curl --show-error --silent --remote-name  https://git.ligo.org/waveforms/software/lalsuite-waveform-data/-/raw/main/waveform_data/SEOBNRv4ROM_v3.0.hdf5
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
