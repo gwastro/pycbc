@@ -68,7 +68,12 @@ class TestDetector(unittest.TestCase):
     def test_response_matrix(self):
         import lal
         for ifo in ['H1', 'L1', 'V1', 'K1', 'A1']:
-            ref_resp = lal.cached_detector_by_prefix[ifo].response
+            if ifo == 'A1':
+                # FIXME: patch until the I1-A1 rename is fixed in lalsuite
+                ref_resp = lal.cached_detector_by_prefix["I1"].response
+            else:
+                ref_resp = lal.cached_detector_by_prefix[ifo].response
+
             resp = det.Detector(ifo).response
             self.assertAlmostEqual((ref_resp - resp).max(), 0, places=6)
 
