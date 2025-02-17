@@ -252,16 +252,18 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
 for ifo in ifos:
     avail_segs = select_segments_by_definer(veto_file.storage_path, ifo=ifo)
     avail_segs.coalesce()
-    vetoed_segs = offSrc[ifo] - avail_segs
-    if onSrc[ifo].intersects(vetoed_segs):
-        intersection = onSrc[ifo] & vetoed_segs
-        logging.error(
-            "The onsource %s contains the time %s that is vetoed in %s.",
-            onSrc[ifo][0][:],
-            intersection,
-            ifo
-        )
-        sys.exit()
+    # In case no relevant vetoes are available, avail_segs becomes an empty list
+    if len(avail_segs) > 0:
+        vetoed_segs = offSrc[ifo] - avail_segs
+        if onSrc[ifo].intersects(vetoed_segs):
+            intersection = onSrc[ifo] & vetoed_segs
+            logging.error(
+                "The onsource %s contains the time %s that is vetoed in %s.",
+                onSrc[ifo][0][:],
+                intersection,
+                ifo
+            )
+            sys.exit()
 
 # Generate sky grid if needed
 skygrid_file = None
