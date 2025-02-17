@@ -6,6 +6,7 @@ _ifo_color_map = {
     'K1': '#ffb200',  # yellow/orange
     'H1': '#ee0000',  # red
     'A1': '#b0dd8b',  # light green
+    'I1': '#b0dd8b',  # light green - deprecated, but needed until lalsuite updates
     'L1': '#4ba6ff',  # blue
     'V1': '#9b59b6',  # magenta/purple
 }
