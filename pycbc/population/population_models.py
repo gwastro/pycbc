@@ -169,14 +169,14 @@ def p_tau(tau, td_model="inverse"):
 
     Returns
     -------
-    p_t : float
+    p_t : float or ndarray or sympy.core.mul.Mul based on input
           The probability at time delay tau.
 
     Notes
     -----
          Pease see the Appendix in <arXiv:2011.02717v3> for more details.
     """
-    from sympy import sqrt, exp, log
+    from sympy import sqrt, exp, log, Piecewise
 
     if td_model == "log_normal":
         t_ln = 2.9  # Gyr
@@ -191,7 +191,15 @@ def p_tau(tau, td_model="inverse"):
         alpha_t = 0.81
         p_t = tau**(-alpha_t)
     elif td_model == "inverse":
-        p_t = tau**(-0.999)  # Try to avoid dividing zero.
+        # make sure that there is a minimum and maximum time delay
+        td_min = 0.02 # Taken from Regimbau et al. https://journals.aps.org/prd/abstract/10.1103/PhysRevD.86.122001
+        td_max = cosmological_quantity_from_redshift(0, 'age')
+        norm_const = 1/np.log(td_max/td_min)
+        if isinstance(tau, (float, int)) or isinstance(tau, np.ndarray):
+            p_t = np.where((tau < td_min) | (tau > td_max), 0, norm_const * tau**(-0.999))
+        else:
+            p_t = Piecewise((0, tau < td_min), (0, tau > td_max), (norm_const * tau**(-0.999), True))
+
     else:
         raise ValueError("'model' must choose from \
         ['log_normal', 'gaussian', 'power_law', 'inverse'].")
