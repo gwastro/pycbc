@@ -71,9 +71,23 @@ def get_available_lal_detectors():
     """
     ld = lal.__dict__
     known_lal_names = [j for j in ld.keys() if "DETECTOR_PREFIX" in j]
-    known_prefixes = [ld[k] for k in known_lal_names]
-    known_names = [ld[k.replace('PREFIX', 'NAME')] for k in known_lal_names]
-    return list(zip(known_prefixes, known_names))
+
+    # Remove bar detectors
+    known_prefix_names = [
+        (ld[k], ld[k.replace('PREFIX', 'NAME')])
+        for k in known_lal_names
+        if ld[k.replace('PREFIX','ARM_X_MIDPOINT_SI')] != 0.
+    ]
+    # FIXME: patch until the I1-A1 rename is fixed in lalsuite
+    # Change prefix of I1 to A1 - LIGO India's proper prefix
+    known_prefix_names = [
+        (k, v)
+        if not k == 'I1'
+        else ("A1", v)
+        for k, v in known_prefix_names
+    ]
+
+    return known_prefix_names
 
 _ground_detectors = {}
 
@@ -178,7 +192,7 @@ def load_detector_config(config_files):
         try:
             method, arg_names = methods[kwds.pop('method')]
         except KeyError:
-            raise ValueError("Missing or unkown method, "
+            raise ValueError("Missing or unknown method, "
                              "options are {}".format(methods.keys()))
         for k in kwds:
             kwds[k] = float(kwds[k])
@@ -193,7 +207,9 @@ def load_detector_config(config_files):
 # prepopulate using detectors hardcoded into lalsuite
 for pref, name in get_available_lal_detectors():
     lalsim = pycbc.libutils.import_optional('lalsimulation')
-    lal_det = lalsim.DetectorPrefixToLALDetector(pref).frDetector
+    # FIXME: patch until the I1-A1 rename is fixed in lalsuite
+    prefix = pref if not pref == 'A1' else 'I1'
+    lal_det = lalsim.DetectorPrefixToLALDetector(prefix).frDetector
     add_detector_on_earth(pref,
                           lal_det.vertexLongitudeRadians,
                           lal_det.vertexLatitudeRadians,
@@ -234,7 +250,7 @@ class Detector(object):
             self.response = self.info['response']
             self.location = self.info['location']
         else:
-            raise ValueError("Unkown detector {}".format(detector_name))
+            raise ValueError("Unknown detector {}".format(detector_name))
 
         loc = coordinates.EarthLocation(self.location[0],
                                         self.location[1],
@@ -550,7 +566,7 @@ class Detector(object):
         # add in only the correction for the time variance in the polarization
         # due to the earth's rotation, no doppler correction applied
         else:
-            raise ValueError("Unkown projection method {}".format(method))
+            raise ValueError("Unknown projection method {}".format(method))
         return ts
 
     def optimal_orientation(self, t_gps):
