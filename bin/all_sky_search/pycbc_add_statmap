@@ -247,7 +247,7 @@ for ifo in all_ifos:
 # fg_times is a tuple of trigger time arrays
 fg_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
-# Cluster by statistic value. Currently only clustering zerolag,
+# Cluster using the chosen method. Currently only clustering zerolag,
 # i.e. foreground, so set all timeslide_ids to zero
 cidx = pycbc.events.cluster_coincs_multiifo(f[f'foreground/{args.cluster_stat}'][:],
                                             fg_times,
