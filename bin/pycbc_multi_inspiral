@@ -60,7 +60,7 @@ def slide_limiter(args):
     If the data is not time slid, there is a single slide for the zero-lag.
     '''
     low, upp = 1, args.segment_length[args.instruments[0]]
-    if args.do_shortslides:
+    if args.do_shortslides and and len(args.instruments[:])>1:
         n_ifos = len(args.instruments)
         stride_dur = args.segment_length[args.instruments[0]]/2
         num_slides = np.int32(1 +
@@ -70,7 +70,7 @@ def slide_limiter(args):
                 f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
                 f" goes over the allowed upper bound {upp}"
     else:
-        num_slides = 1
+        num_slides = 0
     return num_slides
 
 
@@ -412,8 +412,10 @@ with ctx:
     )
 
     logging.info("Determining time slide shifts and time delays")
+    # create an array of slide_ids using the syntax: start, stop, step
+    # where values are generated within the half-open interval [start, stop)
+    slide_ids = np.arange(0, num_slides+1, 1)
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
-    slide_ids = np.arange(num_slides)
     time_slides = {
         ifo: args.slide_shift * slide_ids * ifo_idx
         for ifo_idx, ifo in enumerate(args.instruments)
