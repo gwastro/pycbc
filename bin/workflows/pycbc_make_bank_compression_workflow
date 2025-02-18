@@ -15,8 +15,8 @@ from pycbc.results import layout, save_fig_with_metadata
 
 def finalize(container, workflow, finalize_workflow):
     # Create the final log file
-    log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
-                            extension='.html', directory=rdir['workflow'])
+    #log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
+    #                        extension='.html', directory=rdir['workflow'])
 
     gen_file_html = wf.File(workflow.ifos, 'WORKFLOW-GEN', workflow.analysis_time,
                             extension='.html', directory=rdir['workflow'])
@@ -52,18 +52,18 @@ def finalize(container, workflow, finalize_workflow):
 
     # Close the log and flush to the html file
     logging.shutdown()
-    with open(wf_log_file.storage_path, "r") as logfile:
-        logdata = logfile.read()
-    log_str = """
-    <p>Workflow generation script created workflow in output directory: %s</p>
-    <p>Workflow name is: %s</p>
-    <p>Workflow generation script run on host: %s</p>
-    <pre>%s</pre>
-    """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
-    kwds = {'title': 'Workflow Generation Log',
-            'caption': "Log of the workflow script %s" % sys.argv[0],
-            'cmd': ' '.join(sys.argv), }
-    save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+    #with open(wf_log_file.storage_path, "r") as logfile:
+    #    logdata = logfile.read()
+    #log_str = """
+    #<p>Workflow generation script created workflow in output directory: %s</p>
+    #<p>Workflow name is: %s</p>
+    #<p>Workflow generation script run on host: %s</p>
+    #<pre>%s</pre>
+    #""" % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+    #kwds = {'title': 'Workflow Generation Log',
+    #        'caption': "Log of the workflow script %s" % sys.argv[0],
+    #        'cmd': ' '.join(sys.argv), }
+    #save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 
     # Add the command line used to a specific file
     args_to_output = [sys.argv[0]]
@@ -80,7 +80,7 @@ def finalize(container, workflow, finalize_workflow):
             'caption': "Command used to generate the workflow.",
             'cmd': ' '.join(sys.argv), }
     save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
-    layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html, log_file_html]))
+    layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html]))
     sys.exit(0)
 
 
