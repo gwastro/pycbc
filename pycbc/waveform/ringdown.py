@@ -188,11 +188,11 @@ def lm_amps_phases(**kwargs):
     if kwargs.get('qlmns', None) is None:
         return amps, phis, dbetas, dphis
     else:
-        ref_amp_quad = kwargs.pop('ref_amp_quad', None)
-        ref_phi_quad = kwargs.pop('ref_phi_quad', None)
-        if ref_amp_quad is None:
+        qref_amp = kwargs.pop('qref_amp', None)
+        qref_phi = kwargs.pop('qref_phi', None)
+        if qref_amp is None:
             # default to the 220 mode
-            ref_amp_quad = ref_amp
+            qref_amp = ref_amp
         for qlmn, lmn1, lmn2 in kwargs['qlmns']:
             overtones_qlmn = parse_mode(qlmn)
             overtones_lmn1, overtones_lmn2 = parse_mode(lmn1), parse_mode(lmn2)
@@ -200,18 +200,18 @@ def lm_amps_phases(**kwargs):
                                            overtones_lmn2):
                 try:
                     if mode1 != ref_mode and mode2 != ref_mode:
-                        amps[modeq] = ref_amp_quad * kwargs['amp' + mode1] * kwargs['amp' + mode2]
+                        amps[modeq] = qref_amp * kwargs['amp' + mode1] * kwargs['amp' + mode2]
                     elif mode1 == ref_mode and mode2 != ref_mode:
-                        amps[modeq] = ref_amp_quad * ref_amp * kwargs['amp' + mode2]
+                        amps[modeq] = qref_amp * ref_amp * kwargs['amp' + mode2]
                     elif mode1 != ref_mode and mode2 == ref_mode:
-                        amps[modeq] = ref_amp_quad * kwargs['amp' + mode1] * ref_amp
+                        amps[modeq] = qref_amp * kwargs['amp' + mode1] * ref_amp
                     else:
-                        amps[modeq] = ref_amp_quad * ref_amp * ref_amp
+                        amps[modeq] = qref_amp * ref_amp * ref_amp
                 except KeyError:
                     raise ValueError('Must provide reference amplitude for quadratic modes, and \
                                         amp{} and amp{} are required'.format(mode1, mode2))
                 try:
-                    phis[modeq] = kwargs['phi' + mode1] + kwargs['phi' + mode2] + ref_phi_quad
+                    phis[modeq] = kwargs['phi' + mode1] + kwargs['phi' + mode2] + qref_phi
                 except KeyError:
                     raise ValueError('Must provide reference phi for quadratic modes, and \
                                      phi{} and phi{} are required'.format(mode1, mode2))
@@ -238,6 +238,29 @@ def lm_freqs_taus(**kwargs):
                 taus[mode] = kwargs['tau_' + mode]
             except KeyError:
                 raise ValueError('tau_{} is required'.format(mode))
+    return freqs, taus
+
+
+def qlm_freqs_taus(**kwargs):
+    """Take input_params and return dictionaries with frequencies and damping
+    times of each overtone of a specific quadratic lm mode, checking that all of them
+    are given.
+    """
+    freqs, taus = {}, {}
+    for qlmn, lmn1, lmn2 in kwargs['qlmns']:
+        overtones_qlmn = parse_mode(qlmn)
+        overtones_lmn1, overtones_lmn2 = parse_mode(lmn1), parse_mode(lmn2)
+        for modeq, mode1, mode2 in zip(overtones_qlmn, overtones_lmn1,
+                                    overtones_lmn2):
+            try:
+                freqs[modeq] = kwargs['f_' + mode1] + kwargs['f_' + mode2]
+            except KeyError:
+                raise ValueError('f_{} and f_{} are required'.format(mode1, mode2))
+            try:
+                taus[modeq] = (kwargs['tau_' + mode1] * kwargs['tau_' + mode2]) / \
+                            (kwargs['tau_' + mode1] + kwargs['tau_' + mode2])
+            except KeyError:
+                raise ValueError('tau_{} and tau_{} are required'.format(mode1, mode2))
     return freqs, taus
 
 
@@ -839,6 +862,8 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
     # figure out the frequencies and damping times
     if freq_tau_approximant:
         freqs, taus = lm_freqs_taus(**input_params)
+        if quadratic_lmns:
+            freqs, taus = qlm_freqs_taus(**input_params)
         norm = 1.
     else:
         freqs, taus = get_lm_f0tau_allmodes(input_params['final_mass'],
