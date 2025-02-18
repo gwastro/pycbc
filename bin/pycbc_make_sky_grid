@@ -96,7 +96,6 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-
 if len(args.instruments) == 1:
     # Make a single point skygrid object
     sky_grid = SkyGrid(
