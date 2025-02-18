@@ -85,8 +85,6 @@ def finalize(container, workflow, finalize_workflow):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--verbose', action='count',
-    help="Incrementally add more verbosity")
 pycbc.add_common_pycbc_options(parser)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
