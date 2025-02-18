@@ -1,0 +1,187 @@
+#!/usr/bin/python
+"""
+Create a workflow for adding compressed waveforms to a template bank
+"""
+import pycbc
+
+import sys
+import os
+import argparse
+import logging
+import socket
+
+import pycbc.workflow as wf
+from pycbc.results import layout, save_fig_with_metadata
+
+def finalize(container, workflow, finalize_workflow):
+    # Create the final log file
+    #log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
+    #                        extension='.html', directory=rdir['workflow'])
+
+    gen_file_html = wf.File(workflow.ifos, 'WORKFLOW-GEN', workflow.analysis_time,
+                            extension='.html', directory=rdir['workflow'])
+
+    # Create a page to contain a dashboard link
+    dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
+                             extension='.html', directory=rdir['workflow'])
+    dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
+    kwds = {'title': "Pegasus Dashboard",
+            'caption': "Link to Pegasus Dashboard",
+            'cmd': "PYCBC_SUBMIT_DAX_ARGV", }
+    save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
+
+    # Create pages for the submission script to write data
+    wf.makedir(rdir['workflow/dax'])
+    wf.makedir(rdir['workflow/input_map'])
+    wf.makedir(rdir['workflow/output_map'])
+    wf.makedir(rdir['workflow/planning'])
+
+    wf.make_results_web_page(
+        finalize_workflow,
+        os.path.join(os.getcwd(), rdir.base)
+    )
+
+    container += workflow
+    container += finalize_workflow
+
+    container.add_subworkflow_dependancy(workflow, finalize_workflow)
+
+    container.save()
+
+    logging.info("Written dax.")
+
+    # Close the log and flush to the html file
+    logging.shutdown()
+    #with open(wf_log_file.storage_path, "r") as logfile:
+    #    logdata = logfile.read()
+    #log_str = """
+    #<p>Workflow generation script created workflow in output directory: %s</p>
+    #<p>Workflow name is: %s</p>
+    #<p>Workflow generation script run on host: %s</p>
+    #<pre>%s</pre>
+    #""" % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+    #kwds = {'title': 'Workflow Generation Log',
+    #        'caption': "Log of the workflow script %s" % sys.argv[0],
+    #        'cmd': ' '.join(sys.argv), }
+    #save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+
+    # Add the command line used to a specific file
+    args_to_output = [sys.argv[0]]
+    for arg in sys.argv[1:]:
+        if arg.startswith('--'):
+            # This is an option, add tab
+            args_to_output.append('  ' + arg)
+        else:
+            # This is a parameter, add two tabs
+            args_to_output.append('    ' + arg)
+
+    gen_str = '<pre>' + ' \\\n'.join(args_to_output) + '</pre>'
+    kwds = {'title': 'Workflow Generation Command',
+            'caption': "Command used to generate the workflow.",
+            'cmd': ' '.join(sys.argv), }
+    save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
+    layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html]))
+    sys.exit(0)
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
+wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
+args = parser.parse_args()
+
+# Default logging level is info: --verbose adds to this
+logging_level = args.verbose + 1 if args.verbose else logging.INFO
+pycbc.init_logging(logging_level)
+
+container = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args, args.workflow_name + '-main')
+finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization')
+
+wf.makedir(args.output_dir)
+os.chdir(args.output_dir)
+
+rdir = layout.SectionNumber(
+    'results',
+    ['workflow',],
+)
+
+wf.makedir(rdir.base)
+wf.makedir(rdir['workflow'])
+
+# We are _also_ logging to a file -> No we're not, it doesn't work on this
+# branch
+#wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
+#                      extension='.txt',
+#                      directory=rdir['workflow'])
+
+#pycbc.init_logging(logging_level,
+#                   to_file=wf_log_file.storage_path)
+#logging.info("Created log file %s" % wf_log_file.storage_path)
+
+# Setup the workflow with the bank input file,
+# this will do the job to convert from e.g. xml to hdf as well
+hdfbank = wf.setup_tmpltbank_pregenerated(
+    workflow,
+)
+
+assert( len(hdfbank) == 1 )
+hdfbank = hdfbank[0]
+
+# Split the bank so that we can parallelise the 
+splitbank_files = wf.setup_splittable_dax_generated(
+    workflow,
+    [hdfbank],
+    out_dir='split_bank',
+    tags=None,
+)
+
+# For each split bank, we run the waveform compression
+compressed_files = wf.make_compress_split_banks(
+    workflow,
+    splitbank_files,
+    out_dir='compress_bank',
+    tags=None,
+)
+
+# All the split banks have had the waveforms compressed, so now
+# join them back together
+combine_banks = wf.make_combine_split_banks(
+    workflow,
+    compressed_files,
+    out_dir='combine_bank',
+    tags=None,
+)
+
+# Make a plot of the compression factor of the templates
+plots = wf.make_bank_compression_plots(
+    workflow,
+    combine_banks,
+    out_dir=rdir.base,
+    tags=None,
+)
+
+layout.single_layout(
+    rdir.base,
+    plots,
+)
+
+# Save global config file to results directory
+base = rdir['workflow/configuration']
+wf.makedir(base)
+ini_file_path = os.path.join(base, 'configuration.ini')
+with open(ini_file_path, 'w') as ini_fh:
+    container.cp.write(ini_fh)
+ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
+                        file_url='file://' + ini_file_path)])
+layout.single_layout(base, ini_file)
+
+# Create versioning information
+wf.make_versioning_page(
+    workflow,
+    workflow.cp,
+    rdir['workflow/version'],
+)
+
+finalize(container, workflow, finalize_workflow)
+
