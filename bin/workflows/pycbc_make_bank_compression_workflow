@@ -85,13 +85,16 @@ def finalize(container, workflow, finalize_workflow):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--verbose', action='count',
+    help="Incrementally add more verbosity")
 pycbc.add_common_pycbc_options(parser)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 # Default logging level is info: --verbose adds to this
-pycbc.init_logging(args.verbose, default_level=1)
+logging_level = args.verbose + 1 if args.verbose else logging.INFO
+pycbc.init_logging(logging_level)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, args.workflow_name + '-main')
@@ -108,14 +111,15 @@ rdir = layout.SectionNumber(
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
 
-# We are _also_ logging to a file
-wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
-                      extension='.txt',
-                      directory=rdir['workflow'])
+# We are _also_ logging to a file -> No we're not, it doesn't work on this
+# branch
+#wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
+#                      extension='.txt',
+#                      directory=rdir['workflow'])
 
-pycbc.init_logging(args.verbose, default_level=1,
-                   to_file=wf_log_file.storage_path)
-logging.info("Created log file %s" % wf_log_file.storage_path)
+#pycbc.init_logging(logging_level,
+#                   to_file=wf_log_file.storage_path)
+#logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # Setup the workflow with the bank input file,
 # this will do the job to convert from e.g. xml to hdf as well
