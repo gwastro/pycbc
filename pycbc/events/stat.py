@@ -1503,16 +1503,24 @@ class ExpFitStatistic(PhaseTDStatistic):
         """
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
-        network_sigmasq = numpy.amin(
-            [sngl[1]["sigmasq"] for sngl in sngls], axis=0
-        )
-        # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
+
         # Get benchmark log volume as single-ifo information :
         # benchmark_logvol for a given template is not ifo-dependent, so
         # choose the first ifo for convenience
         benchmark_logvol = sngls[0][1]["benchmark_logvol"]
-        network_logvol -= benchmark_logvol
+
+        if np.isnan(benchmark_logvol):
+            # This can be the case in pycbc live if there are no triggers
+            # from this template in the trigger fits file. In this case we
+            # just assume that the sigma of the trigger of interest is
+            # representative of the network.
+            return 0
+
+        network_sigmasq = numpy.amin(
+            [sngl[1]["sigmasq"] for sngl in sngls], axis=0
+        )
+        # Volume \propto sigma^3 or sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
 
         return network_logvol
 
