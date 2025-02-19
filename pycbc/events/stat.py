@@ -1718,14 +1718,16 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
         if not np.isnan(sngls['benchmark_logvol']):
-            # Only include this term if the benchmark log volume is defined
-            # This should always be the case in the offline search, but may
-            # not be in the live search.
             network_sigmasq = sngls['sigmasq']
             network_logvol = 1.5 * numpy.log(network_sigmasq)
             benchmark_logvol = sngls['benchmark_logvol']
             network_logvol -= benchmark_logvol
         else:
+            # If the benchmark rate is nan, we don't want to propogate
+            # the nan through to the statistic. Assume that the
+            # sigma of this event is equal to what we would use as a
+            # benchmark. This can happen in Live if there are not enough
+            # triggers in the background fit files
             network_logvol = 0
         ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
@@ -1778,17 +1780,20 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # choose the first ifo for convenience
         benchmark_logvol = s[0][1]['benchmark_logvol']
         if not np.isnan(benchmark_logvol):
-            # Only include this term if the benchmark log volume is defined
-            # This should always be the case in the offline search, but may
-            # not be in the live search.
             # Network sensitivity for a given coinc type is approximately
             # determined by the least sensitive ifo
             network_sigmasq = numpy.amin(
                 [sngl[1]['sigmasq'] for sngl in s],
                 axis=0
             )
-            network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
+            network_logvol = 1.5 * numpy.log(network_sigmasq)
+            network_logvol -= benchmark_logvol
         else:
+            # If the benchmark rate is nan, we don't want to propogate
+            # the nan through to the statistic. Assume that the
+            # sigma of this event is equal to what we would use as a
+            # benchmark. This can happen in Live if there are not enough
+            # triggers in the background fit files
             network_logvol = 0
 
         # Use prior histogram to get Bayes factor for signal vs noise
