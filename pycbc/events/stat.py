@@ -1510,7 +1510,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             # This can be the case in pycbc live if there are no triggers
             # from this template in the trigger fits file. In this case we
             # just assume that the sigma of the trigger of interest is
-            # representative of the network.
+            # representative of the benchmark network.
             return 0
 
         # Network sensitivity for a given coinc type is approximately
