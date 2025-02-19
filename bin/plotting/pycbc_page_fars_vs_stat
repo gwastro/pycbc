@@ -55,12 +55,14 @@ ax = fig.add_subplot(111)
 ifar_calc_points = np.linspace(-10, 30, 200)
 
 fitted = []  # List of combos for which a fit is used
-for f in opts.trigger_files:
+for item in opts.trigger_files:
+    sig_key, f = item.split(':', 1)  # Split at the first colon
     logging.info(f"Opening {f}")
     with h5py.File(f, 'r') as exc_zlag_f:
-        logging.info(f"Ifos {exc_zlag_f.attrs['ifos']}")  # eg 'H1 L1'
-        sig_key = exc_zlag_f.attrs['ifos'].replace(' ', '')  # eg 'H1L1'
-        coinc_key = sig_key.replace('1', '')  # eg 'HL'
+        ifos = ' '.join(list(sig_key))  # eg 'H1 L1'
+        logging.info(f"Ifos {ifos}")
+        sig_key = ifos.replace(' ', '')  # eg 'H1L1'
+        coinc_key = ''.join([c for c in sig_key if not c.isdigit()])  # eg 'HL'
         stat_exc = exc_zlag_f['background_exc']['stat'][:]
         dec_fac_exc = exc_zlag_f['background_exc']['decimation_factor'][:]
         bg_time = convert_s_to_y(exc_zlag_f.attrs['background_time_exc'])

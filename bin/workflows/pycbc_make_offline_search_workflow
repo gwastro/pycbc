@@ -604,6 +604,9 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
                                   tags=combined_bg_file.tags + ['background'])
 
 # Sub-pages for each ifo combination
+farstat = wf.make_farstat_plot(workflow, final_bg_files, rdir['background_triggers'],
+                                      require='summ',
+                                      tags=bg_file.tags + ['closed'])
 
 snrifar_summ = []
 for key in final_bg_files:
@@ -629,7 +632,7 @@ for key in final_bg_files:
                                     tags=bg_file.tags + ['closed_box'])
         closed_page = [(snrifar_cb, ifar_cb)]
     else:
-        closed_page = [(snrifar_cb,)]
+        closed_page = [(snrifar_cb, farstat)]
     if len(ifo_sets) > 1:
         # If there is only one ifo_set, then this table has already been made
         table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
