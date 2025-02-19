@@ -1725,6 +1725,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             network_logvol = 1.5 * numpy.log(network_sigmasq)
             benchmark_logvol = sngls['benchmark_logvol']
             network_logvol -= benchmark_logvol
+        else:
+            network_logvol = 0
         ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
         # cut off underflowing and very small values
@@ -1771,17 +1773,23 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         ln_noise_rate -= self.benchmark_lograte
 
-        # Network sensitivity for a given coinc type is approximately
-        # determined by the least sensitive ifo
-        network_sigmasq = numpy.amin([sngl[1]['sigmasq'] for sngl in s],
-                                     axis=0)
-        # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
         # Get benchmark log volume as single-ifo information :
         # benchmark_logvol for a given template is not ifo-dependent, so
         # choose the first ifo for convenience
         benchmark_logvol = s[0][1]['benchmark_logvol']
-        network_logvol -= benchmark_logvol
+        if not np.isnan(benchmark_logvol):
+            # Only include this term if the benchmark log volume is defined
+            # This should always be the case in the offline search, but may
+            # not be in the live search.
+            # Network sensitivity for a given coinc type is approximately
+            # determined by the least sensitive ifo
+            network_sigmasq = numpy.amin(
+                [sngl[1]['sigmasq'] for sngl in s],
+                axis=0
+            )
+            network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
+        else:
+            network_logvol = 0
 
         # Use prior histogram to get Bayes factor for signal vs noise
         # given the time, phase and SNR differences between IFOs
