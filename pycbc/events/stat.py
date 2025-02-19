@@ -1723,7 +1723,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             benchmark_logvol = sngls['benchmark_logvol']
             network_logvol -= benchmark_logvol
         else:
-            # If the benchmark rate is nan, we don't want to propogate
+            # If the benchmark rate is nan, we don't want to propagate
             # the nan through to the statistic. Assume that the
             # sigma of this event is equal to what we would use as a
             # benchmark. This can happen in Live if there are not enough
