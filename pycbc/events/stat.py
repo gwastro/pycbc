@@ -1501,9 +1501,6 @@ class ExpFitStatistic(PhaseTDStatistic):
             log of the cube of the sensitive distance (sigma), divided by
             a benchmark volume.
         """
-        # Network sensitivity for a given coinc type is approximately
-        # determined by the least sensitive ifo
-
         # Get benchmark log volume as single-ifo information :
         # benchmark_logvol for a given template is not ifo-dependent, so
         # choose the first ifo for convenience
@@ -1516,6 +1513,8 @@ class ExpFitStatistic(PhaseTDStatistic):
             # representative of the network.
             return 0
 
+        # Network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
         network_sigmasq = numpy.amin(
             [sngl[1]["sigmasq"] for sngl in sngls], axis=0
         )
