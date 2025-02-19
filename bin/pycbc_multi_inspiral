@@ -53,7 +53,7 @@ from pycbc.tmpltbank.sky_grid import SkyGrid
 def slide_limiter(args):
     '''
     This function computes the number of shortslides used by the coherent
-    matched filter statistic to obtain as most background triggers as
+    matched filter statistic to obtain as most background triggers as 
     possible.
 
     It bounds the number of slides to avoid counting triggers more than once.
