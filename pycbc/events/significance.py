@@ -192,6 +192,11 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
     # quiet as possible. nans are considered greater than any floats in an
     # argsort
     nanmask = np.isnan(back_stat)
+    if any(nanmask):
+        logging.warning(
+            "Removing %d NaN background statistic values",
+            np.count_nonzero(nanmask),
+        )
     bstat = copy.deepcopy(back_stat)
     back_stat[nanmask] = -np.inf
 
