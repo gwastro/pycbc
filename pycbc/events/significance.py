@@ -197,8 +197,8 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
             "Removing %d NaN background statistic values",
             np.count_nonzero(nanmask),
         )
-    back_stat = copy.deepcopy(back_stat)
-    back_stat[nanmask] = -np.inf
+        back_stat = copy.deepcopy(back_stat)
+        back_stat[nanmask] = -np.inf
 
     return _significance_meth_dict[method](
         back_stat,
