@@ -207,11 +207,10 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
             "Setting %d NaN background statistic values to inf",
             nanmask.sum(),
         )
-        back_stat = copy.deepcopy(back_stat)
-        back_stat[nanmask] = -np.inf
+    back_stat_nonan = np.where(nanmask, -np.inf, back_stat
 
     return _significance_meth_dict[method](
-        back_stat,
+        back_stat_nonan,
         fore_stat,
         dec_facs,
         **kwargs)
