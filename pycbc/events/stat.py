@@ -970,7 +970,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             # benchmark_logvol is a benchmark sensitivity array
             # over template id
             ref_ifos = self.kwargs.get("reference_ifos", "H1,L1").split(",")
-            hl_net_med_sigma = numpy.amin(
+            hl_net_med_sigma = numpy.nanmin(
                 [self.fits_by_tid[ifo]["median_sigma"] for ifo in ref_ifos],
                 axis=0,
             )
