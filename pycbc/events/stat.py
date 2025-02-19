@@ -1598,7 +1598,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         network of reference IFOs
         """
         # benchmark_logvol is a benchmark sensitivity array over template id
-        bench_net_med_sigma = numpy.amin(
+        bench_net_med_sigma = numpy.nanmin(
             [self.fits_by_tid[ifo]['median_sigma'] for ifo in self.ref_ifos],
             axis=0,
         )
@@ -1715,13 +1715,16 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             The array of single detector statistics
         """
         sngls = single_info[1]
-
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
-        network_sigmasq = sngls['sigmasq']
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        benchmark_logvol = sngls['benchmark_logvol']
-        network_logvol -= benchmark_logvol
+        if not np.isnan(sngls['benchmark_logvol']):
+            # Only include this term if the benchmark log volume is defined
+            # This should always be the case in the offline search, but may
+            # not be in the live search.
+            network_sigmasq = sngls['sigmasq']
+            network_logvol = 1.5 * numpy.log(network_sigmasq)
+            benchmark_logvol = sngls['benchmark_logvol']
+            network_logvol -= benchmark_logvol
         ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
         # cut off underflowing and very small values
