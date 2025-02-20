@@ -603,10 +603,10 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
                                   'daxes', mfup_dir_bg,
                                   tags=combined_bg_file.tags + ['background'])
 
-#Far_vs_stat for each ifo combination in a single plot
+# Far vs stat for all ifo combinations in a single plot
 farstat = wf.make_farstat_plot(workflow, final_bg_files, rdir['background_triggers'],
-                                      require='summ',
-                                      tags=bg_file.tags + ['closed'])
+                               require='summ',
+                               tags=bg_file.tags + ['closed'])
 
 # Sub-pages for each ifo combination
 snrifar_summ = []
