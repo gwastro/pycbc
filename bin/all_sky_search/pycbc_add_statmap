@@ -37,6 +37,8 @@ parser.add_argument('--veto-window', type=float, default=0.1,
     help="Time around each zerolag trigger to window out [default=.1s]")
 parser.add_argument('--cluster-window', type=float,
     help="Time interval to cluster coincident events over")
+parser.add_argument('--cluster-stat', default='stat',
+    help="What ranking to use when clustering zerolag [default='stat']")
 parser.add_argument('--output-coinc-types', action='store_true',
     help="Create additional foreground dataset recording coinc type for each"
          " event. Mainly for debugging")
@@ -245,9 +247,9 @@ for ifo in all_ifos:
 # fg_times is a tuple of trigger time arrays
 fg_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
-# Cluster by statistic value. Currently only clustering zerolag,
+# Cluster using the chosen method. Currently only clustering zerolag,
 # i.e. foreground, so set all timeslide_ids to zero
-cidx = pycbc.events.cluster_coincs_multiifo(f['foreground/stat'][:],
+cidx = pycbc.events.cluster_coincs_multiifo(f[f'foreground/{args.cluster_stat}'][:],
                                             fg_times,
                                             np.zeros(n_triggers), 0,
                                             args.cluster_window)
