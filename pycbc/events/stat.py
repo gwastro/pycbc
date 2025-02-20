@@ -1717,7 +1717,9 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         sngls = single_info[1]
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
-        if not numpy.isnan(sngls['benchmark_logvol']):
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if not any(numpy.isnan(sngls['benchmark_logvol'])):
             network_sigmasq = sngls['sigmasq']
             network_logvol = 1.5 * numpy.log(network_sigmasq)
             benchmark_logvol = sngls['benchmark_logvol']
@@ -1779,7 +1781,9 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # benchmark_logvol for a given template is not ifo-dependent, so
         # choose the first ifo for convenience
         benchmark_logvol = s[0][1]['benchmark_logvol']
-        if not numpy.isnan(benchmark_logvol):
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if not any(numpy.isnan(benchmark_logvol)):
             # Network sensitivity for a given coinc type is approximately
             # determined by the least sensitive ifo
             network_sigmasq = numpy.amin(
