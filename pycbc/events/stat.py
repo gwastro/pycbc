@@ -1508,8 +1508,8 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         if np.isnan(benchmark_logvol):
             # This can be the case in pycbc live if there are no triggers
-            # from this template in the trigger fits file. In this case we
-            # just assume that the sigma of the trigger of interest is
+            # from this template in the trigger fits file. If so, assume 
+            # that sigma for the triggers being ranked is
             # representative of the benchmark network.
             return 0
 
