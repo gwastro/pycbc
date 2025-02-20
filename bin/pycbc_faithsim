@@ -28,8 +28,8 @@ from numpy import complex64
 import argparse
 import sys
 
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw import lsctables
 
 import pycbc.strain
 import pycbc.psd
