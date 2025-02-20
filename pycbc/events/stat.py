@@ -1506,7 +1506,9 @@ class ExpFitStatistic(PhaseTDStatistic):
         # choose the first ifo for convenience
         benchmark_logvol = sngls[0][1]["benchmark_logvol"]
 
-        if numpy.isnan(benchmark_logvol):
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if any(numpy.isnan(benchmark_logvol)):
             # This can be the case in pycbc live if there are no triggers
             # from this template in the trigger fits file. If so, assume 
             # that sigma for the triggers being ranked is
