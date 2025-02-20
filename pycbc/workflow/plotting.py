@@ -343,7 +343,7 @@ def make_farstat_plot(workflow, trigger_files, out_dir, tags=None,
     opt = list(trigger_files.values())
     ifo_combos = ' '.join(sorted(trigger_files.keys(), key=lambda x: (len(x), x)))
 
-    exe = PlotExecutable(workflow.cp, executable,
+    exe = PlotExecutable(workflow.cp, executable, ifos=workflow.ifos,
                          out_dir=out_dir, tags=tags)
     node = exe.create_node()
     node.add_input_list_opt('--trigger-files', opt)
