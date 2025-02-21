@@ -30,7 +30,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 import h5py
 import sys
-from packaging.Version import Version
+from packaging.version import Version
 
 import pycbc
 import pycbc.pnutils
