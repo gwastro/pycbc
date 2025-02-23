@@ -29,7 +29,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 
-from ligo.lw import lsctables, utils as ligolw_utils
+from igwn_ligolw import lsctables, utils as ligolw_utils
 
 import pycbc
 import pycbc.version

@@ -32,7 +32,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 import lal
-from ligo.lw import utils as ligolw_utils, ligolw, lsctables
+from igwn_ligolw import utils as ligolw_utils, ligolw, lsctables
 
 from pycbc import waveform, frame, libutils
 from pycbc.opt import LimitedSizeDict

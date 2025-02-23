@@ -31,8 +31,8 @@ import logging
 import configparser
 from scipy import spatial
 
-from ligo.lw import ligolw
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 import pycbc.psd

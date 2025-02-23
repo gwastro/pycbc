@@ -34,7 +34,7 @@ import logging
 import urllib.parse
 
 import igwn_segments as segments
-from ligo.lw import utils, table
+from igwn_ligolw import utils, table
 from gwdatafind import find_urls as find_frame_urls
 
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir

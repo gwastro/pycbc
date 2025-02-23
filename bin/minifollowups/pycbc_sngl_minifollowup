@@ -22,8 +22,8 @@ import argparse
 import logging
 import numpy
 
-from ligo.lw import table
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import table
+from igwn_ligolw import utils as ligolw_utils
 
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import layout

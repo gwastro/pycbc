@@ -18,16 +18,15 @@
 import os
 import sys
 import numpy
-from ligo.lw import lsctables
-from ligo.lw import ligolw
-from ligo.lw.ligolw import Param, LIGOLWContentHandler \
+from igwn_ligolw import lsctables
+from igwn_ligolw import ligolw
+from igwn_ligolw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
-from ligo.lw.lsctables import TableByName
-from ligo.lw.table import Column, TableStream
-from ligo.lw.types import FormatFunc, FromPyType, ToPyType
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.param import Param as LIGOLWParam
-from ligo.lw.array import Array as LIGOLWArray
+from igwn_ligolw.lsctables import TableByName
+from igwn_ligolw.table import Column, TableStream
+from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
+from igwn_ligolw.utils import process as ligolw_process
+from igwn_ligolw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
 
@@ -176,8 +175,8 @@ def legacy_row_id_converter(ContentHandler):
     Notes
     -----
     When building a ContentHandler, this must be the _outermost_ decorator,
-    outside of :func:`ligo.lw.lsctables.use_in`, :func:`ligo.lw.param.use_in`,
-    or :func:`ligo.lw.table.use_in`.
+    outside of :func:`igwn_ligolw.lsctables.use_in`, :func:`igwn_ligolw.param.use_in`,
+    or :func:`igwn_ligolw.table.use_in`.
     """
 
     def endElementNS(self, uri_localname, qname,
@@ -200,7 +199,7 @@ def legacy_row_id_converter(ContentHandler):
         Notes
         -----
         This method is adapted from
-        :func:`ligo.lw.utils.ilwd.strip_ilwdchar`.
+        :func:`igwn_ligolw.utils.ilwd.strip_ilwdchar`.
 
         """
         result = __orig_startColumn(self, parent, attrs)
@@ -235,7 +234,7 @@ def legacy_row_id_converter(ContentHandler):
         Notes
         -----
         This method is adapted from
-        :meth:`ligo.lw.table.TableStream.config`.
+        :meth:`igwn_ligolw.table.TableStream.config`.
 
         """
         result = __orig_startStream(self, parent, attrs)
@@ -265,7 +264,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
-    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
+    elem.appendChild(Param.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((
@@ -308,7 +307,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
             's^-1'
         )
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
+        fs.appendChild(Param.from_pyvalue('instrument', instrument))
     return xmldoc
 
 def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
@@ -326,7 +325,7 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
         's'
     )
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
+    eid_param = Param.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def get_table_columns(table):
