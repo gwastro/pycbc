@@ -9,4 +9,4 @@ Here we collect pages describing various parts of the PyCBC searches
 .. toctree::
    :maxdepth: 1
 
-   offline_search/ranking_statistic.rst
+   searches/ranking_statistic.rst
