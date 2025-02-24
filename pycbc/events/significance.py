@@ -187,8 +187,21 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
     Wrapper to find the correct n_louder calculation method using standard
     inputs
     """
+    # This nan to inf conversion is a safety shield; there shouldn't be any
+    # nan statistic values, but if there are, they should be considered as
+    # quiet as possible. nans are considered greater than any floats in an
+    # argsort
+    nanmask = np.isnan(back_stat)
+
+    if any(nanmask):
+        logging.warning(
+            "Setting %d NaN background statistic values to -inf",
+            nanmask.sum(),
+        )
+    back_stat_nonan = np.where(nanmask, -np.inf, back_stat)
+
     return _significance_meth_dict[method](
-        back_stat,
+        back_stat_nonan,
         fore_stat,
         dec_facs,
         **kwargs)

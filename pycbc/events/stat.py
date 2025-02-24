@@ -1598,7 +1598,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         network of reference IFOs
         """
         # benchmark_logvol is a benchmark sensitivity array over template id
-        bench_net_med_sigma = numpy.amin(
+        bench_net_med_sigma = numpy.nanmin(
             [self.fits_by_tid[ifo]['median_sigma'] for ifo in self.ref_ifos],
             axis=0,
         )
@@ -1715,13 +1715,22 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             The array of single detector statistics
         """
         sngls = single_info[1]
-
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
-        network_sigmasq = sngls['sigmasq']
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        benchmark_logvol = sngls['benchmark_logvol']
-        network_logvol -= benchmark_logvol
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if not any(numpy.isnan(sngls['benchmark_logvol'])):
+            network_sigmasq = sngls['sigmasq']
+            network_logvol = 1.5 * numpy.log(network_sigmasq)
+            benchmark_logvol = sngls['benchmark_logvol']
+            network_logvol -= benchmark_logvol
+        else:
+            # If the benchmark rate is nan, we don't want to propagate
+            # the nan through to the statistic. Assume that the
+            # sigma of this event is equal to what we would use as a
+            # benchmark. This can happen in Live if there are not enough
+            # triggers in the background fit files
+            network_logvol = 0
         ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
         # cut off underflowing and very small values
@@ -1768,17 +1777,28 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         ln_noise_rate -= self.benchmark_lograte
 
-        # Network sensitivity for a given coinc type is approximately
-        # determined by the least sensitive ifo
-        network_sigmasq = numpy.amin([sngl[1]['sigmasq'] for sngl in s],
-                                     axis=0)
-        # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
         # Get benchmark log volume as single-ifo information :
         # benchmark_logvol for a given template is not ifo-dependent, so
         # choose the first ifo for convenience
         benchmark_logvol = s[0][1]['benchmark_logvol']
-        network_logvol -= benchmark_logvol
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if not any(numpy.isnan(benchmark_logvol)):
+            # Network sensitivity for a given coinc type is approximately
+            # determined by the least sensitive ifo
+            network_sigmasq = numpy.amin(
+                [sngl[1]['sigmasq'] for sngl in s],
+                axis=0
+            )
+            network_logvol = 1.5 * numpy.log(network_sigmasq)
+            network_logvol -= benchmark_logvol
+        else:
+            # If the benchmark rate is nan, we don't want to propogate
+            # the nan through to the statistic. Assume that the
+            # sigma of this event is equal to what we would use as a
+            # benchmark. This can happen in Live if there are not enough
+            # triggers in the background fit files
+            network_logvol = 0
 
         # Use prior histogram to get Bayes factor for signal vs noise
         # given the time, phase and SNR differences between IFOs

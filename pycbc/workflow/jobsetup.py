@@ -685,8 +685,8 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and \
-                (node.get_opt('--do-short-slides') is not None or \
-                 node.get_opt('--short-slide-offset') is not None):
+                (self.get_opt('--do-short-slides') is not None or \
+                 self.get_opt('--short-slide-offset') is not None):
             raise ValueError("Cannot run with time slides in a single IFO "
                              "configuration! Please edit your configuration "
                              "file accordingly.")
