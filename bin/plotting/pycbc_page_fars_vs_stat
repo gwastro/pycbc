@@ -9,10 +9,6 @@ from pycbc import init_logging, add_common_pycbc_options, results
 from pycbc.events import significance
 from pycbc.conversions import sec_to_year as convert_s_to_y
 
-plt.rcParams.update({
-    "text.usetex": True,
-})
-
 parser = argparse.ArgumentParser(usage='pycbc_page_ifar_vs_stat [--options]',
                     description='Plots cumulative IFAR vs stat for'
                           'backgrounds of different event types.')
