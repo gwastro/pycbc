@@ -970,7 +970,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             # benchmark_logvol is a benchmark sensitivity array
             # over template id
             ref_ifos = self.kwargs.get("reference_ifos", "H1,L1").split(",")
-            hl_net_med_sigma = numpy.amin(
+            hl_net_med_sigma = numpy.nanmin(
                 [self.fits_by_tid[ifo]["median_sigma"] for ifo in ref_ifos],
                 axis=0,
             )
@@ -1501,18 +1501,27 @@ class ExpFitStatistic(PhaseTDStatistic):
             log of the cube of the sensitive distance (sigma), divided by
             a benchmark volume.
         """
+        # Get benchmark log volume as single-ifo information :
+        # benchmark_logvol for a given template is not ifo-dependent, so
+        # choose the first ifo for convenience
+        benchmark_logvol = sngls[0][1]["benchmark_logvol"]
+
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if any(numpy.isnan(benchmark_logvol)):
+            # This can be the case in pycbc live if there are no triggers
+            # from this template in the trigger fits file. If so, assume 
+            # that sigma for the triggers being ranked is
+            # representative of the benchmark network.
+            return 0
+
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin(
             [sngl[1]["sigmasq"] for sngl in sngls], axis=0
         )
         # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        # Get benchmark log volume as single-ifo information :
-        # benchmark_logvol for a given template is not ifo-dependent, so
-        # choose the first ifo for convenience
-        benchmark_logvol = sngls[0][1]["benchmark_logvol"]
-        network_logvol -= benchmark_logvol
+        network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
 
         return network_logvol
 
