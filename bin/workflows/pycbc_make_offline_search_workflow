@@ -76,10 +76,11 @@ def finalize(container, workflow, finalize_workflow):
     save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
 
     # Create pages for the submission script to write data
-    #wf.makedir(rdir['workflow/dax'])
-    #wf.makedir(rdir['workflow/input_map'])
-    #wf.makedir(rdir['workflow/output_map'])
-    #wf.makedir(rdir['workflow/planning'])
+    # FIXME: add this
+    # wf.makedir(rdir['workflow/dax'])
+    # wf.makedir(rdir['workflow/input_map'])
+    # wf.makedir(rdir['workflow/output_map'])
+    # wf.makedir(rdir['workflow/planning'])
 
     wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
                                                              rdir.base))
@@ -901,7 +902,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 if len(files_for_combined_injfind) > 0:
     sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb,
                                        rdir['search_sensitivity'],
-                                       require='all'
+                                       require='all',
                                        exclude="summ")
     inj_all = wf.make_foundmissed_plot(workflow, found_inj_comb,
                                        rdir['injections'],
