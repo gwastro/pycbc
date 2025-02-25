@@ -538,7 +538,7 @@ if workflow.cp.has_option_tags('workflow-matchedfilter',
         rdir['workflow/throughput'],
         tags=['full_data']
     )
-   layout.group_layout(throughput_plots)
+   layout.group_layout(rdir['workflow/throughput'], throughput_plots)
 
 # Run minifollowups on loudest sngl detector events
 excl_subsecs = set([])
