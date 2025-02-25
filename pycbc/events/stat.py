@@ -1361,7 +1361,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None,
-                 reference_ifos='H1,L1', **kwargs):
+                 reference_ifos='H1,L1', statistic_correction=0,
+                 **kwargs):
         """
         Parameters
         ----------
@@ -1400,6 +1401,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         self.single_increasing = False
         # Initialize variable to hold event template id(s)
         self.curr_tnum = None
+
+        self.stat_correction = float(statistic_correction)
 
     def assign_median_sigma(self, ifo):
         """
@@ -1516,6 +1519,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         network_logvol -= benchmark_logvol
         ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
+        loglr += self.stat_correction
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
         return loglr
@@ -1585,6 +1589,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # Combine to get final statistic: log of
         # ((rate of signals / rate of noise) * PTA Bayes factor)
         loglr = network_logvol - ln_noise_rate + logr_s - logr_n
+        loglr += self.stat_correction
 
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
@@ -1668,6 +1673,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         logr_n = - numpy.log(hist_vol)
 
         loglr = - thresh + network_logvol - ln_noise_rate + logr_s - logr_n
+        loglr += self.stat_correction
         return loglr
 
 
