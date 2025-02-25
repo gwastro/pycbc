@@ -76,10 +76,10 @@ def finalize(container, workflow, finalize_workflow):
     save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
 
     # Create pages for the submission script to write data
-    wf.makedir(rdir['workflow/dax'])
-    wf.makedir(rdir['workflow/input_map'])
-    wf.makedir(rdir['workflow/output_map'])
-    wf.makedir(rdir['workflow/planning'])
+    #wf.makedir(rdir['workflow/dax'])
+    #wf.makedir(rdir['workflow/input_map'])
+    #wf.makedir(rdir['workflow/output_map'])
+    #wf.makedir(rdir['workflow/planning'])
 
     wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
                                                              rdir.base))
@@ -494,32 +494,50 @@ layout.group_layout(rdir['single_triggers'], snrchi)
 hist_summ = []
 for insp in full_insps:
     outdir = rdir['single_triggers/%s_binned_triggers' % insp.ifo]
-    wf.make_singles_plot(workflow, [insp], hdfbank, censored_veto,
-                         'closed_box', outdir, tags=['full_data'])
+    singles_plots = wf.make_singles_plot(
+        workflow,
+        [insp],
+        hdfbank,
+        censored_veto,
+        'closed_box',
+        outdir,
+        tags=['full_data']
+    )
+    layout.group_layout(outdir, singles_plots)
     # make non-summary hists using the bank file
     # currently, none of these are made
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', outdir,
                         bank_file=hdfbank, exclude='summ',
                         tags=['full_data'])
+
+
     # make summary hists for all templates together
     # currently, 2 per ifo: snr and newsnr
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
     allhists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
                                    outdir, require='summ', tags=['full_data'])
+    layout.group_layout(outdir, allhists)
+
     # make hists of newsnr split up by parameter
     # currently, 1 per ifo split by template duration
     outdir = rdir['single_triggers/%s_binned_histograms' % insp.ifo]
     binhists = wf.make_binned_hist(workflow, insp, censored_veto,
                                    'closed_box', outdir, hdfbank,
                                    tags=['full_data'])
+    layout.group_layout(outdir, binhists)
     # put raw SNR and binned newsnr hist in summary
     hist_summ += list(layout.grouper([allhists[0], binhists[0]], 2))
 
 if workflow.cp.has_option_tags('workflow-matchedfilter',
                                'plot-throughput', tags=['full_data']):
-    wf.make_throughput_plot(workflow, full_insps, rdir['workflow/throughput'],
-                            tags=['full_data'])
+   throughput_plots = wf.make_throughput_plot(
+        workflow,
+        full_insps,
+        rdir['workflow/throughput'],
+        tags=['full_data']
+    )
+   layout.group_layout(throughput_plots)
 
 # Run minifollowups on loudest sngl detector events
 excl_subsecs = set([])
@@ -883,12 +901,12 @@ for inj_file, tag in zip(inj_files, inj_tags):
 if len(files_for_combined_injfind) > 0:
     sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb,
                                        rdir['search_sensitivity'],
-                                       require='all')
-    layout.group_layout(rdir['search_sensitivity'], sen_all)
+                                       require='all'
+                                       exclude="summ")
     inj_all = wf.make_foundmissed_plot(workflow, found_inj_comb,
                                        rdir['injections'],
-                                       require='all')
-    layout.group_layout(rdir['injections'], inj_all)
+                                       require='all',
+                                       exclude="summ")
 
     # Make summary page foundmissed and sensitivity plot
     sen_s = wf.make_sensitivity_plot(workflow, found_inj_comb,
@@ -898,6 +916,8 @@ if len(files_for_combined_injfind) > 0:
                                      rdir['injections'],
                                      require='summ')
     inj_summ = list(layout.grouper(inj_s + sen_s, 2))
+    layout.group_layout(rdir['injections'], inj_s + inj_all)
+    layout.group_layout(rdir['search_sensitivity'], sen_s, sen_all)
 
 # Make analysis time summary
 analysis_time_summ = [time_file, seg_summ_plot]
@@ -933,11 +953,12 @@ ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
 layout.single_layout(base, ini_file)
 
 # Create versioning information
-wf.make_versioning_page(
+_, version_page = wf.make_versioning_page(
     workflow,
     container.cp,
     rdir['workflow/version'],
 )
+layout.single_layout(rdir['workflow/version'], version_page)
 
 ############################ Finalization ####################################
 finalize(container, workflow, finalize_workflow)
