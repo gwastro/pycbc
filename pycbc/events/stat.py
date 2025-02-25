@@ -972,7 +972,7 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         # Go through the keywords and add class information as needed:
         if self.kwargs["sensitive_volume"]:
-            # Add network sensitivity beckmark
+            # Add network sensitivity benchmark
             self.single_dtype.append(("benchmark_logvol", numpy.float32))
             # benchmark_logvol is a benchmark sensitivity array
             # over template id
