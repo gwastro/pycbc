@@ -141,6 +141,7 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     node.add_input_list_opt('--input-file', insp_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
+    return node.output_files
 
 
 def make_foreground_table(workflow, trig_file, bank_file, out_dir,
