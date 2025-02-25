@@ -1688,7 +1688,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
 
-        # Apply statistic correction if given
+        # Apply statistic correction
         loglr += self.stat_correction
 
         # cut off underflowing and very small values
