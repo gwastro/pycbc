@@ -963,9 +963,9 @@ class ExpFitStatistic(PhaseTDStatistic):
         # This will be used to keep track of the template number being used
         self.curr_tnum = None
 
-        # This applies a constant offset to *all* statistic values. Can be
-        # used to apply weights for difference coincident combinations, or
-        # just to rescale the statistic plot. Default is to not apply this.
+        # Applies a constant offset to all statistic values in a given instance.
+        # This can be used to e.g. change relative rankings between different
+        # event types. Default is zero offset.
         self.stat_correction = float(
             self.kwargs.get("statistic_correction", 0)
         )
