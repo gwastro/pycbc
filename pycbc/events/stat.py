@@ -963,6 +963,13 @@ class ExpFitStatistic(PhaseTDStatistic):
         # This will be used to keep track of the template number being used
         self.curr_tnum = None
 
+        # This applies a constant offset to *all* statistic values. Can be
+        # used to apply weights for difference coincident combinations, or
+        # just to rescale the statistic plot. Default is to not apply this.
+        self.stat_correction = float(
+            self.kwargs.get("statistic_correction", 0)
+        )
+
         # Go through the keywords and add class information as needed:
         if self.kwargs["sensitive_volume"]:
             # Add network sensitivity beckmark
@@ -1593,6 +1600,9 @@ class ExpFitStatistic(PhaseTDStatistic):
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
 
+        # Apply statistic correction if given
+        loglr += self.stat_correction
+
         # cut off underflowing and very small values
         loglr[loglr < self.min_stat] = self.min_stat
         return loglr
@@ -1678,6 +1688,9 @@ class ExpFitStatistic(PhaseTDStatistic):
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
 
+        # Apply statistic correction if given
+        loglr += self.stat_correction
+
         # cut off underflowing and very small values
         loglr[loglr < self.min_stat] = self.min_stat
 
@@ -1756,6 +1769,9 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
+
+        # Apply statistic correction if given
+        loglr += self.stat_correction
 
         # From this combined rate, what is the minimum snglstat value
         # in the pivot IFO needed to reach the threshold?
