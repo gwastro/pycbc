@@ -108,7 +108,7 @@ for combo in fitted:
 ax.semilogy()
 ax.legend(ncol=2, fontsize=12)
 ax.grid()
-ax.set_xlim([args.min_x, args.max_x])
+ax.set_xlim([opts.min_x, opts.max_x])
 ax.set_ylim([1e-3, 1e6])
 yticks = ax.get_yticks()
 ax.set_yticklabels(['$10^{%d}$' % np.log10(t) for t in yticks], fontsize=14)
