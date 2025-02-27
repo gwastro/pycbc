@@ -52,7 +52,7 @@ coinc_line_map = {
 fig = plt.figure(figsize=(9, 6))
 ax = fig.add_subplot(111)
 
-ifar_calc_points = np.linspace(-10, 30, 200)
+ifar_calc_points = np.linspace(opts.min_x, opts.max_x, 200)
 
 fitted = []  # List of combos for which a fit is used
 for f in opts.trigger_files:
