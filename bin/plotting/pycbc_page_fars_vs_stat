@@ -19,6 +19,10 @@ parser.add_argument('--trigger-files', nargs='+',
                     help='Paths to separate-event-type statmap files.')
 parser.add_argument('--ifo-combos', nargs='+',
                     help='Which event types (detector combinations) to plot.')
+parser.add_argument('--min-x', type=float, default=-15.,
+                    help='X axis limit.')
+parser.add_argument('--max-x', type=float, default=25.,
+                    help='X axis limit.')
 parser.add_argument('--output-file', required=True,
                     help='Path to output plot.')
 opts = parser.parse_args()
@@ -104,7 +108,7 @@ for combo in fitted:
 ax.semilogy()
 ax.legend(ncol=2, fontsize=12)
 ax.grid()
-ax.set_xlim([-10, 30])
+ax.set_xlim([args.min_x, args.max_x])
 ax.set_ylim([1e-3, 1e6])
 yticks = ax.get_yticks()
 ax.set_yticklabels(['$10^{%d}$' % np.log10(t) for t in yticks], fontsize=14)
@@ -124,4 +128,3 @@ results.save_fig_with_metadata(fig, opts.output_file,
      title='Cumulative Rate vs. Statistic',
      caption=caption,
      cmd=' '.join(sys.argv))
-
