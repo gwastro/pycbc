@@ -32,6 +32,7 @@ import logging
 import tempfile
 import subprocess
 import warnings
+import platform
 from packaging import version
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
@@ -357,6 +358,15 @@ class Workflow(object):
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
+    #(Self Inserted Code)
+        if platform.system() == "Darwin":
+            tar = Transformation(
+                "tar",
+                site="local",
+                pfn="/usr/bin/tar",
+                is_stageable=False,
+            )
+            self._tc.add_transformations(tar)
 
         if directory is None:
             self.out_dir = os.getcwd()
