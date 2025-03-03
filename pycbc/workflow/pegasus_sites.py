@@ -27,7 +27,6 @@ if release == 'True':
     sing_version = version
 else:
     sing_version = last_release
-sing_version = '2.3.9'
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
