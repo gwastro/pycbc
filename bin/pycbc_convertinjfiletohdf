@@ -30,7 +30,7 @@ from pycbc.io.record import FieldArray
 from pycbc.io.hdf import HFile
 
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import utils as ligolw_utils, lsctables
+from igwn_ligolw import utils as ligolw_utils, lsctables
 
 
 # Handlers for alternative injection formats

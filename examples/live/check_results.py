@@ -8,8 +8,8 @@ import numpy as np
 import pycbc
 from pycbc.io import FieldArray, HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw.utils import load_filename as load_xml_doc
-from ligo.lw import lsctables
+from igwn_ligolw.utils import load_filename as load_xml_doc
+from igwn_ligolw import lsctables
 from pycbc import conversions as conv
 from ligo.skymap.io import LigoLWEventSource
 

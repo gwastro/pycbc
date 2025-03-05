@@ -32,8 +32,8 @@ urllib3
 # addresses incompatibility between old flask/jinja2 and latest markupsafe
 markupsafe <= 2.0.1
 
-# Requirements for ligoxml access needed by some workflows
-python-ligo-lw >= 1.8.1
+# Requirements for LIGO Light-Weight XML format access needed by some workflows
+igwn-ligolw
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1

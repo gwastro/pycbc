@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from ligo.lw import lsctables, utils
+from igwn_ligolw import lsctables, utils
 
 import pycbc.events
 from pycbc.waveform import (
