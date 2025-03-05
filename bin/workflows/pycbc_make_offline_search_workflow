@@ -582,11 +582,6 @@ symlink_result(table, 'open_box_result/significance')
 main_page = [(ifar_ob,), (table, )]
 layout.two_column_layout(rdir['open_box_result'], main_page)
 
-#detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
-#layout.two_column_layout(rdir['open_box_result/significance'], detailed_page)
-
-closed_page = [(bank_plot,)]
-layout.two_column_layout(rdir['background_triggers'], closed_page)
 
 # run minifollowups on the output of the loudest events
 mfup_dir_fg = rdir['open_box_result/loudest_events_followup']
@@ -603,9 +598,18 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
                                   'daxes', mfup_dir_bg,
                                   tags=combined_bg_file.tags + ['background'])
 
-# Sub-pages for each ifo combination
+# Far vs stat for all ifo combinations in a single plot
+farstat = wf.make_farstat_plot(workflow, final_bg_files, rdir['background_triggers'],
+                               require='summ',
+                               tags=bg_file.tags + ['closed'])
 
-snrifar_summ = []
+closed_page = [(bank_plot, farstat)]
+layout.two_column_layout(rdir['background_triggers'], closed_page)
+
+# Add farstat plot to summary page
+snrifar_summ = [(farstat,)]
+
+# Sub-pages for each ifo combination
 for key in final_bg_files:
     bg_file = final_bg_files[key]
     open_dir = rdir['open_box_result/{}_candidates'.format(key)]
@@ -639,7 +643,6 @@ for key in final_bg_files:
     detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
     layout.two_column_layout(open_dir, detailed_page)
 
-    snrifar_summ += closed_page
     layout.two_column_layout(closed_dir, closed_page)
 
 #################### Plotting of data quality results #########################

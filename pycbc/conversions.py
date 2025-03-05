@@ -622,6 +622,8 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, \
         input_is_array = \
         ensurearray(mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar)
+    assert numpy.all(spin1_a >= 0) and numpy.all(spin2_a >= 0), \
+        "Spin magnitude MUST be null or positive"
     # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
     if swap_companions:
         mass1, mass2, spin1_a, spin2_a, spin1_polar, spin2_polar = \

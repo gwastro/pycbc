@@ -963,14 +963,21 @@ class ExpFitStatistic(PhaseTDStatistic):
         # This will be used to keep track of the template number being used
         self.curr_tnum = None
 
+        # Applies a constant offset to all statistic values in a given instance.
+        # This can be used to e.g. change relative rankings between different
+        # event types. Default is zero offset.
+        self.stat_correction = float(
+            self.kwargs.get("statistic_correction", 0)
+        )
+
         # Go through the keywords and add class information as needed:
         if self.kwargs["sensitive_volume"]:
-            # Add network sensitivity beckmark
+            # Add network sensitivity benchmark
             self.single_dtype.append(("benchmark_logvol", numpy.float32))
             # benchmark_logvol is a benchmark sensitivity array
             # over template id
             ref_ifos = self.kwargs.get("reference_ifos", "H1,L1").split(",")
-            hl_net_med_sigma = numpy.amin(
+            hl_net_med_sigma = numpy.nanmin(
                 [self.fits_by_tid[ifo]["median_sigma"] for ifo in ref_ifos],
                 axis=0,
             )
@@ -1501,18 +1508,27 @@ class ExpFitStatistic(PhaseTDStatistic):
             log of the cube of the sensitive distance (sigma), divided by
             a benchmark volume.
         """
+        # Get benchmark log volume as single-ifo information :
+        # benchmark_logvol for a given template is not ifo-dependent, so
+        # choose the first ifo for convenience
+        benchmark_logvol = sngls[0][1]["benchmark_logvol"]
+
+        # Benchmark log volume will be the same for all triggers, so if
+        # any are nan, they are all nan
+        if any(numpy.isnan(benchmark_logvol)):
+            # This can be the case in pycbc live if there are no triggers
+            # from this template in the trigger fits file. If so, assume 
+            # that sigma for the triggers being ranked is
+            # representative of the benchmark network.
+            return 0
+
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin(
             [sngl[1]["sigmasq"] for sngl in sngls], axis=0
         )
         # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        # Get benchmark log volume as single-ifo information :
-        # benchmark_logvol for a given template is not ifo-dependent, so
-        # choose the first ifo for convenience
-        benchmark_logvol = sngls[0][1]["benchmark_logvol"]
-        network_logvol -= benchmark_logvol
+        network_logvol = 1.5 * numpy.log(network_sigmasq) - benchmark_logvol
 
         return network_logvol
 
@@ -1583,6 +1599,9 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
+
+        # Apply statistic correction
+        loglr += self.stat_correction
 
         # cut off underflowing and very small values
         loglr[loglr < self.min_stat] = self.min_stat
@@ -1669,6 +1688,9 @@ class ExpFitStatistic(PhaseTDStatistic):
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
 
+        # Apply statistic correction
+        loglr += self.stat_correction
+
         # cut off underflowing and very small values
         loglr[loglr < self.min_stat] = self.min_stat
 
@@ -1747,6 +1769,9 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         # Combine the signal and noise rates
         loglr = ln_s - ln_noise_rate
+
+        # Apply statistic correction
+        loglr += self.stat_correction
 
         # From this combined rate, what is the minimum snglstat value
         # in the pivot IFO needed to reach the threshold?
