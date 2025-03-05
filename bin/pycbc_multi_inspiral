@@ -761,7 +761,7 @@ with ctx:
                     # and their SNRs
                     elif len(coinc_idx) != 0 and nifo == 1:
                         coinc_triggers = {
-                            args.instruments[0]: snr_dict[args.instruments[0]][
+                            args.instruments[0]: snr[args.instruments[0]][
                                 coinc_idx_det_frame[args.instruments[0]]
                             ]
                         }
@@ -972,7 +972,7 @@ with ctx:
                             )
                         else:
                             rho_sngl = abs(
-                                snr_dict[args.instruments[0]][
+                                snr[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
@@ -1037,7 +1037,7 @@ with ctx:
                             network_out_vals['coherent_snr'] = rho_coinc
                         else:
                             network_out_vals['coherent_snr'] = abs(
-                                snr_dict[args.instruments[0]][
+                                snr[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
