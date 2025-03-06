@@ -752,7 +752,7 @@ class FilterBank(TemplateBank):
                 htilde = self.get_decompressed_waveform(
                     tempout,
                     index,
-                    f_lower=f_low,
+                    f_lower=low_frequency_cutoff,
                     approximant=approximant,
                     df=None
                 )
