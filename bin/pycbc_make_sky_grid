@@ -42,66 +42,20 @@ def cart_to_spher(sky_points):
     spher[spher[:, 0] <0, 0] += 2 * np.pi
     return spher
 
-
-parser = argparse.ArgumentParser(description=__doc__)
-pycbc.add_common_pycbc_options(parser)
-parser.add_argument(
-    '--ra',
-    type=angle_as_radians,
-    required=True,
-    help="Right ascension of the center of the external trigger "
-    "error box. Use the rad or deg suffix to specify units, "
-    "otherwise radians are assumed.",
-)
-parser.add_argument(
-    '--dec',
-    type=angle_as_radians,
-    required=True,
-    help="Declination of the center of the external trigger "
-    "error box. Use the rad or deg suffix to specify units, "
-    "otherwise radians are assumed.",
-)
-parser.add_argument(
-    '--instruments',
-    nargs="+",
-    type=str,
-    required=True,
-    help="List of instruments to analyze.",
-)
-parser.add_argument(
-    '--sky-error',
-    type=angle_as_radians,
-    required=True,
-    help="3-sigma confidence radius of the external trigger error "
-    "box. Use the rad or deg suffix to specify units, otherwise "
-    "radians are assumed.",
-)
-parser.add_argument(
-    '--trigger-time',
-    type=int,
-    required=True,
-    help="Time (in s) of the external trigger",
-)
-parser.add_argument(
-    '--timing-uncertainty',
-    type=float,
-    default=0.0001,
-    help="Timing uncertainty (in s) we are willing to accept",
-)
-parser.add_argument(
-    '--output', type=str, required=True, help="Name of the sky grid"
-)
-
-args = parser.parse_args()
-
-pycbc.init_logging(args.verbose)
-
-if len(args.instruments) == 1:
-    # Make a single point skygrid object
+def make_single_det_grid(args):
+    '''
+    Compute a trivial skygrid object with a single point 
+    '''
     sky_grid = SkyGrid(
         [args.ra], [args.dec], args.instruments, args.trigger_time
     )
-else:
+    return sky_grid
+
+def make_multi_det_grid(args):
+    '''
+    Compute a skygrid object using the time delay among detectors 
+    in the network.
+    '''
     args.instruments.sort()  # Put the ifos in alphabetical order
     detectors = args.instruments
     detectors = [Detector(d) for d in detectors]
@@ -173,6 +127,68 @@ else:
     sky_grid = SkyGrid(
         spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
     )
+    return sky_grid
+
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument(
+    '--ra',
+    type=angle_as_radians,
+    required=True,
+    help="Right ascension of the center of the external trigger "
+    "error box. Use the rad or deg suffix to specify units, "
+    "otherwise radians are assumed.",
+)
+parser.add_argument(
+    '--dec',
+    type=angle_as_radians,
+    required=True,
+    help="Declination of the center of the external trigger "
+    "error box. Use the rad or deg suffix to specify units, "
+    "otherwise radians are assumed.",
+)
+parser.add_argument(
+    '--instruments',
+    nargs="+",
+    type=str,
+    required=True,
+    help="List of instruments to analyze.",
+)
+parser.add_argument(
+    '--sky-error',
+    type=angle_as_radians,
+    required=True,
+    help="3-sigma confidence radius of the external trigger error "
+    "box. Use the rad or deg suffix to specify units, otherwise "
+    "radians are assumed.",
+)
+parser.add_argument(
+    '--trigger-time',
+    type=int,
+    required=True,
+    help="Time (in s) of the external trigger",
+)
+parser.add_argument(
+    '--timing-uncertainty',
+    type=float,
+    default=0.0001,
+    help="Timing uncertainty (in s) we are willing to accept",
+)
+parser.add_argument(
+    '--output', type=str, required=True, help="Name of the sky grid"
+)
+
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+if len(args.instruments) == 1:
+    # Make a single point skygrid object
+    sky_grid = make_single_det_grid(args)
+else:
+    # Make a skygrid object using timedelays among all detectors in the
+    # network.
+    sky_grid = make_multi_det_grid(args)
 
 extra_attributes = {
     'trigger_ra': args.ra,
