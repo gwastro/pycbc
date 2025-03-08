@@ -1198,6 +1198,42 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
             tau[key.format(l, abs(m), n)] = tmp_tau
     return f0, tau
 
+def get_qlm_f0tau_allmodes(mass, spin, qmodes):
+    """Returns a dictionary of all of the frequencies and damping times for the
+    requested modes.
+
+    Parameters
+    ----------
+    mass : float or array
+        Mass of the black hole (in solar masses).
+    spin : float or array
+        Dimensionless spin of the final black hole.
+    qmodes : list of str
+        The modes to get. Each string in the list should be formatted
+        'qlmN', where l (m) is the l (m) index of the
+        harmonic and N is the number of overtones to generate (note, N is not
+        the index of the overtone).
+
+    Returns
+    -------
+    f0 : dict
+        Dictionary mapping the modes to the frequencies. The dictionary keys
+        are 'qlmn' string, where l (m) is the l (m) index of the harmonic and
+        n is the index of the overtone. For example, '220' is the l = m = 2
+        mode and the 0th overtone.
+    tau : dict
+        Dictionary mapping the modes to the damping times. The keys are the
+        same as ``f0``.
+    """
+    f0, tau = {}, {}
+    for qlmn in qmodes:
+        key = '{}{}{}'
+        l, m, nmodes = int(qlmn[0][0]), int(qlmn[0][1]), int(qlmn[0][2])
+        for n in range(nmodes):
+            tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, n)
+            f0[key.format(l, abs(m), n)] = tmp_f0
+            tau[key.format(l, abs(m), n)] = tmp_tau
+    return f0, tau
 
 def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
     """Returns QNM frequency for the given mass and spin and mode.
