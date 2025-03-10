@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-14]
+        os: [ubuntu-24.04, macos-14]
 
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
           path: ./wheelhouse/*.whl
   deploy_pypi:
     name: Package and publish to PyPI
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: build_wheels
     steps:
     - uses: actions/checkout@v4
