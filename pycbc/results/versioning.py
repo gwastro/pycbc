@@ -92,9 +92,11 @@ def get_library_version_info():
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'
-    pycbcinfo['ID'] = pycbc.version.version
+    pycbcinfo['ID'] = pycbc.version.git_hash
     pycbcinfo['Status'] = pycbc.version.git_status
-    pycbcinfo['Version'] = pycbc.version.release or ''
+    pycbcinfo['Version'] = pycbc.version.version
+    if pycbc.version.release:
+        pycbcinfo['Version'] += ' (release)'
     pycbcinfo['Tag'] = pycbc.version.git_tag
     pycbcinfo['Author'] = pycbc.version.git_author
     pycbcinfo['Builder'] = pycbc.version.git_builder
