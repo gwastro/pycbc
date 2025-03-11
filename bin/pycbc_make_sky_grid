@@ -43,9 +43,10 @@ def cart_to_spher(sky_points):
     return spher
 
 def make_single_det_grid(args):
-    '''
-    Compute a trivial skygrid object with a single point 
-    '''
+    """Construct a sky grid for a single-detector analysis.
+    Since a one-detector network has no sky localization capability,
+    we just put a single point at the center of the input distribution.
+    """
     sky_grid = SkyGrid(
         [args.ra], [args.dec], args.instruments, args.trigger_time
     )
