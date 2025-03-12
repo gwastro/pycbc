@@ -64,7 +64,7 @@ library and application suite.
    :maxdepth: 1
 
    tutorials
-   search
+   searches
    inference
    apps
 
