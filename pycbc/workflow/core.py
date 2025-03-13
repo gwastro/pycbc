@@ -665,10 +665,16 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             output_dir = args.output_dir or None
 
+        if args.cache_file is not None:
+            # Resolve any cache files locations
+            cache_file = resolve_url(args.cache_file)
+        else:
+            cache_file = None
+
         super(Workflow, self).__init__(
             name=name if name is not None else args.workflow_name,
             directory=output_dir,
-            cache_file=args.cache_file,
+            cache_file=cache_file,
             dax_file_name=dax_file,
         )
 
