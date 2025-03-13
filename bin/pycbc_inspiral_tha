@@ -48,9 +48,7 @@ tstart = time.time()
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
-parser.add_argument('--version', action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                  help="print extra debugging information", default=False )
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--update-progress",
                   help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
                   type=float, default=0)
@@ -287,7 +285,7 @@ def template_triggers(t_num):
             idx+stilde.analyze.start
         )
 
-        out_vals['cont_chisq'] = \
+        out_vals['cont_chisq'], _ = \
               autochisq.values(snr_full, idx+stilde.analyze.start,
                                template_comps[0],
                                stilde.psd, norm, stilde=stilde,
