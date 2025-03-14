@@ -362,6 +362,94 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         return results
 
 
+class MaximizedExtrinsic(MarginalizedTime):
+    r""" This likelihood numerically marginalizes over time
+
+    This likelihood is optimized for marginalizing over time, but can also
+    handle marginalization over polarization, phase (where appropriate),
+    and sky location. The time series is interpolated using a
+    quadratic apparoximation for sub-sample times.
+    """
+    name = 'maximized_extrinsic'
+
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        from pycbc.filter import matched_filter_core
+
+        params = self.current_params
+        try:
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_loglr()
+            else:
+                raise e
+
+        sh_total = hh_total = 0.
+        snr_estimate = {}
+        cplx_hpd = {}
+        cplx_hcd = {}
+        hphp = {}
+        hchc = {}
+        hphc = {}
+        
+        loglr_approx = 0
+        
+        for det, (hp, hc) in wfs.items():
+            # the kmax of the waveforms may be different than internal kmax
+            kmax = min(max(len(hp), len(hc)), self._kmax[det])
+            slc = slice(self._kmin[det], kmax)
+
+            # whiten both polarizations
+            hp[self._kmin[det]:kmax] *= self._weight[det][slc]
+            hc[self._kmin[det]:kmax] *= self._weight[det][slc]
+
+            hp.resize(len(self._whitened_data[det]))
+            hc.resize(len(self._whitened_data[det]))
+            cplx_hpd[det], _, _ = matched_filter_core(
+                                 hp,
+                                 self._whitened_data[det],
+                                 low_frequency_cutoff=self._f_lower[det],
+                                 high_frequency_cutoff=self._f_upper[det],
+                                 h_norm=1)
+            cplx_hcd[det], _, _ = matched_filter_core(
+                                 hc,
+                                 self._whitened_data[det],
+                                 low_frequency_cutoff=self._f_lower[det],
+                                 high_frequency_cutoff=self._f_upper[det],
+                                 h_norm=1)
+
+            hphp[det] = hp[slc].inner(hp[slc]).real
+            hchc[det] = hc[slc].inner(hc[slc]).real
+            hphc[det] = hp[slc].inner(hc[slc]).real
+
+            snrsq_proxy = 0.5 * ((cplx_hpd[det] / hphp[det] ** 0.5).squared_norm() +
+                         (cplx_hcd[det] / hchc[det] ** 0.5).squared_norm())
+            loglr_approx += snrsq_proxy / 2.0
+        return float(loglr_approx.max())
+
 class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
     r""" This likelihood numerically marginalizes over polarization angle
 
