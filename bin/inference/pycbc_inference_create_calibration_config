@@ -1,0 +1,196 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2023 Sumit K.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Generate the calibration configuration file for a given event/GPS time.
+Also plots the calibration envelop for each detector for sanity checks.
+"""
+
+import h5py, os, argparse
+import numpy as np
+from scipy.interpolate import InterpolatedUnivariateSpline
+import matplotlib.pyplot as plt
+
+parser = argparse.ArgumentParser()
+
+
+parser.add_argument('--calibration-files-path',
+                    help='Calibration envelope file path. It can be pre-
+                          downloaded or downloaded on the fly', required=True,
+                    type=str)
+parser.add_argument('--detectors',  nargs='+',
+                    help='List of detectors', required=True,
+                    type=str)
+
+parser.add_argument('--min-freq-list', nargs='+',
+                    help='List of minimum frequencies for each detector',
+                    required=True, type=float)
+
+parser.add_argument('--max-freq-list', nargs='+',
+                    help='List of maximum frequencies for each detector',
+                    required=True, type=float)
+
+parser.add_argument('--gps-time',
+                    help='GPS time at which calibration configuration files 
+                          are needed',
+                    required=True, type=str)
+
+parser.add_argument('--output-dir',                                 
+                    help="Path for the output calibration config files",                    
+                    default='.', type=str)
+
+parser.add_argument('--plots-dir',
+                    help="Path for the 'sanity check' plots",
+                    default='.', type=str)
+
+parser.add_argument('--n-nodes',
+                    help='Number of frequency nodes to be used',
+                    default=10, type=int)
+
+parser.add_argument('--plot-sanity-checks', help='Make some plots for sanity checks',
+                    default=True, type=bool)
+
+# parse the command line
+opts = parser.parse_args()
+
+#args = parser.parse_args()
+#calib_env_path = args.calib_env_path
+#detector_list = args.detectors
+#min_freq_list = args.min_freq_list
+#max_freq_list = args.max_freq_list
+#gps_time = args.gps_time
+#plots_dir = args.plots_dir
+#n_nodes = args.n_nodes
+
+input_dict = {}
+for ii in range(len(detector_list)):
+    detector = str(detector_list[ii]).lower()
+    input_dict['min_freq_%s'%detector]=min_freq_list[ii]
+    input_dict['max_freq_%s'%detector]=max_freq_list[ii]
+
+# Upper and Lower indices of detectors seems unnecessary
+# but they are there to make sure the correct convention
+# is followed for recalibration module in inference config
+# file as well as in detector notation.
+prior_dict = {}
+for detector in detector_list:
+    detector = detector.lower()
+    min_freq = input_dict['min_freq_%s'%detector]
+    max_freq = input_dict['max_freq_%s'%detector]
+    calib_env_path = input_dict['calib_env_path_%s'%detector]
+    log_nodes, amplitude_mean_nodes, amplitude_sigma_nodes, phase_mean_nodes, phase_sigma_nodes = \
+               read_from_envelop_file(calib_env_path, min_freq,
+                                      max_freq, n_nodes, detector.upper())
+    prior_dict['log_nodes_%s'%detector] = log_nodes
+    prior_dict['amplitude_mean_nodes_%s'%detector] = amplitude_mean_nodes
+    prior_dict['amplitude_sigma_nodes_%s'%detector] = amplitude_sigma_nodes
+    prior_dict['phase_mean_nodes_%s'%detector] = phase_mean_nodes
+    prior_dict['phase_sigma_nodes_%s'%detector] =phase_sigma_nodes
+    print('Done for detector %s'%detector)
+
+
+calibration_filename = '%s/calibration-%s.ini'%(output_dir, tag)
+if os.path.isfile(calibration_filename) != True:
+    text_file = open(calibration_filename, "w")
+    text_file.write("# Details of set up as given in the O1 Binary Black Hole Paper https://arxiv.org/abs/1606.04856 \n")
+    text_file.write("[calibration] \n")
+    for detector in detector_list:
+        detector = detector.lower()
+        min_freq = input_dict['min_freq_%s'%detector]
+        max_freq = input_dict['max_freq_%s'%detector]
+        text_file.write("%s_model = cubic_spline \n"%detector)
+        text_file.write("%s_minimum_frequency = %d \n"%(detector,min_freq))
+        text_file.write("%s_maximum_frequency = %d \n"%(detector,max_freq))
+        text_file.write("%s_n_points = %d \n"%(detector,n_nodes))
+    text_file.write(" \n")
+    text_file.write("[variable_params] \n")
+    #for ii in range(n_nodes):
+    for detector in detector_list:
+        for ii in range(n_nodes):
+            detector = detector.lower()
+            text_file.write("recalib_amplitude_%s_%d = \n"%(detector,ii))
+            text_file.write("recalib_phase_%s_%d = \n"%(detector,ii))
+    text_file.write(" \n")
+   #for ii in range(n_nodes):
+    for detector in detector_list:
+        for ii in range(n_nodes):
+            detector = detector.lower()
+            amplitude_mean_nodes_l1 = prior_dict['amplitude_mean_nodes_%s'%detector][ii]
+            amplitude_sigma_nodes_l1 = prior_dict['amplitude_sigma_nodes_%s'%detector][ii]
+            text_file.write("[prior-recalib_amplitude_%s_%d] \n"%(detector,ii))
+            text_file.write("name = gaussian \n")
+            text_file.write("recalib_amplitude_%s_%d_mean = %.3g \n"%(detector,ii,amplitude_mean_nodes_l1))
+            text_file.write("recalib_amplitude_%s_%d_var = %.3g \n"%(detector,ii,amplitude_sigma_nodes_l1**2))
+            text_file.write(" \n")
+    #for ii in range(n_nodes):
+    for detector in detector_list:
+        for ii in range(n_nodes):
+            detector = detector.lower()
+            phase_mean_nodes_l1 = prior_dict['phase_mean_nodes_%s'%detector][ii]
+            phase_sigma_nodes_l1 = prior_dict['phase_sigma_nodes_%s'%detector][ii]
+            text_file.write("[prior-recalib_phase_%s_%d] \n"%(detector,ii))
+            text_file.write("name = gaussian \n")
+            text_file.write("recalib_phase_%s_%d_mean = %.3g \n"%(detector,ii,phase_mean_nodes_l1))
+            text_file.write("recalib_phase_%s_%d_var = %.3g \n"%(detector,ii,phase_sigma_nodes_l1**2))
+            text_file.write(" \n")
+    text_file.write(" \n")
+    text_file.write(" \n")
+    text_file.close()
+else:
+    print('Calibration file already present. Either delete it or rename it. Overwriting this file is not allowed!!!')
+
+# Sanity check plots
+if opts.plot_sanity_checks:
+    for detector in detector_list:
+        calib_env_path = input_dict['calib_env_path_%s'%detector.lower()]
+        min_freq = input_dict['min_freq_%s'%detector.lower()]
+        max_freq = input_dict['max_freq_%s'%detector.lower()]
+        log_nodes = prior_dict['log_nodes_%s'%detector.lower()]
+        amp_mean_nodes = prior_dict['amplitude_mean_nodes_%s'%detector.lower()]
+        amp_sigma_nodes = prior_dict['amplitude_sigma_nodes_%s'%detector.lower()]
+        plt.figure(figsize=(8,5))
+        plt.plot(f1[calib_env_path][:][:,0],f1[calib_env_path][:][:,1],label=r'$\mu$')
+        plt.plot(f1[calib_env_path][:][:,0],f1[calib_env_path][:][:,3],label=r'$\mu-\sigma$')
+        plt.plot(f1[calib_env_path][:][:,0],f1[calib_env_path][:][:,5],label=r'$\mu+\sigma$')
+        plt.plot(np.exp(log_nodes),amp_mean_nodes+1,'.',label=r'$\mu$(Prior)')
+        plt.plot(np.exp(log_nodes),amp_mean_nodes+1-amp_sigma_nodes,'.',label=r'$\mu-\sigma$ (Prior)')
+        plt.plot(np.exp(log_nodes),amp_mean_nodes+1+amp_sigma_nodes,'.',label=r'$\mu+\sigma$ (Prior)')
+        plt.xscale('log')
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Amplitude')
+        plt.title('Calibration envelop (Amplitude) for %s'%detector.upper())
+        plt.legend()
+        plt.savefig('%s/calibration_envelop_amplitude_%s_%s.png'%(plots_dir,tag,detector.upper()))
+        plt.clf()
+
+        phase_mean_nodes = prior_dict['phase_mean_nodes_%s'%detector.lower()]
+        phase_sigma_nodes = prior_dict['phase_sigma_nodes_%s'%detector.lower()]
+        plt.figure(figsize=(8,5))
+        plt.plot(f1[calib_env_path][:][:,0],f1[calib_env_path][:][:,2],label=r'$\mu$')
+        plt.plot(f1[calib_env_path][:][:,0],f1[calib_env_path][:][:,4],label=r'$\mu-\sigma$')
+        plt.plot(f1[calib_env_path][:][:,0],f1[calib_env_path][:][:,6],label=r'$\mu+\sigma$')
+        plt.plot(np.exp(log_nodes),phase_mean_nodes,'.',label=r'$\mu$ (Prior)')
+        plt.plot(np.exp(log_nodes),phase_mean_nodes-phase_sigma_nodes,'.',label=r'$\mu-\sigma$ (Prior)')
+        plt.plot(np.exp(log_nodes),phase_mean_nodes+phase_sigma_nodes,'.',label=r'$\mu+\sigma$')
+        plt.xscale('log')
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Phase')
+        plt.title('Calibration envelop (Phase) for %s'%detector.upper())
+        plt.legend()
+        plt.savefig('%s/calibration_envelop_phase_%s_%s.png'%(plots_dir,tag,detector.upper()))
+        plt.clf()
+
