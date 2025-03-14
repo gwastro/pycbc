@@ -129,42 +129,38 @@ if h_inc_back_num > h_iterations:
 args.cumulative = not args.not_cumulative
 
 foreground_livetime = conv.sec_to_year(f.attrs['foreground_time'])
-try:
     
-    if args.cumulative:
-        cstat_fore = f['foreground/stat'][:]
-        cstat_fore.sort()
-        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / foreground_livetime
-        fap_end = f['foreground/fap'][:].min() * args.trials_factor
-    else:
-        cstat_fore = f['foreground/stat'][:]
-        ssort = cstat_fore.argsort()
-        cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
-         # Correct the foreground ifars depending on the values calculated
-         # under a particular inclusive background distribution.
+if args.cumulative:
+    cstat_fore = f['foreground/stat'][:]
+    cstat_fore.sort()
+    cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / foreground_livetime
+else:
+    cstat_fore = f['foreground/stat'][:]
+    ssort = cstat_fore.argsort()
+    cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
+     # Correct the foreground ifars depending on the values calculated
+     # under a particular inclusive background distribution.
 
-        try:
-            ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
-        except KeyError:
-            ifar_h_inc = []
+    try:
+        ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
+    except KeyError:
+        ifar_h_inc = []
 
-        try:
-            stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
-        except KeyError:
-            stat_h_inc = []
+    try:
+        stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
+    except KeyError:
+        stat_h_inc = []
 
-        for i in range(len(ifar_h_inc)):
-            orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
-            if orig_idx is not None:
-                cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
+    for i in range(len(ifar_h_inc)):
+        orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
+        if orig_idx is not None:
+            cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
 
-        cstat_rate = cstat_rate[ssort]
-        cstat_fore = cstat_fore[ssort]
-        cstat_fap = p_from_far(cstat_rate, foreground_livetime)
-    
-    logging.info('Found %s foreground triggers' % len(cstat_fore))
-except:
-    cstat_fore = None
+    cstat_rate = cstat_rate[ssort]
+    cstat_fore = cstat_fore[ssort]
+    cstat_fap = p_from_far(cstat_rate, foreground_livetime)
+
+logging.info('Found %s foreground triggers' % len(cstat_fore))
 
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
