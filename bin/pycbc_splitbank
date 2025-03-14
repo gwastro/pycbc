@@ -30,12 +30,14 @@
 import argparse
 from numpy import random, ceil
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
-from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
+from pycbc.io.ligolw import (
+    LIGOLWContentHandler, create_process_table, get_table_columns
+)
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.pnutils import frequency_cutoff_from_name
 
@@ -96,15 +98,7 @@ except:
     template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
     tabletype = lsctables.SimInspiralTable
 
-# make a list of columns that are present in the input table.
-# The : split is needed for columns like `process:process_id`,
-# which must be listed as `process:process_id` in `lsctables.New()`,
-# but are listed as just `process_id` in the `columnnames` attribute
-used_columns = []
-for col in template_bank_table.validcolumns:
-    att = col.split(':')[-1]
-    if att in template_bank_table.columnnames:
-        used_columns.append(col)
+used_columns = get_table_columns(template_bank_table)
 
 length = len(template_bank_table)
 
@@ -151,7 +145,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
         options=args.__dict__
     )
 
-    sngl_inspiral_table = lsctables.New(tabletype, columns=used_columns)
+    sngl_inspiral_table = tabletype.new(columns=used_columns)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     for i in range(idx2-idx1):
