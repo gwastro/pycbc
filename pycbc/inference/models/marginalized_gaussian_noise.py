@@ -360,6 +360,11 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                                                                  params['tc'])
             dtc = params['tc'] + dt
 
+            pol_phase = numpy.exp(-2.0j * params['polarization'])
+            f = (fp + 1.0j * fc) * pol_phase
+            fp = f.real
+            fc = f.imag
+            
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
                                                  interpolate='quadratic')
             cplx_hd += fc * cplx_hcd[det].at_time(dtc,
