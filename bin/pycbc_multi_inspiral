@@ -53,7 +53,7 @@ from pycbc.tmpltbank.sky_grid import SkyGrid
 def slide_limiter(args):
     '''
     This function computes the number of shortslides used by the coherent
-    matched filter statistic to obtain as most background triggers as 
+    matched filter statistic to obtain as most background triggers as
     possible.
 
     It bounds the number of slides to avoid counting triggers more than once.
@@ -64,11 +64,12 @@ def slide_limiter(args):
         n_ifos = len(args.instruments)
         stride_dur = args.segment_length[args.instruments[0]]/2
         num_slides = np.int32(1 +
-            np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
-        assert  np.logical_and(num_slides>=low,num_slides<=upp),\
-                "the combination (slideshift, segment_dur)"\
-                f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
-                f" goes over the allowed upper bound {upp}"
+                              np.floor(stride_dur /
+                                       (args.slide_shift*(n_ifos-1))))
+        assert np.logical_and(num_slides >= low, num_slides <= upp), \
+               "the combination (slideshift, segment_dur)"\
+               f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
+               f" goes over the allowed upper bound {upp}"
     else:
         num_slides = 1
     return num_slides
@@ -157,7 +158,7 @@ parser.add_argument("--autochi-two-phase", action="store_true",
                          "If not given, only the phase matching the trigger "
                          "will be used.")
 parser.add_argument("--autochi-onesided", action='store',
-                    choices=['left','right'],
+                    choices=['left', 'right'],
                     help="Decide whether to calculate auto-chisq using"
                          "points on both sides of the trigger or only on one"
                          "side. If not given points on both sides will be"
@@ -174,8 +175,8 @@ parser.add_argument("--autochi-reverse-template", action="store_true",
 parser.add_argument("--autochi-max-valued", action="store_true",
                     default=False,
                     help="If given, store only the maximum value of the auto-"
-                         "chisq over all points tested. A disadvantage of this "
-                         "is that the mean value will not be known "
+                         "chisq over all points tested. A disadvantage of "
+                         "this is that the mean value will not be known "
                          "analytically.")
 parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
                     type=int,
@@ -242,7 +243,8 @@ parser.add_argument(
     type=int,
     default=2,
     help="How many detectors must pass the --sngl-snr-threshold cut in order "
-    "to generate a trigger (default 2)."
+    "to generate a trigger; the cut may used only when more than 1 detector "
+    "is used in the analysis (default 2)."
 )
 parser.add_argument(
     "--sngl-snr-threshold",
@@ -340,14 +342,13 @@ num_slides = slide_limiter(args)
 args.instruments.sort()
 # Check that the number of IFOs requested to have single SNR above threshold
 # is compatible with the number of detectors in the analysis
-if len(args.instruments) > 1:
-    if len(args.instruments) < args.nifo_sngl_snr_threshold:
-        parser.error("--nifo-sngl-snr-threshold "
-                     f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
-                     "number of detectors in the analysis "
-                     f"({len(args.instruments)}) because this would "
-                     "always yield no triggers.")
-        parser.error(err_msg)
+if len(args.instruments) > 1 and \
+   len(args.instruments) < args.nifo_sngl_snr_threshold:
+    parser.error("--nifo-sngl-snr-threshold "
+                 f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
+                 "number of detectors in the analysis "
+                 f"({len(args.instruments)}) because this would "
+                 "always yield no triggers.")
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
@@ -683,7 +684,7 @@ with ctx:
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 # change to integer indexes because we will have to do
-                # arithmetic with time_delay_idx, which can be positive 
+                # arithmetic with time_delay_idx, which can be positive
                 # or negative
                 idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
