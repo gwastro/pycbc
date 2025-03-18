@@ -30,7 +30,7 @@ import numpy as np
 logger = logging.getLogger('pycbc.events.coherent')
 
 
-def get_coinc_indexes(idx_dict, time_delay_idx):
+def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
     """Return the indexes corresponding to coincident triggers, requiring
     they are seen in at least two detectors in the network
 
@@ -42,6 +42,9 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
     time_delay_idx: dict
         Dictionary giving time delay index (time_delay*sample_rate) for
         each ifo
+    min_nifos: int
+        The minimum number of detectors needed to be above threshold
+        for a coincidence to be produced
 
     Returns
     -------
@@ -59,10 +62,11 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
                 [coinc_list, idx_dict[ifo] - time_delay_idx[ifo]]
             )
     # Search through coinc_idx for repeated indexes. These must have been loud
-    # in at least 2 detectors if the analysis uses more than 2 detectors.
+    # in at least min_nifos detectors if the analysis uses more than 2 detectors.
     counts = np.unique(coinc_list, return_counts=True)
+    min_nifos_low = min_nifos - 1
     coinc_idx = (
-        counts[0][counts[1] > 1] if len(idx_dict.keys()) > 2 else counts[0]
+        counts[0][counts[1] > min_ifos_low] if len(idx_dict) > 2 else counts[0]
     )
     return coinc_idx
 
