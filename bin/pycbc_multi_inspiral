@@ -338,6 +338,16 @@ init_logging(args.verbose)
 num_slides = slide_limiter(args)
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
+# Check that the number of IFOs requested to have single SNR above threshold
+# is compativle with the number of detectors in the analysis
+if len(args.instruments) > 1:
+    if len(args.instruments) < args.nifo_sngl_snr_threshold:
+        err_msg = "--nifo-sngl-snr-threshold "
+        err_msg += "(%d) cannot exceed the " % args.nifo_sngl_snr_threshold
+        err_msg += "number of detectors in the analysis "
+        err_msg += "(%d) because this would " % len(args.instruments)
+        err_msg += "always yield no triggers.")
+        raise ValueError(err_msg)
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
@@ -457,9 +467,9 @@ with ctx:
     # All MatchedFilterControl instances are initialized in the same way.
     # This allows to track where the single detector SNR timeseries are
     # greater than args.sngl_snr_threshold. Later, coh.get_coinc_indexes
-    # will enforce the requirement that at least two single detector SNR
-    # are above args.sngl_snr_threshold, rescuing, where necessary, SNR
-    # timeseries points for detectors below that threshold.
+    # will enforce the requirement that at least args.nifo_sngl_snr_threshold
+    # single detector SNRs are above args.sngl_snr_threshold, rescuing, where
+    # necessary, SNR timeseries points for detectors below that threshold.
     # NOTE: Do not cluster here for a coherent search (use_cluster=False).
     #       Clustering happens at the end of the template loop.
     matched_filter = {
@@ -720,7 +730,8 @@ with ctx:
                     # in at least args.nifo_sngl_snr_threshold IFOs.
                     if nifo > 1:
                         coinc_idx = coh.get_coinc_indexes(
-                            idx_dict, time_delay_idx[slide][position_index]
+                            idx_dict, time_delay_idx[slide][position_index],
+                            args.nifo_sngl_snr_threshold
                         )
                     else:
                         coinc_idx = (
