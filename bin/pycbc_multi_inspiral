@@ -237,13 +237,21 @@ parser.add_argument(
     "value will be discarded.",
 )
 parser.add_argument(
+    "--nifo-sngl-snr-threshold",
+    action="store",
+    type=int,
+    default=2,
+    help="Number of detectors requiring a minimum SNR value (specified "
+    "with --sngl-snr-threshold) value for trigger generation (default: 2).",
+)
+parser.add_argument(
     "--sngl-snr-threshold",
     action="store",
     type=float,
     default=4.0,
     metavar='THRESHOLD',
     help="Single detector SNR threshold for trigger generation required in "
-    "at least two detectors (default: 4).",
+    "at least --nifo-sngl-snr-threshold detectors (default: 4).",
 )
 parser.add_argument(
     "--chisq-index",
@@ -708,8 +716,8 @@ with ctx:
                     # multiple IFOs. If a single IFO analysis then just use the
                     # indices from that IFO, i.e., IFO 0; otherwise, this
                     # method finds coincidences and applies the single IFO cut,
-                    # namely, triggers must have at least 2 IFO SNRs above
-                    # args.sngl_snr_threshold when 3 or more IFOs are involved.
+                    # namely, triggers must have SNR >= args.sngl_snr_threshold
+                    # in at least args.nifo_sngl_snr_threshold IFOs.
                     if nifo > 1:
                         coinc_idx = coh.get_coinc_indexes(
                             idx_dict, time_delay_idx[slide][position_index]
