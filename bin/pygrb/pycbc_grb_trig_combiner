@@ -489,7 +489,7 @@ logging.info(
 offsource_ntrials = [int(numpy.trunc(abs(b)/trialtime)) for b in bins["OFFSOURCE"]]
 
 # Seed random number generator
-numpy.random.seed(numpy.int64(args.seed))
+numpy.random.seed(args.seed)
 
 # Randomly pick num_trials offsource trials
 offtrials = numpy.random.choice(
