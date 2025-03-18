@@ -241,8 +241,8 @@ parser.add_argument(
     action="store",
     type=int,
     default=2,
-    help="Number of detectors requiring a minimum SNR value (specified "
-    "with --sngl-snr-threshold) value for trigger generation (default: 2).",
+    help="How many detectors must pass the --sngl-snr-threshold cut in order "
+    "to generate a trigger (default 2)."
 )
 parser.add_argument(
     "--sngl-snr-threshold",
@@ -339,15 +339,15 @@ num_slides = slide_limiter(args)
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 # Check that the number of IFOs requested to have single SNR above threshold
-# is compativle with the number of detectors in the analysis
+# is compatible with the number of detectors in the analysis
 if len(args.instruments) > 1:
     if len(args.instruments) < args.nifo_sngl_snr_threshold:
-        err_msg = "--nifo-sngl-snr-threshold "
-        err_msg += "(%d) cannot exceed the " % args.nifo_sngl_snr_threshold
-        err_msg += "number of detectors in the analysis "
-        err_msg += "(%d) because this would " % len(args.instruments)
-        err_msg += "always yield no triggers.")
-        raise ValueError(err_msg)
+        parser.error("--nifo-sngl-snr-threshold "
+                     f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
+                     "number of detectors in the analysis "
+                     f"({len(args.instruments)}) because this would "
+                     "always yield no triggers.")
+        parser.error(err_msg)
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
