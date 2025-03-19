@@ -353,6 +353,7 @@ parser.add_argument(
 parser.add_argument(
     "-e",
     "--seed",
+    type=int,
     default=None,
     help="Seed for the NumPy random number generator, default: %(default)s",
 )
@@ -457,10 +458,7 @@ offsource_ntrials = [int(numpy.trunc(abs(b)/trialtime))
                      for b in bins["OFFSOURCE"]]
 
 # Seed random number generator
-if args.seed is None:
-    numpy.random.seed(args.seed)
-else:
-    numpy.random.seed(numpy.int64(args.seed))
+numpy.random.seed(args.seed)
 
 # Randomly pick num_trials offsource trials
 offtrials = numpy.random.choice(
