@@ -243,7 +243,7 @@ parser.add_argument(
     type=int,
     default=2,
     help="How many detectors must pass the --sngl-snr-threshold cut in order "
-    "to generate a trigger; the cut may used only when more than 1 detector "
+    "to generate a trigger; the cut is only applied when more than 1 detector "
     "is used in the analysis (default 2)."
 )
 parser.add_argument(
