@@ -135,16 +135,12 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
         x in sngl_event_id_names if not x.startswith("network")
     ]
     all_event_id_names = sngl_event_id_names + network_event_id_names
-    del sngl_event_id_names
-    del network_event_id_names
 
     # handle search datasets as a special case
     # (they will the same in all files)
     search_datasets = set(filter(lambda x: "/search/" in x, dataset_names))
     gating_datasets = set(filter(lambda x: "/gating/" in x, dataset_names))
     once_only_datasets = search_datasets.union(gating_datasets)
-    del search_datasets
-    del gating_datasets
 
     with HFile(outputfile, 'w') as h5out:
         h5out.attrs.update(attributes)
@@ -169,8 +165,8 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                     if dset in once_only_datasets:
                         break
 
-            _ = h5out.create_dataset(dset, data=numpy.concatenate(data),
-                                     **compression_kw)
+            h5out.create_dataset(dset, data=numpy.concatenate(data),
+                                 **compression_kw)
             del data
         # END OF DATSET LOOP
 
