@@ -189,7 +189,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
         data = numpy.concatenate(data)
         for dset in all_event_id_names:
             logging.info("Storing %s dataset", dset)
-            _ = h5out.create_dataset(dset, data=data, **compression_kw)
+            h5out.create_dataset(dset, data=data, **compression_kw)
         del data
 
         # Handling template_id seprately
