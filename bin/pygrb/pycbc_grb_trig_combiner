@@ -62,7 +62,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
         the paths of the input HDF5 files to merge
 
     outputfile : `str`
-         the path of the output HDF5 file to write
+        the path of the output HDF5 file to write
     """
     attributes = {}
     datasets = {}
