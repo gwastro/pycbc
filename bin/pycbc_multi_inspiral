@@ -348,7 +348,7 @@ if len(args.instruments) > 1 and \
                  f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
                  "number of detectors in the analysis "
                  f"({len(args.instruments)}) because this would "
-                 "always yield no triggers.")
+                 "never yield any trigger.")
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
