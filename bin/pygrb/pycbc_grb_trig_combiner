@@ -197,7 +197,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
         template_ids = template_hash_to_id(
             trigger_file=h5out, bank_path=args.bank_file
         )
-        logging.info("Storing template IDs", dset)
+        logging.info("Storing template IDs")
         h5out.create_dataset("network/template_id",
                              data=template_ids,
                              compression="gzip",
