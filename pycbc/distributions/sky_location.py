@@ -46,6 +46,86 @@ class UniformSky(angular.UniformSolidAngle):
     _default_azimuthal_angle = 'ra'
 
 
+class UniformCircleSky:
+
+    name = 'uniform_circle_sky'
+    _params = ['ra', 'dec']
+    
+    def __init__(self, **params):
+        self.mean_ra = angle_as_radians(params['mean_ra'])
+        self.mean_dec = angle_as_radians(params['mean_dec'])
+        self.sigma = angle_as_radians(params['sigma'])
+        if self.mean_ra < 0 or self.mean_ra > 2 * numpy.pi:
+            raise ValueError(
+                f'The mean RA must be between 0 and 2π, {mean_ra} rad given'
+            )
+        if self.mean_dec < -numpy.pi / 2 or self.mean_dec > numpy.pi / 2:
+            raise ValueError(
+                'The mean declination must be between '
+                f'-π/2 and π/2, {mean_dec} rad given'
+            )
+        if self.sigma < 0 or self.sigma > 2 * numpy.pi:
+            raise ValueError(
+                'Sigma must be non-negative and smaller than 2π '
+                '(preferably much smaller)'
+            )
+        self.rayleigh_scale = 0.66 * self.sigma
+        # Prepare a rotation that puts the North Pole at the mean position
+        self.rotation = Rotation.from_euler(
+            'yz', [numpy.pi / 2 - self.mean_dec, self.mean_ra]
+        )
+
+    @property
+    def params(self):
+        return self._params
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        tag = variable_args
+        variable_args = variable_args.split(VARARGS_DELIM)
+        if set(variable_args) != set(cls._params):
+            raise ValueError(
+                "Not all parameters used by this distribution "
+                "included in tag portion of section name"
+            )
+        self.mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
+        self.mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
+        self.sigma = cp.get_opt_tag(section, 'sigma', tag)
+        return cls(
+            mean_ra=self.mean_ra,
+            mean_dec=self.mean_dec,
+            sigma=self.sigma,
+        )
+
+
+    def rvs(self, size):
+        # Draw samples from a distribution centered on the North pole
+        np_ra = numpy.random.uniform(low=0, high=(2 * numpy.pi), size=size)
+        np_dec = angular.SinAngle(
+            polar_bounds=(0,self.sigma)).rvs(
+            size=size).astype(numpy.float64)
+
+        # Convert the samples to intermediate cartesian representation
+        np_cart = numpy.empty(shape=(size, 3))
+        np_cart[:, 0] = numpy.cos(np_ra) * numpy.sin(np_dec)
+        np_cart[:, 1] = numpy.sin(np_ra) * numpy.sin(np_dec)
+        np_cart[:, 2] = numpy.cos(np_dec)
+
+        # Rotate the samples according to our pre-built rotation
+        rot_cart = self.rotation.apply(np_cart)
+
+        # Convert the samples back to spherical coordinates.
+        # Some unpleasant conditional operations are needed
+        # to get the correct angle convention.
+        rot_radec = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
+        rot_radec['ra'] = numpy.arctan2(rot_cart[:, 1], rot_cart[:, 0])
+        neg_mask = rot_radec['ra'] < 0
+        rot_radec['ra'][neg_mask] += 2 * numpy.pi
+        rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
+        return rot_radec
+
+
+
 class FisherSky:
     """A distribution that returns a random angle drawn from an approximate
     `Von_Mises-Fisher distribution`_. Assumes that the Fisher concentration
@@ -87,33 +167,33 @@ class FisherSky:
     _params = ['ra', 'dec']
 
     def __init__(self, **params):
-        mean_ra = angle_as_radians(params['mean_ra'])
-        mean_dec = angle_as_radians(params['mean_dec'])
-        sigma = angle_as_radians(params['sigma'])
-        if mean_ra < 0 or mean_ra > 2 * numpy.pi:
+        self.mean_ra = angle_as_radians(params['mean_ra'])
+        self.mean_dec = angle_as_radians(params['mean_dec'])
+        self.sigma = angle_as_radians(params['sigma'])
+        if self.mean_ra < 0 or self.mean_ra > 2 * numpy.pi:
             raise ValueError(
                 f'The mean RA must be between 0 and 2π, {mean_ra} rad given'
             )
-        if mean_dec < -numpy.pi / 2 or mean_dec > numpy.pi / 2:
+        if self.mean_dec < -numpy.pi / 2 or self.mean_dec > numpy.pi / 2:
             raise ValueError(
                 'The mean declination must be between '
                 f'-π/2 and π/2, {mean_dec} rad given'
             )
-        if sigma < 0 or sigma > 2 * numpy.pi:
+        if self.sigma < 0 or self.sigma > 2 * numpy.pi:
             raise ValueError(
                 'Sigma must be non-negative and smaller than 2π '
                 '(preferably much smaller)'
             )
-        if sigma > 0.35:
+        if self.sigma > 0.35:
             logger.warning(
                 'Warning: sigma = %s rad is probably too large for the '
                 'Fisher approximation to be valid',
-                sigma,
+                self.sigma,
             )
-        self.rayleigh_scale = 0.66 * sigma
+        self.rayleigh_scale = 0.66 * self.sigma
         # Prepare a rotation that puts the North Pole at the mean position
         self.rotation = Rotation.from_euler(
-            'yz', [numpy.pi / 2 - mean_dec, mean_ra]
+            'yz', [numpy.pi / 2 - self.mean_dec, self.mean_ra]
         )
 
     @property
@@ -129,13 +209,13 @@ class FisherSky:
                 "Not all parameters used by this distribution "
                 "included in tag portion of section name"
             )
-        mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
-        mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
-        sigma = cp.get_opt_tag(section, 'sigma', tag)
+        self.mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
+        self.mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
+        self.sigma = cp.get_opt_tag(section, 'sigma', tag)
         return cls(
-            mean_ra=mean_ra,
-            mean_dec=mean_dec,
-            sigma=sigma,
+            mean_ra=self.mean_ra,
+            mean_dec=self.mean_dec,
+            sigma=self.sigma,
         )
 
     def rvs(self, size):
@@ -161,6 +241,10 @@ class FisherSky:
         rot_radec['ra'][neg_mask] += 2 * numpy.pi
         rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
         return rot_radec
+
+    def to_uniform_patch(self, coverage):
+        new_sigma = numpy.sqrt(self.rayleigh_scale**2 * (-2*numpy.log(1-coverage)))
+        return UniformCircleSky(mean_ra=self.mean_ra, mean_dec=self.mean_dec, sigma=new_sigma)
 
 
 class HealpixSky:
@@ -242,6 +326,24 @@ class HealpixSky:
         phi[phi < 0] += 2 * numpy.pi
         phi[phi >= 2 * numpy.pi] -= 2 * numpy.pi
         return phi
+
+    def to_uniform_patch(self, coverage):
+        """Apply the coverage criterion on the skymap
+        """
+        non_zero_ind = numpy.flatnonzero(self.pix_probs)
+        dtype = numpy.dtype([('index', numpy.ndarray), ('prob', numpy.float64)])
+        prob = self.pix_probs[non_zero_ind]
+        ind_prob = numpy.array(list(zip(non_zero_ind, prob)), dtype=dtype)
+        ind_prob_sorted = numpy.sort(ind_prob, order='prob')
+        prob = numpy.sort(prob)
+        ind_prob_rev_sorted = ind_prob_sorted[::-1]
+        list_ind = []
+        for i in range(len(ind_prob_sorted)):
+            list_ind.append(ind_prob_rev_sorted[i][0])
+        cum_sum_prob = numpy.cumsum(prob[::-1])
+        covered_sky = cum_sum_prob[cum_sum_prob<coverage]
+        self.pix_probs[list_ind[:len(covered_sky)]] = 1/len(covered_sky)
+        self.pix_probs[self.pix_probs!= 1/len(covered_sky)] = 0
 
     def rvs(self, size):
         # First of all, draw a random sample of pixel indices following the
@@ -336,4 +438,4 @@ class HealpixSky:
         return radec
 
 
-__all__ = ['UniformSky', 'FisherSky', 'HealpixSky']
+__all__ = ['UniformSky', 'UniformCircleSky', 'FisherSky', 'HealpixSky']
