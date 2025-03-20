@@ -193,7 +193,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
         del data
 
         # Handling template_id separately
-        logging.info("Preparing template IDs", dset)
+        logging.info("Preparing template IDs")
         template_ids = template_hash_to_id(
             trigger_file=h5out, bank_path=args.bank_file
         )
