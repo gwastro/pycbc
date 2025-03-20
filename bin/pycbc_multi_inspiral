@@ -60,8 +60,8 @@ def slide_limiter(args):
     If the data is not time slid, there is a single slide for the zero-lag.
     '''
     low, upp = 1, args.segment_length[args.instruments[0]]
-    if args.do_shortslides:
-        n_ifos = len(args.instruments)
+    n_ifos = len(args.instruments)
+    if args.do_shortslides and n_ifos>1:
         stride_dur = args.segment_length[args.instruments[0]]/2
         num_slides = np.int32(1 +
                               np.floor(stride_dur /
@@ -781,7 +781,7 @@ with ctx:
                     # and their SNRs
                     elif len(coinc_idx) != 0 and nifo == 1:
                         coinc_triggers = {
-                            args.instruments[0]: snr[args.instruments[0]][
+                            args.instruments[0]: snr_dict[args.instruments[0]][
                                 coinc_idx_det_frame[args.instruments[0]]
                             ]
                         }
@@ -992,7 +992,7 @@ with ctx:
                             )
                         else:
                             rho_sngl = abs(
-                                snr[args.instruments[0]][
+                                snr_dict[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
@@ -1057,7 +1057,7 @@ with ctx:
                             network_out_vals['coherent_snr'] = rho_coinc
                         else:
                             network_out_vals['coherent_snr'] = abs(
-                                snr[args.instruments[0]][
+                                snr_dict[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
