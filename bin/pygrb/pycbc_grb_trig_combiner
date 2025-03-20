@@ -454,8 +454,7 @@ logging.info(
 # there should always be two segments in the offsource bins,
 # one before and one after the onsource.
 # Nevertheless, simply rely on there being at least one stretch of offsource.
-offsource_ntrials = [int(numpy.trunc(abs(b)/trialtime))
-                     for b in bins["OFFSOURCE"]]
+offsource_ntrials = [int(abs(b) / trialtime) for b in bins["OFFSOURCE"]]
 
 # Seed random number generator
 numpy.random.seed(args.seed)
