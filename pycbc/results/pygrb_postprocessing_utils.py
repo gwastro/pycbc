@@ -162,15 +162,6 @@ def pygrb_add_null_snr_opts(parser):
                         "increase above the threshold")
 
 
-def pygrb_add_single_snr_cut_opt(parser):
-    """Add to the parser object an argument to place a threshold on single
-    detector SNR."""
-    parser.add_argument("-B", "--sngl-snr-threshold",
-                        type=float, default=4.0, help="Single detector SNR "
-                        "threshold, the two most sensitive detectors "
-                        "should have SNR above this.")
-
-
 def pygrb_add_bestnr_cut_opt(parser):
     """Add to the parser object an argument to place a threshold on BestNR."""
     if parser is None:
