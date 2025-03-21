@@ -94,8 +94,8 @@ def mkdir(dir_name):
         pass
 
 def mc_min_max_from_sorted_file(fname):
-    from ligo.lw.utils import load_filename
-    from ligo.lw.table import Table
+    from igwn_ligolw.utils import load_filename
+    from igwn_ligolw.ligolw import Table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     from pycbc.io.ligolw import LIGOLWContentHandler
 
@@ -303,7 +303,8 @@ f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 import numpy as np
-from ligo.lw import utils, table
+from igwn_ligolw import utils
+from igwn_ligolw.ligolw import Table
 import glob
 
 from pycbc.io.ligolw import LIGOLWContentHandler
@@ -329,12 +330,12 @@ for row in res:
     if row['bank'] not in btables:
         indoc = utils.load_filename(eval(row['bank']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        btables[row['bank']] = table.Table.get_table(indoc, "sngl_inspiral")
+        btables[row['bank']] = Table.get_table(indoc, "sngl_inspiral")
 
     if row['sim'] not in itables:
         indoc = utils.load_filename(eval(row['sim']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral")
+        itables[row['sim']] = Table.get_table(indoc, "sim_inspiral")
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
