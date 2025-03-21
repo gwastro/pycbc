@@ -38,6 +38,8 @@ parser.add_argument('--statmap-file',
                     help="HDF format clustered coincident trigger result file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
+parser.add_argument('--psd-files', nargs='+', action=MultiDetOptionAction,
+                    help="Merged PSD files")
 parser.add_argument('--inspiral-segments',
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-data-read-name',
@@ -222,10 +224,13 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
     _, sngl_tmplt_plots = mini.make_single_template_plots(
         workflow,
         insp_segs,
+        single_triggers,
+        tmpltbank_file,
         args.inspiral_data_read_name,
         args.inspiral_data_analyzed_name,
         params,
         args.output_dir,
+        special_tids=ifo_tids,
         data_segments=insp_data_seglists,
         tags=args.tags + [str(event_count)]
     )

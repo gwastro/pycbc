@@ -42,7 +42,7 @@ def grouper(iterable, n, fillvalue=None):
     return zip_longest(*args, fillvalue=fillvalue)
 
 def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
-                       tmpltbank_file, insp_segs, insp_data_name,
+                       tmpltbank_file, psd_files, insp_segs, insp_data_name,
                        insp_anal_name, dax_output, out_dir,
                        tags=None):
     """ Create plots that followup the Nth loudest coincident injection
@@ -105,6 +105,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_input_opt('--statmap-file', coinc_file)
     node.add_multiifo_input_list_opt('--single-detector-triggers',
                                      single_triggers)
+    node.add_multiifo_input_list_opt('--psd-files', psd_files)
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
@@ -137,6 +138,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     logger.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
+                                   psd_file,
                                    insp_segs, insp_data_name, insp_anal_name,
                                    dax_output, out_dir, veto_file=None,
                                    veto_segment_name=None, fg_file=None,
@@ -198,6 +200,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
+    node.add_input_opt('--psd-file', psd_file)
     node.add_input_opt('--single-detector-file', single_trig_file)
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
@@ -251,6 +254,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
 def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
                                   single_triggers, tmpltbank_file,
+                                  psd_files,
                                   insp_segs, insp_data_name, insp_anal_name,
                                   dax_output, out_dir, tags=None):
     """ Create plots that followup the closest missed injections
@@ -308,6 +312,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     node.add_input_opt('--injection-file', injection_file)
     node.add_input_opt('--injection-xml-file', inj_xml_file)
     node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
+    node.add_multiifo_input_list_opt('--psd-files', psd_files)
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
@@ -424,10 +429,12 @@ def get_single_template_params(curr_idx, times, bank_data,
     return params
 
 
-def make_single_template_files(workflow, segs, ifo, data_read_name,
+def make_single_template_files(workflow, segs, singles, bank_file, ifo,
+                               data_read_name,
                                analyzed_name, params, out_dir, inj_file=None,
                                exclude=None, require=None, tags=None,
                                store_file=False, use_mean_time=False,
+                               special_tid=None,
                                use_exact_inj_params=False):
     """Function for creating jobs to run the pycbc_single_template code and
     add these jobs to the workflow.
@@ -502,24 +509,10 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
     if use_exact_inj_params:
         node.add_opt('--use-params-of-closest-injection')
     else:
-        node.add_opt('--mass1', "%.6f" % params['mass1'])
-        node.add_opt('--mass2', "%.6f" % params['mass2'])
-        node.add_opt('--spin1z',"%.6f" % params['spin1z'])
-        node.add_opt('--spin2z',"%.6f" % params['spin2z'])
-        node.add_opt('--template-start-frequency',
-                     "%.6f" % params['f_lower'])
-        # Is this precessing?
-        if 'u_vals' in params or 'u_vals_%s' % ifo in params:
-            node.add_opt('--spin1x',"%.6f" % params['spin1x'])
-            node.add_opt('--spin1y',"%.6f" % params['spin1y'])
-            node.add_opt('--spin2x',"%.6f" % params['spin2x'])
-            node.add_opt('--spin2y',"%.6f" % params['spin2y'])
-            node.add_opt('--inclination',"%.6f" % params['inclination'])
-            try:
-                node.add_opt('--u-val',"%.6f" % params['u_vals'])
-            except:
-                node.add_opt('--u-val',
-                             "%.6f" % params['u_vals_%s' % ifo])
+        node.add_opt('--use-tha-trigger-as-template')
+        node.add_input_opt('--single-trigger-file', singles)
+        node.add_input_opt('--bank-file', bank_file)
+        node.add_opt('--special-trigger-id', special_tid)
 
     if params[ifo + '_end_time'] > 0 and not use_mean_time:
         trig_time = params[ifo + '_end_time']
@@ -538,7 +531,7 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
     return node.output_files
 
 
-def make_harmonic_waveform(workflow, singles, bank_file, out_dir,
+def make_harmonic_waveform(workflow, singles, bank_file, psd_file,  out_dir,
                            veto_file=None, special_tids=None,
                            tags=None):
     tags = [] if tags is None else tags
@@ -548,6 +541,7 @@ def make_harmonic_waveform(workflow, singles, bank_file, out_dir,
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
     node.add_multiifo_input_list_opt('--single-trigger-files', singles)
+    node.add_multiifo_input_list_opt('--merge-psd-files', psd_file)
     node.add_input_opt('--bank-file', bank_file)
     if veto_file is not None:
         node.add_input_opt('--veto-file', veto_file)
@@ -559,9 +553,10 @@ def make_harmonic_waveform(workflow, singles, bank_file, out_dir,
     return files
 
 
-def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
+def make_single_template_plots(workflow, segs, singles, bank_file,
+                               data_read_name, analyzed_name,
                                params, out_dir, inj_file=None, exclude=None,
-                               data_segments=None,
+                               data_segments=None, special_tids=None,
                                require=None, tags=None, params_str=None,
                                use_exact_inj_params=False):
     """Function for creating jobs to run the pycbc_single_template code and
@@ -642,14 +637,30 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             if not valid[ifo]:
                 # If the IFO is not being used, continue
                 continue
+            if special_tids is not None:
+                sids = special_tids.split(' ')
+                for sid in sids:
+                    if sid.startswith(ifo):
+                        break
+                else:
+                    raise ValueError()
+                special_tid = sid[3:]
+            else:
+                special_tid = None
+            ifo_sngls = [sngl for sngl in singles if sngl.ifo == ifo]
+            assert len(ifo_sngls) == 1
+
             data = make_single_template_files(
                 workflow,
                 segs,
+                ifo_sngls[0],
+                bank_file,
                 ifo,
                 data_read_name,
                 analyzed_name,
                 params,
                 out_dir,
+                special_tid=special_tid,
                 inj_file=inj_file,
                 exclude=exclude,
                 require=require,
@@ -675,10 +686,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             if use_exact_inj_params:
                 caption += ". The injection itself was used as the template.'"
             else:
-                caption += ". The template used has the following parameters: "
-                caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'"\
-                       %(params['mass1'], params['mass2'], params['spin1z'],
-                         params['spin2z'])
+                caption += ". Using parameters from closest trigger.'"
             node.add_opt('--plot-caption', caption)
             workflow += node
             plot_files += node.output_files

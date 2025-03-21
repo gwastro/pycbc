@@ -530,6 +530,11 @@ for insp_file in full_insps:
 
 for insp_file in full_insps:
     curr_ifo = insp_file.ifo
+    for psd_file in psd_files:
+        if psd_file.ifo == insp_file.ifo:
+            break
+    else:
+        raise ValueError()
     for subsec in workflow.cp.get_subsections('workflow-sngl_minifollowups'):
         if subsec in excl_subsecs:
             continue
@@ -537,7 +542,7 @@ for insp_file in full_insps:
         dir_str = workflow.cp.get(sec_name, 'section-header')
         currdir = rdir['single_triggers/{}_{}'.format(curr_ifo, dir_str)]
         wf.setup_single_det_minifollowups\
-            (workflow, insp_file, hdfbank, insp_files_seg_file,
+            (workflow, insp_file, hdfbank, psd_file, insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
              statfiles=wf.FileList(statfiles),
              fg_file=censored_veto, fg_name='closed_box',
@@ -587,13 +592,15 @@ layout.two_column_layout(rdir['open_box_result'], main_page)
 mfup_dir_fg = rdir['open_box_result/loudest_events_followup']
 mfup_dir_bg = rdir['background_triggers/loudest_background_followup']
 wf.setup_foreground_minifollowups(workflow, combined_bg_file,
-                                  full_insps, hdfbank, insp_files_seg_file,
+                                  full_insps, hdfbank, psd_files,
+                                  insp_files_seg_file,
                                   data_analysed_name, trig_generated_name,
                                   'daxes', mfup_dir_fg,
                                   tags=combined_bg_file.tags + ['foreground'])
 
 wf.setup_foreground_minifollowups(workflow, combined_bg_file,
-                                  full_insps, hdfbank, insp_files_seg_file,
+                                  full_insps, hdfbank, psd_files,
+                                  insp_files_seg_file,
                                   data_analysed_name, trig_generated_name,
                                   'daxes', mfup_dir_bg,
                                   tags=combined_bg_file.tags + ['background'])
@@ -853,7 +860,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
         curr_dir_nam += '_' + suf_str
     currdir = rdir[curr_dir_nam]
     wf.setup_injection_minifollowups(workflow, found_inj, inj_file,
-                                     insps, hdfbank, insp_files_seg_file,
+                                     insps, hdfbank, psd_files,
+                                     insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,
                                      'daxes', currdir, tags=[tag])
 

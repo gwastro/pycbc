@@ -21,10 +21,11 @@ import sys
 import logging
 import argparse
 import numpy
+import h5py
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, filter
-from pycbc.io import WaveformArray, HFile
+from pycbc.io import WaveformArray, HFile, SingleDetTriggers
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, complex64
@@ -175,6 +176,17 @@ parser.add_argument("--data-read-name",
 parser.add_argument("--data-analyzed-name",
         help="name of the segmentlist containing the data analysed by each job "
              "from the inspiral segment file")
+# Parameters for THA triggers
+parser.add_argument("--use-tha-trigger-as-template", action="store_true",
+                  default=False,
+                  help="If given, use THA trigger as template")
+parser.add_argument('--single-trigger-file',
+    help="The bank file in HDF format")
+parser.add_argument('--bank-file',
+    help="The bank file in HDF format")
+parser.add_argument('--special-trigger-id', type=int,
+    help="The bank file in HDF format")
+
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -301,6 +313,68 @@ with ctx:
             approximant = inj.approximant
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
+    elif opt.use_tha_trigger_as_template:
+        # Probably shouldn't be segments[0]
+        stilde = segments[0]
+        from pycbc.waveform.bank import PhenomXPTemplate
+        # Generating template from trigger list
+        trigs = SingleDetTriggers(
+            opt.single_trigger_file,
+            ifo,
+            bank_file=opt.bank_file,
+        )
+        special_idx = opt.special_trigger_id
+        norm_snr = 0.0
+        #Get the total SNR
+        for i in range(5):
+            key = 'snr_comp_{}'.format(i+1)
+            norm_snr += trigs.trigs[key][special_idx]**2
+        norm_snr = numpy.sqrt(norm_snr)
+
+        amplitudes_dict = {}
+        phases_dict = {}
+
+        for i in range(5):
+            key = 'snr_comp_{}'.format(i+1)
+            phase_key = 'coa_phase_comp_{}'.format(i+1)
+            amplitudes_dict[i] = trigs.trigs[key][special_idx]/norm_snr
+            phases_dict[i] = trigs.trigs[phase_key][special_idx]
+
+        bad_tempid = trigs.trigs['template_id'][special_idx]
+        ncomp = trigs.bank['num_comps'][bad_tempid]
+        # FIXME: Harcoding max num_comps for now
+        if ncomp > 3:
+            ncomp = 3
+
+        class template_params:
+            def __init__(self, bank, x):
+                for key in bank.keys():
+                    setattr(self, key, bank[key][x])
+
+        params = template_params(h5py.File(opt.bank_file), trigs.trigs['template_id'][special_idx])
+
+        phenom_object = PhenomXPTemplate(params, opt.sample_rate, opt.low_frequency_cutoff)
+
+        harmonics = phenom_object.get_whitened_normalized_comps(
+            1.0/opt.segment_length,
+            stilde.psd,
+            num_comps=ncomp,
+        )
+
+        template = None
+        for harm_idx, harm in enumerate(harmonics):
+            if harm_idx == ncomp:
+                break
+            if template is not None:
+                template += amplitudes_dict[harm_idx] * harm * numpy.exp(1j * phases_dict[harm_idx])
+            else:
+                template = amplitudes_dict[harm_idx] * harm * numpy.exp(1j * phases_dict[harm_idx])
+
+        # Don't want whitened template
+        template = template * (stilde.psd.data[:]**0.5)
+        template = template.astype(complex_same_precision_as(segments[0]))
+        approximant = 'THAWaveform'
+
     else:
         approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
         logging.info("Making template: %s", opt.approximant)

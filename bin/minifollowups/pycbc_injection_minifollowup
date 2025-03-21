@@ -129,6 +129,8 @@ parser.add_argument('--injection-xml-file',
                     help="XML format injection file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
+parser.add_argument('--psd-files', nargs='+', action=MultiDetOptionAction,
+                    help="Merged PSD files")
 parser.add_argument('--inspiral-segments',
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-data-read-name',
@@ -356,6 +358,8 @@ for num_event in range(num_events):
             )
 
     _, norm_plot = mini.make_single_template_plots(workflow, insp_segs,
+                            single_triggers,
+                            tmpltbank_file,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
@@ -366,6 +370,8 @@ for num_event in range(num_events):
     files += norm_plot
 
     _, inv_plot = mini.make_single_template_plots(workflow, insp_segs,
+                            single_triggers,
+                            tmpltbank_file,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
@@ -377,6 +383,8 @@ for num_event in range(num_events):
     files += inv_plot
 
     _, noinj_plot = mini.make_single_template_plots(workflow, insp_segs,
+                            single_triggers,
+                            tmpltbank_file,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
@@ -387,6 +395,7 @@ for num_event in range(num_events):
                             use_exact_inj_params=True)
     files += noinj_plot
 
+    ifo_tids_strings = []
     for curr_ifo in args.single_detector_triggers:
         # Finding loudest template in this detector near to the injection:
         # First, find triggers close to the missed injection
@@ -411,38 +420,19 @@ for num_event in range(num_events):
         # Use SNR here or NewSNR, or other??
         loudest_idx = hd_sngl.snr.argmax()
         hd_sngl.apply_mask([loudest_idx])
+        ifo_tids_strings += ['%s:%s' % (curr_ifo, loudest_idx)]
+    curr_tags = ['THA_TRIGS']
+    curr_tags += [str(num_event)]
 
-        # What are the parameters of this trigger?
-        curr_params = copy.deepcopy(inj_params)
-        curr_params['mass1'] = hd_sngl.mass1[0]
-        curr_params['mass2'] = hd_sngl.mass2[0]
-        curr_params['spin1z'] = hd_sngl.spin1z[0]
-        curr_params['spin2z'] = hd_sngl.spin2z[0]
-        curr_params['f_lower'] = hd_sngl.f_lower[0]
-        # don't require precessing template info if not present
-        try:
-            curr_params['spin1x'] = hd_sngl.spin1x[0]
-            curr_params['spin2x'] = hd_sngl.spin2x[0]
-            curr_params['spin1y'] = hd_sngl.spin1y[0]
-            curr_params['spin2y'] = hd_sngl.spin2y[0]
-            curr_params['inclination'] = hd_sngl.inclination[0]
-        except KeyError:
-            pass
-        try:
-            # Only present for precessing search
-            curr_params['u_vals'] = hd_sngl.u_vals[0]
-        except:
-            pass
-
-        curr_tags = ['TMPLT_PARAMS_%s' %(curr_ifo,)]
-        curr_tags += [str(num_event)]
-        _, loudest_plot = mini.make_single_template_plots(workflow, insp_segs,
+    _, loudest_plot = mini.make_single_template_plots(workflow, insp_segs,
+                                single_triggers,
+                                tmpltbank_file,
                                 args.inspiral_data_read_name,
-                                args.inspiral_data_analyzed_name, curr_params,
+                                args.inspiral_data_analyzed_name, inj_params,
                                 args.output_dir, inj_file=injection_xml_file,
-                                tags=args.tags + curr_tags,
-                                params_str='loudest template in %s' % curr_ifo )
-        files += loudest_plot
+                                special_tids=' '.join(ifo_tids_strings),
+                                tags=args.tags + curr_tags)
+    files += loudest_plot
 
     layouts += list(layout.grouper(files, 2))
 

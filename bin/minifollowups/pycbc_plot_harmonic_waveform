@@ -28,6 +28,7 @@ import numpy
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.results
 from pycbc.types import MultiDetOptionAction
+from pycbc.types import FrequencySeries
 from pycbc.events import ranking
 from pycbc.filter.matchedfilter import sigma
 from pycbc.io import HFile, SingleDetTriggers
@@ -80,8 +81,40 @@ def obtain_trigger_amp_phase(trigs, special_idx):
         phases_dict[i] = trigs.trigs[phase_key][special_idx]
     return amplitudes_dict, phases_dict
 
-def compute_harmonic_waveform(trigs, special_idx):
+def compute_harmonic_waveform(trigs, special_idx, ifo, merge_psd_file):
     bad_tempid = trigs.trigs['template_id'][special_idx]
+    end_time = trigs.trigs['end_time'][special_idx]
+
+    psd_fp = h5py.File(merge_psd_file, 'r')
+    psd_fp = psd_fp[ifo]
+    psd_idx = None
+    for idx in range(len(psd_fp['start_time'])):
+        st = psd_fp['start_time'][idx]
+        et = psd_fp['end_time'][idx]
+        if st < end_time < et:
+            print(st, et, end_time)
+            if psd_idx is not None:
+                # This may very well happen and we need to decide on which PSD
+                err_msg = "There seems to be multiple PSDs covering this time."
+                err_msg += " I don't know which one to use! Taking first."
+                logging.warn(err_msg)
+            else:
+                psd_idx = idx
+    if psd_idx is None:
+        err_msg = "I couldn't find an overlapping PSD in the file!"
+        err_msg += f" Covering time {end_time}."
+
+    psd_data = psd_fp[f'psds/{psd_idx}']
+    df = psd_data.attrs['delta_f']
+    epoch = psd_data.attrs['epoch']
+    data = psd_data[:]
+    psd = FrequencySeries(
+        data,
+        delta_f=df,
+        epoch=epoch,
+        dtype=data.dtype,
+        copy=False
+    )
     
     amplitudes_dict, phases_dict = obtain_trigger_amp_phase(trigs, special_idx)
 
@@ -91,25 +124,30 @@ def compute_harmonic_waveform(trigs, special_idx):
     sample_freq = 32.0
     f_lower = 30.0
     flen = int(sample_rate * sample_freq/2+1)
+    ncomp = trigs.bank['num_comps'][bad_tempid]
+    # Hardcoded max numcomps for now:
+    if ncomp > 3:
+        ncomp = 3
 
     phenom_object = PhenomXPTemplate(params, sample_rate, f_lower)
 
-    harmonics = phenom_object.compute_waveform_five_comps(1.0/sample_freq, 1024.0, num_comps = 5)
+    harmonics = phenom_object.get_whitened_normalized_comps(
+        1.0/sample_freq,
+        psd,
+        num_comps=ncomp,
+    )
 
-    ncomp = trigs.bank['num_comps'][bad_tempid]
-    reverse_flag = trigs.bank['reverse_flag'][bad_tempid]
+    #reverse_flag = trigs.bank['reverse_flag'][bad_tempid]
     logging.info("Template id: {}, mass1: {}, mass2: {}, SNR: {}, ncomp: {}".format(bad_tempid, 
                                                                         trigs.bank['mass1'][bad_tempid],
                                                                         trigs.bank['mass2'][bad_tempid],
                                                                         trigs.trigs['snr'][special_idx],
                                                                         ncomp) )
 
+    # FIXME: Can we remove harmonics_dict and just use harmonics?
     harmonics_dict = {}
     for i in range(ncomp):
-        if reverse_flag == 1:
-            harmonics_dict[i] = harmonics[4-i]
-        else: 
-            harmonics_dict[i] = harmonics[i]
+        harmonics_dict[i] = harmonics[i]
 
     p_det = _make_waveform_from_precessing_harmonics(phenom_object, harmonics_dict, amplitudes_dict, phases_dict)
 
@@ -121,7 +159,15 @@ def compute_harmonic_waveform(trigs, special_idx):
     #Amplify the template
     amp_factor = sigma(harmonics_dict[0], low_frequency_cutoff=f_lower)
     shifted_t /= amp_factor
-    return shifted_t, ncomp
+
+    harmonics = []
+    for i in range(ncomp):
+        harm_temp = harmonics_dict[i].to_timeseries()
+        harm_temp = harm_temp.cyclic_time_shift(10)
+        harm_temp /= amp_factor
+        harmonics.append(harm_temp)
+
+    return shifted_t, ncomp, harmonics
     
 
 parser = argparse.ArgumentParser()
@@ -129,18 +175,25 @@ add_common_pycbc_options(parser)
 #parser.add_argument('--verbose')
 parser.add_argument('--single-trigger-files', nargs='+',
     action=MultiDetOptionAction, metavar="IFO:FILE",
+    required=True,
     help="The HDF format single detector merged trigger files, in "
          "multi-ifo argument format, H1:file1.hdf L1:file2.hdf, etc")
-parser.add_argument('--bank-file', 
+parser.add_argument('--bank-file',
+    required=True,
     help="The bank file in HDF format")
 parser.add_argument('--veto-file',
-    help="The bank file in XML format")
+    help="The veto file in XML format")
 parser.add_argument('--special-trigger-ids', nargs='+', type=int,
     action=MultiDetOptionAction, metavar="IFO:trigger_id",required=True,
     help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type',
     choices=ranking.sngls_ranking_function_dict, default='snr',
     help="Which single-detector ranking statistic to plot.")
+parser.add_argument('--merge-psd-files', nargs='+',
+    action=MultiDetOptionAction, metavar="IFO:FILE",
+    help="Location of the MERGE_PSD output fiel to get the PSD from.",
+    required=True,
+)
 parser.add_argument('--output-file')
 
 args = parser.parse_args()
@@ -150,7 +203,9 @@ fig = pylab.figure()
 
 bankf = h5py.File(args.bank_file, 'r')
 
-fig, axs = pylab.subplots(2,1, figsize=(14,8))
+fig, axs = pylab.subplots(len(args.single_trigger_files), 1, figsize=(14,8))
+if len(args.single_trigger_files) == 1:
+    axs = [axs]
 axs_count=0
 
 for ifo in args.single_trigger_files.keys():
@@ -168,17 +223,23 @@ for ifo in args.single_trigger_files.keys():
     
     params = template_params(bankf, trigs.trigs['template_id'][special_idx])
 
-    shifted_t, ncomp = compute_harmonic_waveform(trigs, special_idx)
+    shifted_t, ncomp, harmonics = compute_harmonic_waveform(trigs, special_idx, ifo, args.merge_psd_files[ifo])
 
     ###Zoom-in automatically. Again a crappy way! Improve it !!
     threshold = 1e-2  # or something data-specific
     nonzero_indices = numpy.where(numpy.abs(shifted_t) > threshold)[0]
     i_min, i_max = nonzero_indices[0], nonzero_indices[-1]
 
-    axs[axs_count].plot(shifted_t.sample_times[i_min:i_max], shifted_t[i_min:i_max])
+    axs[axs_count].plot(shifted_t.sample_times[i_min:i_max], shifted_t[i_min:i_max], label="Full waveform")
+    for idx, harm in enumerate(harmonics):
+        axs[axs_count].plot(harm.sample_times[i_min:i_max], harm[i_min:i_max], linestyle=':', label=f"Harmonic {idx+1}")
     axs[axs_count].set_title('{}: {}-harmonic plot'.format(ifo, ncomp))
     axs[axs_count].set_xlabel('time (s)')
     axs[axs_count].set_ylabel("Scaled $h(t)$")
+    max_val = abs(shifted_t.data).argmax()
+    max_time = shifted_t.sample_times[max_val]
+    axs[axs_count].set_xlim([max_time-0.7, max_time+0.2])
+    axs[axs_count].legend()
     axs[axs_count].grid()
     axs_count += 1
 
