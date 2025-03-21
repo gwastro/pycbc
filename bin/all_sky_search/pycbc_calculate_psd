@@ -40,6 +40,7 @@ def get_psd(input_tuple):
     """ Get the PSDs for the given data chunck. This follows the same rules
     as pycbc_inspiral for determining where to calculate PSDs
     """
+    import pycbc
     seg = input_tuple[0]
     i = input_tuple[1]
     

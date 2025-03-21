@@ -241,7 +241,7 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(IS_GLIDEIN =?= True)")
-    cvmfs_loc = '"./tha_precession_v1_1.sif"'
+    cvmfs_loc = '"./tha_precession_v1_3.sif"'
     site.add_profiles(Namespace.CONDOR, key="My.SingularityImage",
                       value=cvmfs_loc)
     site.add_profiles(Namespace.CONDOR, key='transfer_input_files',
