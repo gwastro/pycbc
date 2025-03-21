@@ -81,7 +81,10 @@ m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
 s1x, s2x = f['injections']['spin1x'][iidx], f['injections']['spin2x'][iidx]
 s1y, s2y = f['injections']['spin1y'][iidx], f['injections']['spin2y'][iidx]
 s1z, s2z = f['injections']['spin1z'][iidx], f['injections']['spin2z'][iidx]
-eccentricity, rel_anomaly = f['injections']['eccentricity'][iidx], f['injections']['rel_anomaly'][iidx]
+try:
+    eccentricity, rel_anomaly = f['injections']['eccentricity'][iidx], f['injections']['rel_anomaly'][iidx]
+except KeyError:
+    eccentricity, rel_anomaly = 0, 0
 
 derived = {}
 derived['mchirp'], derived['eta'] = \
