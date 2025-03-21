@@ -282,7 +282,7 @@ for rank, num_event in enumerate(order):
     try:
         curr_params['eccentricity'] = trigs.eccentricity[num_event]
         curr_params['rel_anomaly'] = trigs.rel_anomaly[num_event]
-    except AttributeError:
+    except KeyError:
         pass
     # don't require precessing template info if not present
     try:
