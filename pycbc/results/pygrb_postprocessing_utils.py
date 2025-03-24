@@ -291,6 +291,8 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
         return None
 
     trigs = HFile(input_file, 'r')
+    if 'network/reweighted_snr' not in trigs.keys():
+        return {}
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
 
@@ -310,8 +312,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
 
     # Apply the reweighted SNR cut on the reweighted SNR
     if rw_snr_threshold is not None:
-        rw_snr = reweightedsnr_cut(rw_snr, rw_snr_threshold)
-
+        rw_snr = reweightedsnr_cut(rw_snr.copy(), rw_snr_threshold)
     # Establish the indices of data not surviving the cut
     above_thresh = rw_snr > 0
 
@@ -332,7 +333,6 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
         ifo_ids_above_thresh_locations[ifo] = \
             numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
                          for net_id in net_ids[above_thresh]])
-
     # Apply the cut on all the data by removing points with reweighted SNR = 0
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
@@ -358,9 +358,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
             if trigs_dict[path].size == trigs['network/slide_id'][:].size:
                 trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
                                                  slide_id=slide_id)
-
     return trigs_dict
-
 
 # =============================================================================
 # Function to apply vetoes to found injections
@@ -393,8 +391,12 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
     """
 
     keep_keys = keys if keys else found_injs.keys()
-
     if not found_missed_file:
+        return (dict.fromkeys(keep_keys, numpy.array([])),
+                dict.fromkeys(keep_keys, numpy.array([])),
+                None, None)
+
+    if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
         return (dict.fromkeys(keep_keys, numpy.array([])),
                 dict.fromkeys(keep_keys, numpy.array([])),
                 None, None)
