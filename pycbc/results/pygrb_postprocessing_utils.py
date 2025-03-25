@@ -225,7 +225,7 @@ def _extract_vetoes(veto_file, ifos, offsource):
         for ifo in ifos:
             segs = veto.select_segments_by_definer(veto_file, ifo=ifo)
             segs.coalesce()
-            if len(segs)>0:
+            if len(segs) > 0:
                 clean_segs[ifo] = segs
             else:
                 clean_segs[ifo] = segments.segmentlist([offsource])
@@ -297,9 +297,9 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     # Output the number of items loaded only upon a request by the user who is
     # expected not to set data_tag to 'trigs'or 'injs' when processing the
     # onsource
-    if data_tag=='trigs':
+    if data_tag == 'trigs':
         logging.info("%d triggers loaded.", len(rw_snr))
-    elif data_tag=='injs':
+    elif data_tag == 'injs':
         logging.info("%d injections loaded.", len(rw_snr))
     else:
         logging.info("Loading triggers.")
@@ -314,13 +314,12 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
 
     # Establish the indices of data not surviving the cut
     above_thresh = rw_snr > 0
-    num_orig_pts = len(above_thresh)
 
     # Output the number of items surviging vetoes with the same logic as above
     msg = ""
-    if data_tag=='trigs':
+    if data_tag == 'trigs':
         msg += f"{sum(above_thresh)} triggers "
-    elif data_tag=='injs':
+    elif data_tag == 'injs':
         msg = f"{sum(above_thresh)} injections "
     if msg:
         msg += f"surviving reweighted SNR cut at {rw_snr_threshold}."
@@ -343,7 +342,8 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
             # just copy it
             if 'search' in path or 'missed' in path:
                 trigs_dict[path] = dset[:]
-            # The dataset is trig/inj info at an IFO: cut with the correct index
+            # The dataset is trig/inj info at an IFO:
+            # cut with the correct index
             elif path[:2] in ifos:
                 ifo = path[:2]
                 if ifo_ids_above_thresh_locations[ifo].size != 0:
@@ -406,12 +406,20 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
         logging.info("Applying data vetoes to found injections...")
         for ifo in ifos:
             inj_time = found_injs[ifo+'/end_time'][:]
-            segs = veto.select_segments_by_definer(veto_file, segment_name=None, ifo=ifo)
-            if len(segs)>0:
-                idx, _ = veto.indices_outside_segments(inj_time, [veto_file], ifo, None)
+            segs = veto.select_segments_by_definer(veto_file,
+                                                   segment_name=None,
+                                                   ifo=ifo)
+            if len(segs) > 0:
+                idx, _ = veto.indices_outside_segments(inj_time,
+                                                       [veto_file],
+                                                       ifo,
+                                                       None)
                 veto_idx = numpy.append(veto_idx, idx)
                 logging.info("%d injections vetoed due to %s.", len(idx), ifo)
-                idx, _ = veto.indices_within_segments(inj_time, [veto_file], ifo, None)
+                idx, _ = veto.indices_within_segments(inj_time,
+                                                      [veto_file],
+                                                      ifo,
+                                                      None)
                 found_idx = numpy.intersect1d(found_idx, idx)
 
         veto_idx = numpy.unique(veto_idx)
@@ -507,7 +515,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
                                   in trial_dict[slide_id]]
 
         # Check that the number of triggers has not increased after vetoes
-        assert len(sorted_trigs[slide_id]) <= num_trigs_before,\
+        assert len(sorted_trigs[slide_id]) <= num_trigs_before, \
             f"Slide {slide_id} has {num_trigs_before} triggers before the "\
             f"trials dictionary was used and {len(sorted_trigs[slide_id])} "\
             "after. This should not happen."
@@ -762,7 +770,7 @@ def get_coinc_snr(trigs_or_injs):
 
     coinc_snr = numpy.array([])
     if 'network/coherent_snr' in trigs_or_injs.keys() and \
-        'network/null_snr' in trigs_or_injs.keys():
+            'network/null_snr' in trigs_or_injs.keys():
         coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
         null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
         coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)

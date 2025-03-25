@@ -147,8 +147,10 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     # Apply reweighted SNR cut
     cut_data = {}
     if snr_threshold:
-        logging.info("%d found injections loaded.", len(found_data[inj_params[0]]))
-        logging.info("%d missed injections loaded.", len(missed_data[inj_params[0]]))
+        logging.info("%d found injections loaded.",
+                     len(found_data[inj_params[0]]))
+        logging.info("%d missed injections loaded.",
+                     len(missed_data[inj_params[0]]))
         logging.info("Applying reweighted SNR cut at %s.", snr_threshold)
         rw_snr_cut = found_data['reweighted_snr'] < snr_threshold
         for key in found_data:
@@ -314,7 +316,8 @@ trig_data = ppu.load_data(offsource_file, ifos, data_tag='offsource',
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
 # _av stands for after vetoes
-keys = ['network/end_time_gc', 'network/coherent_snr', 'network/reweighted_snr']
+keys = ['network/end_time_gc', 'network/coherent_snr',
+        'network/reweighted_snr']
 trig_data_av = ppu.extract_trig_properties(
     trial_dict,
     trig_data,
@@ -325,8 +328,8 @@ trig_data_av = ppu.extract_trig_properties(
 
 # Max SNR and BestNR values in each trial: these are stored in dictionaries
 # keyed by slide_id, as arrays indexed by trial number
-background_snr = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
-background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+background_snr = {k: np.zeros(len(v)) for k, v in trial_dict.items()}
+background = {k: np.zeros(len(v)) for k, v in trial_dict.items()}
 for slide_id in slide_dict:
     trig_times = trig_data_av[keys[0]][slide_id]
     for j, trial in enumerate(trial_dict[slide_id]):
@@ -505,7 +508,7 @@ if onsource_file:
         if on_trigs_bestnrs.size > 0:
             bestNR_event = np.argmax(on_trigs_bestnrs)
             loud_on_bestnr_trigs = on_trigs['network/event_id'][bestNR_event]
-            loud_on_bestnr =  on_trigs_bestnrs[bestNR_event]
+            loud_on_bestnr = on_trigs_bestnrs[bestNR_event]
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
@@ -612,7 +615,7 @@ if found_missed_file is not None:
     # 3) missed after being recovered: vetoed (these have bestnr = 0)
 
     # Avoids a problem with formatting in the non-static html output file
-    #missed_na = [-0] * len(missed_injs['mchirp'])
+    # missed_na = [-0] * len(missed_injs['mchirp'])
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
