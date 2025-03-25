@@ -223,7 +223,8 @@ for ifo in ifos:
 # 3) Calculate the mean, max, and min sigmas
 for ifo in ifos:
     sigma_norm = found_trigs[ifo+'/sigmasq'] / found_trigs['sigma_tot']
-    found_trigs[ifo+'/sigma_mean'] = sigma_norm.mean() if len(sigma_norm) else 0
+    found_trigs[ifo+'/sigma_mean'] = sigma_norm.mean() \
+        if len(sigma_norm) else 0
     if ifo == opts.ifo:
         found_trigs['sigma_max'] = sigma_norm.max() if len(sigma_norm) else 0
         found_trigs['sigma_min'] = sigma_norm.min() if len(sigma_norm) else 0
@@ -242,7 +243,8 @@ logging.info("Plotting...")
 
 # Order the IFOs by sensitivity
 ifo_sensitivity = {
-    ifo: found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean'] for ifo in ifos
+    ifo: found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean']
+    for ifo in ifos
 }
 ifo_sensitivity = collections.OrderedDict(
     sorted(ifo_sensitivity.items(), key=operator.itemgetter(1), reverse=True)
