@@ -14,7 +14,6 @@ dnf makecache
 dnf -y groupinstall "Development Tools" "Scientific Support"
 rpm -e --nodeps git perl-Git
 dnf -y install \
-    @python39 \
     fftw \
     fftw-devel \
     fftw-libs \
@@ -29,13 +28,15 @@ dnf -y install \
     libpng-devel \
     openssl-devel \
     osg-ca-certs \
-    python39-devel \
+    python3.11 \
+    python3.11-devel \
+    python3.11-pip \
     rsync \
     sqlite-devel \
     swig \
     which \
     zlib-devel
-alternatives --set python /usr/bin/python3.9
+alternatives --set python /usr/bin/python3.11
 python -m pip install --upgrade pip setuptools wheel cython
 python -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite
 dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm
