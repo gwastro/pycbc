@@ -136,11 +136,11 @@ bank_file = HFile(opts.bank_file, 'r')
 
 # Check options
 if opts.exclusion_dist_output_file is not None or \
-    opts.onsource_output_file is not None:
+        opts.onsource_output_file is not None:
     if opts.onsource_file is None:
-        logging.error("Requesting the --exclusion-dist-output-file or the " +
-                      "--onsource-output-file requires the --onsource-file " +
-                      "as nput.")
+        logging.error("Requesting the --exclusion-dist-output-file or " +
+                      "the --onsource-output-file requires the " +
+                      "--onsource-file as nput.")
 
 # Store options used multiple times in local variables
 trig_file = opts.trig_file
@@ -220,7 +220,7 @@ trig_data = ppu.extract_trig_properties(
 
 # Max BestNR values in each trial: these are stored in a dictionary keyed
 # by slide_id, as arrays indexed by trial number
-background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+background = {k: np.zeros(len(v)) for k, v in trial_dict.items()}
 for slide_id in slide_dict:
     trig_times = trig_data[keys[0]][slide_id]
     for j, trial in enumerate(trial_dict[slide_id]):
@@ -303,9 +303,9 @@ if onsource_file:
         loud_on_fap = sum(sorted_bkgd > loud_on_bestnr) / total_trials
 
 
-# =======================
-# Post-process injections
-# =======================
+# ====================
+# Load injections data
+# ====================
 # injs contains found/missed injections AND triggers they generated
 # The reweighted SNR cut is applied, vetoes are not
 injs = ppu.load_data(found_missed_file, ifos, data_tag='injs',
@@ -570,7 +570,8 @@ if opts.background_output_file:
     ax.grid()
     ax.set_ylim([0, 1])
     ax.set_xlim(0, 1.3*upper_dist)
-    ax.set_ylabel("Fraction of injections found louder than loudest background")
+    ax.set_ylabel("Fraction of injections found louder than "
+                  "loudest background")
     ax.set_xlabel("Distance (Mpc)")
     plot_title = "Detection efficiency - "+inj_set_name
     plot_caption = "Injection recovery efficiency using "

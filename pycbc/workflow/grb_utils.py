@@ -36,7 +36,7 @@ from gwdatafind.utils import filename_metadata
 
 from pycbc import makedir
 from pycbc.workflow.core import \
-    File, FileList, resolve_url_to_file,\
+    File, FileList, resolve_url_to_file, \
     Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
@@ -335,8 +335,12 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     exe_class = _select_grb_pp_class(wf, "trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
-    node, trig_files = job_instance.create_node(wf.ifo_string, seg_dir, segment,
-                                                insp_files, pp_dir, bank_file)
+    node, trig_files = job_instance.create_node(wf.ifo_string,
+                                                seg_dir,
+                                                segment,
+                                                insp_files,
+                                                pp_dir,
+                                                bank_file)
     wf.add_node(node)
 
     # Trig clustering for each trig file
@@ -759,7 +763,7 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
                                  inj_files, bank_file, seg_dir,
-                                 veto_file=None,tags=None,
+                                 veto_file=None, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.

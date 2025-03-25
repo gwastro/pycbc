@@ -62,8 +62,8 @@ TQDM_KW = {
     "smoothing": 0.05,
 }
 
-# -- utilities ----------------------------------
 
+# -- utilities ----------------------------------
 def find_split_files(filelist, split):
     for fn in filelist:
         if (split is None and 'SPLIT' not in fn) or split in fn:
@@ -95,8 +95,8 @@ def read_hdf5_triggers(inputfiles, verbose=False):
         if not isinstance(obj, h5py.Dataset):
             return
         elif name.startswith("network") and \
-            NETWORK_IFO_EVENT_ID_REGEX.match(name):
-                return
+                NETWORK_IFO_EVENT_ID_REGEX.match(name):
+            return
         elif "template_id" in name:
             return
         elif "search" in name:
@@ -147,8 +147,8 @@ def read_hdf5_triggers(inputfiles, verbose=False):
 
     return out_dict
 
-# -- parse command line -------------------------
 
+# -- parse command line -------------------------
 parser = argparse.ArgumentParser(
     description=__doc__,
 )
@@ -222,12 +222,12 @@ missed = []
 found = []
 
 # dictionary that will contain ifo names and 'network' as keys and information
-# on triggers to be written to file 
+# on triggers to be written to file
 out_trigs = {}
 # open first injection file
 firstfile = HFile(args.input_files[0], "r")
 for key in firstfile.keys():
-    # associate ifo names and 'network' with [] so we can append later 
+    # associate ifo names and 'network' with [] so we can append later
     out_trigs[key] = defaultdict(list)
 
 allinjections = None
@@ -329,7 +329,7 @@ with HFile(outfilename, "w") as h5out:
                 grp[field] = injs[field]
             else:
                 grp[field] = [str(s) for s in injs[field]]
-                
+
     # write triggers
     for x in out_trigs:
         xgroup = h5out.create_group(x)

@@ -61,7 +61,7 @@ def slide_limiter(args):
     '''
     low, upp = 1, args.segment_length[args.instruments[0]]
     n_ifos = len(args.instruments)
-    if args.do_shortslides and n_ifos>1:
+    if args.do_shortslides and n_ifos > 1:
         stride_dur = args.segment_length[args.instruments[0]]/2
         num_slides = np.int32(1 +
                               np.floor(stride_dur /

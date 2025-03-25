@@ -171,8 +171,10 @@ found_after_vetoes, *_ = ppu.apply_vetoes_to_found_injs(
 )
 
 # Obtain times and SNRs
-trig_data_time = numpy.concatenate([found_trigs[x_key][slide_id][:] for slide_id in slide_dict])
-trig_data_snr = numpy.concatenate([found_trigs[y_key][slide_id][:] for slide_id in slide_dict])
+trig_data_time = numpy.concatenate([found_trigs[x_key][slide_id][:]
+                                    for slide_id in slide_dict])
+trig_data_snr = numpy.concatenate([found_trigs[y_key][slide_id][:]
+                                   for slide_id in slide_dict])
 inj_data_time = found_after_vetoes[x_key][:] if inj_file else None
 inj_data_snr = found_after_vetoes[y_key][:] if inj_file else None
 

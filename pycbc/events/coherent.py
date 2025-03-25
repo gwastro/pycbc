@@ -63,7 +63,8 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
                 [coinc_list, idx_dict[ifo] - time_delay_idx[ifo]]
             )
     # Search through coinc_idx for repeated indexes. These must have been loud
-    # in at least min_nifos detectors if the analysis uses more than 1 detector.
+    # in at least min_nifos detectors if the analysis uses more than 1
+    # detector.
     counts = np.unique(coinc_list, return_counts=True)
     if len(idx_dict) == 1:
         return counts[0]
