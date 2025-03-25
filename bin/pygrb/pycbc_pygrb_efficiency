@@ -570,7 +570,7 @@ if opts.background_output_file:
     ax.grid()
     ax.set_ylim([0, 1])
     ax.set_xlim(0, 1.3*upper_dist)
-    ax.set_ylabel("Fraction of injections found louder than " +
+    ax.set_ylabel("Fraction of injections found louder than "
                   "loudest background")
     ax.set_xlabel("Distance (Mpc)")
     plot_title = "Detection efficiency - "+inj_set_name
