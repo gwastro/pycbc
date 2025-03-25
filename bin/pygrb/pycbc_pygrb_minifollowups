@@ -64,8 +64,9 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     # Ensure that zero-lag data is used in these follow-up plots and store
     # the slide-id option originally provided
     orig_slide_id = None
-    if workflow.cp.has_option('pygrb_plot_snr_timeseries','slide-id'):
-        orig_slide_id = workflow.cp.get('pygrb_plot_snr_timeseries','slide-id')
+    if workflow.cp.has_option('pygrb_plot_snr_timeseries', 'slide-id'):
+        orig_slide_id = workflow.cp.get('pygrb_plot_snr_timeseries',
+                                        'slide-id')
     workflow.cp.add_options_to_section(
         'pygrb_plot_snr_timeseries',
         [('slide-id', '0')],
@@ -116,7 +117,7 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
             True
         )
     else:
-        workflow.cp.remove_option('pygrb_plot_snr_timeseries','slide-id')
+        workflow.cp.remove_option('pygrb_plot_snr_timeseries', 'slide-id')
 
     return node.output_files
 
@@ -142,7 +143,8 @@ wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 ppu.pygrb_add_bestnr_cut_opt(parser)
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
+pycbc.init_logging(args.verbose,
+                   format="%(asctime)s: %(levelname)s: %(message)s")
 
 workflow = wf.Workflow(args)
 
