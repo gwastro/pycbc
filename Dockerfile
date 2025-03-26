@@ -10,7 +10,6 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 RUN <<EOF
 dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
 dnf -y install cvmfs cvmfs-config-default
-dnf clean all
 dnf makecache
 dnf -y groupinstall "Development Tools" "Scientific Support"
 rpm -e --nodeps git perl-Git
@@ -44,7 +43,6 @@ EOF
 
 # set up environment
 RUN <<EOF
-cd /
 mkdir -p /cvmfs/config-osg.opensciencegrid.org /cvmfs/software.igwn.org /cvmfs/gwosc.osgstorage.org
 echo "config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab
 echo "software.igwn.org /cvmfs/software.igwn.org cvmfs ro,noauto 0 0" >> /etc/fstab
@@ -71,8 +69,8 @@ dnf -y install \
     openmpi-devel
 python3.9 -m pip install schwimmbad
 MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python3.9 -m pip install --no-cache-dir mpi4py
+echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
 EOF
-RUN echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
 
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
