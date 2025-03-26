@@ -1,7 +1,7 @@
 #!/bin/bash -v
 set -e
 cd /scratch
-python3.9 -m pip install --upgrade 'pip<22.0'
+python3.9 -m pip install --upgrade pip
 python3.9 -m pip install -r requirements.txt
 python3.9 -m pip install -r requirements-igwn.txt
 python3.9 -m pip install -r companion.txt
