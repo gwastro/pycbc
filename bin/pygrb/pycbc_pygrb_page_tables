@@ -113,11 +113,14 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_'+param] = \
             np.array(bank_file[param])[inj_data['network/template_id']]
-    if 'network/end_time_gc' in inj_data:
-        found_data['time_diff'] = \
-                found_data['tc'] - inj_data['network/end_time_gc'][...]
-    else:
-        found_data['time_diff'] = np.array([])
+    # If there are no found injections, simply move on
+    # (there are no injections missed after the cut to return)
+    if 'network/end_time_gc' not in inj_data.keys():
+        return found_data, missed_data, {}
+    # Otherwise carry on getting the recovered parameters and statistic values
+    # of the found injections
+    found_data['time_diff'] = \
+        found_data['tc'] - inj_data['network/end_time_gc'][...]
     found_data['rec_mchirp'] = mchirp_from_mass1_mass2(
         found_data['rec_mass1'],
         found_data['rec_mass2'])
