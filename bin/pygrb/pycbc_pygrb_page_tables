@@ -150,7 +150,7 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     # BestNRs
     found_data['bestnr'] = reweightedsnr_cut(found_data['reweighted_snr'][...],
                                              snr_threshold)
-    # Apply reweighted SNR cut
+    # Apply reweighted SNR cut to the found injections
     cut_data = {}
     if snr_threshold:
         logging.info("%d found injections loaded.",
@@ -611,6 +611,9 @@ if found_missed_file is not None:
         veto_file=opts.veto_file
     )
 
+    if 'bestnr' not in found_after_vetoes.keys():
+        found_after_vetoes['bestnr'] = np.array([])
+
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = found_after_vetoes['bestnr'] > max_bestnr
@@ -655,6 +658,9 @@ if found_missed_file is not None:
              'rec_mass2', 'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra',
              'rec_dec', 'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
+    for key in keys:
+        if key not in found_after_vetoes.keys():
+            found_after_vetoes[key] = np.array([])
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
              'spin2z', 'rec_spin1z', 'rec_spin2z']
     td = [found_after_vetoes[key][nonzero_fap] for key in keys]
@@ -686,6 +692,11 @@ if found_missed_file is not None:
                                          **kwds)
 
     # Write quiet triggers to html file
+    if len(cut_injs) == 0:
+        cut_injs = dict.fromkeys(keys, np.array([]))
+    for key in keys:
+        if key not in vetoed:
+            vetoed[key] = np.array([])
     t_missed = [np.concatenate((vetoed[key], cut_injs[key])) for key in keys]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
