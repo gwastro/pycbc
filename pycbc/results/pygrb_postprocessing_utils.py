@@ -795,7 +795,7 @@ def template_hash_to_id(trigger_file, bank_path):
     bank_file: filepath for template bank
     """
     ifos = [k for k in trigger_file.keys() if k != 'network']
-    if ifos[0]'/template_hash' not in trigger_file.keys():
+    if ifos[0]+'/template_hash' not in trigger_file.keys():
         return numpy.array([], dtype=numpy.int64)
     with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
