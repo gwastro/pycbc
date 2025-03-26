@@ -796,11 +796,11 @@ def template_hash_to_id(trigger_file, bank_path):
     """
     ifos = [k for k in trigger_file.keys() if k != 'network']
     if ifos[0]+'/template_hash' not in trigger_file.keys():
-        return numpy.array([], dtype=numpy.int64)
+        return numpy.array([], dtype=int)
     with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
-    trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=numpy.int64)
+    trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
     for idx, t_hash in enumerate(hashes):
         matches = numpy.where(trig_hashes == t_hash)
         trig_ids[matches] = idx
