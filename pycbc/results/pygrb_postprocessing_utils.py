@@ -357,9 +357,10 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
             else:
                 trigs_dict[path] = dset[above_thresh]
 
-            if trigs_dict[path].size == trigs['network/slide_id'][:].size:
-                trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
-                                                 slide_id=slide_id)
+            if 'network/slide_id' in trigs.keys():
+                if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                    trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
+                                                     slide_id=slide_id)
     return trigs_dict
 
 
