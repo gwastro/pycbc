@@ -52,7 +52,10 @@ def get_stat(args, trigs, threshold):
 
         above = chunk_stat >= threshold
         stat.append(chunk_stat[above])
-        select.append(trigger_keep_ids[above])
+
+        trigger_keep_bool = np.zeros(e-s, dtype=bool)
+        trigger_keep_bool[trigger_keep_ids][above] = True
+        select.append(trigger_keep_bool)
         s += chunk_size
 
     # Return boolean area that selects the triggers above threshold
