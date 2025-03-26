@@ -658,11 +658,11 @@ if found_missed_file is not None:
              'rec_mass2', 'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra',
              'rec_dec', 'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
+    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+             'spin2z', 'rec_spin1z', 'rec_spin2z']
     for key in keys:
         if key not in found_after_vetoes.keys():
             found_after_vetoes[key] = np.array([])
-    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
-             'spin2z', 'rec_spin1z', 'rec_spin2z']
     td = [found_after_vetoes[key][nonzero_fap] for key in keys]
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
