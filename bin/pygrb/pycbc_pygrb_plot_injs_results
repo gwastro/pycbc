@@ -163,7 +163,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
             key = ifo+'/end_time'
             data_dict[key] = injs[key] if key in injs else np.array([])
         key = 'network/reweighted_snr'
-        data_dict['reweighted_snr'] = \ 
+        data_dict['reweighted_snr'] = \
             injs[key] if key in injs else np.array([])
 
     logging.info("%d %s injections analysed.", len(data_dict[keys[0]]), tag)
