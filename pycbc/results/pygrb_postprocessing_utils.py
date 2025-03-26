@@ -377,6 +377,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                 if trigs_dict[path].size == trigs['network/slide_id'][:].size:
                     trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
                                                      slide_id=slide_id)
+
     return trigs_dict
 
 
@@ -411,6 +412,7 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
     """
 
     keep_keys = keys if keys else found_injs.keys()
+    
     if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
         return (dict.fromkeys(keep_keys, numpy.array([])),
                 dict.fromkeys(keep_keys, numpy.array([])),
