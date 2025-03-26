@@ -159,14 +159,12 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
 
     # Include information needed to apply vetoes and reweighted SNR cut
     if tag == 'found':
-        if 'network/reweighted_snr' in injs:
-            for ifo in ifos:
-                data_dict[ifo+'/end_time'] = injs[ifo+'/end_time']
-            data_dict['reweighted_snr'] = injs['network/reweighted_snr']
-        else:
-            for ifo in ifos:
-                data_dict[ifo+'/end_time'] = np.array([])
-            data_dict['reweighted_snr'] = np.array([])
+        for ifo in ifos:
+            key = ifo+'/end_time'
+            data_dict[key] = injs[key] if key in injs else np.array([])
+        key = 'network/reweighted_snr'
+        data_dict['reweighted_snr'] = \ 
+            injs[key] if key in injs else np.array([])
 
     logging.info("%d %s injections analysed.", len(data_dict[keys[0]]), tag)
 
