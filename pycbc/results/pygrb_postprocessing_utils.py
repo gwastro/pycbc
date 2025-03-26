@@ -312,24 +312,11 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
             if ifo+'/event_id' in trigs.keys() \
             else numpy.array([], dtype=numpy.int64)
     trigs.close()
-    # Output the number of items loaded only upon a request by the user who is
-    # expected not to set data_tag to 'trigs'or 'injs' when processing the
-    # onsource
-    if data_tag == 'trigs':
-        logging.info("%d triggers loaded.", len(rw_snr))
-    elif data_tag == 'injs':
-        logging.info("%d injections loaded.", len(rw_snr))
-    else:
-        logging.info("Loading triggers.")
-    ifo_ids = {}
-    for ifo in ifos:
-        ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
-    trigs.close()
 
     # Apply the reweighted SNR cut on the reweighted SNR
     if rw_snr_threshold is not None:
         rw_snr = reweightedsnr_cut(rw_snr, rw_snr_threshold)
-    
+
     # Establish the indices of data not surviving the cut
     above_thresh = rw_snr > 0
 
@@ -412,7 +399,7 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
     """
 
     keep_keys = keys if keys else found_injs.keys()
-    
+
     if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
         return (dict.fromkeys(keep_keys, numpy.array([])),
                 dict.fromkeys(keep_keys, numpy.array([])),
