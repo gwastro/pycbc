@@ -291,10 +291,11 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
         return None
 
     trigs = HFile(input_file, 'r')
-    if 'network/reweighted_snr' not in trigs.keys():
-        return {}
-    rw_snr = trigs['network/reweighted_snr'][:]
-    net_ids = trigs['network/event_id'][:]
+    rw_snr = trigs['network/reweighted_snr'][:] \
+        if 'network/reweighted_snr' in trigs.keys() else numpy.array([])
+    net_ids = trigs['network/event_id'][:] \
+        if 'network/event_id' in trigs.keys() \
+        else numpy.array([], dtype=numpy.int64)
 
     # Output the number of items loaded only upon a request by the user who is
     # expected not to set data_tag to 'trigs'or 'injs' when processing the
