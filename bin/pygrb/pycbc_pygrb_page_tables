@@ -125,12 +125,8 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
         found_data['rec_mass1'],
         found_data['rec_mass2'])
     # Recovered RA and Dec
-    if 'network/ra' and 'network/dec' in inj_data:
-        found_data['rec_ra'] = inj_data['network/ra'][...]
-        found_data['rec_dec'] = inj_data['network/dec'][...]
-    else:
-        found_data['rec_ra'] = np.array([])
-        found_data['rec_dec'] = np.array([])
+    found_data['rec_ra'] = inj_data['network/ra'][...]
+    found_data['rec_dec'] = inj_data['network/dec'][...]
     # Statistics values
     if 'network/my_network_chisq' and 'network/nifo'in inj_data:
         for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
