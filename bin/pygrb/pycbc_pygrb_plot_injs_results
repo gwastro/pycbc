@@ -298,6 +298,7 @@ logging.info("Background bestNR calculated.")
 # Load injection data without applying the reweighted SNR cut, nor vetoes
 inj_data = ppu.load_data(opts.found_missed_file, ifos, data_tag='injs',
                          slide_id=0)
+
 # Extract the necessary data from the missed injections for the plot
 missed_inj = complete_inj_data(inj_data, [x_qty, y_qty], 'missed', ifos=ifos)
 
