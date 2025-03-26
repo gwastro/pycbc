@@ -54,7 +54,7 @@ def get_stat(args, trigs, threshold):
         stat.append(chunk_stat[above])
 
         trigger_keep_bool = np.zeros(e-s, dtype=bool)
-        trigger_keep_bool[trigger_keep_ids][above] = True
+        trigger_keep_bool[trigger_keep_ids[above]] = True
         select.append(trigger_keep_bool)
         s += chunk_size
 
