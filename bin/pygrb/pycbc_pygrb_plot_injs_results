@@ -160,8 +160,11 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
     # Include information needed to apply vetoes and reweighted SNR cut
     if tag == 'found':
         for ifo in ifos:
-            data_dict[ifo+'/end_time'] = injs[ifo+'/end_time']
-        data_dict['reweighted_snr'] = injs['network/reweighted_snr']
+            key = ifo+'/end_time'
+            data_dict[key] = injs[key] if key in injs else np.array([])
+        key = 'network/reweighted_snr'
+        data_dict['reweighted_snr'] = \
+            injs[key] if key in injs else np.array([])
 
     logging.info("%d %s injections analysed.", len(data_dict[keys[0]]), tag)
 
@@ -295,6 +298,7 @@ logging.info("Background bestNR calculated.")
 # Load injection data without applying the reweighted SNR cut, nor vetoes
 inj_data = ppu.load_data(opts.found_missed_file, ifos, data_tag='injs',
                          slide_id=0)
+
 # Extract the necessary data from the missed injections for the plot
 missed_inj = complete_inj_data(inj_data, [x_qty, y_qty], 'missed', ifos=ifos)
 

@@ -291,8 +291,11 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
         return None
 
     trigs = HFile(input_file, 'r')
-    rw_snr = trigs['network/reweighted_snr'][:]
-    net_ids = trigs['network/event_id'][:]
+    rw_snr = trigs['network/reweighted_snr'][:] \
+        if 'network/reweighted_snr' in trigs.keys() else numpy.array([])
+    net_ids = trigs['network/event_id'][:] \
+        if 'network/event_id' in trigs.keys() \
+        else numpy.array([], dtype=numpy.int64)
 
     # Output the number of items loaded only upon a request by the user who is
     # expected not to set data_tag to 'trigs'or 'injs' when processing the
@@ -305,7 +308,9 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
         logging.info("Loading triggers.")
     ifo_ids = {}
     for ifo in ifos:
-        ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
+        ifo_ids[ifo] = trigs[ifo+'/event_id'][:] \
+            if ifo+'/event_id' in trigs.keys() \
+            else numpy.array([], dtype=numpy.int64)
     trigs.close()
 
     # Apply the reweighted SNR cut on the reweighted SNR
@@ -355,9 +360,10 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
             else:
                 trigs_dict[path] = dset[above_thresh]
 
-            if trigs_dict[path].size == trigs['network/slide_id'][:].size:
-                trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
-                                                 slide_id=slide_id)
+            if 'network/slide_id' in trigs.keys():
+                if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                    trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
+                                                     slide_id=slide_id)
 
     return trigs_dict
 
@@ -394,10 +400,11 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
 
     keep_keys = keys if keys else found_injs.keys()
 
-    if not found_missed_file:
-        return (dict.fromkeys(keep_keys, numpy.array([])),
-                dict.fromkeys(keep_keys, numpy.array([])),
-                None, None)
+    if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
+        empty_dict = dict.fromkeys(keep_keys, numpy.array([]))
+        empty_dict['network/template_id'] = \
+            empty_dict['network/template_id'].astype(dtype=numpy.int64)
+        return (empty_dict, empty_dict, None, None)
 
     found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
     veto_idx = numpy.array([], dtype=numpy.int64)
@@ -788,9 +795,11 @@ def template_hash_to_id(trigger_file, bank_path):
     trigger_file: HFile object for trigger file
     bank_file: filepath for template bank
     """
+    ifos = [k for k in trigger_file.keys() if k != 'network']
+    if ifos[0]+'/template_hash' not in trigger_file.keys():
+        return numpy.array([], dtype=int)
     with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
-    ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
     for idx, t_hash in enumerate(hashes):
