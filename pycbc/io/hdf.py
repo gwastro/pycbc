@@ -1509,24 +1509,35 @@ chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
+    """
+    Retrieves the chi-squared values based on the specified choice.
+
+    Parameters:
+    ----------
+    hdfile: HDF file object, or dictionary, or ReadByTemplate object 
+            or SingleDetTriggers object
+        The object to retrieve the chi-squared values from.
+    chisq_choice: str 
+        The choice of chi-squared values to retrieve.
+
+    Returns:
+    -------
+    chisq: numpy.ndarray
+        The chi-squared values based on the specified choice.
+    """
     f = hdfile
-    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
-                             'max_bank_cont_trad']:
-        trad_chisq = f['chisq'][:]
-        # We now need to handle the case where chisq is not actually calculated
-        # 0 is used as a sentinel value
+    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad', 'max_bank_cont_trad']:
+        trad_data = f['chisq'][:]
         trad_chisq_dof = f['chisq_dof'][:]
-        trad_chisq /= (trad_chisq_dof * 2 - 2)
-    if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
-                             'max_bank_cont_trad']:
-        cont_chisq = f['cont_chisq'][:]
+        trad_chisq = trad_data / (trad_chisq_dof * 2 - 2)
+    if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont', 'max_bank_cont_trad']:
+        cont_data = f['cont_chisq'][:]
         cont_chisq_dof = f['cont_chisq_dof'][:]
-        cont_chisq /= cont_chisq_dof
-    if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
-                             'max_bank_cont_trad']:
-        bank_chisq = f['bank_chisq'][:]
+        cont_chisq = cont_data / cont_chisq_dof
+    if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']:
+        bank_data = f['bank_chisq'][:]
         bank_chisq_dof = f['bank_chisq_dof'][:]
-        bank_chisq /= bank_chisq_dof
+        bank_chisq = bank_data / bank_chisq_dof
     if chisq_choice == 'sg':
         chisq = f['sg_chisq'][:]
     elif chisq_choice == 'traditional':
