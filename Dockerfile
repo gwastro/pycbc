@@ -35,7 +35,7 @@ dnf -y install \
     swig \
     which \
     zlib-devel
-RUN alternatives --set python /usr/bin/python3.9
+alternatives --set python /usr/bin/python3.9
 python -m pip install --upgrade pip setuptools wheel cython
 python -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite
 dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm
