@@ -42,6 +42,93 @@ def cart_to_spher(sky_points):
     spher[spher[:, 0] <0, 0] += 2 * np.pi
     return spher
 
+def make_single_det_grid(args):
+    """Construct a sky grid for a single-detector analysis.
+    Since a one-detector network has no sky localization capability,
+    we just put a single point at the center of the input distribution.
+    """
+    sky_grid = SkyGrid(
+        [args.ra], [args.dec], args.instruments, args.trigger_time
+    )
+    return sky_grid
+
+def make_multi_det_grid(args):
+    '''
+    Compute a skygrid object using the time delay among detectors 
+    in the network.
+    '''
+    args.instruments.sort()  # Put the ifos in alphabetical order
+    detectors = args.instruments
+    detectors = [Detector(d) for d in detectors]
+    detector_pairs = list(itertools.combinations(detectors, 2))
+
+    # Calculate the time delay for each detector pair
+    tds = [
+        detector_pairs[i][0].time_delay_from_detector(
+            detector_pairs[i][1], args.ra, args.dec, args.trigger_time
+        )
+        for i in range(len(detector_pairs))
+    ]
+
+    # Calculate the light travel time between the detector pairs
+    light_travel_times = [
+        detector_pairs[i][0].light_travel_time_to_detector(detector_pairs[i][1])
+        for i in range(len(detector_pairs))
+    ]
+
+    # Calculate the required angular spacing between the sky points
+    ang_spacings = [
+        (2 * args.timing_uncertainty)
+        / np.sqrt(light_travel_times[i] ** 2 - tds[i] ** 2)
+        for i in range(len(detector_pairs))
+    ]
+    angular_spacing = min(ang_spacings)
+
+    sky_points = np.zeros((1, 2))
+
+    number_of_rings = int(args.sky_error / angular_spacing)
+
+    # Generate the sky grid centered at the North pole
+    for i in range(number_of_rings + 1):
+        if i == 0:
+            sky_points[0][0] = 0
+            sky_points[0][1] = np.pi / 2
+        else:
+            number_of_points = int(2 * np.pi * i)
+            for j in range(number_of_points):
+                sky_points = np.row_stack(
+                    (
+                        sky_points,
+                        np.array([j / i, np.pi / 2 - i * angular_spacing]),
+                    )
+                )
+
+    # Convert spherical coordinates to cartesian coordinates
+    cart = spher_to_cart(sky_points)
+
+    grb = np.zeros((1, 2))
+    grb[0] = args.ra, args.dec
+    grb_cart = spher_to_cart(grb)
+
+    north_pole = [0, 0, 1]
+
+    ort = np.cross(grb_cart, north_pole)
+    norm = np.linalg.norm(ort)
+    ort /= norm
+    n = -np.arccos(np.dot(grb_cart, north_pole))
+    u = ort * n
+
+    # Rotate the sky grid to the center of the external trigger error box
+    r = R.from_rotvec(u)
+    rota = r.apply(cart)
+
+    # Convert cartesian coordinates back to spherical coordinates
+    spher = cart_to_spher(rota)
+
+    sky_grid = SkyGrid(
+        spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
+    )
+    return sky_grid
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -97,79 +184,12 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 if len(args.instruments) == 1:
-    parser.error('Can not make a sky grid for only one detector.')
-
-args.instruments.sort()  # Put the ifos in alphabetical order
-detectors = args.instruments
-detectors = [Detector(d) for d in detectors]
-detector_pairs = list(itertools.combinations(detectors, 2))
-
-# Calculate the time delay for each detector pair
-tds = [
-    detector_pairs[i][0].time_delay_from_detector(
-        detector_pairs[i][1], args.ra, args.dec, args.trigger_time
-    )
-    for i in range(len(detector_pairs))
-]
-
-# Calculate the light travel time between the detector pairs
-light_travel_times = [
-    detector_pairs[i][0].light_travel_time_to_detector(detector_pairs[i][1])
-    for i in range(len(detector_pairs))
-]
-
-# Calculate the required angular spacing between the sky points
-ang_spacings = [
-    (2 * args.timing_uncertainty)
-    / np.sqrt(light_travel_times[i] ** 2 - tds[i] ** 2)
-    for i in range(len(detector_pairs))
-]
-angular_spacing = min(ang_spacings)
-
-sky_points = np.zeros((1, 2))
-
-number_of_rings = int(args.sky_error / angular_spacing)
-
-# Generate the sky grid centered at the North pole
-for i in range(number_of_rings + 1):
-    if i == 0:
-        sky_points[0][0] = 0
-        sky_points[0][1] = np.pi / 2
-    else:
-        number_of_points = int(2 * np.pi * i)
-        for j in range(number_of_points):
-            sky_points = np.row_stack(
-                (
-                    sky_points,
-                    np.array([j / i, np.pi / 2 - i * angular_spacing]),
-                )
-            )
-
-# Convert spherical coordinates to cartesian coordinates
-cart = spher_to_cart(sky_points)
-
-grb = np.zeros((1, 2))
-grb[0] = args.ra, args.dec
-grb_cart = spher_to_cart(grb)
-
-north_pole = [0, 0, 1]
-
-ort = np.cross(grb_cart, north_pole)
-norm = np.linalg.norm(ort)
-ort /= norm
-n = -np.arccos(np.dot(grb_cart, north_pole))
-u = ort * n
-
-# Rotate the sky grid to the center of the external trigger error box
-r = R.from_rotvec(u)
-rota = r.apply(cart)
-
-# Convert cartesian coordinates back to spherical coordinates
-spher = cart_to_spher(rota)
-
-sky_grid = SkyGrid(
-    spher[:, 0], spher[:, 1], args.instruments, args.trigger_time
-)
+    # Make a single point skygrid object
+    sky_grid = make_single_det_grid(args)
+else:
+    # Make a skygrid object using timedelays among all detectors in the
+    # network.
+    sky_grid = make_multi_det_grid(args)
 
 extra_attributes = {
     'trigger_ra': args.ra,

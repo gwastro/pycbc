@@ -243,7 +243,7 @@ datafind_veto_files.extend(datafind_files)
 veto_file = None
 if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
     veto_file = _workflow.get_segments_file(wflow,
-                                            'vetoes', 
+                                            'vetoes',
                                             'segments-vetoes',
                                             seg_dir,
                                             tags=['veto'])
@@ -252,7 +252,7 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
 for ifo in ifos:
     avail_segs = select_segments_by_definer(veto_file.storage_path, ifo=ifo)
     avail_segs.coalesce()
-    # In case no relevant vetoes are available, avail_segs becomes an empty list
+    # If no relevant vetoes are available, avail_segs becomes an empty list
     if len(avail_segs) > 0:
         vetoed_segs = offSrc[ifo] - avail_segs
         if onSrc[ifo].intersects(vetoed_segs):
@@ -345,7 +345,7 @@ if wflow.cp.has_section("workflow-injections"):
     inj_method = wflow.cp.get("workflow-injections",
                               "injections-method")
     if inj_method == "IN_WORKFLOW" and \
-        wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
+            wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
         tc_path = os.path.join(base_dir, "tc_prior.ini")
         _workflow.generate_tc_prior(wflow, tc_path, bufferSeg)
 

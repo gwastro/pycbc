@@ -113,6 +113,12 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_'+param] = \
             np.array(bank_file[param])[inj_data['network/template_id']]
+    # If there are no found injections, simply move on
+    # (there are no injections missed after the cut to return)
+    if 'network/end_time_gc' not in inj_data.keys():
+        return found_data, missed_data, {}
+    # Otherwise carry on getting the recovered parameters and statistic values
+    # of the found injections
     found_data['time_diff'] = \
         found_data['tc'] - inj_data['network/end_time_gc'][...]
     found_data['rec_mchirp'] = mchirp_from_mass1_mass2(
@@ -144,11 +150,13 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     # BestNRs
     found_data['bestnr'] = reweightedsnr_cut(found_data['reweighted_snr'][...],
                                              snr_threshold)
-    # Apply reweighted SNR cut
+    # Apply reweighted SNR cut to the found injections
     cut_data = {}
     if snr_threshold:
-        logging.info("%d found injections loaded.", len(found_data[inj_params[0]]))
-        logging.info("%d missed injections loaded.", len(missed_data[inj_params[0]]))
+        logging.info("%d found injections loaded.",
+                     len(found_data[inj_params[0]]))
+        logging.info("%d missed injections loaded.",
+                     len(missed_data[inj_params[0]]))
         logging.info("Applying reweighted SNR cut at %s.", snr_threshold)
         rw_snr_cut = found_data['reweighted_snr'] < snr_threshold
         for key in found_data:
@@ -314,7 +322,8 @@ trig_data = ppu.load_data(offsource_file, ifos, data_tag='offsource',
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
 # _av stands for after vetoes
-keys = ['network/end_time_gc', 'network/coherent_snr', 'network/reweighted_snr']
+keys = ['network/end_time_gc', 'network/coherent_snr',
+        'network/reweighted_snr']
 trig_data_av = ppu.extract_trig_properties(
     trial_dict,
     trig_data,
@@ -325,8 +334,8 @@ trig_data_av = ppu.extract_trig_properties(
 
 # Max SNR and BestNR values in each trial: these are stored in dictionaries
 # keyed by slide_id, as arrays indexed by trial number
-background_snr = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
-background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+background_snr = {k: np.zeros(len(v)) for k, v in trial_dict.items()}
+background = {k: np.zeros(len(v)) for k, v in trial_dict.items()}
 for slide_id in slide_dict:
     trig_times = trig_data_av[keys[0]][slide_id]
     for j, trial in enumerate(trial_dict[slide_id]):
@@ -505,7 +514,7 @@ if onsource_file:
         if on_trigs_bestnrs.size > 0:
             bestNR_event = np.argmax(on_trigs_bestnrs)
             loud_on_bestnr_trigs = on_trigs['network/event_id'][bestNR_event]
-            loud_on_bestnr =  on_trigs_bestnrs[bestNR_event]
+            loud_on_bestnr = on_trigs_bestnrs[bestNR_event]
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
@@ -602,6 +611,9 @@ if found_missed_file is not None:
         veto_file=opts.veto_file
     )
 
+    if 'bestnr' not in found_after_vetoes.keys():
+        found_after_vetoes['bestnr'] = np.array([])
+
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = found_after_vetoes['bestnr'] > max_bestnr
@@ -612,7 +624,7 @@ if found_missed_file is not None:
     # 3) missed after being recovered: vetoed (these have bestnr = 0)
 
     # Avoids a problem with formatting in the non-static html output file
-    #missed_na = [-0] * len(missed_injs['mchirp'])
+    # missed_na = [-0] * len(missed_injs['mchirp'])
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
@@ -648,6 +660,9 @@ if found_missed_file is not None:
     keys += sngl_snr_keys
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
              'spin2z', 'rec_spin1z', 'rec_spin2z']
+    for key in keys:
+        if key not in found_after_vetoes.keys():
+            found_after_vetoes[key] = np.array([])
     td = [found_after_vetoes[key][nonzero_fap] for key in keys]
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
@@ -677,6 +692,11 @@ if found_missed_file is not None:
                                          **kwds)
 
     # Write quiet triggers to html file
+    if len(cut_injs) == 0:
+        cut_injs = dict.fromkeys(keys, np.array([]))
+    for key in keys:
+        if key not in vetoed:
+            vetoed[key] = np.array([])
     t_missed = [np.concatenate((vetoed[key], cut_injs[key])) for key in keys]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
