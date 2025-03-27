@@ -43,9 +43,11 @@ def get_stat(args, trigs, threshold):
         # read and format chunk of data so it can be read by key
         # as the stat classes expect.
         chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
-        
-        trigger_keep_ids = cuts.apply_trigger_cuts(chunk, trigger_cut_dict)
-        chunk = {k: chunk[k][trigger_keep_ids] for k in chunk}
+
+        if len(trigger_cut_dict) > 0:
+            # Apply trigger cuts        
+            trigger_keep_ids = cuts.apply_trigger_cuts(chunk, trigger_cut_dict)
+            chunk = {k: arr[trigger_keep_ids] for k, arr in chunk.items()}
 
         rank_method = statsmod.get_statistic_from_opts(args, [args.ifo])
         chunk_stat = rank_method.get_sngl_ranking(chunk)
