@@ -106,7 +106,7 @@ def make_multi_det_grid(args):
             if grid.shape[0] == 0:
                 # first point, accept
                 # FIXME handling the first point can surely be moved before the loop!
-                grid = np.vstack((grid, input_dist.get_max_pixel_prob())
+                grid = np.vstack((grid, input_dist.get_max_pixel_prob()))
                 continue
             # FIXME it is not necessary to calculate *all* distances,
             # we can reject as soon as we find one below threshold!
