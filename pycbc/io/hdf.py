@@ -1512,7 +1512,7 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     """
     Retrieves the chi-squared values based on the specified choice.
 
-    Parameters:
+    Parameters
     ----------
     hdfile: HDF file object, or dictionary, or ReadByTemplate object 
             or SingleDetTriggers object
@@ -1520,40 +1520,42 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     chisq_choice: str 
         The choice of chi-squared values to retrieve.
 
-    Returns:
+    Returns
     -------
     chisq: numpy.ndarray
-        The chi-squared values based on the specified choice.
+        The reduced chi-squared values based on the specified choice.
     """
-    f = hdfile
+    # Get the reduced chi-squared values
     if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad', 'max_bank_cont_trad']:
-        trad_data = f['chisq'][:]
-        trad_chisq_dof = f['chisq_dof'][:]
-        trad_chisq = trad_data / (trad_chisq_dof * 2 - 2)
+        trad_chisq = hdfile['chisq'][:]
+        trad_chisq_dof = hdfile['chisq_dof'][:]
+        red_trad_chisq = trad_chisq / (trad_chisq_dof * 2 - 2)
     if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont', 'max_bank_cont_trad']:
-        cont_data = f['cont_chisq'][:]
-        cont_chisq_dof = f['cont_chisq_dof'][:]
-        cont_chisq = cont_data / cont_chisq_dof
+        cont_chisq = hdfile['cont_chisq'][:]
+        cont_chisq_dof = hdfile['cont_chisq_dof'][:]
+        red_cont_chisq = cont_chisq / cont_chisq_dof
     if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']:
-        bank_data = f['bank_chisq'][:]
-        bank_chisq_dof = f['bank_chisq_dof'][:]
-        bank_chisq = bank_data / bank_chisq_dof
+        bank_chisq = hdfile['bank_chisq'][:]
+        bank_chisq_dof = hdfile['bank_chisq_dof'][:]
+        red_bank_chisq = bank_chisq / bank_chisq_dof
+
+    # return the corresponding reduced chi-squared values depending on the choice
     if chisq_choice == 'sg':
-        chisq = f['sg_chisq'][:]
+        chisq = hdfile['sg_chisq'][:]
     elif chisq_choice == 'traditional':
-        chisq = trad_chisq
+        chisq = red_trad_chisq
     elif chisq_choice == 'cont':
-        chisq = cont_chisq
+        chisq = red_cont_chisq
     elif chisq_choice == 'bank':
-        chisq = bank_chisq
+        chisq = red_bank_chisq
     elif chisq_choice == 'max_cont_trad':
-        chisq = np.maximum(trad_chisq, cont_chisq)
+        chisq = np.maximum(red_trad_chisq, red_cont_chisq)
     elif chisq_choice == 'max_bank_cont':
-        chisq = np.maximum(bank_chisq, cont_chisq)
+        chisq = np.maximum(red_bank_chisq, red_cont_chisq)
     elif chisq_choice == 'max_bank_trad':
-        chisq = np.maximum(bank_chisq, trad_chisq)
+        chisq = np.maximum(red_bank_chisq, red_trad_chisq)
     elif chisq_choice == 'max_bank_cont_trad':
-        chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
+        chisq = np.maximum(np.maximum(red_bank_chisq, red_cont_chisq), red_trad_chisq)
     else:
         err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
