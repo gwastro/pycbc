@@ -1526,17 +1526,20 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         The reduced chi-squared values based on the specified choice.
     """
     # Get the reduced chi-squared values
-    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad', 'max_bank_cont_trad']:
+    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
+                             'max_bank_cont_trad']:
         trad_chisq = hdfile['chisq'][:]
         # We now need to handle the case where chisq is not actually calculated
         # 0 is used as a sentinel value
         trad_chisq_dof = hdfile['chisq_dof'][:]
         red_trad_chisq = trad_chisq / (trad_chisq_dof * 2 - 2)
-    if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont', 'max_bank_cont_trad']:
+    if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
+                             'max_bank_cont_trad']:
         cont_chisq = hdfile['cont_chisq'][:]
         cont_chisq_dof = hdfile['cont_chisq_dof'][:]
         red_cont_chisq = cont_chisq / cont_chisq_dof
-    if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']:
+    if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
+                             'max_bank_cont_trad']:
         bank_chisq = hdfile['bank_chisq'][:]
         bank_chisq_dof = hdfile['bank_chisq_dof'][:]
         red_bank_chisq = bank_chisq / bank_chisq_dof
