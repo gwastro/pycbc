@@ -35,10 +35,10 @@ dnf -y install \
     swig \
     which \
     zlib-devel
-python3.9 -m pip install --upgrade pip setuptools wheel cython
-python3.9 -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite
+alternatives --set python /usr/bin/python3.9
+python -m pip install --upgrade pip setuptools wheel cython
+python -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite
 dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm
-dnf clean all
 EOF
 
 # set up environment
@@ -67,16 +67,13 @@ dnf -y install \
     librdmacm-devel \
     openmpi \
     openmpi-devel
-python3.9 -m pip install schwimmbad
-MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python3.9 -m pip install --no-cache-dir mpi4py
+python -m pip install schwimmbad
+MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python -m pip install --no-cache-dir mpi4py
 echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
 EOF
 
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
-
-# Make python be what we want
-RUN alternatives --set python /usr/bin/python3.9
 
 # Explicitly set the path so that it is not inherited from build the environment
 ENV PATH "/usr/local/bin:/usr/bin:/bin:/lib64/openmpi/bin/bin"

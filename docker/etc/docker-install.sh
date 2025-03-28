@@ -4,11 +4,11 @@ set -e
 
 # Install PyCBC
 cd /scratch
-python3.9 -m pip install --upgrade pip
-python3.9 -m pip install -r requirements.txt
-python3.9 -m pip install -r requirements-igwn.txt
-python3.9 -m pip install -r companion.txt
-python3.9 -m pip install .
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-igwn.txt
+python -m pip install -r companion.txt
+python -m pip install .
 cd /
 
 # Copy PyCBC source repository into the image
@@ -33,5 +33,9 @@ umount /cvmfs/software.igwn.org
 # Set ownership and permissions correctly
 chown -R 1000:1000 /opt/pycbc/src /opt/pycbc/pycbc-software
 chmod -R u=rwX,g=rX,o=rX /opt/pycbc
+
+# Cleanup any leftover stuff cached by dnf and pip
+dnf clean all
+python -m pip cache purge
 
 exit 0
