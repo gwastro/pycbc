@@ -1528,6 +1528,8 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     # Get the reduced chi-squared values
     if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad', 'max_bank_cont_trad']:
         trad_chisq = hdfile['chisq'][:]
+        # We now need to handle the case where chisq is not actually calculated
+        # 0 is used as a sentinel value
         trad_chisq_dof = hdfile['chisq_dof'][:]
         red_trad_chisq = trad_chisq / (trad_chisq_dof * 2 - 2)
     if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont', 'max_bank_cont_trad']:
