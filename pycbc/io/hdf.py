@@ -1510,7 +1510,7 @@ chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
     """
-    Retrieves the chi-squared values based on the specified choice.
+    Retrieves the reduced chi-squared values based on the specified choice.
 
     Parameters
     ----------
