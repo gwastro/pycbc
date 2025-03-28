@@ -28,6 +28,25 @@ from pycbc.io import HFile
 #### DEFINITIONS AND FUNCTIONS ####
 
 def get_stat(args, trigs, threshold):
+    """
+    Select the triggers and calculate the single detector statistic.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        The argparse object containing options and parameters.
+    trigs: dict
+        The dictionary of single detector trigger data.
+    threshold: float
+        The statistic threshold value for selecting triggers.
+
+    Returns
+    -------
+    np.concatenate(select): np.ndarray
+        A boolean array that selects the triggers.
+    np.concatenate(stat): np.ndarray
+        The statistic values of the selected triggers.
+    """
     # For now this is using the single detector ranking. If we want, this
     # could use the Stat classes in stat.py using similar code as in hdf/io.py
     # This requires additional options, so only change this if it's useful!
