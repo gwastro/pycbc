@@ -144,10 +144,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
             invp = 1./p
             self._invpsds[det] = invp
             self._invasds[det] = invp**0.5
-            # store the autocorrelation function and covariance matrix for each detector
+            # store the autocorrelation function and covariance matrix for
+            # each detector
             Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
             self._Rss[det] = Rss
-            # calculate and store the linear regressions to extrapolate determinant values
+            # calculate and store the linear regressions to extrapolate
+            # determinant values
             if self.normalize:
                 cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
                 samples, fit = self.logdet_fit(cov, p)
@@ -156,14 +158,17 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
 
     def logdet_fit(self, cov, p):
-        """Construct a linear regression from a sample of truncated covariance matrices.
+        """Construct a linear regression from a sample of truncated covariance
+        matrices.
         
-        Returns the sample points used for linear fit generation as well as the linear fit parameters.
+        Returns the sample points used for linear fit generation as well as the
+        linear fit parameters.
         """
         # initialize lists for matrix sizes and determinants
         sample_sizes = []
         sample_dets = []
-        # set sizes of sample matrices; ensure exact calculations are only on small matrices
+        # set sizes of sample matrices; ensure exact calculations are only on
+        # small matrices
         s = cov.shape[0]
         max_size = 8192
         if s > max_size:
@@ -171,7 +176,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         else:
             sample_sizes = [s, s//2, s//4, s//8]
         for i in sample_sizes:
-            # calculate logdet of the full matrix using circulant eigenvalue approximation
+            # calculate logdet of the full matrix using circulant eigenvalue
+            # approximation
             if i == s:
                 ld = 2*numpy.log(p/(2*p.delta_t)).sum()
                 sample_dets.append(ld)
@@ -180,7 +186,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 gate_size = s - i
                 start = (s - gate_size)//2
                 end = start + gate_size
-                tc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
+                tc = numpy.delete(numpy.delete(cov, slice(start, end), 0),
+                                  slice(start, end), 1)
                 ld = numpy.linalg.slogdet(tc)[1]
                 sample_dets.append(ld)
         # generate a linear regression using the four points (size, logdet)
@@ -205,8 +212,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         return lindex, rindex
     
     def det_lognorm(self, det, start_index=None, end_index=None):
-        """Calculate the normalization term from the truncated covariance matrix.
-        Determinant is estimated using a linear fit to logdet vs truncated matrix size
+        """Calculate the normalization term from the truncated covariance
+        matrix.
+        
+        Determinant is estimated using a linear fit to logdet vs truncated
+        matrix size.
         """
         if not self.normalize:
             return 0
@@ -223,7 +233,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
             m, b = self._cov_regressions[det]
             # extrapolate from linear fit
             ld = m*trunc_size + b
-            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
+            # full normalization term:
+            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld)
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
         return lognorm
@@ -450,7 +461,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # gate input for ringdown analysis which consideres a start time
         # and an end time
         dgate = params['gate_window']
-        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1, spin2)
+        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1,
+                                       spin2)
         # figure out the gate times
         gatetimes = {}
         for det, h in wfs.items():
@@ -481,7 +493,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gate_times = self.get_gate_times()
         for det, invpsd in self._invpsds.items():
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index, end_index) # linear estimation
+            # linear estimation
+            norm = self.det_lognorm(det, start_index, end_index)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -556,14 +569,16 @@ class BaseGatedGaussian(BaseGaussianNoise):
         BaseDataModel.write_metadata(self, fp, group=group)
         attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
-        attrs['analyzed_detectors'] = self.detectors # store fitting values here
+        attrs['analyzed_detectors'] = self.detectors
+        # store fitting values here
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             attrs[key] = [float(data.start_time), float(data.end_time)]
-            # store covariance determinant extrapolation information (checkpoint)
+            # store covariance determinant extrapolation info (checkpoint)
             if self.normalize:
                 attrs['{}_cov_sample'.format(det)] = self._cov_samples[det]
-                attrs['{}_cov_regression'.format(det)] = self._cov_regressions[det]
+                attrs['{}_cov_regression'.format(det)] = \
+                    self._cov_regressions[det]
         if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds, group=group)
         # write the times used for psd estimation (if they were provided)
@@ -711,10 +726,11 @@ class GatedGaussianNoise(BaseGatedGaussian):
     def get_gated_waveforms(self, inpaint=True):
         wfs = self.get_waveforms()
         out = {}
+        gateonly = self.zero_before_gate or self.zero_after_gate or not inpaint
         # apply the gate
         for det, h in wfs.items():
             ht = h.to_timeseries()
-            if self.zero_before_gate or self.zero_after_gate or not inpaint:
+            if gateonly:
                 # just gate
                 start_index, end_index = gate_indices(self, det)
                 if self.zero_before_gate:
@@ -791,6 +807,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
     def get_gated_waveforms(self, inpaint=True):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
+        gateonly = self.zero_before_gate or self.zero_after_gate or not inpaint
         out = {}
         for det in wfs:
             invpsd = self._invpsds[det]
@@ -799,7 +816,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             pols = []
             for h in wfs[det]:
                 ht = h.to_timeseries() 
-                if self.zero_before_gate or self.zero_after_gate or not inpaint:
+                if gateonly:
                     # just gate
                     start_index, end_index = gate_indices(self, det)
                     if self.zero_before_gate:
@@ -839,10 +856,12 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # gate input for ringdown analysis which consideres a start time
         # and an end time
         dgate = params['gate_window']
-        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1, spin2)
+        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1,
+                                       spin2)
         # figure out the gate times
         gatetimes = {}
-        # for now only calculating time from plus polarization; should be all that's necessary
+        # for now only calculating time from plus polarization; should be all
+        # that's necessary
         for det, (hp, hc) in wfs.items():
             invpsd = self._invpsds[det]
             hp.resize(len(invpsd))
@@ -971,7 +990,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             [x[det][0].resize(mlen) for x in wfs]
             [x[det][1].resize(mlen) for x in wfs]
             # combine waveforms
-            combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1] for x in wfs]))
+            combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1]
+                                 for x in wfs]))
 
         self._current_wfs = combine
         return self._loglikelihood()
