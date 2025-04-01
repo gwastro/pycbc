@@ -23,7 +23,8 @@ from Pegasus.api import Arch, OS, SiteCatalog
 
 from pycbc.version import last_release, version, release  # noqa
 
-if release == 'True':
+
+if release:
     sing_version = version
 else:
     sing_version = last_release
