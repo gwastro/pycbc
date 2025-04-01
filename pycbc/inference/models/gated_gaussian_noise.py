@@ -59,6 +59,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._invasds = {}
         self._Rss = {}
         self._lognorm = {}
+        self._gatetimes = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
         self._cov_regressions = {}
@@ -192,7 +193,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         # get time series start and delta_t
         ts = self._Rss[det]
-        start_time_gc = float(self.td_data[det].start_time) # need float for conversion input
+        start_time_gc = float(self.td_data[det].start_time)
         delta_t = ts.delta_t
         # get gate start and length from get_gate_times
         gate_start, gate_length = self.get_gate_times()[det]
@@ -233,8 +234,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         return self._normalize
 
-    ### This is called before psds, so doing direct calls to self._psds, etc. throws an error for now ###
-    
     @normalize.setter
     def normalize(self, normalize):
         """Clears the current stats if the normalization state is changed.
@@ -289,6 +288,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                     raise ValueError("whiten must be either 0, 1, or 2")
         return data
 
+    @abstractmethod
     def get_waveforms(self):
         """The waveforms generated using the current parameters.
 
@@ -300,34 +300,19 @@ class BaseGatedGaussian(BaseGaussianNoise):
         Returns
         -------
         dict :
-            Dictionary of detector names -> FrequencySeries.
+            Dictionary of detector names -> waveforms
         """
-        if self._current_wfs is None:
-            params = self.current_params
-            wfs = self.waveform_generator.generate(**params)
-            for det, h in wfs.items():
-                # make the same length as the data
-                h.resize(len(self.data[det]))
-                # apply high pass
-                if self.highpass_waveforms:
-                    h = highpass(
-                        h.to_timeseries(),
-                        frequency=self.highpass_waveforms).to_frequencyseries()
-                wfs[det] = h
-            self._current_wfs = wfs
-        return self._current_wfs
+        pass
 
     @abstractmethod
-    def get_gated_waveforms(self, white=False):
+    def get_gated_waveforms(self, inpaint=True):
         """Generates and gates waveforms using the current parameters.
 
         Parameters
         ----------
-        white : bool, optional
-            Gate and in-paint the waveforms using the inverse ASD instead of
-            the inverse PSD. This will cause the whitened waveform to be
-            identically zero in the gated region rather than the overwhitened
-            waveform. Default is False.
+        inpaint : bool, optional
+            Gate and in-paint the waveforms. If False, the waveforms will
+            just be gated, but no in-painting will be done. Default is True.
 
         Returns
         -------
@@ -335,22 +320,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             Dictionary of detector names -> FrequencySeries.
         """
         pass
-
-    def get_residuals(self):
-        """Generates the residuals ``d-h`` using the current parameters.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        wfs = self.get_waveforms()
-        
-        out = {}
-        for det, h in wfs.items():
-            d = self.data[det]
-            out[det] = d - h
-        return out
 
     def get_data(self):
         """Return a copy of the data.
@@ -389,9 +358,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache.clear()
                 d = d.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint',
-                           zero_before_gate=self.zero_before_gate,
-                           zero_after_gate=self.zero_after_gate)
+                           invpsd=invpsd, method='paint')
                 dtilde = d.to_frequencyseries()
                 # save for next time
                 cache[gatestartdelay, dgatedelay] = dtilde
@@ -407,11 +374,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gate times will just be retrieved from the ``t_gate_start`` and
         ``t_gate_end`` parameters.
 
-        .. warning::
-            Since the normalization of the likelihood is currently not
-            being calculated, it is recommended that you do not use
-            ``gatefunc``, instead using fixed gate times.
-
         Returns
         -------
         dict :
@@ -424,20 +386,49 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gatefunc = None
         if gatefunc == 'hmeco':
             return self.get_gate_times_hmeco()
-        # gate input for ringdown analysis which consideres a start time
-        # and an end time
         gatestart = params['t_gate_start']
         gateend = params['t_gate_end']
         # we'll need the sky location for determining time shifts
         ra = self.current_params['ra']
         dec = self.current_params['dec']
+        # try to get from cache
+        try:
+            gatetimes = self._gatetimes[gatestart, gateend, ra, dec]
+        except KeyError:
+            # doesn't exist, or parameters have changed, recalculate
+            self._gatetimes.clear()
+            gatetimes = self._get_gate_times(gatestart, gateend, ra, dec)
+            self._gatetimes[gatestart, gateend, ra, dec] = gatetimes
+        return gatetimes
+
+    def _get_gate_times(self, gatestart, gateend, ra, dec):
+        """Calculates the gate times in each detector.
+
+        Parameters
+        ----------
+        gatestart : float
+            Geocentric start time of the gate.
+        gateend : float
+            Geocentric end time of the gate.
+        ra : float
+            Right ascension of the signal.
+        dec : float
+            Declination of the signal.
+            
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> (gate start, gate width)
+        """
         gatetimes = {}
         for det in self._invpsds:
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
-            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(ra, dec, gatestart)
-            gateenddelay = gateend + thisdet.time_delay_from_earth_center(ra, dec, gateend)
+            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(
+                ra, dec, gatestart)
+            gateenddelay = gateend + thisdet.time_delay_from_earth_center(
+                ra, dec, gateend)
             dgatedelay = gateenddelay - gatestartdelay
             gatetimes[det] = (gatestartdelay, dgatedelay)
         return gatetimes
@@ -499,9 +490,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             data = self.td_data[det]
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint',
-                                 zero_before_gate=self.zero_before_gate,
-                                 zero_after_gate=self.zero_after_gate)
+                                 invpsd=invpsd, method='paint')
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
             # overwhiten
@@ -646,7 +635,10 @@ class GatedGaussianNoise(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        wfs = self.get_waveforms()
+        # We'll gate them here, but not in-paint. We'll do the in-painting
+        # once, on the residual. We'll gate the waveforms here so that
+        # zero before/after gate can be applied to them.
+        wfs = self.get_gated_waveforms(inpaint=False)
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
@@ -665,9 +657,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             rtilde = res.to_frequencyseries()
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint',
-                                 zero_before_gate=self.zero_before_gate,
-                                 zero_after_gate=self.zero_after_gate)
+                                 invpsd=invpsd, method='paint')
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
             gated_rtilde *= invpsd
@@ -702,53 +692,45 @@ class GatedGaussianNoise(BaseGatedGaussian):
         self._current_wfs = combine
         return self._loglikelihood()
 
-    def get_gated_waveforms(self, white=False):
+    def get_waveforms(self):
+        if self._current_wfs is None:
+            params = self.current_params
+            wfs = self.waveform_generator.generate(**params)
+            for det, h in wfs.items():
+                # make the same length as the data
+                h.resize(len(self.data[det]))
+                # apply high pass
+                if self.highpass_waveforms:
+                    h = highpass(
+                        h.to_timeseries(),
+                        frequency=self.highpass_waveforms).to_frequencyseries()
+                wfs[det] = h
+            self._current_wfs = wfs
+        return self._current_wfs
+
+    def get_gated_waveforms(self, inpaint=True):
         wfs = self.get_waveforms()
-        gate_times = self.get_gate_times()
         out = {}
         # apply the gate
         for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            if white:
-                pfilter = invpsd**0.5
-            else:
-                pfilter = invpsd
-            gatestartdelay, dgatedelay = gate_times[det]
             ht = h.to_timeseries()
-            ht = ht.gate(gatestartdelay + dgatedelay/2,
-                         window=dgatedelay/2, copy=False,
-                         invpsd=pfilter, method='paint',
-                         zero_before_gate=self.zero_before_gate,
-                         zero_after_gate=self.zero_after_gate)
+            if self.zero_before_gate or self.zero_after_gate or not inpaint:
+                # just gate
+                start_index, end_index = gate_indices(self, det)
+                if self.zero_before_gate:
+                    start_index = 0
+                if self.zero_after_gate:
+                    end_index = -1
+                ht[start_index:end_index] = 0.
+            if inpaint:
+                invpsd = self._invpsds[det]
+                gate_times = self.get_gate_times()
+                gatestartdelay, dgatedelay = gate_times[det]
+                ht = ht.gate(gatestartdelay + dgatedelay/2,
+                             window=dgatedelay/2, copy=False,
+                             invpsd=invpsd, method='paint')
             h = ht.to_frequencyseries()
             out[det] = h
-        return out
-
-    def get_gated_residuals(self):
-        """Generates the gated residuals ``d-h`` using the current parameters.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        params = self.current_params
-        wfs = self.waveform_generator.generate(**params)
-        gate_times = self.get_gate_times()
-        out = {}
-        for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            gatestartdelay, dgatedelay = gate_times[det]
-            data = self.td_data[det]
-            ht = h.to_timeseries()
-            res = data - ht
-            res = res.gate(gatestartdelay + dgatedelay/2,
-                           window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint',
-                           zero_before_gate=self.zero_before_gate,
-                           zero_after_gate=self.zero_after_gate)
-            res = res.to_frequencyseries()
-            out[det] = res
         return out
 
 
@@ -806,32 +788,30 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         self._current_wfs = wfs
         return self._current_wfs
 
-    def get_gated_waveforms(self, white=False):
+    def get_gated_waveforms(self, inpaint=True):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
         for det in wfs:
             invpsd = self._invpsds[det]
-            if white:
-                pfilter = invpsd**0.5
-            else:
-                pfilter = invpsd
             gatestartdelay, dgatedelay = gate_times[det]
             # the waveforms are a dictionary of (hp, hc)
             pols = []
             for h in wfs[det]:
                 ht = h.to_timeseries() 
-                try:
+                if self.zero_before_gate or self.zero_after_gate or not inpaint:
+                    # just gate
+                    start_index, end_index = gate_indices(self, det)
+                    if self.zero_before_gate:
+                        start_index = 0
+                    if self.zero_after_gate:
+                        end_index = -1
+                    ht[start_index:end_index] = 0.
+                if inpaint:
                     ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
-                             invpsd=pfilter, method='paint',
-                             zero_before_gate=self.zero_before_gate,
-                             zero_after_gate=self.zero_after_gate)
-                    h = ht.to_frequencyseries()
-                except ValueError as e:
-                    numpy.save('fail_params.out', self.current_params, allow_pickle=True)
-                    ht.save('fail_wf.hdf')
-                    raise e
+                             invpsd=invpsd, method='paint')
+                h = ht.to_frequencyseries()
                 pols.append(h)
             out[det] = tuple(pols)
         return out
@@ -970,6 +950,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         """
         return [type(self)]
     
+    @catch_waveform_error
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
