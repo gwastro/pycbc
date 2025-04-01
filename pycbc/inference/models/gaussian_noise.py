@@ -16,7 +16,6 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
-import os, psutil
 import logging
 import shlex
 from abc import ABCMeta
