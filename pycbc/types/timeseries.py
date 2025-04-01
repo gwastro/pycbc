@@ -564,8 +564,7 @@ class TimeSeries(Array):
                            **kwds)
 
     def gate(self, time, window=0.25, method='taper', copy=True,
-             taper_width=0.25, invpsd=None, zero_before_gate=False,
-             zero_after_gate=False):
+             taper_width=0.25, invpsd=None):
         """ Gate out portion of time series
 
         Parameters
@@ -585,14 +584,6 @@ class TimeSeries(Array):
         invpsd: pycbc.types.FrequencySeries
             The inverse PSD to use for painting method. If not given,
             a PSD is generated using default settings.
-        zero_before_gate : bool, optional
-            For in-painting method, the time series will be zeroed out
-            before the gate time. In painting is still only done within the
-            gate time. Default is False.
-        zero_after_gate : bool, optional
-            For in-painting method, the time series will be zeroed out
-            after the gate time. In painting is still only done within the
-            gate time. Default is False.
 
         Returns
         -------
@@ -619,18 +610,14 @@ class TimeSeries(Array):
             rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:
-                return gate_and_paint(data, lindex, rindex, invpsd, copy=False,
-                                      zero_before_gate=zero_before_gate,
-                                      zero_after_gate=zero_after_gate)
+                return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
             else:
                 # time shift such that gate end time lands on a specific data sample
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
                 # gate and paint in time domain
                 data = fdata.to_timeseries()
-                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False,
-                                      zero_before_gate=zero_before_gate,
-                                      zero_after_gate=zero_after_gate)
+                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
                 # shift back to the original time
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
