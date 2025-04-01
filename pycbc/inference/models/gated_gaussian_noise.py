@@ -726,11 +726,11 @@ class GatedGaussianNoise(BaseGatedGaussian):
     def get_gated_waveforms(self, inpaint=True):
         wfs = self.get_waveforms()
         out = {}
-        gateonly = self.zero_before_gate or self.zero_after_gate or not inpaint
+        pregate = self.zero_before_gate or self.zero_after_gate or not inpaint
         # apply the gate
         for det, h in wfs.items():
             ht = h.to_timeseries()
-            if gateonly:
+            if pregate:
                 # just gate
                 start_index, end_index = gate_indices(self, det)
                 if self.zero_before_gate:
@@ -807,7 +807,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
     def get_gated_waveforms(self, inpaint=True):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
-        gateonly = self.zero_before_gate or self.zero_after_gate or not inpaint
+        pregate = self.zero_before_gate or self.zero_after_gate or not inpaint
         out = {}
         for det in wfs:
             invpsd = self._invpsds[det]
@@ -816,7 +816,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             pols = []
             for h in wfs[det]:
                 ht = h.to_timeseries() 
-                if gateonly:
+                if pregate:
                     # just gate
                     start_index, end_index = gate_indices(self, det)
                     if self.zero_before_gate:
