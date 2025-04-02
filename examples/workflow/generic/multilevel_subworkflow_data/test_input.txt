@@ -1,1 +1,0 @@
-../simple_subworkflow_data/test_input.txt

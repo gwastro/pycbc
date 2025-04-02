@@ -1226,13 +1226,18 @@ def get_qlm_f0tau_allmodes(mass, spin, qmodes):
         same as ``f0``.
     """
     f0, tau = {}, {}
-    for qlmn in qmodes:
+    for qlmn, lmn1, lmn2 in qmodes:
         key = '{}{}{}'
-        l, m, nmodes = int(qlmn[0][0]), int(qlmn[0][1]), int(qlmn[0][2])
-        for n in range(nmodes):
-            tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, n)
-            f0[key.format(l, abs(m), n)] = tmp_f0
-            tau[key.format(l, abs(m), n)] = tmp_tau
+        l1, m1, nmodes1 = int(lmn1[0]), int(lmn1[1]), int(lmn1[2])
+        l2, m2, nmodes2 = int(lmn2[0]), int(lmn2[1]), int(lmn2[2])
+        ql, qm, qnmodes = int(qlmn[0]), int(qlmn[1]), int(qlmn[2])
+        for qn in range(qnmodes):
+            for n1 in range(nmodes1):
+                for n2 in range(nmodes2):
+                    tmp_f01, tmp_tau1 = get_lm_f0tau(mass, spin, l1, m1, n1)
+                    tmp_f02, tmp_tau2 = get_lm_f0tau(mass, spin, l2, m2, n2)
+                    f0[key.format(ql, abs(qm), qn)] = tmp_f01 + tmp_f02
+                    tau[key.format(ql, abs(qm), qn)] = (tmp_tau1 * tmp_tau2) / (tmp_tau1 + tmp_tau2)
     return f0, tau
 
 def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
