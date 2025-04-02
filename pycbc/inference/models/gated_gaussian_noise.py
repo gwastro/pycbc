@@ -60,6 +60,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._Rss = {}
         self._lognorm = {}
         self._gatetimes = {}
+        self._det_lognls = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
         self._cov_regressions = {}
@@ -224,8 +225,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # check if the key already exists; if so, return its value
             lognorm = self._lognorm[(det, start_index, end_index)]
         except KeyError:
-            # if not, extrapolate the normalization term
-            start_index, end_index = self.gate_indices(det)
             # get the size of the matrix
             n = len(self._Rss[det])
             trunc_size = n - (end_index - start_index)
@@ -701,7 +700,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         for det in self.data:
             # get max waveform length
             mlen = max([len(x[det]) for x in wfs])
-            [x[det].resize(mlen) for x in wfs]
+            [x[det].copy().resize(mlen) for x in wfs]
             combine[det] = sum([x[det] for x in wfs])
 
         self._current_wfs = combine
@@ -732,11 +731,11 @@ class GatedGaussianNoise(BaseGatedGaussian):
             ht = h.to_timeseries()
             if pregate:
                 # just gate
-                start_index, end_index = gate_indices(self, det)
+                start_index, end_index = self.gate_indices(det)
                 if self.zero_before_gate:
                     start_index = 0
                 if self.zero_after_gate:
-                    end_index = -1
+                    end_index = None
                 ht[start_index:end_index] = 0.
             if inpaint:
                 invpsd = self._invpsds[det]
@@ -818,7 +817,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 ht = h.to_timeseries() 
                 if pregate:
                     # just gate
-                    start_index, end_index = gate_indices(self, det)
+                    start_index, end_index = self.gate_indices(self, det)
                     if self.zero_before_gate:
                         start_index = 0
                     if self.zero_after_gate:
@@ -841,14 +840,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             Dictionary of detector names -> (gate start, gate width)
         """
         # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
+        wfs = self.get_waveforms()
         # get waveform parameters
         params = self.current_params
         spin1 = params['spin1z']
@@ -987,8 +979,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             mlenc = max([len(x[det][1]) for x in wfs])
             mlen = max([mlenp, mlenc])
             # resize plus and cross
-            [x[det][0].resize(mlen) for x in wfs]
-            [x[det][1].resize(mlen) for x in wfs]
+            wfs[det][0] = wfs[det][0].copy().resize(mlen)
+            wfs[det][1] = wfs[det][1].copy().resize(mlen)
             # combine waveforms
             combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1]
                                  for x in wfs]))
