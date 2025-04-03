@@ -4,7 +4,6 @@
 
 import numpy
 import argparse
-import logging
 import sys
 from itertools import cycle
 from matplotlib import use
@@ -14,7 +13,7 @@ from matplotlib import pyplot
 import pycbc
 import pycbc.results
 import pycbc.io
-from pycbc.events import background_bin_from_string, veto, ranking
+from pycbc.events import background_bin_from_string, ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)

@@ -13,7 +13,6 @@
 # Public License for more details.
 
 
-import sys, h5py
 import argparse, logging
 
 import copy, numpy as np

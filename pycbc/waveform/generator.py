@@ -34,7 +34,6 @@ from .waveform import (FailedWaveformError)
 from . import ringdown
 from . import supernovae
 from . import waveform_modes
-from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fseries_time_shift, taper_timeseries, \
@@ -702,11 +701,11 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         return h
 
     @staticmethod
-    def select_rframe_generator(approximant):
+    def select_rframe_generator(approximant, domain):
         """Returns a radiation frame generator class based on the approximant
         string.
         """
-        return select_waveform_generator(approximant)
+        return select_waveform_generator(approximant, domain)
 
 
 class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
@@ -845,11 +844,11 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         return h
 
     @staticmethod
-    def select_rframe_generator(approximant):
+    def select_rframe_generator(approximant, domain):
         """Returns a radiation frame generator class based on the approximant
         string.
         """
-        return select_waveform_generator(approximant)
+        return select_waveform_generator(approximant, domain)
 
 class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform in a specific frame.
@@ -944,11 +943,12 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
         return h
 
     @staticmethod
-    def select_rframe_generator(approximant):
+    def select_rframe_generator(approximant, domain):
         """Returns a radiation frame generator class based on the approximant
         string.
         """
-        return select_waveform_generator(approximant)
+        return select_waveform_generator(approximant, domain)
+
 
 class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform modes in a specific frame.
@@ -1096,11 +1096,11 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         return h
 
     @staticmethod
-    def select_rframe_generator(approximant):
+    def select_rframe_generator(approximant, domain):
         """Returns a radiation frame generator class based on the approximant
         string.
         """
-        return select_waveform_modes_generator(approximant)
+        return select_waveform_modes_generator(approximant, domain)
 
 
 class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
@@ -1197,8 +1197,40 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
 # =============================================================================
 #
 
+def get_td_generator(approximant, modes=False):
+    """Returns the time-domain generator for the given approximant."""
+    if approximant in waveform.td_approximants():
+        if modes:
+            return TDomainCBCModesGenerator
+        return TDomainCBCGenerator
 
-def select_waveform_generator(approximant):
+    if approximant in ringdown.ringdown_td_approximants:
+        if approximant == 'TdQNMfromFinalMassSpin':
+            return TDomainMassSpinRingdownGenerator
+        return TDomainFreqTauRingdownGenerator
+
+    if approximant in supernovae.supernovae_td_approximants:
+        return TDomainSupernovaeGenerator
+
+    raise ValueError(f"No time-domain generator found for "
+                       "approximant: {approximant}")
+
+def get_fd_generator(approximant, modes=False):
+    """Returns the frequency-domain generator for the given approximant."""
+    if approximant in waveform.fd_approximants():
+        if modes:
+            return FDomainCBCModesGenerator
+        return FDomainCBCGenerator
+
+    if approximant in ringdown.ringdown_fd_approximants:
+        if approximant == 'FdQNMfromFinalMassSpin':
+            return FDomainMassSpinRingdownGenerator
+        return FDomainFreqTauRingdownGenerator
+
+    raise ValueError(f"No frequency-domain generator found for "
+                       "approximant: {approximant}")
+
+def select_waveform_generator(approximant, domain=None):
     """Returns the single-IFO generator for the approximant.
 
     Parameters
@@ -1206,6 +1238,9 @@ def select_waveform_generator(approximant):
     approximant : str
         Name of waveform approximant. Valid names can be found using
         ``pycbc.waveform`` methods.
+    domain : str or None
+        Name of the preferred waveform domain
+        ('td' for time domain, 'fd' for frequency domain, None for default)
 
     Returns
     -------
@@ -1225,33 +1260,22 @@ def select_waveform_generator(approximant):
     >>> from pycbc.waveform.generator import select_waveform_generator
     >>> select_waveform_generator(waveform.fd_approximants()[0])
     """
-    # check if frequency-domain CBC waveform
-    if approximant in waveform.fd_approximants():
-        return FDomainCBCGenerator
-    # check if time-domain CBC waveform
-    elif approximant in waveform.td_approximants():
-        return TDomainCBCGenerator
-    # check if frequency-domain ringdown waveform
-    elif approximant in ringdown.ringdown_fd_approximants:
-        if approximant == 'FdQNMfromFinalMassSpin':
-            return FDomainMassSpinRingdownGenerator
-        elif approximant == 'FdQNMfromFreqTau':
-            return FDomainFreqTauRingdownGenerator
-    elif approximant in ringdown.ringdown_td_approximants:
-        if approximant == 'TdQNMfromFinalMassSpin':
-            return TDomainMassSpinRingdownGenerator
-        elif approximant == 'TdQNMfromFreqTau':
-            return TDomainFreqTauRingdownGenerator
-    # check if supernovae waveform:
-    elif approximant in supernovae.supernovae_td_approximants:
-        if approximant == 'CoreCollapseBounce':
-            return TDomainSupernovaeGenerator
-    # otherwise waveform approximant is not supported
-    else:
-        raise ValueError("%s is not a valid approximant." % approximant)
 
+    if domain not in {None, 'td', 'fd'}:
+        raise ValueError(f"Invalid domain '{domain}'. "
+                          "Must be one of: None, 'td', or 'fd'.")
 
-def select_waveform_modes_generator(approximant):
+    if domain == 'td':
+        return get_td_generator(approximant)
+    elif domain == 'fd':
+        return get_fd_generator(approximant)
+    elif domain is None:
+        try:
+            return get_fd_generator(approximant)
+        except ValueError:
+            return get_td_generator(approximant)
+
+def select_waveform_modes_generator(approximant, domain=None):
     """Returns the single-IFO modes generator for the approximant.
 
     Parameters
@@ -1259,17 +1283,26 @@ def select_waveform_modes_generator(approximant):
     approximant : str
         Name of waveform approximant. Valid names can be found using
         ``pycbc.waveform`` methods.
+    domain : str or None
+        Name of the preferred waveform domain
+        ('td' for time domain, 'fd' for frequency domain, None for default)
 
     Returns
     -------
     generator : (PyCBC generator instance)
-        A waveform generator object.
+        A waveform modes generator object.
     """
-    # check if frequency-domain CBC waveform
-    if approximant in waveform.fd_approximants():
-        return FDomainCBCModesGenerator
-    # check if time-domain CBC waveform
-    elif approximant in waveform.td_approximants():
-        return TDomainCBCModesGenerator
-    # otherwise waveform approximant is not supported
-    raise ValueError("%s is not a valid approximant." % approximant)
+
+    if domain not in {None, 'td', 'fd'}:
+        raise ValueError(f"Invalid domain '{domain}'. "
+                           "Must be one of: None, 'td', or 'fd'.")
+
+    if domain == 'td':
+        return get_td_generator(approximant, modes=True)
+    elif domain == 'fd':
+        return get_fd_generator(approximant, modes=True)
+    elif domain is None:
+        try:
+            return get_fd_generator(approximant, modes=True)
+        except ValueError:
+            return get_td_generator(approximant, modes=True)

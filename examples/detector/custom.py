@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from pycbc.detector import add_detector_on_earth, Detector
-import pycbc.psd
 import numpy as np
 
 # Set up potential Cosmic Explorer detector locations

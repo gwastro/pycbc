@@ -25,9 +25,12 @@
 These are the unittests for the pycbc.filter.matchedfilter module
 """
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.filter import *
+from pycbc.types import (
+    Array, TimeSeries, FrequencySeries, zeros, float32, float64, complex64
+)
+from pycbc.filter import (
+    make_frequency_series, optimized_match, match, matched_filter
+)
 from math import sqrt
 import numpy
 from utils import parse_args_all_schemes, simple_exit

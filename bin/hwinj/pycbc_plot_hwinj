@@ -23,7 +23,6 @@ import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
-import sys
 
 from pycbc import add_common_pycbc_options, init_logging
 

@@ -230,7 +230,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """
         Read a .ini file and return it as a ConfigParser class.
         This function does none of the parsing/combining of sections. It simply
-        reads the file and returns it unedited
+        reads the file, checks if there are overlaping options
+        and returns it unedited
 
         Stub awaiting more functionality - see configparser_test.py
 
@@ -245,6 +246,27 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             The ConfigParser class containing the read in .ini file
         """
         # Read the file
+
+        options_seen = {}
+
+        for filename in fpath:
+            parser = ConfigParser.ConfigParser()
+            parser.optionxform=str
+            parser.read(filename)
+
+            for section in parser.sections():
+                if section not in options_seen:
+                    options_seen[section] = set()
+
+                section_options = parser.options(section)
+
+                option_intersection = options_seen[section].intersection(section_options)
+
+                if option_intersection:
+                    raise ValueError(f"Duplicate option(s) {', '.join(option_intersection)} found in section '{section}' in file '{filename}'")
+
+                options_seen[section].update(section_options)
+
         self.read(fpath)
 
     def get_subsections(self, section_name):

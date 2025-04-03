@@ -25,10 +25,8 @@ import sys
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
-import numpy as np
 
 import pycbc
-import lal
 from pycbc.io.gracedb import gracedb_tag_with_version
 
 parser = argparse.ArgumentParser(description=__doc__)

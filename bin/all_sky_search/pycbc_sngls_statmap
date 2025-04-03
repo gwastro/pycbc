@@ -5,13 +5,11 @@ by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
 with producing the combined foreground and background triggers.
 """
 
-import argparse, itertools
+import argparse
 import logging, numpy, copy
-from pycbc.events import veto, coinc
-from pycbc.events import triggers, trigger_fits as trstats
+from pycbc.events import veto
 from pycbc.events import significance
 import pycbc.pnutils, pycbc.io
-import sys
 import pycbc.conversions as conv
 
 class fw(object):
@@ -107,6 +105,7 @@ assert ifo + '/time' in all_trigs.data
 logging.info("We have %s triggers" % len(all_trigs.stat))
 logging.info("Clustering triggers")
 all_trigs = all_trigs.cluster(args.cluster_window)
+logging.info("%s triggers remain" % len(all_trigs.stat))
 
 fg_time = float(all_trigs.attrs['foreground_time'])
 
@@ -137,12 +136,13 @@ significance_dict = significance.digest_significance_options([ifo], args)
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-bg_far, fg_far = significance.get_far(
+bg_far, fg_far, sig_info = significance.get_far(
     back_stat,
     fore_stat,
     bkg_dec_facs,
     fg_time,
-    **significance_dict[ifo])
+    **significance_dict[ifo]
+)
 
 fg_far = significance.apply_far_limit(
     fg_far,
@@ -190,7 +190,7 @@ back_exc_locs = back_exc_locs[to_keep]
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-bg_far_exc, fg_far_exc = significance.get_far(
+bg_far_exc, fg_far_exc, exc_sig_info = significance.get_far(
     back_stat_exc,
     fore_stat,
     bkg_exc_dec_facs,
@@ -229,6 +229,10 @@ f['foreground/fap'] = fap
 fap_exc = 1 - numpy.exp(- fg_time_exc / fg_ifar_exc)
 f['foreground/ifar_exc'] = conv.sec_to_year(fg_ifar_exc)
 f['foreground/fap_exc'] = fap_exc
+for key, value in sig_info.items():
+    f['foreground'].attrs[key] = value
+for key, value in exc_sig_info.items():
+    f['foreground'].attrs[f'{key}_exc'] = value
 
 if 'name' in all_trigs.attrs:
     f.attrs['name'] = all_trigs.attrs['name']
@@ -289,6 +293,10 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
         f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(fg_ifar)
         f['foreground_h%s/ifar_exc' % h_iterations] = conv.sec_to_year(fg_ifar_exc)
         f['foreground_h%s/fap' % h_iterations] = fap
+        for key, value in sig_info.items():
+            f['foreground_h%s' % h_iterations].attrs[key] = value
+        for key, value in exc_sig_info.items():
+            f['foreground_h%s' % h_iterations].attrs[key + "_exc"] = value
         for k in all_trigs.data:
             f['foreground_h%s/' % h_iterations + k] = all_trigs.data[k]
     # Add the iteration number of hierarchical removals done.
@@ -342,7 +350,7 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
     back_stat = fore_stat = all_trigs.stat
     bkg_dec_facs = all_trigs.decimation_factor
 
-    bg_far, fg_far = significance.get_far(
+    bg_far, fg_far, sig_info = significance.get_far(
         back_stat,
         fore_stat,
         bkg_dec_facs,
@@ -368,11 +376,12 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
     # triggers are being removed via inclusive or exclusive background.
     if is_bkg_inc:
         ifar_louder = fg_ifar
+        exc_sig_info = {}
 
     # Exclusive background doesn't change when removing foreground triggers.
     # So we don't have to take bg_far_exc, just repopulate fg_ifar_exc
     else:
-        _, fg_far_exc = significance.get_far(
+        _, fg_far_exc, exc_sig_info = significance.get_far(
             back_stat_exc,
             fore_stat,
             bkg_exc_dec_facs,
@@ -400,6 +409,10 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
         # Write ranking statistic to file just for downstream plotting code
         f['foreground_h%s/stat' % h_iterations] = fore_stat
 
+        for key, value in sig_info.items():
+            f['foreground_h%s' % h_iterations].attrs[key] = value
+        for key, value in exc_sig_info.items():
+            f['foreground_h%s' % h_iterations].attrs[key + "_exc"] = value
         fap = 1 - numpy.exp(- fg_time / fg_ifar)
         f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(fg_ifar)
         f['foreground_h%s/fap' % h_iterations] = fap

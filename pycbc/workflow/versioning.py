@@ -71,4 +71,4 @@ def make_versioning_page(workflow, config_parser, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow.add_node(node)
 
-    return node
+    return node, node.output_files

@@ -21,7 +21,6 @@ daily_counts_per_bin = 500.
 # Set attributes to be something appropriate
 f.attrs['start_date'] = 0
 f.attrs['end_date'] = n_days
-f.attrs['fit_threshold'] = 6.5
 
 f['bins_edges'] = np.logspace(np.log10(min_duration),
                               np.log10(max_duration),
@@ -35,6 +34,7 @@ for ifo in ['H1', 'L1', 'V1']:
     ifo_group.attrs['live_time'] = np.round(n_days * 0.7 * 86400.)
     ifo_group.attrs['mean_alpha'] = alpha
     ifo_group.attrs['total_counts'] = daily_counts_per_bin * n_days * n_bins
+    ifo_group.attrs['fit_threshold'] = 6.5
 
     # Make daily fits datasets, this doesn't atually matter for the test, but
     # means that the file format matches in case of future requirements

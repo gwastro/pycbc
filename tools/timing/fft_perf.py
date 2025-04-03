@@ -1,7 +1,7 @@
 #!/usr/bin/python
-from pycbc.scheme import *
-from pycbc.types import *
-from pycbc.fft import *
+from pycbc.scheme import CPUScheme, CUDAScheme
+from pycbc.types import zeros, complex64, check_aligned
+from pycbc.fft import ifft
 import pycbc
 from optparse import OptionParser
 import gc
@@ -39,8 +39,6 @@ if _options['scheme'] == 'cpu':
             set_measure_level(options.measure_level)
             if options.num_threads != 1:
                 set_threads_backend('openmp')
-
-
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
@@ -66,7 +64,7 @@ if options.import_float_wisdom:
 
 print("Making the plan")
 with ctx:
-    ifft(vecin, vecout, backend=options.backend)
+    ifft(vecin, vecout)
 print("Planning done")
 
 if options.export_float_wisdom:
@@ -75,9 +73,9 @@ if options.export_float_wisdom:
 
 def tifft():
     with ctx:
-	    for i in range(0, niter):
-	        ifft(vecin, vecout, backend=options.backend)
-	    sync = vecout[0]
+        for i in range(0, niter):
+            ifft(vecin, vecout)
+        sync = vecout[0]
 
 import timeit
 gt = timeit.Timer(tifft)

@@ -18,15 +18,10 @@
 import argparse
 import logging
 import numpy
-import sys
-from foton import FilterFile, Filter
+from foton import FilterFile
 
-from pycbc import init_logging, add_common_pycbc_options
 from pycbc.filter.fotonfilter import filter_data, get_swstat_bits, read_gain_from_frames
 from pycbc.frame import frame_paths
-from pycbc.inject import InjectionSet, legacy_approximant_name
-from pycbc.types import TimeSeries
-from pycbc.waveform import get_td_waveform
 
 # list of IFOs
 ifo_list = ['H1', 'L1']
@@ -35,7 +30,7 @@ ifo_list = ['H1', 'L1']
 parser = argparse.ArgumentParser(usage='pycbc_foton_filter [--options]',
              description='Filter a single-column ASCII time series.')
 
-add_common_pycbc_options(parser)
+pycbc.add_common_pycbc_options(parser)
 
 # injection options
 parser.add_argument("--data-file", type=str, required=True,

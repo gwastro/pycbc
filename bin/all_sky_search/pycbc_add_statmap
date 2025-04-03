@@ -4,11 +4,10 @@ with more than one ifo combination available. Cluster to keep foreground
 coincs with the highest stat value.
 """
 import numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
+import igwn_segments as segments
 import pycbc.version
 import pycbc.conversions as conv
-from pycbc.events import coinc, significance
-from ligo import segments
-import sys, copy
+from pycbc.events import significance
 
 def get_ifo_string(fi):
     # Returns a string of a space-separated list of ifos from input file.
@@ -38,6 +37,8 @@ parser.add_argument('--veto-window', type=float, default=0.1,
     help="Time around each zerolag trigger to window out [default=.1s]")
 parser.add_argument('--cluster-window', type=float,
     help="Time interval to cluster coincident events over")
+parser.add_argument('--cluster-stat', default='stat',
+    help="What ranking to use when clustering zerolag [default='stat']")
 parser.add_argument('--output-coinc-types', action='store_true',
     help="Create additional foreground dataset recording coinc type for each"
          " event. Mainly for debugging")
@@ -246,9 +247,9 @@ for ifo in all_ifos:
 # fg_times is a tuple of trigger time arrays
 fg_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
-# Cluster by statistic value. Currently only clustering zerolag,
+# Cluster using the chosen method. Currently only clustering zerolag,
 # i.e. foreground, so set all timeslide_ids to zero
-cidx = pycbc.events.cluster_coincs_multiifo(f['foreground/stat'][:],
+cidx = pycbc.events.cluster_coincs_multiifo(f[f'foreground/{args.cluster_stat}'][:],
                                             fg_times,
                                             np.zeros(n_triggers), 0,
                                             args.cluster_window)
@@ -308,14 +309,14 @@ if injection_style:
     for bg_fname in args.background_files:
         bg_f = pycbc.io.HFile(bg_fname, 'r')
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
-        _, far[ifo_combo_key] = significance.get_far(
+        _, far[ifo_combo_key], _ = significance.get_far(
                 bg_f['background/stat'][:],
                 f['foreground/stat'][:],
                 bg_f['background/decimation_factor'][:],
                 bg_f.attrs['background_time'],
                 **significance_dict[ifo_combo_key])
 
-        _, far_exc[ifo_combo_key] = \
+        _, far_exc[ifo_combo_key], _ = \
             significance.get_far(
                 bg_f['background_exc/stat'][:],
                 f['foreground/stat'][:],
@@ -328,7 +329,7 @@ else:
     # background included
     for f_in in files:
         ifo_combo_key = get_ifo_string(f_in).replace(' ','')
-        _, far[ifo_combo_key] = \
+        _, far[ifo_combo_key], _ = \
             significance.get_far(
                 f_in['background/stat'][:],
                 f['foreground/stat'][:],
@@ -336,7 +337,7 @@ else:
                 f_in.attrs['background_time'],
                 **significance_dict[ifo_combo_key])
 
-        _, far_exc[ifo_combo_key] = \
+        _, far_exc[ifo_combo_key], _ = \
             significance.get_far(
                 f_in['background_exc/stat'][:],
                 f['foreground/stat'][:],
@@ -607,7 +608,7 @@ while True:
         fg_time_ct[key] -= args.cluster_window
         bg_t_y = conv.sec_to_year(bg_time_ct[key])
         fg_t_y = conv.sec_to_year(fg_time_ct[key])
-        bg_far, fg_far = significance.get_far(
+        bg_far, fg_far, _ = significance.get_far(
             sep_bg_data[key].data['stat'],
             sep_fg_data[key].data['stat'],
             sep_bg_data[key].data['decimation_factor'],
@@ -631,7 +632,7 @@ while True:
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
-        _, far[key] = significance.get_far(
+        _, far[key], _ = significance.get_far(
             sep_bg_data[key].data['stat'],
             combined_fg_data.data['stat'],
             sep_bg_data[key].data['decimation_factor'],

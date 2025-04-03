@@ -28,7 +28,7 @@ gravitational-wave detectors from public sources and/or dqsegdb.
 import logging
 import json
 import numpy
-from ligo.segments import segmentlist, segment
+from igwn_segments import segmentlist, segment
 from pycbc.frame.gwosc import get_run
 from pycbc.io import get_file
 
@@ -52,7 +52,7 @@ def parse_veto_definer(veto_def_filename, ifos):
         Returns a dictionary first indexed by ifo, then category level, and
         finally a list of veto definitions.
     """
-    from ligo.lw import table, utils as ligolw_utils
+    from igwn_ligolw import ligolw, utils as ligolw_utils
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     data = {}
@@ -64,7 +64,7 @@ def parse_veto_definer(veto_def_filename, ifos):
 
     indoc = ligolw_utils.load_filename(veto_def_filename, False,
                                        contenthandler=h)
-    veto_table = table.Table.get_table(indoc, 'veto_definer')
+    veto_table = ligolw.Table.get_table(indoc, 'veto_definer')
 
     ifo = veto_table.getColumnByName('ifo')
     name = veto_table.getColumnByName('name')
@@ -152,7 +152,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
     Returns
     ---------
-    segments: ligo.segments.segmentlist
+    segments: igwn_segments.segmentlist
         List of segments
     """
     flag_segments = segmentlist([])
@@ -279,7 +279,7 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
 
     Returns
     ---------
-    segments: ligo.segments.segmentlist
+    segments: igwn_segments.segmentlist
         List of segments
     """
     total_segs = segmentlist([])

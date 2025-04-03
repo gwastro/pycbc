@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plot
 
 import pycbc.detector
-from pycbc import pnutils, results
+from pycbc import results
 from pycbc.events import triggers
 from pycbc.io.hdf import HFile
 

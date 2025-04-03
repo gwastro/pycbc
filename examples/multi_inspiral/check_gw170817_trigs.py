@@ -6,7 +6,6 @@
 import sys
 import logging
 import h5py
-import numpy as np
 from pycbc import init_logging
 
 init_logging(True)

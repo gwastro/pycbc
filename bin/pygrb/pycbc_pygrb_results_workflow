@@ -735,16 +735,6 @@ _workflow.makedir(rdir['workflow/input_map'])
 _workflow.makedir(rdir['workflow/output_map'])
 _workflow.makedir(rdir['workflow/planning'])
 
-logging.info(
-    "Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base)
-)
-_workflow.make_results_web_page(
-    wflow,
-    os.path.join(os.getcwd(), rdir.base),
-    template='red',
-    explicit_dependencies=plotting_nodes + html_nodes,
-)
-
 # Protect the open box results folder
 out_dir = rdir['open_box']
 _workflow.makedir(out_dir)
@@ -831,6 +821,17 @@ for inj_set in inj_sets:
     html_nodes.append(excl_dist_table_node)
     eff_layout += [(eff_plot, excl_dist_table[0])]
 layout.two_column_layout(out_dir, eff_layout)
+
+# Job to gather all html material in the webpage
+logging.info(
+    "Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base)
+)
+_workflow.make_results_web_page(
+    wflow,
+    os.path.join(os.getcwd(), rdir.base),
+    template='red',
+    explicit_dependencies=plotting_nodes + html_nodes,
+)
 
 # Close the log and flush to the html file
 logging.shutdown()

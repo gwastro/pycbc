@@ -25,7 +25,6 @@ __email__ = "vaibhav.tiwari@ligo.org"
 __version__ = "0.0"
 __date__ = "31.10.2017"
 
-import logging
 import argparse
 from numpy import logaddexp, log, newaxis, expm1
 import numpy as np

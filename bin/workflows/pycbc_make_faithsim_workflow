@@ -5,18 +5,11 @@ Program for running a faithfulness comparisons workflow analysis between two app
 and generate files containing the match between them and plots.
 """
 
-import os
-import pycbc
 import pycbc.workflow as wf
-import logging
-import configparser as ConfigParser
-import numpy as np
-import logging
 import argparse
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.workflow.plotting import PlotExecutable
-from pycbc.workflow import setup_splittable_dax_generated
 
 def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
     tags = [] if tags is None else tags

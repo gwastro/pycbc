@@ -69,10 +69,7 @@ from numpy.random import randn
 import pycbc.fft
 from pycbc.fft.backend_support import set_backend
 import unittest
-import sys
-from utils import parse_args_all_schemes, simple_exit
 from lal import LIGOTimeGPS as LTG
-import lal as _lal
 
 # Because we run many similar tests where we only vary dtypes, precisions,
 # or Array/TimeSeries/FrequencySeries, it is helpful to define the following

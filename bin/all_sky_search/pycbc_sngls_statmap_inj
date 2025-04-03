@@ -5,13 +5,10 @@ by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
 with producing the combined foreground and background triggers.
 """
 
-import argparse, itertools
-import lal, logging, numpy
-from pycbc.events import veto, coinc
-from pycbc.events import triggers, trigger_fits as trstats
+import argparse
+import logging, numpy
 from pycbc.events import significance
 import pycbc.pnutils, pycbc.io
-import sys
 import pycbc.conversions as conv
 
 class fw(object):
@@ -108,7 +105,7 @@ significance_dict = significance.digest_significance_options([ifo], args)
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-bg_far_exc, fg_far_exc = significance.get_far(
+bg_far_exc, fg_far_exc, sig_info = significance.get_far(
     back_stat_exc,
     fore_stat,
     bkg_exc_dec_facs,
@@ -134,6 +131,9 @@ f.attrs['foreground_time_exc'] = fg_time_exc
 fap_exc = 1 - numpy.exp(- fg_time_exc / fg_ifar_exc)
 f['foreground/ifar_exc'] = conv.sec_to_year(fg_ifar_exc)
 f['foreground/fap_exc'] = fap_exc
+
+for key, value in sig_info.items():
+    f['foreground'].attrs[key + '_exc'] = value
 
 if 'name' in all_trigs.attrs:
     f.attrs['name'] = all_trigs.attrs['name']

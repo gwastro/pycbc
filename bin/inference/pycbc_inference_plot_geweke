@@ -18,7 +18,6 @@
 """ Plots the Geweke convergence diagnositic statistic.
 """
 
-import argparse
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
@@ -26,7 +25,7 @@ import pycbc
 from pycbc import results
 import sys
 
-from pycbc.inference import (io, geweke, option_utils)
+from pycbc.inference import (io, geweke)
 
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=['walkers'])

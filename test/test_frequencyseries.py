@@ -25,13 +25,13 @@
 These are the unittests for the pycbc frequencyseries type
 '''
 
-import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
+from pycbc.types import (
+    Array, FrequencySeries, float32, complex64, float64, complex128,
+)
+from pycbc.scheme import DefaultScheme
 import numpy
 import lal
-import sys
 import os
 import tempfile
 from utils import array_base, parse_args_all_schemes, simple_exit
@@ -318,7 +318,7 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
         if self.scheme != 'cpu':
             self.assertRaises(TypeError, FrequencySeries, out4, 0.1, copy=False)
             out6 = FrequencySeries(out4, 0.1, dtype=self.dtype, epoch=self.epoch)
-            self.assertTrue(type(out6._scheme) == CPUScheme)
+            self.assertTrue(type(out6._scheme) == DefaultScheme)
             self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0],1)
             self.assertEqual(out6[1],2)

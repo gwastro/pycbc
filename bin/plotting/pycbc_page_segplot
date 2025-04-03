@@ -20,15 +20,12 @@ import argparse
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
-import itertools, datetime, time
 import sys
 from itertools import cycle
-from matplotlib.patches import Rectangle
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.events.veto import get_segment_definer_comments
-from pycbc.results.color import ifo_color
-from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
+from pycbc.results.mpld3_utils import LineTooltip
 from pycbc.workflow import SegFile
 
 # parse command line

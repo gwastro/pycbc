@@ -19,7 +19,6 @@
 an html table.
 """
 
-import argparse
 import logging
 import numpy
 import sys

@@ -25,7 +25,7 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 
 import copy
 import numpy
-from ligo import segments
+import igwn_segments as segments
 from pycbc.results import save_fig_with_metadata
 
 

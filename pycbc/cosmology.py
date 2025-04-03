@@ -31,7 +31,7 @@ Any other distance measure is explicitly named; e.g., ``comoving_distance``.
 
 import logging
 import numpy
-from scipy import interpolate, integrate
+from scipy import interpolate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError

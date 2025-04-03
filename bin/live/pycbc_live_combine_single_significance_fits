@@ -19,7 +19,7 @@ import argparse
 import logging
 import numpy as np
 
-from ligo.segments import segment, segmentlist
+from igwn_segments import segment, segmentlist
 
 import pycbc
 from pycbc.io.hdf import HFile
@@ -193,8 +193,16 @@ for ifo in args.ifos:
 
         invalphan = c[valid] / a[valid]
         mean_alpha = c[valid].mean() / invalphan.mean()
-        cons_alpha = np.percentile(a[valid], 100 - args.conservative_percentile)
-        cons_alphas_out[ifo][counter] = cons_alpha
+        cons_count = np.percentile(
+            c[valid],
+            args.conservative_percentile
+        )
+        cons_invalphan = np.percentile(
+            invalphan,
+            args.conservative_percentile
+        )
+        # Conservative alpha estimate using percentile rather than mean
+        cons_alphas_out[ifo][counter] = cons_count / cons_invalphan 
         alphas_out[ifo][counter] = mean_alpha
 
         # To get the count values, we need to convert to rates and back again

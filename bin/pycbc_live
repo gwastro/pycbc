@@ -10,12 +10,11 @@ launched with mpirun.
 See https://arxiv.org/abs/1805.11174 for an overview."""
 
 import sys
-import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
+import argparse, numpy, pycbc, logging, cProfile, h5py, json
 import os.path
 import itertools
 import platform
 import subprocess
-import multiprocessing
 from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
@@ -43,7 +42,6 @@ from pycbc.detector import ppdets
 from pycbc.filter import resample
 from pycbc.psd import estimate
 from pycbc.psd import variation
-from pycbc.live import snr_optimizer
 from pycbc import conversions as conv
 
 # Use cached class-based FFTs in the resample and estimate module

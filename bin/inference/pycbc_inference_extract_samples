@@ -38,8 +38,6 @@ across combined files.
 """
 
 import os
-import argparse
-import logging
 import numpy
 import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,

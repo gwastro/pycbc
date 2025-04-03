@@ -23,8 +23,6 @@ import pylab
 import matplotlib as mpl
 mpl.use('Agg')
 
-from ligo import segments
-
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.results
 from pycbc.events import veto

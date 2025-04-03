@@ -8,15 +8,10 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       -
         uses: actions/checkout@v1
-      -
-        name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.9
       -
         env:
           OSG_ACCESS: "${{secrets.OSG_ACCESS}}"
@@ -29,4 +24,3 @@ jobs:
           DOCKER_SECURE_ENV_VARS: true
         name: "Creating the virtual environment"
         run: "bash -e tools/docker_build_and_test.sh"
-

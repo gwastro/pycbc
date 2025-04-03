@@ -33,7 +33,6 @@ from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
 from pycbc.io import FieldArray, HFile
 from pycbc.inference import option_utils
 from pycbc.tmpltbank import bank_conversions as bconv
-from pycbc.pnutils import get_imr_duration
 from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.results import metadata
 

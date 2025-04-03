@@ -3,7 +3,7 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-import numpy, argparse, os, pylab, pycbc.pnutils
+import numpy, argparse, pylab, pycbc.pnutils
 from pycbc.io.hdf import HFile
 
 from pycbc import init_logging, add_common_pycbc_options

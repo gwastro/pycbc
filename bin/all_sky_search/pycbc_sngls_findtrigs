@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-import argparse, logging, h5py, numpy as np
-from ligo.segments import infinity
+import argparse, logging, numpy as np
 from numpy.random import seed, shuffle
 
 import pycbc
 from pycbc.events import veto, coinc, stat
-import pycbc.conversions as conv
 from pycbc import io
-from pycbc.events import cuts, trigger_fits as trfits
-from pycbc.events.veto import indices_outside_times
+from pycbc.events import cuts
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc import init_logging
 
@@ -131,17 +128,6 @@ if args.cluster_window is not None:
   logging.info('Clustering events over %s s window within each template',
                args.cluster_window)
 
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
-
 loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
 
 threshes = []
@@ -172,6 +158,11 @@ for i, tnum in enumerate(template_ids):
             "Calculating statistic in template %d out of %d",
             i, len(template_ids),
         )
+    else:
+        logging.debug(
+            "Calculating statistic in template %d out of %d",
+            i, len(template_ids),
+        )
     tids_uncut = trigs.set_template(tnum)
 
     trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict,
@@ -188,9 +179,8 @@ for i, tnum in enumerate(template_ids):
 
     # Stat class instance to calculate the ranking statistic
     sds = rank_method.single(trigs)[trigger_keep_ids]
-    stat_t = rank_method.rank_stat_single((ifo, sds),
-                                          **extra_kwargs)
-    trigger_times = sds['end_time']
+    stat_t = rank_method.rank_stat_single((ifo, sds))
+    trigger_times = trigs['end_time'][:][trigger_keep_ids]
     if args.cluster_window is not None:
         cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)
@@ -206,7 +196,7 @@ for i, tnum in enumerate(template_ids):
 # Perform decimation
 dec_facs = np.ones_like(template_ids_all)
 stat_all = np.array(stat_all)
-template_ids_all = np.array(template_ids_all)
+template_ids_all = np.array(template_ids_all, dtype=int)
 trigger_ids_all = np.array(trigger_ids_all)
 trigger_times_all = np.array(trigger_times_all)
 

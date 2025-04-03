@@ -10,7 +10,6 @@ import argparse
 import logging
 
 import pycbc
-from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import (save_fig_with_metadata, html_escape,
     get_library_version_info, get_code_version_numbers)
 
@@ -26,7 +25,7 @@ parser.add_argument("--output-file", required=True,
                     help="The directory for output html snippets")
 args = parser.parse_args()
 
-init_logging(args.verbose)
+pycbc.init_logging(args.verbose)
 
 if not len(args.executables) == len(args.executables_names):
     raise parser.error("--executables-files and executables-names must be "

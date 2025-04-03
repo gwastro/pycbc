@@ -8,15 +8,10 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       -
         uses: actions/checkout@v1
-      -
-        name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.9
       -
         name: "Preparing a host container"
         run: "docker build -t pycbc-docker-tmp ."
@@ -35,4 +30,3 @@ jobs:
           DOCKER_USERNAME: "${{secrets.DOCKERHUB_USERNAME}}"
         name: "Pushing docker image"
         run: "bash -e docker/etc/push_image.sh"
-

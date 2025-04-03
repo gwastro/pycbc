@@ -23,7 +23,6 @@ smaller banks where the number of smaller banks is a user input
 
 import argparse
 import numpy
-import h5py
 import logging
 from numpy import random
 
@@ -76,7 +75,6 @@ if args.output_filenames is None and args.output_prefix is None:
 if args.output_filenames and args.output_prefix:
     raise RuntimeError("Can't specify both output filenames and a prefix")
 
-pycbc.init_logging(args.verbose)
 logging.info("Loading bank")
 
 tmplt_bank = bank.TemplateBank(args.bank_file)
@@ -92,7 +90,6 @@ if args.random_sort:
     tmplt_bank.table = templates
 
 if args.mchirp_sort:
-    from pycbc import pnutils
     mcsort = numpy.argsort(templates.mchirp)
     templates = templates[mcsort]
     tmplt_bank.table = templates

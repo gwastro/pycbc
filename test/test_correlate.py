@@ -26,9 +26,8 @@ These are the unittests for the correlate functions in pycbc.filter.matchedfilte
 """
 import unittest
 import numpy
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.filter import *
+from pycbc.types import Array, zeros, complex64
+from pycbc.filter import correlate
 from utils import parse_args_all_schemes, simple_exit
 from pycbc.filter.matchedfilter import BatchCorrelator, Correlator
 

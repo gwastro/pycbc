@@ -25,7 +25,6 @@ import os
 import argparse
 import shutil
 import logging
-import time
 import numpy
 import tqdm
 

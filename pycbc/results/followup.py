@@ -34,7 +34,7 @@ import sys
 if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 import pylab, mpld3, mpld3.plugins
-from ligo.segments import segment
+from igwn_segments import segment
 from pycbc.io.hdf import HFile
 
 def columns_from_file_list(file_list, columns, ifo, start, end):

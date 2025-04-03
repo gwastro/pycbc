@@ -26,8 +26,14 @@ These are the unittests for the pycbc.filter.matchedfilter module
 """
 import unittest
 import numpy
-from pycbc.pnutils import *
-from pycbc.scheme import *
+from pycbc.pnutils import (
+    mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma,
+    mass1_mass2_to_mchirp_eta,
+    mass1_mass2_to_mtotal_eta,
+    mass1_mass2_to_tau0_tau3,
+    tau0_tau3_to_mass1_mass2,
+    tau0_tau3_to_mtotal_eta,
+)
 from utils import parse_args_cpu_only, simple_exit
 
 # We only need CPU tests

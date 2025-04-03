@@ -1,28 +1,30 @@
 #!/usr/bin/python
-from pycbc.scheme import *
-from pycbc.types import *
-from pycbc.fft import *
-from pycbc.events import *
+from pycbc.types import zeros, complex64
+from pycbc.scheme import CPUScheme, CUDAScheme
 import pycbc
-from optparse import OptionParser
+from argparse import ArgumentParser
 from math import sin, log
 import gc
-parser = OptionParser()
+parser = ArgumentParser()
 
-parser.add_option('--scheme','-s',  type = 'choice',
-                    choices = ('cpu','cuda','opencl'),
-                    default = 'cpu', dest = 'scheme',
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
+parser.add_argument(
+    '--scheme',
+    '-s',
+    choices = ('cpu','cuda','opencl'),
+    default = 'cpu',
+    dest = 'scheme',
+    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl'
+)
 
-parser.add_option('--device-num','-d', action='store', type = 'int',
+parser.add_argument('--device-num','-d', action='store', type = int,
                     dest = 'devicenum', default=0,
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
 
 
-parser.add_option('--size',type=float, help='FFT size')
-parser.add_option('--iterations', type=int, help='Number of iterations to perform')
+parser.add_argument('--size',type=float, help='FFT size', required=True)
+parser.add_argument('--iterations', type=int, help='Number of iterations to perform', required=True)
 
-(options, args) = parser.parse_args()
+options = parser.parse_args()
 
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(options)
@@ -61,21 +63,21 @@ def addc():
 
 def add():
     with ctx:
-	for i in range(0, niter):
-	    v+v
-	v[0]
+        for i in range(0, niter):
+            v+v
+        v[0]
 
 def mul():
     with ctx:
-	for i in range(0, niter):
-	    v*v
-	v[0]
+        for i in range(0, niter):
+            v*v
+        v[0]
 
 def sqnm():
     with ctx:
-	for i in range(0, niter):
-	    v.squared_norm()
-	v[0]
+        for i in range(0, niter):
+            v.squared_norm()
+        v[0]
 
 import timeit
 

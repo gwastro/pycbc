@@ -17,13 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import logging
 import numpy
 import pycbc.results
 import sys
 import itertools
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata

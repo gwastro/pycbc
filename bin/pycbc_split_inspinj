@@ -2,8 +2,8 @@
 
 # Copyright (C) 2014 Andrew Lundgren
 import argparse
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw import lsctables
 from itertools import cycle
 
 import pycbc
@@ -44,7 +44,7 @@ xmlroot.removeChild(allinjs)
 num_splits = args.num_splits or len(args.output_files)
 
 new_inj_tables = [
-    lsctables.New(tabletype, columns=get_table_columns(allinjs))
+    tabletype.new(columns=get_table_columns(allinjs))
     for _ in range(num_splits)
 ]
 

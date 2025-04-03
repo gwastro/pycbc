@@ -14,16 +14,13 @@
 
 """Find trigger files and combine them into a single hdf trigger merge file."""
 
-import glob
 import numpy
 import argparse
-import itertools
 import h5py
 import os
 import logging
-from datetime import datetime, timedelta
 
-from ligo.segments import segmentlist, segment
+from igwn_segments import segmentlist, segment
 
 import pycbc
 from pycbc.io import live as liveio

@@ -83,7 +83,7 @@ def setup_dq_reranking(workflow, insps, bank,
         dq_types[dql] = workflow.cp.get_opt_tags(
             'workflow-data_quality', 'dq-type', [dql])
 
-    ifos = set(dq_ifos.values())
+    ifos = set(dq_ifos.values()) & set(workflow.ifos)
 
     for ifo in ifos:
         # get the dq label, type, and name for this ifo

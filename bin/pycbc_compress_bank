@@ -14,13 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 __description__ = \
 """"Loads a bank of waveforms and compresses them using the specified
 compression algorithm. The resulting compressed waveforms are saved to an
@@ -28,17 +21,13 @@ hdf file."""
 
 import argparse
 import numpy
-import h5py
 import logging
 
 import pycbc
-from pycbc import psd, DYN_RANGE_FAC
+from pycbc import psd
 from pycbc.waveform import compress
 from pycbc import waveform
 from pycbc.types import FrequencySeries, real_same_precision_as
-from pycbc import pnutils
-from pycbc import filter
-
 
 parser = argparse.ArgumentParser(description=__description__)
 pycbc.add_common_pycbc_options(parser)
@@ -98,6 +87,12 @@ parser.add_argument("--precision", type=str, choices=["double", "single"],
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                     "Otherwise, an error is raised.")
+parser.add_argument(
+    "--do-not-compress",
+    nargs="+",
+    help="If given, will not compress waveforms using "
+         "the given approximant. Recommended 'SPAtmplt TaylorF2'."
+)
 
 # Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser, include_data_options=False)
@@ -111,12 +106,15 @@ pycbc.init_logging(args.verbose)
 # using a PSD is not desired, this check would prevent raising an error
 # asking for PSD options.
 if args.psd_model or args.psd_file or args.asd_file :
-    psd.verify_psd_options(args, parser)
+    pycbc.psd.verify_psd_options(args, parser)
 
 if args.sample_rate % 2 != 0:
     raise ValueError("sample rate must be a power of 2")
 if args.segment_length % 2 != 0:
     raise ValueError("segment length must be a power of 2")
+
+if args.do_not_compress is None:
+    args.do_not_compress = []
 
 df = 1./args.segment_length
 fmax = args.sample_rate/2.
@@ -143,6 +141,8 @@ logging.info("writing template info to output")
 output = bank.write_to_hdf(args.output, force=args.force,
                            write_compressed_waveforms=False)
 
+output.create_group("compressed_waveforms")
+
 # get the psd
 logging.info("getting psd")
 psd = pycbc.psd.from_cli(args, length=N//2+1, delta_f=df,
@@ -157,9 +157,11 @@ logging.info("getting compressed amplitude and phase")
 decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
 
 for ii in range(templates.size):
+    tmplt = bank.table[ii]
+    if tmplt['approximant'] in args.do_not_compress:
+        continue
     # generate the waveform
     htilde = bank[ii]
-    tmplt = bank.table[ii]
     fmin=tmplt.f_lower
     template_duration = htilde.chirp_length
     output['template_duration'][ii] = template_duration

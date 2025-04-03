@@ -131,6 +131,10 @@ def _dummy_broadcast(self, f, args):
     self.map(f, [args] * self.size)
 
 class SinglePool(object):
+
+    def __init__(self, **_):
+        pass
+
     def broadcast(self, fcn, args):
         return self.map(fcn, [args])
 
@@ -174,15 +178,18 @@ def use_mpi(require_mpi=False, log=True):
     return use_mpi, size, rank
 
 
-def choose_pool(processes, mpi=False):
-    """ Get processing pool
+def choose_pool(processes, mpi=False, **kwargs):
+    """ Get processing pool.
+
+    Keyword arguments are passed to the pool constructor.
     """
     do_mpi, size, rank = use_mpi(require_mpi=mpi)
     if do_mpi:
         try:
             import schwimmbad
             pool = schwimmbad.choose_pool(mpi=do_mpi,
-                                          processes=(size - 1))
+                                          processes=(size - 1),
+                                          **kwargs)
             pool.broadcast = types.MethodType(_dummy_broadcast, pool)
             atexit.register(pool.close)
 
@@ -197,11 +204,11 @@ def choose_pool(processes, mpi=False):
             raise ValueError("Failed to start up an MPI pool, "
                              "install mpi4py / schwimmbad")
     elif processes == 1:
-        pool = SinglePool()
+        pool = SinglePool(**kwargs)
     else:
         if processes == -1:
             processes = cpu_count()
-        pool = BroadcastPool(processes)
+        pool = BroadcastPool(processes, **kwargs)
 
     pool.size = processes
     if size:

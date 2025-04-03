@@ -28,8 +28,8 @@ matplotlib.use('agg')
 import pylab as pl
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-import h5py
 import sys
+from packaging.version import Version
 
 import pycbc
 import pycbc.pnutils
@@ -148,7 +148,7 @@ hexbin_style = {
 
 # In earlier versions mpl will try to take the max over bins with 0 triggers
 # and fail, unless we tell it to leave these blank by setting mincnt
-if matplotlib.__version__ < '3.8.1':
+if Version(matplotlib.__version__) < Version('3.8.1'):
     hexbin_style['mincnt'] = 0
 
 if opts.log_x:

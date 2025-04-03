@@ -3,8 +3,6 @@
 """
 
 import argparse
-import numpy
-import h5py
 from numpy.random import choice
 
 from pycbc import add_common_pycbc_options, init_logging
