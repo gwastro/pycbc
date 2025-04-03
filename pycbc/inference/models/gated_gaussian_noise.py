@@ -206,8 +206,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # get gate start and length from get_gate_times
         gate_start, gate_length = self.get_gate_times()[det]
         # convert to indices
-        lindex = float(gate_start - start_time_gc) // delta_t
-        rindex = lindex + (gate_length // delta_t)
+        lindex = int(float(gate_start - start_time_gc) / delta_t)
+        rindex = lindex + int(gate_length / delta_t)
         lindex = lindex if lindex >= 0 else 0
         rindex = rindex if rindex <= len(ts) else len(ts)
         return lindex, rindex
@@ -817,7 +817,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 ht = h.to_timeseries() 
                 if pregate:
                     # just gate
-                    start_index, end_index = self.gate_indices(self, det)
+                    start_index, end_index = self.gate_indices(det)
                     if self.zero_before_gate:
                         start_index = 0
                     if self.zero_after_gate:
