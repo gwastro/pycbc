@@ -26,9 +26,9 @@ from pycbc.inject import InjectionSet
 import unittest
 import numpy
 import itertools
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
@@ -116,7 +116,7 @@ class TestInjection(unittest.TestCase):
         xmldoc.appendChild(ligolw.LIGO_LW())
 
         # create sim inspiral table, link it to document and fill it
-        sim_table = lsctables.New(lsctables.SimInspiralTable)
+        sim_table = lsctables.SimInspiralTable.new()
         xmldoc.childNodes[-1].appendChild(sim_table)
         for i in range(len(self.injections)):
             row = sim_table.RowType()
