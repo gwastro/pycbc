@@ -1312,13 +1312,13 @@ def get_fd_modes_from_freqtau(template=None, **kwargs):
 # Approximant names ###########################################################
 ringdown_fd_approximants = {
     'FdQNMfromFinalMassSpin': get_fd_from_final_mass_spin,
-    'FdQNMModesfromFinalMassSpin': get_fd_modes_from_final_mass_spin,
+    'FdModesfromFinalMassSpin': get_fd_modes_from_final_mass_spin,
     'FdQNMfromFreqTau': get_fd_from_freqtau,
-    'FdQNMModesfromFreqTau': get_fd_modes_from_freqtau}
+    'FdModesfromFreqTau': get_fd_modes_from_freqtau}
 
 
 ringdown_td_approximants = {
     'TdQNMfromFinalMassSpin': get_td_from_final_mass_spin,
-    'TdQNMModesfromFinalMassSpin': get_td_modes_from_final_mass_spin,
+    'TdModesfromFinalMassSpin': get_td_modes_from_final_mass_spin,
     'TdQNMfromFreqTau': get_td_from_freqtau,
-    'TdQNMModesfromFreqTau': get_td_modes_from_freqtau}
+    'TdModesfromFreqTau': get_td_modes_from_freqtau}
