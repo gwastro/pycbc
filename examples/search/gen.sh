@@ -6,4 +6,3 @@ pycbc_make_offline_search_workflow \
 --output-dir output \
 --config-files analysis.ini plotting.ini executables.ini injections_minimal.ini \
 --config-overrides results_page:output-path:$(pwd)/html \
---submit-now
