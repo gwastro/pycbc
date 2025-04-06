@@ -4,7 +4,6 @@ of injections.
 """
 
 import sys
-import argparse
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.colorbar as cbar
@@ -12,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy
 import pycbc
 from matplotlib import cm
-from pycbc import inject
 from pycbc.inference import (option_utils, io)
 from pycbc.results import save_fig_with_metadata
 

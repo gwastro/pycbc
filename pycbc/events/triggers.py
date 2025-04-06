@@ -227,7 +227,7 @@ def get_inj_param(injfile, param, ifo, args=None):
 
     inj = injfile["injections"]
     if param in inj.keys():
-        return inj["injections/"+param]
+        return inj[param][:]
 
     if param == "end_time_"+ifo[0].lower():
         return inj['end_time'][:] + det.time_delay_from_earth_center(

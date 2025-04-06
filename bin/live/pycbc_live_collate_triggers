@@ -14,16 +14,13 @@
 
 """Find trigger files and combine them into a single hdf trigger merge file."""
 
-import glob
 import numpy
 import argparse
-import itertools
 import h5py
 import os
 import logging
-from datetime import datetime, timedelta
 
-from ligo.segments import segmentlist, segment
+from igwn_segments import segmentlist, segment
 
 import pycbc
 from pycbc.io import live as liveio
@@ -231,7 +228,6 @@ with h5py.File(args.output_file, 'w') as destination:
                 sorted_key = triggers[key][:][sorted_indices]
                 triggers[key][:] = sorted_key
 
-
         logging.info("Setting up region references")
         # Datasets which need region references:
         region_ref_datasets = ('chisq_dof', 'chisq', 'coa_phase',
@@ -239,6 +235,8 @@ with h5py.File(args.output_file, 'w') as destination:
                                'template_duration', 'sigmasq')
         if 'psd_var_val' in triggers.keys():
             region_ref_datasets += ('psd_var_val',)
+        if 'dq_state' in triggers.keys():
+            region_ref_datasets += ('dq_state',)
 
         start_boundaries = template_boundaries
         end_boundaries = numpy.roll(start_boundaries, -1)

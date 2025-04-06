@@ -25,7 +25,7 @@ import logging
 import datetime
 import sys
 
-from ligo import segments as _segments
+import igwn_segments as _segments
 import lal
 
 import pycbc

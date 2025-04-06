@@ -46,12 +46,11 @@ __program__ = "dayhopecheck"
 import os
 import logging
 import argparse
-from ligo import segments
+import igwn_segments as segments
 import pycbc.workflow as _workflow
 
-from ligo.lw import ligolw
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
+from igwn_ligolw import ligolw
+from igwn_ligolw import utils as ligolw_utils
 
 from glue.segmentdb import segmentdb_utils
 
@@ -118,8 +117,7 @@ insps = _workflow.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 # FIXME: PROGRAM NAME and dictionary of opts should be variables defined up above
-proc_id = ligolw_process.register_to_xmldoc(outdoc, 'dayhopetest',
-                                            vars(args) ).process_id
+proc_id = outdoc.register_process('dayhopetest', vars(args)).process_id
 for ifo in workflow.ifos:
     # Lets get the segment lists we need
     segIfoFiles = segsList.find_output_with_ifo(ifo)

@@ -82,14 +82,10 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     popd
 
     # run PyCBC Live test
-    if ((${PYTHON_MINOR_VERSION} > 7)); then
-      # ligo.skymap is only supporting python3.8+, and older releases are
-      # broken by a new release of python-ligo-lw
-      pushd examples/live
-      bash -e run.sh
-      test_result
-      popd
-    fi
+    pushd examples/live
+    bash -e run.sh
+    test_result
+    popd
 
     # run pycbc_multi_inspiral (PyGRB) test
     pushd examples/multi_inspiral
@@ -149,14 +145,10 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     popd
 
     ## Run pycbc_make_skymap example
-    if ((${PYTHON_MINOR_VERSION} > 7)); then
-      # ligo.skymap is only supporting python3.8+, and older releases are
-      # broken by a new release of python-ligo-lw
-      pushd examples/make_skymap
-      bash -e simulated_data.sh
-      test_result
-      popd
-    fi
+    pushd examples/make_skymap
+    bash -e simulated_data.sh
+    test_result
+    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "docs" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then

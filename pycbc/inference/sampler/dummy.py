@@ -37,6 +37,7 @@ class DummySampler(BaseSampler):
         self.num_samples = int(num_samples)
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         self._samples = {}
+        self.meta = {}
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,
@@ -70,6 +71,8 @@ class DummySampler(BaseSampler):
     def finalize(self):
         with self.io(self.checkpoint_file, "a") as fp:
             fp.write_samples(samples=self._samples)
+            for k in self.meta:
+                fp[fp.sampler_group].attrs[k] = self.meta[k]
 
     checkpoint = resume_from_checkpoint = run
 

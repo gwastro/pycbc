@@ -19,7 +19,6 @@
 import argparse
 import logging
 import sys
-import h5py
 import matplotlib
 matplotlib.use('Agg')
 import pylab

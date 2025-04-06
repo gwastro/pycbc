@@ -31,11 +31,10 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import logging
 import os.path
-import configparser as ConfigParser
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
-from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
+from pycbc.workflow.jobsetup import (
         PycbcCreateInjectionsExecutable, select_generic_executable)
 
 logger = logging.getLogger('pycbc.workflow.injection')

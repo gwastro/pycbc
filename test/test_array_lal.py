@@ -25,8 +25,10 @@
 These are the unittests for the pycbc.filter.matchedfilter module
 """
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
+from pycbc.types import (
+    Array, TimeSeries, FrequencySeries,
+    float32, float64, complex64, complex128
+)
 from lal import LIGOTimeGPS as LTG
 from utils import parse_args_all_schemes, simple_exit
 

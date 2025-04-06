@@ -5,7 +5,7 @@ coincidences from *any* coincidence type with ifar above a certain threshold
 """
 
 import numpy as np, argparse, logging, pycbc, pycbc.io
-from pycbc.events import veto, coinc, significance
+from pycbc.events import veto, significance
 import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
@@ -91,7 +91,7 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-bg_far, fg_far = significance.get_far(
+bg_far, fg_far, sig_info = significance.get_far(
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],
     filtered_trigs.data['decimation_factor'],
@@ -107,6 +107,8 @@ bg_ifar_exc = 1. / bg_far
 logging.info('Writing updated ifars to file')
 f_out['foreground/ifar_exc'][:] = conv.sec_to_year(fg_ifar_exc)
 f_out['background_exc/ifar'][:] = conv.sec_to_year(bg_ifar_exc)
+for key, value in sig_info.items():
+    f_out['foreground'].attrs[key + '_exc'] = value
 
 fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
 f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)

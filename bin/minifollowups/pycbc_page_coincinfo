@@ -30,7 +30,7 @@ from pycbc import add_common_pycbc_options
 import pycbc.results
 import pycbc.pnutils
 from pycbc.io.hdf import HFile
-from pycbc.events import ranking, stat as pystat
+from pycbc.events import stat as pystat
 from pycbc.results import followup
 
 parser = argparse.ArgumentParser()

@@ -29,7 +29,6 @@ import argparse
 
 import pycbc
 import pycbc.workflow as wf
-import pycbc.workflow.pegasus_workflow as pwf
 
 # We define classes for all executables used in the workflow
 

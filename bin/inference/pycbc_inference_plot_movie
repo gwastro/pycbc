@@ -38,12 +38,11 @@ the movie.
 # =============================================================================
 #
 
-import argparse
 import logging
 import subprocess
 import os
 import glob
-from multiprocessing import Pool
+from pycbc.pool import BroadcastPool as Pool
 
 import numpy
 

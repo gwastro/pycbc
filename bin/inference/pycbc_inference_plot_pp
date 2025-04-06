@@ -20,7 +20,6 @@ within a credible interval versus credible interval.
 """
 
 import sys
-import argparse
 import logging
 import itertools
 
@@ -31,7 +30,6 @@ from scipy import stats
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
-import matplotlib.style as style
 
 import pycbc
 import pycbc.results.plot

@@ -26,7 +26,6 @@ import sys
 import os
 import logging
 import numpy
-import h5py
 from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -37,23 +36,11 @@ from pycbc.results import pygrb_postprocessing_utils as ppu
 plt.switch_backend('Agg')
 rc('font', size=14)
 
-__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
 
-# =============================================================================
-# Functions
-# =============================================================================
-# Load trigger data
-def load_data(input_file, ifos, vetoes, injections=False):
-    """Load data from a trigger/injection file"""
-    
-    logging.info("Loading triggers...")
-    
-    trigs = ppu.load_triggers(input_file, ifos, vetoes)
-        
-    return trigs
 
 # =============================================================================
 # Main script starts here
@@ -70,6 +57,7 @@ trig_file = os.path.abspath(opts.trig_file)
 outfile = opts.output_file
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
+plot_caption = 'Search sky grid points.'
 
 logging.info("Imported and ready to go.")
 
@@ -79,12 +67,11 @@ for outdir in outdirs:
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
 
-# Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                           opts.veto_category)
+# Extract IFOs
+ifos = ppu.extract_ifos(trig_file)
 
-# Load trigger data
-trig_data = load_data(trig_file, ifos, vetoes)
+# Load trigger data: the sky-grid points are not time-slid in the plot
+trig_data = ppu.load_data(trig_file, ifos, data_tag=None, slide_id=0)
 
 #
 # Generate sky grid plot
@@ -100,13 +87,16 @@ if opts.verbose:
 
 fig = plt.figure()
 ax = fig.gca()
-ax.set_xlabel(xlabel)#, fontsize=16)
-ax.set_ylabel(ylabel)#, fontsize=16)
+ax.grid()
+ax.set_xlabel(xlabel)
+ax.set_ylabel(ylabel)
 # Trigger RA/Dec data is stored in radians, so convert to degrees
-ax.plot(numpy.rad2deg(trig_data['network/ra']), numpy.rad2deg(trig_data['network/dec']),
-        'ko', markerfacecolor='blue')
+ax.plot(numpy.rad2deg(trig_data['network/ra']),
+        numpy.rad2deg(trig_data['network/dec']),
+        'ko',
+        markerfacecolor='blue')
 # Wrap up
+plt.tight_layout()
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
-                       title=opts.plot_title, caption=opts.plot_caption)
-                       #fig_kwds=fig_kwds,
+                       title=opts.plot_title, caption=plot_caption)
 plt.close()

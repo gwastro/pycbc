@@ -18,18 +18,15 @@
 """
 
 # imports
-import sys, argparse, matplotlib, numpy, math
+import sys, argparse, matplotlib, numpy
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 from pycbc import waveform, io
 from pycbc import results
 from pycbc import init_logging, add_common_pycbc_options
-from pycbc.fft import ifft
-from pycbc.types import complex_same_precision_as
-from pycbc.types import TimeSeries, zeros, complex64
+from pycbc.types import zeros, complex64
 
 parser = argparse.ArgumentParser(usage='', description=__doc__)
 add_common_pycbc_options(parser)
@@ -157,8 +154,6 @@ if tmplt_length > 1.:
                     x_zoom_fac*template_td.sample_times.max()])
     axins.get_xaxis().set_ticks([])
     axins.get_yaxis().set_ticks([])
-    # Can't get this to work for what I'm doing :-(
-    #mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="0.5")
 
 plt.subplot(2,1,2)
 plt.plot(template.sample_frequencies, abs(template))
