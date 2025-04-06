@@ -750,7 +750,8 @@ get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
-def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
+def _base_get_td_waveform_from_fd(template=None, rwrap=None, dict_modification=None,
+                                  **params):
     """ The base function to calculate time domain version of fourier
     domain approximant which not include or includes detector response.
     Called by `get_td_waveform_from_fd` and `get_td_det_waveform_from_fd_det`.
@@ -807,6 +808,19 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
         # Resize to the right sample rate
         hp.resize(fsize)
         hc.resize(fsize)
+
+        # Check if Amplitude-Phase modification is needed
+        if dict_modification is not None:
+            # Modify the WF
+            amplitude_factor = dict_modification['amplitude_factor']
+            phase_factor = dict_modification['phase_factor']
+            Am_plus = amplitude_from_frequencyseries(hp)*(amplitude_factor)
+            Am_cross = amplitude_from_frequencyseries(hc)*(amplitude_factor)
+            Ph_plus = phase_from_frequencyseries(hp)*(phase_factor)
+            Ph_cross = phase_from_frequencyseries(hc)*(phase_factor)
+        
+            hp.data = np.vectorize(complex)(Am_plus*np.cos(Ph_plus), Am_plus*np.sin(Ph_plus))
+            hc.data = np.vectorize(complex)(Am_cross*np.cos(Ph_cross), Am_cross*np.sin(Ph_cross))
 
         # avoid wraparound
         hp = hp.cyclic_time_shift(-rwrap)
