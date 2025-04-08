@@ -474,12 +474,16 @@ ax.grid()
 # Handle axis limits when plotting spins
 if "spin" in x_qty and missed_inj['spin1_a'].size:
     max_missed_inj = missed_inj['spin1_a'].max()
-    ax.set_xlim([0, np.ceil(10 * max(max_missed_inj,
-                                     found_inj[x_qty].max())) / 10])
+    ax.set_xlim([0, np.ceil(10 * max_missed_inj) / 10])
+    if found_inj[x_qty].size:
+        ax.set_xlim([0, np.ceil(10 * max(max_missed_inj,
+                                         found_inj[x_qty].max())) / 10])
 if "spin" in y_qty and missed_inj['spin2_a'].size:
     max_missed_inj = missed_inj['spin2_a'].max()
-    ax.set_ylim([0, np.ceil(10 * max(max_missed_inj,
-                                     found_inj[y_qty].max())) / 10])
+    ax.set_ylim([0, np.ceil(10 * max_missed_inj) / 10])
+    if found_inj[y_qty].size:
+        ax.set_ylim([0, np.ceil(10 * max(max_missed_inj,
+                                         found_inj[y_qty].max())) / 10])
 
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
