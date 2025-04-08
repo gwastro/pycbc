@@ -564,6 +564,12 @@ if len(found_after_vetoes['network/template_id']):
 # ==========
 logging.info("Plotting.")
 
+# Calculate distances (as means) for the horizontal axis, only if there are
+# found injections
+if len(found_after_vetoes['network/template_id']):
+    dist_plot_vals = [np.asarray(dist_bin).mean()
+                      for dist_bin in dist_bins]
+
 # Plot efficiency using loudest background
 if opts.background_output_file:
     fig = plt.figure()
@@ -571,10 +577,6 @@ if opts.background_output_file:
 
     # Without found injections, do not determine these quantities to plot
     if len(found_after_vetoes['network/template_id']):
-        # Calculate distances (horizontal axis) as means
-        dist_plot_vals = [np.asarray(dist_bin).mean()
-                          for dist_bin in dist_bins]
-
         # Calculate error bars for efficiency/distance plots and datafiles
         # using max BestNR of background
         yerr_low_mc, yerr_high_mc, fraction_mc = efficiency_with_errs(
