@@ -674,6 +674,23 @@ class GatedGaussianNoise(BaseGatedGaussian):
         return float(logl)
     
     @property
+    def _extra_stats(self):
+        """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
+        detector."""
+        return ['loglr', 'maxl_phase'] + ['{}_optimal_snrsq'.format(det) for det in self._data]
+    
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        setattr(self._current_stats, 'loglikelihood', -numpy.inf)
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_phase', numpy.nan)
+        for det in self._data:
+            # snr can't be < 0 by definition, so return 0
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+        return -numpy.inf
+
+    @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
         likelihood
@@ -963,5 +980,195 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1]
                                  for x in wfs]))
 
+        self._current_wfs = combine
+        return self._loglikelihood()
+
+
+class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
+    r"""Gated Gaussian noise model that analytically marginalizes over the
+    phase of one of the modes in a multimodal signal.
+    """
+    name = 'gated_gaussian_margphase'
+    
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super().__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        self.dets = {}
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            gates=self.gates, **self.static_params)
+        # caches
+        self._current_wf_modes = {}
+    
+    def get_waveform_modes(self, zero_phase=False):
+        r"""Generate the waveform modes. 
+        Specify zero_phase = True if generating zero-phase
+        wfs in likelihood. Uses regular current_params by default.
+        """
+        if self._current_wf_modes is None:
+            params = self.current_params
+            if zero_phase:
+                # set the phases to zero
+                for i in params.keys():
+                    if "phi" in i:
+                        params[i] = 0
+            wf_modes = self.waveform_generator.generate(**params)
+            for det, modes in wf_modes.items():
+                for mode, h in modes.items():
+                    # make the same length as the data
+                    h.resize(len(self.data[det]))
+                    # apply high pass
+                    if self.highpass_waveforms:
+                        h = highpass(
+                            h.to_timeseries(),
+                            frequency=self.highpass_waveforms).to_frequencyseries()
+                wf_modes[det][mode] = h
+            self._current_wf_modes = wf_modes
+        return self._current_wf_modes
+    
+    @property
+    def _extra_stats(self):
+        """Adds the maxL polarization and corresponding likelihood."""
+        return ['maxl_phase', 'maxl_logl']
+    
+    def _loglikelihood(self):
+        r"""Computes the log likelihood.
+        """
+        # get the zero-phase waveforms
+        try:
+            wfs = self.get_waveform_modes()
+            wfs_zero_phase = self.get_waveform_modes(zero_phase=True)
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
+        # get the gated data
+        data = self.get_gated_data()
+        # gating params
+        gate_times = self.get_gate_times()
+        
+        # get the phases
+        modes = list(wfs[self.dets[0]].keys())
+        ps = [self.current_params['phi'+i] for i in modes]
+        phases = dict(zip(modes, ps))
+        # cycle over
+        logL = 0.
+        
+        for det in wfs.keys():
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+            # get the waveforms and data for this detector
+            s = data[det]
+            # gate params in this detector
+            gatestartdelay, dgatedelay = gate_times[det]
+            # calculate the antenna pattern for each mode
+            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
+                                     self.current_params['dec'],
+                                     self.current_params['polarization'],
+                                     self.current_params['tc'])
+            # calculate the normalization term
+            start_index, end_index = self.gate_indices(det)
+            norm = self.det_lognorm(det, start_index, end_index)
+            # we always filter the entire segment starting from kmin, since the
+            # gated series may have high frequency components
+            slc = slice(self._kmin[det], self._kmax[det])
+            # overwhiten the data
+            invasd = self._invasds[det]
+            invpsd = invasd*invasd
+            d = s[slc]
+            dow = d * invpsd
+            # collect wfs
+            h = {}
+            h0 = {}
+            for mode in modes:
+                hp, hc = wfs[mode]
+                hp0, hc0 = wfs_zero_phase[mode]
+                h[mode] = (hp, hc)
+                h0[mode] = (hp0, hc0)
+            # save the first mode for marginalization; sum over the rest
+            h1 = h[modes[0]]
+            h10 = h0[modes[0]]
+            hpj = sum(h[i][0] for i in modes[1:])
+            hcj = sum(h[i][1] for i in modes[1:])
+            hpj0 = sum(h0[i][0] for i in modes[1:])
+            hcj0 = sum(h0[i][1] for i in modes[1:])
+            hj = (hpj, hcj)
+            hj0 = (hpj0, hcj0)
+            # evaluate the inner products with data
+            dd = d.inner(dow).real # <d, d>
+            h10d = h10.inner(dow) # O(h1_0, d)
+            hjd = hj.inner(dow).real # <sum(hj), d>
+            # gate the first mode and overwhiten
+            h10 = h10.to_timeseries()
+            h10 = h10.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=False,
+                           kernel=invasd, method='paint',
+                           zero_before_gate=self.zero_before_gate,
+                           zero_after_gate=self.zero_after_gate)
+            h10 = h10.to_frequencyseries()
+            h10ow = h10 * invpsd
+            # take inner products with h1
+            h1h1 = h10.inner(h10ow).real # <h1, h1> = <h1_0, h1_0>
+            h1hj = 0 # sum(<h10, hj0> * exp(i*phi_j))
+            for mode in modes[:1]:
+                fac = h10ow.inner(h0[mode]).real * numpy.exp(1j * phases[mode])
+                h1hj += fac
+            # gate and overwhiten the sum of the other modes
+            hj = hj.to_timeseries()
+            hj = hj.gate(gatestartdelay + dgatedelay/2,
+                         window=dgatedelay/2, copy=False,
+                         kernel=invasd, method='paint',
+                         zero_before_gate=self.zero_before_gate,
+                         zero_after_gate=self.zero_after_gate)
+            hj = hj.to_frequencyseries()
+            hjow = hj * invpsd
+            # take inner product with sum(hj)
+            hjhk = hj.inner(hjow) # <sum(hj), sum(hk)>
+            # evaluate the constant
+            # each inner product carries a term 4*df
+            df = invpsd.delta_f
+            C = 4*df*(-0.5*dd - 0.5*h1h1 - 0.5*hjhk + hjd)
+            # evaluate x and y in the Bessel fn
+            x = 4*df*(h10d.real - h1hj.real)
+            y = 4*df*(h10d.imag + h1hj.imag)
+            A = numpy.sqrt(x*x + y*y)
+            # evaluate the integral
+            logL += C
+            logL += numpy.log(numpy.log(special.i0e(A)) - abs(A))
+            logL += norm
+        return logL
+    
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
+
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # Generate the waveforms for each submodel
+        wfs = []
+        for m in models + [self]:
+            wf = m.get_waveforms()
+            wfs.append(wf)
+        # combine into a single waveform
+        combine = {}
+        for det in self.data:
+            # get max waveform length
+            mlen = max([len(x[det]) for x in wfs])
+            [x[det].resize(mlen) for x in wfs]
+            combine[det] = sum([x[det] for x in wfs])
         self._current_wfs = combine
         return self._loglikelihood()
