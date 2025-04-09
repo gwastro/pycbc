@@ -895,7 +895,10 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # generate the template waveform
         # we'll call the gated wfs without in-painting to ensure
         # that zero/before after gate is applied correctly
-        wfs = self.get_gated_waveforms(inpaint=False)
+        if self.zero_after_gate or self.zero_after_gate:
+            wfs = self.get_gated_waveforms(inpaint=False)
+        else:
+            wfs = self.get_waveforms()
         # get the gated waveforms and data
         gated_wfs = self.get_gated_waveforms()
         gated_data = self.get_gated_data()
