@@ -389,7 +389,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         parameters; see ``get_gate_times_hmeco`` for details. Otherwise, the
         gate times will just be retrieved from the ``t_gate_start`` and
         ``t_gate_end`` parameters.
-        
+
         If the user flagged ``check_condition_number``, also checks if
         inpainting with the calculated gate times will be numerically
         stable. See ``self.condition_number()`` for more info.
@@ -496,12 +496,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gatestartdelay = min(gatestartdelay, params['t_gate_start'])
             gatetimes[det] = (gatestartdelay, dgate)
         return gatetimes
-    
+
     def condition_number(self, det, lindex, rindex):
         """Calculate the condition number associated with the inverse
         covariance matrix used to gate and inpaint. Throws a warning if the
         condition number is greater than 1e16.
-        
+
         Parameters
         ----------
         det : str
