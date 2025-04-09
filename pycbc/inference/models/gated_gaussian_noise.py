@@ -672,7 +672,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
-    
+
     @property
     def _extra_stats(self):
         """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
@@ -1063,7 +1063,8 @@ class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
         phases = dict(zip(modes, ps))
         # cycle over
         logL = 0.
-        
+        x_net = 0.
+        y_net = 0.
         for det in wfs.keys():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1146,6 +1147,14 @@ class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
             logL += C
             logL += numpy.log(numpy.log(special.i0e(A)) - abs(A))
             logL += norm
+            x_net += x
+            y_net += y
+        # save the maximum likelihood and maxL phase for the ref mode
+        maxl_phase = numpy.angle(y_net/x_net)
+        setattr(self._current_stats, 'maxl_phase', maxl_phase)
+        setattr(self._current_stats, 'maxl_logl', logL)
+        # set the reference phase to the analytic maxL value
+        setattr(self.current_params, f'phi{modes[0]}', maxl_phase)
         return logL
     
     @property
