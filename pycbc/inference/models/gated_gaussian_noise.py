@@ -200,16 +200,13 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """Calculate the indices corresponding to start and end of gate.
         """
         # get time series start and delta_t
-        ts = self._Rss[det]
-        start_time_gc = float(self.td_data[det].start_time)
-        delta_t = ts.delta_t
+        ts = self.td_data[det]
         # get gate start and length from get_gate_times
         gate_start, gate_length = self.get_gate_times()[det]
-        # convert to indices
-        lindex = int(float(gate_start - start_time_gc) / delta_t)
-        rindex = lindex + int(gate_length / delta_t)
-        lindex = lindex if lindex >= 0 else 0
-        rindex = rindex if rindex <= len(ts) else len(ts)
+        # the gate code takes central time and width
+        window = gate_length / 2
+        gt = gate_start + window
+        lindex, rindex = ts.get_gate_indices(gt, window)
         return lindex, rindex
     
     def det_lognorm(self, det, start_index=None, end_index=None):
@@ -736,7 +733,8 @@ class GatedGaussianNoise(BaseGatedGaussian):
                     start_index = 0
                 if self.zero_after_gate:
                     end_index = None
-                ht[start_index:end_index] = 0.
+                if start_index != end_index:
+                    ht[start_index:end_index] = 0.
             if inpaint:
                 invpsd = self._invpsds[det]
                 gate_times = self.get_gate_times()
@@ -821,8 +819,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                     if self.zero_before_gate:
                         start_index = 0
                     if self.zero_after_gate:
-                        end_index = -1
-                    ht[start_index:end_index] = 0.
+                        end_index = None
+                    if start_index != end_index:
+                        ht[start_index:end_index] = 0.
                 if inpaint:
                     ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
@@ -894,7 +893,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        wfs = self.get_waveforms()
+        # we'll call the gated wfs without in-painting to ensure
+        # that zero/before after gate is applied correctly
+        wfs = self.get_gated_waveforms(inpaint=False)
         # get the gated waveforms and data
         gated_wfs = self.get_gated_waveforms()
         gated_data = self.get_gated_data()
