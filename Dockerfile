@@ -39,6 +39,11 @@ alternatives --set python /usr/bin/python3.9
 python -m pip install --upgrade pip setuptools wheel cython
 python -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite
 dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm
+# force old version of stashcp as a workaround to
+# https://github.com/gwastro/pycbc/issues/5020
+dnf -y install \
+    pelican-osdf-compat-7.10.11-1.x86_64 \
+    pelican-7.10.11-1.x86_64
 EOF
 
 # set up environment

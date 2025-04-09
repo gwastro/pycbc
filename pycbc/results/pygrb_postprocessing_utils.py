@@ -401,9 +401,12 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
     keep_keys = keys if keys else found_injs.keys()
 
     if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
+        t_id_key = 'network/template_id'
+        if t_id_key not in keep_keys:
+            keep_keys = list(keep_keys+[t_id_key])
         empty_dict = dict.fromkeys(keep_keys, numpy.array([]))
-        empty_dict['network/template_id'] = \
-            empty_dict['network/template_id'].astype(dtype=numpy.int64)
+        empty_dict[t_id_key] = \
+            empty_dict[t_id_key].astype(dtype=numpy.int64)
         return (empty_dict, empty_dict, None, None)
 
     found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
