@@ -47,7 +47,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, highpass_waveforms=False,
-                 zero_before_gate=False, zero_after_gate=False,
                  **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
@@ -69,8 +68,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if self.highpass_waveforms:
             logging.info("Will highpass waveforms at %f Hz",
                          highpass_waveforms)
-        self.zero_before_gate = zero_before_gate
-        self.zero_after_gate = zero_after_gate
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -85,15 +82,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         Additional keyword arguments are:
 
            * ``highpass_waveforms`` : waveforms will be highpassed.
-           * ``zero_before_gate``: data/waveforms will be zeroed out at all
-             times before the gate.
-           * ``zero_after_gate``: data/waveforms will zeroed out at all times
-             after the gate.
         """
-        if cp.has_option('model', 'zero-before-gate'):
-            kwargs['zero_before_gate'] = True
-        if cp.has_option('model', 'zero-after-gate'):
-            kwargs['zero_after_gate'] = True
         if cp.has_option(data_section, 'strain-high-pass') and \
             'highpass_waveforms' not in kwargs:
             kwargs['highpass_waveforms'] = float(cp.get(data_section,
@@ -312,14 +301,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         pass
 
     @abstractmethod
-    def get_gated_waveforms(self, inpaint=True):
+    def get_gated_waveforms(self):
         """Generates and gates waveforms using the current parameters.
-
-        Parameters
-        ----------
-        inpaint : bool, optional
-            Gate and in-paint the waveforms. If False, the waveforms will
-            just be gated, but no in-painting will be done. Default is True.
 
         Returns
         -------
@@ -649,7 +632,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         # We'll gate them here, but not in-paint. We'll do the in-painting
         # once, on the residual. We'll gate the waveforms here so that
         # zero before/after gate can be applied to them.
-        wfs = self.get_gated_waveforms(inpaint=False)
+        wfs = self.get_gated_waveforms()
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
@@ -719,29 +702,18 @@ class GatedGaussianNoise(BaseGatedGaussian):
             self._current_wfs = wfs
         return self._current_wfs
 
-    def get_gated_waveforms(self, inpaint=True):
+    def get_gated_waveforms(self):
         wfs = self.get_waveforms()
         out = {}
-        pregate = self.zero_before_gate or self.zero_after_gate or not inpaint
         # apply the gate
         for det, h in wfs.items():
             ht = h.to_timeseries()
-            if pregate:
-                # just gate
-                start_index, end_index = self.gate_indices(det)
-                if self.zero_before_gate:
-                    start_index = 0
-                if self.zero_after_gate:
-                    end_index = None
-                if start_index != end_index:
-                    ht[start_index:end_index] = 0.
-            if inpaint:
-                invpsd = self._invpsds[det]
-                gate_times = self.get_gate_times()
-                gatestartdelay, dgatedelay = gate_times[det]
-                ht = ht.gate(gatestartdelay + dgatedelay/2,
-                             window=dgatedelay/2, copy=False,
-                             invpsd=invpsd, method='paint')
+            invpsd = self._invpsds[det]
+            gate_times = self.get_gate_times()
+            gatestartdelay, dgatedelay = gate_times[det]
+            ht = ht.gate(gatestartdelay + dgatedelay/2,
+                            window=dgatedelay/2, copy=False,
+                            invpsd=invpsd, method='paint')
             h = ht.to_frequencyseries()
             out[det] = h
         return out
@@ -801,10 +773,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         self._current_wfs = wfs
         return self._current_wfs
 
-    def get_gated_waveforms(self, inpaint=True):
+    def get_gated_waveforms(self):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
-        pregate = self.zero_before_gate or self.zero_after_gate or not inpaint
         out = {}
         for det in wfs:
             invpsd = self._invpsds[det]
@@ -813,19 +784,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             pols = []
             for h in wfs[det]:
                 ht = h.to_timeseries() 
-                if pregate:
-                    # just gate
-                    start_index, end_index = self.gate_indices(det)
-                    if self.zero_before_gate:
-                        start_index = 0
-                    if self.zero_after_gate:
-                        end_index = None
-                    if start_index != end_index:
-                        ht[start_index:end_index] = 0.
-                if inpaint:
-                    ht = ht.gate(gatestartdelay + dgatedelay/2,
-                             window=dgatedelay/2, copy=False,
-                             invpsd=invpsd, method='paint')
+                ht = ht.gate(gatestartdelay + dgatedelay/2,
+                            window=dgatedelay/2, copy=False,
+                            invpsd=invpsd, method='paint')
                 h = ht.to_frequencyseries()
                 pols.append(h)
             out[det] = tuple(pols)
@@ -893,12 +854,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        # we'll call the gated wfs without in-painting to ensure
-        # that zero/before after gate is applied correctly
-        if self.zero_after_gate or self.zero_after_gate:
-            wfs = self.get_gated_waveforms(inpaint=False)
-        else:
-            wfs = self.get_waveforms()
+        wfs = self.get_waveforms()
         # get the gated waveforms and data
         gated_wfs = self.get_gated_waveforms()
         gated_data = self.get_gated_data()
