@@ -14,6 +14,7 @@ Please refer to help(pycbc.types.angle_as_radians) for the recommended
 configuration file syntax for angle arguments.
 """
 
+import logging
 import numpy as np
 import argparse
 import itertools
@@ -84,7 +85,7 @@ def make_multi_det_grid(args):
             # Calculate the time delay for each detector pair
             tds = [
                 detector_pairs[i][0].time_delay_from_detector(
-                    detector_pairs[i][1], prop_ra, prop_dec, trigger_time
+                    detector_pairs[i][1], prop_ra, prop_dec, args.trigger_time
                 )
                 for i in range(len(detector_pairs))
             ]
@@ -98,7 +99,7 @@ def make_multi_det_grid(args):
 
             # Calculate the required angular spacing between the sky points
             ang_spacings = [
-                (2 * timing_uncertainty)
+                (2 * args.timing_uncertainty)
                 / np.sqrt(light_travel_times[i] ** 2 - tds[i] ** 2)
                 for i in range(len(detector_pairs))
             ]

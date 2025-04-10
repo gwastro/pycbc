@@ -348,7 +348,7 @@ class HealpixSky:
     def to_uniform_patch(self, coverage):
         """Apply the coverage criterion on the skymap
         """
-        uniform_patch = HealpixSky(healpix_file=self.healpix_map)
+        uniform_patch = self
         non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
         dtype = numpy.dtype([('index', numpy.ndarray), ('prob', numpy.float64)])
         prob = uniform_patch.pix_probs[non_zero_ind]
