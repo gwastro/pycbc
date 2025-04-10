@@ -17,6 +17,7 @@
 right ascension and declination.
 """
 
+import copy
 import logging
 import warnings
 import numpy
@@ -46,9 +47,27 @@ class UniformSky(angular.UniformSolidAngle):
     _default_azimuthal_angle = 'ra'
 
 
-class UniformCircleSky:
-
-    name = 'uniform_circle_sky'
+class UniformDiskSky:
+    """A distribution that is a uniform disk on the sky and is the uniform 
+    the patch of the FisherSky distribution. The scale parameter of the 
+    FisherSky distribution become a radius parameter to describe the radius 
+    of the distribution on the sky. As in UniformSky, the declination 
+    varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
+             
+    Parameters
+    ----------
+    mean_ra: float or str
+        RA of the center of the distribution. Use the rad or deg suffix to
+        specify units, otherwise radians are assumed.
+    mean_dec: float or str
+        Declination of the center of the distribution. Use the rad or deg   
+        suffix to specify units, otherwise radians are assumed.
+    radius: float or str
+        Radius of the disk. Use the rad or deg suffix to specify units, 
+        otherwise radians are assumed.
+        
+    """
+    name = 'uniform_disk_sky'
     _params = ['ra', 'dec']
     
     def __init__(self, **params):
@@ -96,7 +115,7 @@ class UniformCircleSky:
             raidus=radius,
         )
 
-    def get_max_pixel_prob(self):
+    def get_max_prob_point(self):
         return (self.mean_ra, self.mean_dec)
 
     def rvs(self, size):
@@ -221,7 +240,7 @@ class FisherSky:
             sigma=sigma,
         )
     
-    def get_max_pixel_prob(self):
+    def get_max_prob_point(self):
         return (self.mean_ra, self.mean_dec)
 
     def rvs(self, size):
@@ -250,7 +269,7 @@ class FisherSky:
 
     def to_uniform_patch(self, coverage):
         radius = numpy.sqrt(self.rayleigh_scale**2 * (-2*numpy.log(1-coverage)))
-        return UniformCircleSky(mean_ra=self.mean_ra, mean_dec=self.mean_dec, radius=radius)
+        return UniformDiskSky(mean_ra=self.mean_ra, mean_dec=self.mean_dec, radius=radius)
 
 
 class HealpixSky:
@@ -348,7 +367,7 @@ class HealpixSky:
     def to_uniform_patch(self, coverage):
         """Apply the coverage criterion on the skymap
         """
-        uniform_patch = self
+        uniform_patch = copy.deepcopy(self)
         non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
         dtype = numpy.dtype([('index', numpy.ndarray), ('prob', numpy.float64)])
         prob = uniform_patch.pix_probs[non_zero_ind]
@@ -458,4 +477,4 @@ class HealpixSky:
         return radec
 
 
-__all__ = ['UniformSky', 'UniformCircleSky', 'FisherSky', 'HealpixSky']
+__all__ = ['UniformSky', 'UniformDiskSky', 'FisherSky', 'HealpixSky']
