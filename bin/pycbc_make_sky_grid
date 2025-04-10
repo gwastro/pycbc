@@ -75,8 +75,11 @@ def make_multi_det_grid(args):
         sky_dist = input_dist.to_uniform_patch(args.coverage) 
     else: 
         sky_dist = eval(args.input_dist)
+    if 'FisherSky' in args.input_dist:
+        grid = np.vstack((np.empty((0,2)), input_dist.get_max_prob_point()))
+    elif 'HealpixSky' in args.input_dist:
+        grid = np.vstack((np.empty((0,2)), input_dist.get_max_pixel_prob()))
 
-    grid = np.vstack((grid, input_dist.get_max_pixel_prob()))
     while True:
         prev_size = grid.shape[0]
         sky_dist_samples = sky_dist.rvs(size=10000)
