@@ -77,7 +77,7 @@ def make_multi_det_grid(args):
 
     while True:
         prev_size = grid.shape[0]
-        sky_dist_samples = sky_dist.rvs(size=batch_size)
+        sky_dist_samples = sky_dist.rvs(size=10000)
         sky_ra = sky_dist_samples['ra']
         sky_dec = sky_dist_samples['dec']
         for prop_ra, prop_dec in zip(sky_ra, sky_dec):
