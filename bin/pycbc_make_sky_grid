@@ -18,7 +18,6 @@ import logging
 import numpy as np
 import argparse
 import itertools
-from scipy.spatial.transform import Rotation as R
 
 import pycbc
 from pycbc.distributions import UniformSky, FisherSky, HealpixSky
@@ -70,12 +69,14 @@ def make_multi_det_grid(args):
     detectors = args.instruments
     detectors = [Detector(d) for d in detectors]
     detector_pairs = list(itertools.combinations(detectors, 2))
+    
+    if args.coverage is not None: 
+        input_dist = eval(args.input_dist)
+        sky_dist = input_dist.to_uniform_patch(args.coverage) 
+    else: 
+        sky_dist = eval(args.input_dist)
 
-    input_dist = eval(args.input_dist)
-    sky_dist = eval(args.input_dist)
-    sky_dist = sky_dist.to_uniform_patch(args.coverage) 
-    grid = np.empty((0,2))
-
+    grid = np.vstack((grid, input_dist.get_max_pixel_prob()))
     while True:
         prev_size = grid.shape[0]
         sky_dist_samples = sky_dist.rvs(size=10000)
@@ -84,32 +85,29 @@ def make_multi_det_grid(args):
         for prop_ra, prop_dec in zip(sky_ra, sky_dec):
             # Calculate the time delay for each detector pair
             tds = [
-                detector_pairs[i][0].time_delay_from_detector(
-                    detector_pairs[i][1], prop_ra, prop_dec, args.trigger_time
+                a.time_delay_from_detector(
+                    b, prop_ra, prop_dec, args.trigger_time
                 )
-                for i in range(len(detector_pairs))
+                for a, b in detector_paris
             ]
             
 
             # Calculate the light travel time between the detector pairs
             light_travel_times = [
-                detector_pairs[i][0].light_travel_time_to_detector(detector_pairs[i][1])
-                for i in range(len(detector_pairs))
+                a.light_travel_time_to_detector(b)
+                for a, b in detector_pairs
             ]
+            
+            tds = np.array(tds)
+            light_travel_times = np.array(light_travel_times)
 
             # Calculate the required angular spacing between the sky points
-            ang_spacings = [
-                (2 * args.timing_uncertainty)
-                / np.sqrt(light_travel_times[i] ** 2 - tds[i] ** 2)
-                for i in range(len(detector_pairs))
-            ]
+            ang_spacings = (2 * args.timing_uncertainty) / np.sqrt(
+                    light_travel_times ** 2 - tds ** 2
+            )
+            
             angular_spacing = np.min(ang_spacings)
 
-            if grid.shape[0] == 0:
-                # first point, accept
-                # FIXME handling the first point can surely be moved before the loop!
-                grid = np.vstack((grid, input_dist.get_max_pixel_prob()))
-                continue
             # FIXME it is not necessary to calculate *all* distances,
             # we can reject as soon as we find one below threshold!
             dist = angular_distance((prop_ra, prop_dec), grid)
@@ -117,7 +115,7 @@ def make_multi_det_grid(args):
                 # far enough from other points, accept
                 grid = np.vstack((grid, (prop_ra, prop_dec)))
         num_new_accepted = grid.shape[0] - prev_size
-        logging.info(f'{num_new_accepted} points accepted, {grid.shape[0]} total')
+        logging.info('%d points accepted, %d total', num_new_accepted, grid.shape[0])
         if num_new_accepted == 0:
 
             sky_grid = SkyGrid(
@@ -128,6 +126,20 @@ def make_multi_det_grid(args):
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument(
+    '--ra',
+    type=angle_as_radians,
+    help="Right ascension of the center of the external trigger "
+    "error box. Use the rad or deg suffix to specify units, "
+    "otherwise radians are assumed.",
+)
+parser.add_argument(
+    '--dec',
+    type=angle_as_radians,
+    help="Declination of the center of the external trigger "
+    "error box. Use the rad or deg suffix to specify units, "
+    "otherwise radians are assumed.",
+)
+parser.add_argument(
     '--instruments',
     nargs="+",
     type=str,
@@ -135,10 +147,16 @@ parser.add_argument(
     help="List of instruments to analyze.",
 )
 parser.add_argument(
+    '--sky-error',
+    type=angle_as_radians,
+    help="3-sigma confidence radius of the external trigger error "
+    "box. Use the rad or deg suffix to specify units, otherwise "
+    "radians are assumed.",
+)
+parser.add_argument(
     "--input-dist",
     type=str,
     default='UniformSky()',
-    required=True,
     help="Input distribution of the sky map that you have, could "
     "be HealpixSky or FisherSky. See sky location documentation for "
     "more details",
@@ -146,7 +164,6 @@ parser.add_argument(
 parser.add_argument(
     '--coverage',
     type=float,
-    required=True,
     help="Percentage of probability that you want to cover",
 )
 parser.add_argument(
@@ -158,7 +175,7 @@ parser.add_argument(
 parser.add_argument(
     '--timing-uncertainty',
     type=float,
-    default=0.0001,
+    default=0.0005,
     help="Timing uncertainty (in s) we are willing to accept",
 )
 parser.add_argument(
@@ -172,17 +189,22 @@ pycbc.init_logging(args.verbose)
 if len(args.instruments) == 1:
     # Make a single point skygrid object
     sky_grid = make_single_det_grid(args)
+    extra_attributes = {
+        'trigger_ra': args.ra,
+        'trigger_dec': args.dec,
+        'sky_error':args.sky_error,
+        'timing_uncertainty': args.timing_uncertainty
+    }
+
 else:
     # Make a skygrid object using timedelays among all detectors in the
     # network.
     sky_grid = make_multi_det_grid(args)
-
-
-extra_attributes = {
-    'triiger_ra': sky_grid[0][0],
-    'trigger_dec': sky_grid[0][1],
-    'coverage': args.coverage,
-    'timing_uncertainty': args.timing_uncertainty
-}
+    extra_attributes = {
+        'trigger_ra': sky_grid[0][0],
+        'trigger_dec': sky_grid[0][1],
+        'coverage': args.coverage,
+        'timing_uncertainty': args.timing_uncertainty
+    }
 
 sky_grid.write_to_file(args.output, extra_attributes)
