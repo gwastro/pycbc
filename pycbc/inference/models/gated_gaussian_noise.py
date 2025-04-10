@@ -163,7 +163,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def logdet_fit(self, cov, p):
         """Construct a linear regression from a sample of truncated covariance
         matrices.
-        
+
         Returns the sample points used for linear fit generation as well as the
         linear fit parameters.
         """
@@ -197,7 +197,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         x = numpy.vstack([sample_sizes, numpy.ones(len(sample_sizes))]).T
         m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
         return (sample_sizes, sample_dets), (m, b)
-            
+
     @BaseGaussianNoise.normalize.setter
     def normalize(self, normalize):
         """Clears the current stats if the normalization state is changed.
@@ -226,11 +226,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gt = gate_start + window
         lindex, rindex = ts.get_gate_indices(gt, window)
         return lindex, rindex
-    
+
     def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance
         matrix.
-        
+
         Determinant is estimated using a linear fit to logdet vs truncated
         matrix size.
         """
@@ -421,7 +421,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             Right ascension of the signal.
         dec : float
             Declination of the signal.
-            
+
         Returns
         -------
         dict :
@@ -678,7 +678,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
         detector."""
         return ['loglr', 'maxl_phase'] + ['{}_optimal_snrsq'.format(det) for det in self._data]
-    
+
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
         """
@@ -696,7 +696,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         likelihood
         """
         return [type(self)]
-    
+
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
@@ -822,7 +822,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 pols.append(h)
             out[det] = tuple(pols)
         return out
-    
+
     def get_gate_times_hmeco(self):
         """Gets the time to apply a gate based on the current sky position.
         Returns
@@ -948,14 +948,14 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # compute the marginalized log likelihood
         marglogl = special.logsumexp(loglr) + lognl - numpy.log(len(self.pol))
         return float(marglogl)
-    
+
     @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
         likelihood
         """
         return [type(self)]
-    
+
     @catch_waveform_error
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
@@ -984,7 +984,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         return self._loglikelihood()
 
 
-class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
+class GatedGaussianNoiseMargPhase(BaseGatedGaussian):
     r"""Gated Gaussian noise model that analytically marginalizes over the
     phase of one of the modes in a multimodal signal.
     """
@@ -1004,11 +1004,12 @@ class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
+            generator_class = generator.FDomainDetFrameModesGenerator,
             gates=self.gates, **self.static_params)
         # caches
-        self._current_wf_modes = {}
+        self._current_wf_modes = None
     
-    def get_waveform_modes(self, zero_phase=False):
+    def get_waveforms(self, zero_phase=False):
         r"""Generate the waveform modes. 
         Specify zero_phase = True if generating zero-phase
         wfs in likelihood. Uses regular current_params by default.
@@ -1033,6 +1034,27 @@ class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
                 wf_modes[det][mode] = h
             self._current_wf_modes = wf_modes
         return self._current_wf_modes
+
+    def get_gated_waveforms(self):
+        wfs = self.get_waveforms()
+        gate_times = self.get_gate_times()
+        out = {}
+        for det in wfs:
+            invasd = self._invasds[det]
+            gatestartdelay, dgatedelay = gate_times[det]
+            # the waveforms are a dictionary of (hp, hc)
+            pols = []
+            for h in wfs[det]:
+                ht = h.to_timeseries()
+                ht = ht.gate(gatestartdelay + dgatedelay/2,
+                             window=dgatedelay/2, copy=False,
+                             kernel=invasd, method='paint',
+                             zero_before_gate=self.zero_before_gate,
+                             zero_after_gate=self.zero_after_gate)
+                h = ht.to_frequencyseries()
+                pols.append(h)
+            out[det] = tuple(pols)
+        return out
     
     @property
     def _extra_stats(self):
@@ -1044,8 +1066,8 @@ class GatedGaussianNoiseMargPhase(GatedGaussianNoise):
         """
         # get the zero-phase waveforms
         try:
-            wfs = self.get_waveform_modes()
-            wfs_zero_phase = self.get_waveform_modes(zero_phase=True)
+            wfs = self.get_waveforms()
+            wfs_zero_phase = self.get_waveforms(zero_phase=True)
         except NoWaveformError:
             return self._nowaveform_logl()
         except FailedWaveformError as e:

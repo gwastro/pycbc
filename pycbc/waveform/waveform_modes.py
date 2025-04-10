@@ -23,6 +23,7 @@ from pycbc import libutils, pnutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from pycbc.constants import MSUN_SI, PC_SI
 from .waveform import (props, _check_lal_pars, check_args)
+from pycbc.waveform import ringdown
 from . import parameters
 
 lalsimulation = libutils.import_optional('lalsimulation')
@@ -370,8 +371,14 @@ _mode_waveform_td = {'EOBNRv2': get_lalsimulation_modes,
                      'TaylorT2': get_lalsimulation_modes,
                      'TaylorT3': get_lalsimulation_modes,
                      'TaylorT4': get_lalsimulation_modes,
+                     'TdModesfromFinalMassSpin':
+                         ringdown.get_td_modes_from_final_mass_spin,
+                     'TdModesfromFreqTau': ringdown.get_td_modes_from_freqtau,
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
+                     'FdModesfromFinalMassSpin':
+                         ringdown.get_fd_modes_from_final_mass_spin,
+                     'FdModesfromFreqTau': ringdown.get_fd_modes_from_freqtau,
                      }
 # 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
 # LAL function do not split strain mode by mode
