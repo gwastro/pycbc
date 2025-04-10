@@ -136,7 +136,7 @@ parser.add_argument(
 parser.add_argument(
     "--input-dist",
     type=str,
-    default='UniformSky()'
+    default='UniformSky()',
     required=True,
     help="Input distribution of the sky map that you have, could "
     "be HealpixSky or FisherSky. See sky location documentation for "
