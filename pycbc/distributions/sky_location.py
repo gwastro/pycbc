@@ -17,7 +17,6 @@
 right ascension and declination.
 """
 
-import os
 import logging
 import warnings
 import numpy
@@ -349,8 +348,7 @@ class HealpixSky:
     def to_uniform_patch(self, coverage):
         """Apply the coverage criterion on the skymap
         """
-        self.healpix_map.write_map("temp_map.fits.gz")
-        uniform_patch = HealpixSky(healpix_file="temp_map.fits.gz")
+        uniform_patch = HealpixSky(healpix_file=self.healpix_map)
         non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
         dtype = numpy.dtype([('index', numpy.ndarray), ('prob', numpy.float64)])
         prob = uniform_patch.pix_probs[non_zero_ind]
@@ -365,7 +363,6 @@ class HealpixSky:
         covered_sky = cum_sum_prob[cum_sum_prob<coverage]
         uniform_patch.pix_probs[list_ind[:len(covered_sky)]] = 1/len(covered_sky)
         uniform_patch.pix_probs[uniform_patch.pix_probs!= 1/len(covered_sky)] = 0
-        os.remove("temp_map.fits.gz")
         return uniform_patch
 
     def rvs(self, size):
