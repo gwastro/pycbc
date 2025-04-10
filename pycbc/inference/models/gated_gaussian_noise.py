@@ -1078,8 +1078,8 @@ class GatedGaussianNoiseMargPhase(BaseGatedGaussian):
         phases = dict(zip(modes, ps))
         # cycle over
         logL = 0.
-        log_x_net = 0.
-        log_y_net = 0.
+        x_net = 0.
+        y_net = 0.
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1154,16 +1154,16 @@ class GatedGaussianNoiseMargPhase(BaseGatedGaussian):
             x = 4*df*(h10d.real - h1hj.real)
             y = 4*df*(h10d.imag + h1hj.imag)
             A = numpy.sqrt(x*x + y*y)
-            print(x, y, A)
             # evaluate the integral
             logL += C
             logL += numpy.log(special.i0e(A)) + abs(A)
             logL += norm
-            log_x_net += numpy.log(x)
-            log_y_net += numpy.log(y)
+            x_net += x
+            y_net += y
         # save the maximum likelihood and maxL phase for the ref mode
-        r = log_y_net - log_x_net
-        maxl_phase = numpy.angle(numpy.exp(r))
+        maxl_phase = numpy.arctan2(y_net, x_net)
+        if maxl_phase < 0:
+            maxl_phase += 2*numpy.pi
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         setattr(self._current_stats, 'maxl_logl', logL)
         # set the reference phase to the analytic maxL value
