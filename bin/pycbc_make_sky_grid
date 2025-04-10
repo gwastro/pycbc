@@ -91,7 +91,7 @@ def make_multi_det_grid(args):
                 a.time_delay_from_detector(
                     b, prop_ra, prop_dec, args.trigger_time
                 )
-                for a, b in detector_paris
+                for a, b in detector_pairs
             ]
             
 
