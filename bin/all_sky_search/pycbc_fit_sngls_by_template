@@ -21,12 +21,32 @@ import pycbc
 from pycbc import events, init_logging
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import stat as statsmod
+from pycbc.events import cuts
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.io import HFile
 
 #### DEFINITIONS AND FUNCTIONS ####
 
-def get_stat(statname, trigs, threshold):
+def get_stat(args, trigs, threshold):
+    """
+    Select the triggers and calculate the single detector statistic.
+
+    Parameters
+    ----------
+    args: argparse.Namespace
+        The argparse object containing options and parameters.
+    trigs: dict
+        The dictionary of single detector trigger data.
+    threshold: float
+        The statistic threshold value for selecting triggers.
+
+    Returns
+    -------
+    np.concatenate(select): np.ndarray
+        A boolean array that selects the triggers.
+    np.concatenate(stat): np.ndarray
+        The statistic values of the selected triggers.
+    """
     # For now this is using the single detector ranking. If we want, this
     # could use the Stat classes in stat.py using similar code as in hdf/io.py
     # This requires additional options, so only change this if it's useful!
@@ -35,19 +55,32 @@ def get_stat(statname, trigs, threshold):
     select = []
     size = len(trigs['end_time'])
     s = 0
+    trigger_cut_dict, _ = cuts.ingest_cuts_option_group(args)
     while s < size:
         e = s + chunk_size if (s + chunk_size) <= size else size
 
         # read and format chunk of data so it can be read by key
         # as the stat classes expect.
         chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
-        
+        trigger_keep_bool = np.zeros(e-s, dtype=bool)
+
+        if len(trigger_cut_dict) > 0:
+            # Apply trigger cuts
+            trigger_keep_ids = cuts.apply_trigger_cuts(chunk, trigger_cut_dict)
+            chunk = {k: arr[trigger_keep_ids] for k, arr in chunk.items()}
+
         rank_method = statsmod.get_statistic_from_opts(args, [args.ifo])
         chunk_stat = rank_method.get_sngl_ranking(chunk)
 
         above = chunk_stat >= threshold
         stat.append(chunk_stat[above])
-        select.append(above)
+
+        if len(trigger_cut_dict) > 0:
+            trigger_keep_bool[trigger_keep_ids[above]] = True
+        else:
+            trigger_keep_bool[above] = True
+
+        select.append(trigger_keep_bool)
         s += chunk_size
 
     # Return boolean area that selects the triggers above threshold
@@ -119,6 +152,7 @@ parser.add_argument("--approximant", default="SEOBNRv4",
 
 statsmod.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
+cuts.insert_cuts_option_group(parser)
 args = parser.parse_args()
 
 init_logging(args.verbose)
