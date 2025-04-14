@@ -515,13 +515,13 @@ class PhysicalModel(object):
         return strain_adjusted
 
 class ReadCalibrationEnvelop(object):
-    def __init__(self, envelope_file_path,  minimum_frequency=20, 
+    def __init__(self, envelope_file_path,  minimum_frequency=20,
                  maximum_frequency=2048, n_nodes=10):
         self.envelope_file_path = envelop_file_path
         self.minimum_frequency = minimum_frequency
         self.maximum_frequency = maximum_frequency
         self.n_nodes = n_nodes
-        
+
         # Hardcoded
         self.public_url = 'https://dcc.ligo.org/T2100313/public'
         # Get the filelist
@@ -530,28 +530,28 @@ class ReadCalibrationEnvelop(object):
             self.download_calibration_files('%s/LIGO_O1_cal_uncertainty.tgz')
         self.filelist_L1 = glob.glob('%s/L1/*txt'%self.envelope_file_path)
         self.filelist_V1 = glob.glob('%s/V1/*txt'%self.envelope_file_path)
-        
+
 
 
         self.gps_times_H1,self.gps_times_L1 = [],[]
         for file in self.filelist_H1:
             # Hardcoded, Check for future changes in filename
             self.gps_times_H1.append(int(file.split('/')[-1].split('_')[4]))
-            
+
         for file in self.filelist_L1:
             # Hardcoded, Check for future changes in filename
             self.gps_times_L1.append(int(file.split('/')[-1].split('_')[4]))
-            
-        
+
+
     def find_calibration_file_HL(self, gps_time):
         index_closest_time_H1 = np.argmin(gps_time-np.array(self.gps_times_H1))
         index_closest_time_L1 = np.argmin(gps_time-np.array(self.gps_times_L1))
-            
+
         calibration_file_H1 = self.filelist_H1[index_closest_time_H1]
         calibration_file_L1 = self.filelist_L1[index_closest_time_L1]
-        
+
         return calibration_file_H1, calibration_file_L1
-        
+
     def download_calibration_files(self):
         try
             get_file('')
@@ -592,3 +592,42 @@ class ReadCalibrationEnvelop(object):
 
         return log_nodes, amplitude_mean_nodes, amplitude_sigma_nodes, phase_mean_nodes, phase_sigma_nodes
 
+
+
+def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
+    """
+    This function provides a dictionary of calibration envelop files
+    for each IFO around a given GPS time for O1, O2, and O3 observation
+    run.
+
+    For H1 and L1 detectors
+    -----------
+    Input:
+     ifos: List of detectors in the network
+     gps_time: GPS time around which the calibration envelop is required
+     calibration_file_path: Top level directory of locally downloaded calibration envelopes
+
+    Output:
+     A dictionary of calibration envelop file path for each IFO.
+    """
+    dict_calibration_file = {}
+    for ifo in ifos:
+        all_calibration_files = glob.glob('%s/%s/*txt'%(calibration_file_path, ifo))
+        if ifo !='V1':
+            # H1 and L1 detector files are treated seperately compared to V1 detector
+            list_gpstimes = np.array([int(item.split('_')[5]) for item in all_calibration_files])
+            dt_list = abs(list_gpstimes - gps_time)
+            ifo_calibration_file = '%s/%s'%(os.getcwd(), all_calibration_files[dt_list.argmin()])
+        else:
+            RUN_NAME = get_run(gps_time).split('_')[0]
+            if RUN_NAME=='O2':
+                ifo_calibration_file = '%s/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt'%os.getcwd()
+            elif RUN_NAME=='O3a':
+                ifo_calibration_file = '%s/calibration_envelops/V1/V_O3a_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt'%os.getcwd()
+            elif RUN_NAME=='O3b':
+                ifo_calibration_file = '%s/calibration_envelops/V1/V_O3b_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt'%os.getcwd()
+            else:
+                raise ValueError("Virgo GPS time is not in valid range")
+
+        dict_calibration_file[ifo] = '%s/%s/%s'%(calibration_file_path, ifo,ifo_calibration_file.split('/')[-1])
+    return dict_calibration_file
