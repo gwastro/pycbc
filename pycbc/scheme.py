@@ -1,35 +1,12 @@
-# Copyright (C) 2014  Alex Nitz, Andrew Miller
-#
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """
-This modules provides python contexts that set the default behavior for PyCBC
+This module provides python contexts that set the default behavior for PyCBC
 objects.
 """
 import os
 import pycbc
 from functools import wraps
 import logging
+import ctypes
 from .libutils import get_ctypes_library
 from .pool import use_mpi
 
@@ -43,22 +20,23 @@ class _SchemeManager(object):
 
         if _SchemeManager._single is not None:
             raise RuntimeError("SchemeManager is a private class")
-        _SchemeManager._single= self
+        _SchemeManager._single = self
 
-        self.state= None
-        self._lock= False
+        self.state = None
+        self._lock = False
 
     def lock(self):
-        self._lock= True
+        self._lock = True
 
     def unlock(self):
-        self._lock= False
+        self._lock = False
 
     def shift_to(self, state):
         if self._lock is False:
             self.state = state
         else:
             raise RuntimeError("The state is locked, cannot shift schemes")
+
 
 # Create the global processing scheme manager
 mgr = _SchemeManager()
@@ -69,32 +47,39 @@ default_context = None
 class Scheme(object):
     """Context that sets PyCBC objects to use CPU processing. """
     _single = None
+
     def __init__(self):
         if DefaultScheme is type(self):
             return
         if Scheme._single is not None:
             raise RuntimeError("Only one processing scheme can be used")
         Scheme._single = True
+
     def __enter__(self):
         mgr.shift_to(self)
         mgr.lock()
+
     def __exit__(self, type, value, traceback):
         mgr.unlock()
         mgr.shift_to(default_context)
+
     def __del__(self):
         if Scheme is not None:
             Scheme._single = None
 
-_cuda_cleanup_list=[]
+
+_cuda_cleanup_list = []
+
 
 def register_clean_cuda(function):
     _cuda_cleanup_list.append(function)
 
+
 def clean_cuda(context):
-    #Before cuda context is destroyed, all item destructions dependent on cuda
+    # Before CUDA context is destroyed, all item destructions dependent on CUDA
     # must take place. This calls all functions that have been registered
-    # with _register_clean_cuda() in reverse order
-    #So the last one registered, is the first one cleaned
+    # with register_clean_cuda() in reverse order
+    # So the last one registered, is the first one cleaned
     _cuda_cleanup_list.reverse()
     for func in _cuda_cleanup_list:
         func()
@@ -102,6 +87,7 @@ def clean_cuda(context):
     context.pop()
     from pycuda.tools import clear_context_caches
     clear_context_caches()
+
 
 class CUDAScheme(Scheme):
     """Context that sets PyCBC objects to use a CUDA processing scheme. """
@@ -112,9 +98,37 @@ class CUDAScheme(Scheme):
         import pycuda.driver
         pycuda.driver.init()
         self.device = pycuda.driver.Device(device_num)
-        self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_BLOCKING_SYNC)
+        self.context = self.device.make_context(
+            flags=pycuda.driver.ctx_flags.SCHED_BLOCKING_SYNC)
         import atexit
-        atexit.register(clean_cuda,self.context)
+        atexit.register(clean_cuda, self.context)
+
+
+class TorchScheme(Scheme):
+    """Context that sets PyCBC objects to use a PyTorch processing scheme."""
+    def __init__(self, device='cpu'):
+        Scheme.__init__(self)
+        self.device = device
+        # Check if CUDA is available for PyTorch if device is not CPU
+        if self.device != 'cpu':
+            import torch
+            if not torch.cuda.is_available():
+                raise RuntimeError("CUDA device not available for PyTorch")
+            logger.info(f"PyTorch using device: {self.device}")
+
+    def __enter__(self):
+        Scheme.__enter__(self)
+        # Set the default device for PyTorch tensors
+        import torch
+        torch_device = torch.device(self.device)
+        # No need to set default tensor type; tensors can specify device directly
+        self.torch_device = torch_device
+        logger.info(f"Entered TorchScheme with device: {self.device}")
+
+    def __exit__(self, type, value, traceback):
+        Scheme.__exit__(self, type, value, traceback)
+        logger.info("Exited TorchScheme")
+
 
 
 class CUPYScheme(Scheme):
@@ -167,7 +181,7 @@ class CUPYScheme(Scheme):
 class CPUScheme(Scheme):
     def __init__(self, num_threads=1):
         if isinstance(num_threads, int):
-            self.num_threads=num_threads
+            self.num_threads = num_threads
         elif num_threads == 'env' and "PYCBC_NUM_THREADS" in os.environ:
             self.num_threads = int(os.environ["PYCBC_NUM_THREADS"])
         else:
@@ -188,7 +202,7 @@ class CPUScheme(Scheme):
 
         os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
         if self._libgomp is not None:
-            self._libgomp.omp_set_num_threads( int(self.num_threads) )
+            self._libgomp.omp_set_num_threads(int(self.num_threads))
 
     def __exit__(self, type, value, traceback):
         os.environ["OMP_NUM_THREADS"] = "1"
@@ -196,11 +210,13 @@ class CPUScheme(Scheme):
             self._libgomp.omp_set_num_threads(1)
         Scheme.__exit__(self, type, value, traceback)
 
+
 class MKLScheme(CPUScheme):
     def __init__(self, num_threads=1):
         CPUScheme.__init__(self, num_threads)
         if not pycbc.HAVE_MKL:
             raise RuntimeError("Can't find MKL libraries")
+
 
 class NumpyScheme(CPUScheme):
     pass
@@ -208,6 +224,7 @@ class NumpyScheme(CPUScheme):
 
 scheme_prefix = {
     CUDAScheme: "cuda",
+    TorchScheme: "torch",  # Changed to 'torch' as the scheme name
     CPUScheme: "cpu",
     CUPYScheme: "cupy",
     MKLScheme: "mkl",
@@ -226,17 +243,23 @@ except KeyError as exc:
         ),
     )
 
+
 class DefaultScheme(_default_scheme_class):
     pass
+
 
 default_context = DefaultScheme()
 mgr.state = default_context
 scheme_prefix[DefaultScheme] = _default_scheme_prefix
 
+
 def current_prefix():
     return scheme_prefix[type(mgr.state)]
 
+
 _import_cache = {}
+
+
 def schemed(prefix):
 
     def scheming_function(func):
@@ -262,24 +285,26 @@ def schemed(prefix):
 
                     return schemed_fn(*args, **kwds)
 
-                err = (f"Failed to find implementation of {func.__name__} "
-                       f"for {current_prefix()} scheme. ")
+                err = """Failed to find implementation of (%s)
+                      for %s scheme.""" % (str(func), current_prefix())
                 for emsg in exc_errors:
-                    err += str(emsg) + " "
+                    err += str(emsg) + "\n"
                 raise RuntimeError(err)
         return _scheming_function
 
     return scheming_function
 
+
 def cpuonly(func):
     @wraps(func)
     def _cpuonly(*args, **kwds):
         if not issubclass(type(mgr.state), CPUScheme):
-            raise TypeError(fn.__name__ +
+            raise TypeError(func.__name__ +
                             " can only be called from a CPU processing scheme.")
         else:
             return func(*args, **kwds)
     return _cpuonly
+
 
 def insert_processing_option_group(parser):
     """
@@ -292,26 +317,30 @@ def insert_processing_option_group(parser):
         OptionParser instance
     """
     processing_group = parser.add_argument_group("Options for selecting the"
-                                   " processing scheme in this program.")
+                                                 " processing scheme in this program.")
+    scheme_choices = list(set(scheme_prefix.values()))
     processing_group.add_argument("--processing-scheme",
-                      help="The choice of processing scheme. "
-                           "Choices are " + str(list(set(scheme_prefix.values()))) +
-                           ". (optional for CPU scheme) The number of "
-                           "execution threads "
-                           "can be indicated by cpu:NUM_THREADS, "
-                           "where NUM_THREADS "
-                           "is an integer. The default is a single thread. "
-                           "If the scheme is provided as cpu:env, the number "
-                           "of threads can be provided by the PYCBC_NUM_THREADS "
-                           "environment variable. If the environment variable "
-                           "is not set, the number of threads matches the number "
-                           "of logical cores. ",
-                      default="cpu")
+                                  help="The choice of processing scheme. "
+                                       "Choices are " + str(scheme_choices) +
+                                       ". (optional for CPU scheme) The number of "
+                                       "execution threads "
+                                       "can be indicated by cpu:NUM_THREADS, "
+                                       "where NUM_THREADS "
+                                       "is an integer. The default is a single thread. "
+                                       "If the scheme is provided as cpu:env, the number "
+                                       "of threads can be provided by the PYCBC_NUM_THREADS "
+                                       "environment variable. If the environment variable "
+                                       "is not set, the number of threads matches the number "
+                                       "of logical cores. For Torch scheme, you can specify "
+                                       "the device as torch:DEVICE, where DEVICE is 'cpu' or "
+                                       "'cuda:0', 'cuda:1', etc.",
+                                  default="cpu")
 
     processing_group.add_argument("--processing-device-id",
-                      help="(optional) ID of GPU to use for accelerated "
-                           "processing",
-                      default=0, type=int)
+                                  help="(optional) ID of GPU to use for accelerated "
+                                       "processing",
+                                  default=0, type=int)
+
 
 def from_cli(opt):
     """Parses the command line options and returns a processing scheme.
@@ -333,6 +362,15 @@ def from_cli(opt):
     if name == "cuda":
         logger.info("Running with CUDA support")
         ctx = CUDAScheme(opt.processing_device_id)
+    elif name == "torch":
+        logger.info("Running with Torch (PyTorch) support")
+        # Get device if specified
+        if len(scheme_str) > 1:
+            device = scheme_str[1]
+        else:
+            device = 'cpu'  # Default to CPU
+        ctx = TorchScheme(device)
+        logger.info(f"Torch device set to: {device}")
     elif name == "mkl":
         if len(scheme_str) > 1:
             numt = scheme_str[1]
@@ -356,10 +394,10 @@ def from_cli(opt):
         logger.info("Running with CPU support: %s threads" % ctx.num_threads)
     return ctx
 
-def verify_processing_options(opt, parser):
-    """Parses the  processing scheme options and verifies that they are
-       reasonable.
 
+def verify_processing_options(opt, parser):
+    """Parses the processing scheme options and verifies that they are
+       reasonable.
 
     Parameters
     ----------
@@ -371,10 +409,11 @@ def verify_processing_options(opt, parser):
     """
     scheme_types = scheme_prefix.values()
     if opt.processing_scheme.split(':')[0] not in scheme_types:
-        parser.error("(%s) is not a valid scheme type.")
+        parser.error("(%s) is not a valid scheme type." % opt.processing_scheme)
+
 
 class ChooseBySchemeDict(dict):
-    """ This class represents a dictionary whose purpose is to chose objects
+    """ This class represents a dictionary whose purpose is to choose objects
     based on their processing scheme. The keys are intended to be processing
     schemes.
     """
@@ -382,7 +421,7 @@ class ChooseBySchemeDict(dict):
         for base in scheme.__mro__[0:-1]:
             try:
                 return dict.__getitem__(self, base)
-                break
-            except:
+            except KeyError:
                 pass
+        raise KeyError("Scheme not found in ChooseBySchemeDict")
 
