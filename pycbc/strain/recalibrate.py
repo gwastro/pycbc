@@ -20,6 +20,7 @@
 from abc import (ABCMeta, abstractmethod)
 
 import numpy as np
+import glob, os
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
 from pycbc.frame.gwosc import get_run
@@ -536,11 +537,11 @@ def read_calibration_envelop_file(calibration_file, correction_type,
       phase_median_nodes: Median values of Phase correction at frequency nodal points
       phase_sigma_nodes: Standard deviation values of Phase correction at frequency nodal points
     """
-    calibration_data = numpy.loadtxt(calibration_file).T
-    log_frequency_array = numpy.log(calibration_data[0])
+    calibration_data = np.loadtxt(calibration_file).T
+    log_frequency_array = np.log(calibration_data[0])
 
-    log_nodes = numpy.linspace(numpy.log(minimum_frequency),
-                            numpy.log(maximum_frequency), n_nodes)
+    log_nodes = np.linspace(np.log(minimum_frequency),
+                            np.log(maximum_frequency), n_nodes)
 
     if correction_type.lower()=='template':
         amplitude_median = calibration_data[1] - 1
@@ -603,7 +604,8 @@ def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
         all_calibration_files = glob.glob('%s/%s/*txt'%(calibration_file_path, ifo))
         if ifo !='V1':
             # H1 and L1 detector files are treated seperately compared to V1 detector
-            list_gpstimes = np.array([int(item.split('_')[5]) for item in all_calibration_files])
+            # This list of GPS times can be coded in a better way!!!
+            list_gpstimes = np.array([int(item.split('_')[-4]) for item in all_calibration_files])
             dt_list = abs(list_gpstimes - gps_time)
             ifo_calibration_file = '%s/%s'%(os.getcwd(), all_calibration_files[dt_list.argmin()])
         else:
