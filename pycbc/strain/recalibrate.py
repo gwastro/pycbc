@@ -601,7 +601,7 @@ def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
     """
     dict_calibration_file = {}
     for ifo in ifos:
-        all_calibration_files = glob.glob('%s/%s/*txt'%(calibration_file_path, ifo))
+        all_calibration_files = glob.glob('%s/%s/*FinalResults.txt'%(calibration_file_path, ifo))
         if ifo !='V1':
             # H1 and L1 detector files are treated seperately compared to V1 detector
             # This list of GPS times can be coded in a better way!!!
