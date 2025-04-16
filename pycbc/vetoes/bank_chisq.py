@@ -198,7 +198,7 @@ class SingleDetBankVeto(object):
     def cache_segment_snrs(self, stilde, psd):
         key = (id(stilde), id(psd))
         if key not in self._segment_snrs_cache:
-            logging.info("Precalculate the bank veto template snrs")
+            logging.debug("Precalculate the bank veto template snrs")
             data = segment_snrs(self.filters, stilde, psd, self.f_low)
             self._segment_snrs_cache[key] = data
         return self._segment_snrs_cache[key]
@@ -206,7 +206,7 @@ class SingleDetBankVeto(object):
     def cache_overlaps(self, template, psd):
         key = (id(template.params), id(psd))
         if key not in self._overlaps_cache:
-            logging.info("...Calculate bank veto overlaps")
+            logging.debug("...Calculate bank veto overlaps")
             o = template_overlaps(self.filters, template, psd, self.f_low)
             self._overlaps_cache[key] = o
         return self._overlaps_cache[key]
