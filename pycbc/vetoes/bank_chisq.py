@@ -221,16 +221,15 @@ class SingleDetBankVeto(object):
 
         bank_chisq_dof: int, approx number of statistical degrees of freedom
         """
-        if self.do:
-            logging.info("...Doing bank veto")
-            overlaps = self.cache_overlaps(template, psd)
-            bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
-            chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
-                                            bank_veto_norms, overlaps, indices)
-            dof = numpy.repeat(self.dof, len(chisq))
-            return chisq, dof
-        else:
+        if not self.do:
             return None, None
+        logging.debug("...Doing bank veto")
+        overlaps = self.cache_overlaps(template, psd)
+        bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
+        chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
+                                        bank_veto_norms, overlaps, indices)
+        dof = numpy.repeat(self.dof, len(chisq))
+        return chisq, dof
 
 class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
     """Stub for precessing bank veto if anyone ever wants to code it up.
