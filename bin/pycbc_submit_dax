@@ -92,6 +92,9 @@ SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 
 #Make sure the directory is world readable
 chmod 755 $SUBMIT_DIR
+echo "THE SUBMIT DIR IS: "
+echo $SUBMIT_DIR
+echo $LOCAL_PEGASUS_DIR
 
 # find the site-local template directory
 if [ $DATA_INLINE == "True" ] ; then
