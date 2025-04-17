@@ -198,6 +198,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                 offsrc = seg
     else:
         offsrc = offsrclist[0]
+    offsrc = segments.segment(int(offsrc[0]), int(offsrc[1]))
 
     if abs(offsrc) < minduration + 2 * padding:
         fail = segments.segment([triggertime - minduration / 2. - padding,
@@ -218,7 +219,6 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     logger.info("%ds of padding applied at beginning and end of segment.",
                 padding)
-
 
     # Construct on-source
     onstart = triggertime - onbefore
@@ -248,8 +248,6 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
         offsrc &= segments.segment(offsrc[0],
                                    offsrc[0] + maxduration + 2 * padding)
 
-    offsrc = segments.segment(int(offsrc[0]), int(offsrc[1]))
-
     # Trimming off-source
     excess = (abs(offsrc) - 2 * padding) % quanta
     if excess != 0:
@@ -263,7 +261,6 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
             elif offset > 0:
                 offsrc &= segments.segment(offsrc[0],
                                            offsrc[1] - excess)
-            offsrc = segments.segment(int(offsrc[0]), int(offsrc[1]))
             assert abs(offsrc) % quanta == 2 * padding
         else:
             logger.info("This will make OFF-SOURCE symmetrical about trigger "
