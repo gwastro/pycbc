@@ -198,7 +198,7 @@ class SingleDetBankVeto(object):
     def cache_segment_snrs(self, stilde, psd):
         key = (id(stilde), id(psd))
         if key not in self._segment_snrs_cache:
-            logging.info("Precalculate the bank veto template snrs")
+            logging.debug("Precalculate the bank veto template snrs")
             data = segment_snrs(self.filters, stilde, psd, self.f_low)
             self._segment_snrs_cache[key] = data
         return self._segment_snrs_cache[key]
@@ -206,7 +206,7 @@ class SingleDetBankVeto(object):
     def cache_overlaps(self, template, psd):
         key = (id(template.params), id(psd))
         if key not in self._overlaps_cache:
-            logging.info("...Calculate bank veto overlaps")
+            logging.debug("...Calculate bank veto overlaps")
             o = template_overlaps(self.filters, template, psd, self.f_low)
             self._overlaps_cache[key] = o
         return self._overlaps_cache[key]
@@ -221,16 +221,15 @@ class SingleDetBankVeto(object):
 
         bank_chisq_dof: int, approx number of statistical degrees of freedom
         """
-        if self.do:
-            logging.info("...Doing bank veto")
-            overlaps = self.cache_overlaps(template, psd)
-            bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
-            chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
-                                            bank_veto_norms, overlaps, indices)
-            dof = numpy.repeat(self.dof, len(chisq))
-            return chisq, dof
-        else:
+        if not self.do:
             return None, None
+        logging.debug("...Doing bank veto")
+        overlaps = self.cache_overlaps(template, psd)
+        bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
+        chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
+                                        bank_veto_norms, overlaps, indices)
+        dof = numpy.repeat(self.dof, len(chisq))
+        return chisq, dof
 
 class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
     """Stub for precessing bank veto if anyone ever wants to code it up.
