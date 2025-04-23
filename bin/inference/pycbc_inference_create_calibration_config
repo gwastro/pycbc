@@ -35,8 +35,13 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--calibration-files-path',
                     help='Calibration envelope file path. It can be pre-'
-                          'downloaded or downloaded on the fly', required=True,
+                          'downloaded or downloaded on the fly',
                     type=str)
+
+
+parser.add_argument('--calibration-files', nargs='+', action=MultiDetOptionAction,
+                    metavar = 'DETECTOR:COLUMN', type=str,
+                    help='Calibration file for each detector',)
 
 parser.add_argument('--ifos', nargs='+',
                         help='Specify ifos for the analysis')
@@ -89,8 +94,15 @@ parser.add_argument('--plot-sanity-checks', help='Make some plots for sanity che
 parser.add_argument('--tag', help='Provide your tag for naming calibration file',
                     default=None)
 
+
 # parse the command line
 opts = parser.parse_args()
+
+
+if opts.calibration_files_path and opts.calibration_files:
+    raise ValueError("Only one of the arguments should be provided among:"
+                    "--calibration-files-path and --calibration-files")
+
 
 #args = parser.parse_args()
 calibration_files_path = opts.calibration_files_path
@@ -109,7 +121,12 @@ else:
 print(min_freq_list['H1'])
 
 # Read calibration files
-calibration_files_dict = get_calibration_files_O1_O2_O3(opts.ifos, gps_time, calibration_files_path)
+if opts.calibration_files:
+    calibration_files_dict = {}
+    for ifo in opts.ifos:
+        calibration_files_dict[ifo] = opts.calibration_files[ifo]
+else:
+    calibration_files_dict = get_calibration_files_O1_O2_O3(opts.ifos, gps_time, calibration_files_path)
 
 print(calibration_files_dict)
 
