@@ -21,7 +21,7 @@ import sys
 import numpy
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 import pycbc.results
 from pycbc.events import ranking
@@ -55,8 +55,8 @@ try:
     delta_t = f['snr'].attrs['delta_t']
     start_time = f['snr'].attrs['start_time']
 except:
-    pylab.text(0.5, 0.5, 'no triggers found')
-    pylab.savefig(args.output_file)
+    plt.text(0.5, 0.5, 'no triggers found')
+    plt.savefig(args.output_file)
     sys.exit()
 
 if args.event_time is not None:
@@ -82,7 +82,7 @@ chisq = f['chisq'][left:right][:]
 rang = (numpy.arange(0, len(snr), 1) - (center - left)) * delta_t
 newsnr = ranking.newsnr(snr, chisq)
 
-fig, ax1 = pylab.subplots()
+fig, ax1 = plt.subplots()
 ax1.plot(rang, snr, color='blue', label='SNR')
 ax1.plot(rang, newsnr, color='purple', label='NewSNR')
 ax1.set_ylabel('SNR')

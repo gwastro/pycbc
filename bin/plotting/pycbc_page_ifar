@@ -19,9 +19,9 @@ import argparse
 import numpy
 import sys
 import copy
-import pylab
 import matplotlib as mpl
 mpl.use('Agg')
+from matplotlib import pyplot as plt
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.results
@@ -107,7 +107,7 @@ if h_inc_back_num is None:
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
     import sys
-    fig = pylab.figure()
+    fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.set_xlim(0, 1)
@@ -189,7 +189,7 @@ else :
         back_ifar = fp['background/ifar'][:]
 
 # make figure
-fig = pylab.figure(1)
+fig = plt.figure(1)
 
 # get a unique list of timeslide_ids and loop over them
 interval = fp.attrs['timeslide_interval']
@@ -249,9 +249,9 @@ for tsid in tsids:
 
     # plot the time slide triggers
     if len(ts_ifar) > 1:
-        pylab.loglog(ts_ifar, ts_cumnum, color='gray', alpha=0.4)
+        plt.loglog(ts_ifar, ts_cumnum, color='gray', alpha=0.4)
     elif len(ts_ifar) == 1:
-        pylab.plot(ts_ifar, ts_cumnum, color='gray', marker='.', alpha=0.4)
+        plt.plot(ts_ifar, ts_cumnum, color='gray', marker='.', alpha=0.4)
     else:
         empty_slide_count += 1
 
@@ -259,51 +259,51 @@ allbkg_ifars = numpy.array(allbkg_ifars)
 allbkg_ifars = allbkg_ifars * (fp.attrs['foreground_time'] / allbkg_dur )
 allbkg_ifars.sort()
 allbkg_cumnum = numpy.arange(len(allbkg_ifars), 0, -1)
-pylab.loglog(allbkg_ifars, allbkg_cumnum, color='green', linewidth=1.5,
+plt.loglog(allbkg_ifars, allbkg_cumnum, color='green', linewidth=1.5,
              label="All decimated background")
 
 # plot the expected background
-pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=2,
+plt.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=2,
              color='black', label='Expected Background')
 
 # plot the counting error
 error_plus = expected_cumnum + numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
-pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y',
+plt.fill_between(expected_ifar, error_minus, error_plus, facecolor='y',
                    alpha=0.4, label='$N^{1/2}$ Errors')
 
 # plot the counting error
 error_plus = expected_cumnum + 2 * numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - 2*numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
-pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y',
+plt.fill_between(expected_ifar, error_minus, error_plus, facecolor='y',
                    alpha=0.2, label='$2N^{1/2}$ Errors')
 
 # plot the foreground triggers
 if opts.open_box:
-    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
+    plt.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
                  marker='^', label='Foreground')
 
     if h_inc_back_num > 0:
-        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
+        plt.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
                      marker='v', label='Hierarchically Removed Foreground')
 
 # format plot
 if opts.open_box and len(fore_cumnum) > 100:
     # If we have > 100 foreground triggers, scale the plot around the
     # foreground
-    pylab.ylim(0.8, 1.1 * len(fore_cumnum))
-    pylab.xlim(0.9 * min(fore_ifar))
+    plt.ylim(0.8, 1.1 * len(fore_cumnum))
+    plt.xlim(0.9 * min(fore_ifar))
 elif len(allbkg_cumnum) > 0:
     # If we have < 100 foreground triggers (or this is closed box), scale the
     # plot around the cumulative background (the green line).
-    pylab.ylim(0.8, 1.1 * len(allbkg_cumnum))
-    pylab.xlim(0.9 * min(allbkg_ifars))
-pylab.grid()
-pylab.legend(loc='upper right', fontsize=9)
-pylab.ylabel('Cumulative Number')
-pylab.xlabel('Inverse False Alarm Rate (yr)')
+    plt.ylim(0.8, 1.1 * len(allbkg_cumnum))
+    plt.xlim(0.9 * min(allbkg_ifars))
+plt.grid()
+plt.legend(loc='upper right', fontsize=9)
+plt.ylabel('Cumulative Number')
+plt.xlabel('Inverse False Alarm Rate (yr)')
 
 # save
 caption = 'This is a cumulative histogram of triggers. The blue triangles ' \

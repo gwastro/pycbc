@@ -9,7 +9,7 @@ import logging
 import sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 from scipy.special import erf, erfinv
 from pycbc.io.hdf import HFile
@@ -68,7 +68,7 @@ if h_inc_back_num is None:
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
     import sys
-    fig = pylab.figure()
+    fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.set_xlim(0, 1)
@@ -121,7 +121,7 @@ dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
 logging.info('Found %s background (exclusive zerolag) triggers' % len(bstat_exc))
 
-fig = pylab.figure()
+fig = plt.figure()
 
 if fstat is not None:
     minimum = min(fstat.min(), bstat.min())
@@ -139,7 +139,7 @@ bins = numpy.arange(minimum, maximum + bin_size, bin_size)
 
 # plot background minus foreground
 exc_binweights = dec_exc / conv.sec_to_year(f.attrs['background_time_exc'])
-exc_binvals = pylab.hist(bstat_exc, bins=bins, histtype='step',
+exc_binvals = plt.hist(bstat_exc, bins=bins, histtype='step',
                          linewidth=2,
                          color='grey', log=True,
                          label= 'Background Uncorrelated with Foreground',
@@ -152,7 +152,7 @@ if not args.closed_box:
     bg_key = 'background_time' if h_inc_back_num == 0 \
         else 'background_time_h%s' % h_inc_back_num
     binweights = dec / conv.sec_to_year(f.attrs[bg_key])
-    pylab.hist(
+    plt.hist(
         bstat,
         bins=bins,
         histtype='step',
@@ -197,7 +197,7 @@ if fstat is not None and not args.closed_box:
             count_h_rm = (right_h_rm - left_h_rm) / \
                          conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num])
 
-        pylab.errorbar(bins[:-1] + bin_size / 2, count_h_rm,
+        plt.errorbar(bins[:-1] + bin_size / 2, count_h_rm,
                        xerr=bin_size/2,
                        label='Hierarchically Removed Foreground', mec='none',
                        fmt='s', ms=1, capthick=0, elinewidth=4,
@@ -206,19 +206,19 @@ if fstat is not None and not args.closed_box:
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
     count = (right - left) / conv.sec_to_year(f.attrs['foreground_time'])
-    pylab.errorbar(bins[:-1] + bin_size / 2, count, xerr=bin_size/2,
+    plt.errorbar(bins[:-1] + bin_size / 2, count, xerr=bin_size/2,
                    label='Foreground', mec='none', fmt='o', ms=1, capthick=0,
                    elinewidth=4,  color='#ff6600')
 
-pylab.xlabel('Ranking statistic (bin size = %.2f)' % bin_size)
-pylab.ylabel('Trigger Rate (yr$^{-1})$')
+plt.xlabel('Ranking statistic (bin size = %.2f)' % bin_size)
+plt.ylabel('Trigger Rate (yr$^{-1})$')
 if args.x_min is not None:
-    pylab.xlim(xmin=args.x_min)
+    plt.xlim(xmin=args.x_min)
 else:
-    pylab.xlim(xmin=numpy.floor(histpeak))
-pylab.ylim(ymin=0.5 / conv.sec_to_year(f.attrs['background_time_exc']))
-pylab.grid()
-leg = pylab.legend(fontsize=9)
+    plt.xlim(xmin=numpy.floor(histpeak))
+plt.ylim(ymin=0.5 / conv.sec_to_year(f.attrs['background_time_exc']))
+plt.grid()
+leg = plt.legend(fontsize=9)
 
 end = sigma_from_p(fap.min() * args.trials_factor)
 
@@ -240,22 +240,22 @@ if not args.closed_box:
         if x1 == x2:
             continue
 
-        ymin, ymax = pylab.gca().get_ylim()
+        ymin, ymax = plt.gca().get_ylim()
         try:
             x = [bstat[::-1][x1], bstat[::-1][x2]]
         except IndexError:
             break
-        pylab.fill_between(x, ymin, ymax, zorder=-1,
-                           color=pylab.cm.Blues(next_sig / 8.0))
+        plt.fill_between(x, ymin, ymax, zorder=-1,
+                           color=plt.cm.Blues(next_sig / 8.0))
 
         if next_sig == end:
             next_sig = '%.1f' % next_sig
 
-        pylab.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig,
+        plt.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig,
                    fontsize=10, horizontalalignment='center',
                    verticalalignment='bottom')
 
-ax1 =  pylab.gca()
+ax1 =  plt.gca()
 ax2 = ax1.twinx()
 
 if h_inc_back_num == 0:

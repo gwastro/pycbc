@@ -363,7 +363,7 @@ class CandidateForGraceDB(object):
         labels: list
             Optional list of labels to tag the new event with.
         """
-        import pylab as pl
+        from matplotlib import pyplot as plt
 
         if fname.endswith('.xml.gz'):
             self.basename = fname.replace('.xml.gz', '')
@@ -523,12 +523,12 @@ class CandidateForGraceDB(object):
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             colors = [source_color(label) for label in labels]
-            fig, ax = pl.subplots()
+            fig, ax = plt.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
                    textprops={'fontsize': 15})
             ax.axis('equal')
             fig.savefig(self.prob_plotf)
-            pl.close()
+            plt.close()
             if gid is not None:
                 try:
                     self.gracedb.write_log(
