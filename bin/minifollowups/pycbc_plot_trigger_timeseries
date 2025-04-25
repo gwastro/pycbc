@@ -21,7 +21,7 @@ import logging
 import sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 import numpy
 
 from pycbc import init_logging, add_common_pycbc_options
@@ -56,7 +56,7 @@ init_logging(args.verbose)
 
 any_data = False
 
-fig = pylab.figure()
+fig = plt.figure()
 
 min_rank = numpy.inf
 for ifo in args.single_trigger_files.keys():
@@ -77,7 +77,7 @@ for ifo in args.single_trigger_files.keys():
     if not len(idx):
         # No triggers in this window, add to the legend and continue
         # Make sure it isnt on the plot
-        pylab.scatter(-2 * args.window, 0,
+        plt.scatter(-2 * args.window, 0,
                       color=pycbc.results.ifo_color(ifo),
                       marker='x',
                       label=ifo)
@@ -95,7 +95,7 @@ for ifo in args.single_trigger_files.keys():
     logging.info("Getting %s", args.plot_type)
     rank = ranking.get_sngls_ranking_from_trigs(trigs, args.plot_type)
 
-    pylab.scatter(trigs['end_time'] - t, rank,
+    plt.scatter(trigs['end_time'] - t, rank,
                   color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
 
@@ -111,21 +111,21 @@ for ifo in args.single_trigger_files.keys():
             continue
         special_red_idx = numpy.where(idx == special_idx)[0]
 
-        pylab.scatter(trigs.trigs_f[f'{ifo}/end_time'][special_idx] - t,
+        plt.scatter(trigs.trigs_f[f'{ifo}/end_time'][special_idx] - t,
                       rank[special_red_idx], marker='*', s=50, color='yellow')
 
 if args.log_y_axis and any_data:
-    pylab.yscale('log')
+    plt.yscale('log')
 
 if not numpy.isinf(min_rank):
-    pylab.ylim(ymin=min_rank)
+    plt.ylim(ymin=min_rank)
 
-pylab.xlabel('time (s)')
-pylab.ylabel(args.plot_type)
+plt.xlabel('time (s)')
+plt.ylabel(args.plot_type)
 
-pylab.xlim(xmin=-args.window, xmax=args.window)
-pylab.legend()
-pylab.grid()
+plt.xlim(xmin=-args.window, xmax=args.window)
+plt.legend()
+plt.grid()
 
 logging.info("Saving figure")
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
