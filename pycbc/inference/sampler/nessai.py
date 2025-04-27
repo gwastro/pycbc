@@ -208,7 +208,11 @@ class NessaiSampler(BaseSampler):
                     d_out[k] = option
 
         # Specified kwds
-        ignore_kwds = {"nlive", "name"}
+        ignore_kwds = {
+            "nlive",
+            "name",
+            "loglikelihood-function",
+        }
         invalid_kwds = (
             cp[section].keys()
             - set().union(kwds.keys(), run_kwds.keys())
