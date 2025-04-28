@@ -32,8 +32,8 @@ PAD=8
 BANK_FILE=gw170817_single_template.hdf
 BANK_VETO_FILE=bank_veto_bank.xml
 CHANNEL=SIMULATED_GW170817
-RA=5.016076270234897
-DEC=-0.408407044967
+RA="5.016076270234897 rad"
+DEC="-0.408407044967 rad"
 
 echo -e "\\n\\n>> [`date`] Getting template bank"
 wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
