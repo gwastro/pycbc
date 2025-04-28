@@ -1,0 +1,17 @@
+name: Custom PR failures
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  fail-for-code-of-conduct-not-agreed:
+    if: contains(github.event.pull_request.labels.*.name, 'code of conduct agreed')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if code of conduct has not been agreed
+        run: |
+          echo "The Code of Conduct has not been agreed to, please read it "
+          echo "and apply the code of conduct agreed label and rerun the CI."
+          exit 1
