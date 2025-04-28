@@ -27,9 +27,8 @@ mask = (
 n = mask.sum()
 if n > 0:
     print(
-        'PASS: GW170817 found with coherent SNR = %.2f; reweighted SNR %.2f',
-        coh_snr[mask],
-        rw_snr[mask]
+        f'PASS: GW170817 found with max coherent SNR {max(coh_snr[mask]):.2f}, '
+        f'max reweighted SNR {max(rw_snr[mask]):.2f}'
     )
     status = 0
 else:
