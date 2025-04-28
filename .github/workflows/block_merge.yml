@@ -1,9 +1,7 @@
 name: Custom PR failures
 
 on:
-  pull_request:
-    branches:
-      - master
+  pull_request
 
 jobs:
   fail-for-code-of-conduct-not-agreed:

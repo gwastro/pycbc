@@ -15,6 +15,9 @@ or discuss in the #pycbc-code channel of the gwastro slack.
 Please add labels as appropriate
 -->
 
+<!--- The author of this pull request must confirm that they will adhere to the [code of conduct](https://github.com/gwastro/pycbc/blob/master/CODE_OF_CONDUCT.md)
+by applying the label `code of conduct agreed` to the PR -->
+
 <!-- TOP-LEVEL SUMMARY: Please provide a brief, one-or-two-sentence description of the PR here
 -->
 
@@ -52,5 +55,3 @@ but rather a general discussion of the methods chosen -->
 
 ## Additional notes
 <!--- Anything which does not fit in the above sections -->
-
-- [ ] The author of this pull request confirms they will adhere to the [code of conduct](https://github.com/gwastro/pycbc/blob/master/CODE_OF_CONDUCT.md)
