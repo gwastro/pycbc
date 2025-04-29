@@ -1,11 +1,11 @@
-name: Custom PR failures
+name: "Custom PR failures"
 
 on:
   pull_request
 
 jobs:
   fail-for-code-of-conduct-not-agreed:
-    if: contains(github.event.pull_request.labels.*.name, 'code of conduct agreed')
+    if: "!contains(github.event.pull_request.labels.*.name, 'code of conduct agreed')"
     runs-on: ubuntu-latest
     steps:
       - name: Fail if code of conduct has not been agreed
