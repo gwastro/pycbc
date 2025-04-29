@@ -89,7 +89,11 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
 
     # run pycbc_multi_inspiral (PyGRB) test
     pushd examples/multi_inspiral
-    bash -e run.sh
+    bash -e gw170817_h.sh
+    test_result
+    bash -e gw170817_hl.sh
+    test_result
+    bash -e gw170817_hlv.sh
     test_result
     popd
 fi
