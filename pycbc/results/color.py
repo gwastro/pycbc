@@ -5,7 +5,8 @@ _ifo_color_map = {
     'G1': '#222222',  # dark gray
     'K1': '#ffb200',  # yellow/orange
     'H1': '#ee0000',  # red
-    'I1': '#b0dd8b',  # light green
+    'A1': '#b0dd8b',  # light green
+    'I1': '#b0dd8b',  # light green - deprecated, but needed until lalsuite updates
     'L1': '#4ba6ff',  # blue
     'V1': '#9b59b6',  # magenta/purple
 }
@@ -20,10 +21,57 @@ _source_color_map = {
     'BHG': '#C6C29E'    # dark khaki
 }
 
+_coinc_color_map = {
+    'H1L1': '#caff00',  # lime green
+    'H1V1': '#088e49',  # dark green
+    'L1V1': '#00ffe3',  # cyan
+    'H1L1V1': '#ca9210',  # brown
+    'H1K1': '#0cd75d',  # bright green
+    'K1L1': '#df9aff',  # light purple
+    'H1K1L1': '#ff866d',  # coral
+    'K1V1': '#6d61ff',  # blue violet
+    'H1K1V1': '#b65910',  # sienna
+    'K1L1V1': '#00c2ce',  # turquoise
+    'H1K1L1V1': '#82a200',  # olive
+    'A1H1': '#20869e',  # teal
+    'A1L1': '#b2baff',  # light blue
+    'A1H1L1': '#4db68e',  # sea green
+    'A1V1': '#8a7520',  # olive drab
+    'A1H1V1': '#92e7ff',  # sky blue
+    'A1L1V1': '#928ad2',  # medium purple
+    'A1H1L1V1': '#ffe77d',  # light yellow
+    'A1K1': '#c2c600',  # chartreuse
+    'A1H1K1': '#10ff00',  # neon green
+    'A1K1L1': '#087ddb',  # dodger blue
+    'A1H1K1L1': '#5dffa6',  # aquamarine
+    'A1K1V1': '#f36100',  # orange red
+    'A1H1K1V1': '#ce5dff',  # medium orchid
+    'A1K1L1V1': '#00927d',  # dark cyan
+    'A1H1K1L1V1': '#00ae31',  # forest green
+}
 
 def ifo_color(ifo):
+    """ Return a color for the IFO
+    """
     return _ifo_color_map[ifo]
 
 
 def source_color(source):
+    """ Return a color to indicate the source type """
     return _source_color_map[source]
+
+def coinc_color(coinc):
+    """ Return a color for the coincidence type 
+
+    Parameters:
+    coinc: string
+        A strings for the IFOs in the coincidence.
+        
+    Returns:
+    string
+        The RGB color for the corresponding coinc
+    """
+    if len(coinc) == 1 and coinc in _ifo_color_map:
+        return _ifo_color_map[coinc]
+    else:
+        return _coinc_color_map[coinc]
