@@ -27,7 +27,6 @@ from scipy import special
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
-from pycbc.psd import interpolate
 from pycbc import types
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
