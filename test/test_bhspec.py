@@ -12,7 +12,8 @@ class TestBHSpecModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # set the working directory
-        cls.working_dir = "../examples/inference/time_marg_bhspec"
+        whereami = os.path.dirname(os.path.realpath(__file__))
+        cls.working_dir = f"{whereami}/../examples/inference/time_marg_bhspec"
         # the config file to use
         cls.config_file = "gw150914_hierarchical_gated.ini"
         # the expected values file
