@@ -141,11 +141,25 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # calculate and store the linear regressions to extrapolate
             # determinant values
             if self.normalize:
-                cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
-                samples, fit = self.logdet_fit(cov, p)
-                self._cov_samples[det] = samples
-                self._cov_regressions[det] = fit
+                self._set_covfit(det)
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
+ 
+    def _set_covfit(self, det):
+        """Sets the fit function for estimating the covariance determinant.
+        
+        This must be called after the PSDs have been set, otherwise a
+        ValueError will be raised.
+        """
+        try:
+            p = self.psds[det]
+        except KeyError:
+            raise ValueError("No psd set for detector %s" % det)
+        Rss = self._Rss[det]
+        cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
+        samples, fit = self.logdet_fit(cov, p)
+        self._cov_samples[det] = samples
+        self._cov_regressions[det] = fit
+        return
 
     def logdet_fit(self, cov, p):
         """Construct a linear regression from a sample of truncated covariance
@@ -185,6 +199,22 @@ class BaseGatedGaussian(BaseGaussianNoise):
         m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
         return (sample_sizes, sample_dets), (m, b)
             
+    @BaseGaussianNoise.normalize.setter
+    def normalize(self, normalize):
+        """Clears the current stats if the normalization state is changed.
+
+        If normalize is set to True, the fit to the covariance determinant
+        will be calculated if it hasn't yet and PSDs are set.
+        """
+        # call the parent setter to clear the current stats and set normalize
+        BaseGaussianNoise.normalize.fset(self, normalize)
+        # now set the covariance determinant fit if needed
+        if normalize:
+            for det in self._psds:
+                if det not in self._cov_regressions:
+                    # set the covariance determinant fit
+                    self._set_covfit(det)
+
     def gate_indices(self, det):
         """Calculate the indices corresponding to start and end of gate.
         """
@@ -223,18 +253,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
         return lognorm
-
-    @property
-    def normalize(self):
-        """Determines if the loglikelihood includes the normalization term.
-        """
-        return self._normalize
-
-    @normalize.setter
-    def normalize(self, normalize):
-        """Clears the current stats if the normalization state is changed.
-        """
-        self._normalize = normalize
 
     def _nowaveform_handler(self):
         """Convenience function to set logl values if no waveform generated.

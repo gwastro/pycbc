@@ -87,6 +87,33 @@ class TestBHSpecModel(unittest.TestCase):
                 f"got {snr_pre}"
         )
 
+    def test_normalization(self):
+        """Tests that the model is properly normalized."""
+        params = {p: self.expected_values[p]
+                  for p in self.model.variable_params}
+        self.model.update(**params)
+        logl = self.model.loglikelihood
+        # check that the loglikelihood is properly normalized if normalize
+        # is set to True
+        lognorm = 0
+        for submodel in self.model.submodels.values():
+            submodel.normalize = True
+            for det in submodel.detectors:
+                start_index, end_index = submodel.gate_indices(det)
+                lognorm += submodel.det_lognorm(det, start_index, end_index)
+        # check that the normalization is not zero
+        self.assertNotEqual(lognorm, 0,
+                            msg="Normalization is zero, check the model.")
+        # now call the normed loglikelihood and check that it is the same
+        # as the unnormed loglikelihood + lognorm
+        self.model.update(**params)
+        normed_logl = self.model.loglikelihood
+        self.assertAlmostEqual(
+            normed_logl, logl + lognorm,
+            places=2,
+            msg=f"Loglikelihood mismatch with normalization: expected "
+                f"{logl + lognorm}, got {normed_logl}")
+
     def test_file_io(self):
         """Tests that we can write out a checkpoint file, then can load a
         model using the config, data, and psds from that checkpoint file and
@@ -123,13 +150,27 @@ class TestBHSpecModel(unittest.TestCase):
                                      ringdown__data=rddata,
                                      ringdown__psds=rdpsds)
 
-        # Set parameters for the new model
+        # also check if the normalization is set in the config file, the loaded
+        # model has normalization set
+        cp.set("inspiral__model", "normalize", "")
+        cp.set("ringdown__model", "normalize", "")
+        normed_model = read_from_config(cp, inspiral__data=inspdata,
+                                        inspiral__psds=insppsds,
+                                        ringdown__data=rddata,
+                                        ringdown__psds=rdpsds)
+        # check that the normalization is True in the normed model
+        for submodel in normed_model.submodels.values():
+            self.assertTrue(submodel.normalize,
+                            msg=f"Normalization not set in {submodel.name}")
+        # Set parameters for the new models
         params = {p: self.expected_values[p]
                   for p in new_model.variable_params}
         new_model.update(**params)
+        normed_model.update(**params)
 
         # Compute loglikelihood for the new model
         new_loglikelihood = new_model.loglikelihood
+        normed_logl = normed_model.loglikelihood
 
         # Compare the loglikelihood of the new model with the original model
         self.model.update(**params)
@@ -140,9 +181,28 @@ class TestBHSpecModel(unittest.TestCase):
                 f"expected {original_loglikelihood}, got {new_loglikelihood}"
         )
 
+        # Calculate the normalization of the normed model and compare to the
+        # original model
+        lognorm = 0
+        for submodel in normed_model.submodels.values():
+            submodel.normalize = True
+            for det in submodel.detectors:
+                start_index, end_index = submodel.gate_indices(det)
+                lognorm += submodel.det_lognorm(det, start_index, end_index)
+        # check that the normalization is not zero
+        self.assertNotEqual(lognorm, 0,
+                            msg="Normalization is zero, check the model.")
+        # check that the loglikelihood is the same as the unnormed loglikelihood
+        self.assertAlmostEqual(
+            normed_logl - lognorm, new_loglikelihood,
+            places=2,
+            msg=f"Loglikelihood mismatch with normalization: expected "
+                f"{new_loglikelihood}, got {normed_logl - lognorm}")
+
         # Clean up the checkpoint file
-        if os.path.exists(checkpoint_file):
-            os.remove(checkpoint_file)
+        for fn in [sampler.checkpoint_file, sampler.backup_file]:
+            if os.path.exists(fn):
+                os.remove(fn)
 
 if __name__ == "__main__":
     unittest.main()
