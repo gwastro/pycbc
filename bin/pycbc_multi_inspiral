@@ -757,9 +757,9 @@ with ctx:
                         % len(snr_dict[ifo])
                         for ifo in args.instruments
                     }
-                    # Calculate the coincident and coherent SNR.
-                    # First check there is enough data to compute the SNRs.
-                    if len(coinc_idx) != 0 and nifo > 1:
+                    # Calculate the coincident SNR, regardless of how many IFOs
+                    # are available, only if there are triggers so far.
+                    if len(coinc_idx) != 0:
                         # Find coinc SNR at trigger times and apply coinc SNR
                         # threshold (which depopulates coinc_idx accordingly)
                         (
@@ -781,14 +781,6 @@ with ctx:
                                 "With max coincident SNR = %.2f",
                                 max(rho_coinc),
                             )
-                    # If there is only one IFO, just take its triggers
-                    # and their SNRs
-                    elif len(coinc_idx) != 0 and nifo == 1:
-                        coinc_triggers = {
-                            args.instruments[0]: snr_dict[args.instruments[0]][
-                                coinc_idx_det_frame[args.instruments[0]]
-                            ]
-                        }
                     else:
                         coinc_triggers = {}
                         logging.debug("No coincident triggers were found")
