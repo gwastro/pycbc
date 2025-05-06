@@ -137,7 +137,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     all_event_id_names = sngl_event_id_names + network_event_id_names
 
     # handle search datasets as a special case
-    # (they will the same in all files)
+    # (they will be the same in all files)
     search_datasets = set(filter(lambda x: "/search/" in x, dataset_names))
     gating_datasets = set(filter(lambda x: "/gating/" in x, dataset_names))
     once_only_datasets = search_datasets.union(gating_datasets)
