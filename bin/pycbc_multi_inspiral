@@ -793,10 +793,10 @@ with ctx:
                         coinc_triggers = {}
                         logging.debug("No coincident triggers were found")
                     # If there are triggers above coinc threshold and more
-                    # than 2 IFOs, then calculate the coherent statistics for
+                    # than 1 IFO, then calculate the coherent statistics for
                     # them and apply the cut on coherent SNR (with threshold
                     # equal to the coinc SNR one)
-                    if len(coinc_idx) != 0 and nifo > 2:
+                    if len(coinc_idx) != 0 and nifo > 1:
                         logging.debug("Calculating their coherent statistics")
                         # Plus and cross antenna pattern dictionaries
                         fp = {
@@ -971,7 +971,7 @@ with ctx:
                             chisq, chisq_dof, coherent_ifo_trigs
                         )
                         # Calculate chisq reweighted SNR
-                        if nifo > 2:
+                        if nifo > 1:
                             reweighted_snr = ranking.newsnr(
                                 rho_coh,
                                 network_chisq_dict,
@@ -986,13 +986,6 @@ with ctx:
                                 null_min=args.null_min,
                                 null_grad=args.null_grad,
                                 null_step=args.null_step,
-                            )
-                        elif nifo == 2:
-                            reweighted_snr = ranking.newsnr(
-                                rho_coinc,
-                                network_chisq_dict,
-                                q=args.chisq_index,
-                                n=args.chisq_nhigh,
                             )
                         else:
                             rho_sngl = abs(
@@ -1054,11 +1047,9 @@ with ctx:
                                 ifo_names,
                                 [ifo_out_vals[n] for n in ifo_names],
                             )
-                        if nifo > 2:
+                        if nifo > 1:
                             network_out_vals['coherent_snr'] = rho_coh
                             network_out_vals['null_snr'] = null
-                        elif nifo == 2:
-                            network_out_vals['coherent_snr'] = rho_coinc
                         else:
                             network_out_vals['coherent_snr'] = abs(
                                 snr_dict[args.instruments[0]][
