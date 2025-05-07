@@ -129,7 +129,7 @@ class TestIOGraceDB(unittest.TestCase):
         # make sure lalseries can read the PSDs
         psd_doc = ligolw_utils.load_filename(
                 coinc_file_name, verbose=False,
-                contenthandler=lalseries.PSDContentHandler)
+                contenthandler=LIGOLWContentHandler)
         psd_dict = lalseries.read_psd_xmldoc(psd_doc)
         self.assertEqual(set(psd_dict.keys()), set(all_ifos))
 
