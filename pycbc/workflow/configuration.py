@@ -86,6 +86,49 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
     return True
 
 
+def resolve_url_http():
+    if u.netloc == 'git.ligo.org':
+        # git.ligo.org used to support Shibboleth authentication, which made it
+        # usable via ciecplib. This stopped working in Spring 2025, and this
+        # workaround is the best I could come up with to leave the UX unchanged.
+        # Yes, it us ugly, and I am glad to hear alternative suggestions.
+        re_match = re.match('https://([^ ]+)/raw/([^ /]+)/(.+)', url)
+        if not re_match:
+            raise ValueError('Failed to parse git.ligo.org URL')
+        repo = re_match.group(1)
+        branch = re_match.group(2)
+        file_path = re_match.group(3)
+        logging.info(
+            'Special-case download from git.ligo.org: '
+            'file %s from branch/tag %s of repo %s',
+            file_path,
+            branch,
+            repo
+        )
+        cmd = f'git archive --remote=ssh://git@git.ligo.org/pycbc/pygrb-offline-analysis.git {branch} {file_path} | tar -x -O {file_path}'
+        cmd_result = subprocess.run(
+            cmd, shell=True, capture_output=True, check=True
+        )
+        content = cmd_result.stdout
+    else:
+        # Would like to move ciecplib import to top using import_optional, but
+        # it needs to be available when documentation runs in the CI, and I
+        # can't get it to install in the GitHub CI
+        import ciecplib
+
+        # Make the scitokens logger a little quieter
+        # (it is called through ciecpclib)
+        curr_level = logging.getLogger().level
+        logging.getLogger('scitokens').setLevel(curr_level + 10)
+        with ciecplib.Session() as s:
+            r = s.get(url, allow_redirects=True)
+            r.raise_for_status()
+        content = r.content
+
+    with open(filename, "wb") as output_fp:
+        output_fp.write(r.content)
+
+
 def resolve_url(
     url,
     directory=None,
@@ -135,25 +178,8 @@ def resolve_url(
             else:
                 shutil.copy(u.path, filename)
 
-    elif u.scheme == "http" or u.scheme == "https":
-        # Would like to move ciecplib import to top using import_optional, but
-        # it needs to be available when documentation runs in the CI, and I
-        # can't get it to install in the GitHub CI
-        import ciecplib
-        # Make the scitokens logger a little quieter
-        # (it is called through ciecpclib)
-        curr_level = logging.getLogger().level
-        logging.getLogger('scitokens').setLevel(curr_level + 10)
-        with ciecplib.Session() as s:
-            if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
-                # authenticate with git.ligo.org using callback
-                s.get("https://git.ligo.org/users/auth/shibboleth/callback")
-            r = s.get(url, allow_redirects=True)
-            r.raise_for_status()
-
-        output_fp = open(filename, "wb")
-        output_fp.write(r.content)
-        output_fp.close()
+    elif u.scheme in ("http", "https"):
+        resolve_url_http(url, u, filename)
 
     elif u.scheme == "osdf":
         # OSDF will require a scitoken to be present and stashcp to be
