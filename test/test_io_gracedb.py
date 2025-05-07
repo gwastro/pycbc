@@ -37,10 +37,10 @@ except ImportError:
     GraceDb = None
 
 
-parse_args_cpu_only("io.live")
+parse_args_cpu_only("io.gracedb")
 
 
-class TestIOLive(unittest.TestCase):
+class TestIOGraceDB(unittest.TestCase):
     def setUp(self):
         self.template = {'template_id': 0,
                          'mass1': 10,
@@ -167,7 +167,7 @@ class TestIOLive(unittest.TestCase):
 
 
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestIOLive))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestIOGraceDB))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
