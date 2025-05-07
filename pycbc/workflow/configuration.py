@@ -86,7 +86,7 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
     return True
 
 
-def resolve_url_http():
+def resolve_url_http(url, u, filename):
     """Helper function used by `resolve_url()` to handle HTTP and HTTPS URLs.
     """
 
