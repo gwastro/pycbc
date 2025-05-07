@@ -103,7 +103,7 @@ def resolve_url_http(url, u, filename):
         # Token via the headers. Second, we need to translate the raw-download
         # URL scheme to a different scheme that uses GitLab's REST API.
         re_match = re.match(
-            'https://git.ligo.org/([^ ]+)/(?:-/)?raw/([^ /]+)/(.+)', url
+            'https://git.ligo.org/([^ ]+(?<!/-))/(?:-/)?raw/([^ /]+)/(.+)', url
         )
         assert re_match, f'Failed to parse URL {url} for git.ligo.org special case'
         project = re_match.group(1)
@@ -118,6 +118,8 @@ def resolve_url_http(url, u, filename):
         )
         project = urllib.parse.quote(project, safe='')
         ref = urllib.parse.quote(ref, safe='')
+        # GitLab's REST API does not seem to like double slashes
+        file_path = os.path.normpath(file_path)
         file_path = urllib.parse.quote(file_path, safe='')
         # FIXME This code will break once GitLab changes their mind about the
         # URL format. As a different approach, we could rely on the gitlab
