@@ -758,10 +758,11 @@ with ctx:
                         for ifo in args.instruments
                     }
                     # Calculate the quadrature sum of individual detector SNRs,
-                    # regardless of how many IFOs are available.  This is
-                    # referred to as coincident SNR in the code, and it
-                    # accounts for a coherent SNR component and an incoherent
-                    # one. The calculation is performed only if triggers were
+                    # regardless of how many IFOs are available.
+                    # This accounts for a coherent SNR component and an
+                    # incoherent one.  It is referred to as coincident SNR
+                    # throughout the code, even in the single IFO case.
+                    # The calculation is performed only if triggers were
                     # gathered so far.
                     if len(coinc_idx) != 0:
                         # Find coinc SNR at trigger times and apply coinc SNR
