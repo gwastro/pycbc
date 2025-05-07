@@ -27,6 +27,7 @@ workflow construction. This module is described in the page here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
 
+import re
 import os
 import logging
 import stat
@@ -34,7 +35,6 @@ import shutil
 import subprocess
 from shutil import which
 import urllib.parse
-from urllib.parse import urlparse
 import hashlib
 
 from pycbc.types.config import InterpolatingConfigParser
@@ -87,43 +87,64 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
 
 
 def resolve_url_http():
+    """Helper function used by `resolve_url()` to handle HTTP and HTTPS URLs.
+    """
+
+    # Would like to move ciecplib import to top using import_optional, but
+    # it needs to be available when documentation runs in the CI, and I
+    # can't get it to install in the GitHub CI
+    import ciecplib
+
+    headers = None
+
     if u.netloc == 'git.ligo.org':
-        # git.ligo.org used to support Shibboleth authentication, which made it
-        # usable via ciecplib. This stopped working in Spring 2025, and this
-        # workaround is the best I could come up with to leave the UX unchanged.
-        # Yes, it us ugly, and I am glad to hear alternative suggestions.
-        re_match = re.match('https://([^ ]+)/raw/([^ /]+)/(.+)', url)
-        if not re_match:
-            raise ValueError('Failed to parse git.ligo.org URL')
-        repo = re_match.group(1)
-        branch = re_match.group(2)
+        # We need to do two ugly special things to download a file from
+        # git.ligo.org. First, we need to pass a per-user GitLab Personal Access
+        # Token via the headers. Second, we need to translate the raw-download
+        # URL scheme to a different scheme that uses GitLab's REST API.
+        re_match = re.match(
+            'https://git.ligo.org/([^ ]+)/-/raw/([^ /]+)/(.+)', url
+        )
+        assert (
+            re_match,
+            f'Failed to parse URL {url} for git.ligo.org special case'
+        )
+        project = re_match.group(1)
+        ref = re_match.group(2)
         file_path = re_match.group(3)
         logging.info(
             'Special-case download from git.ligo.org: '
-            'file %s from branch/tag %s of repo %s',
+            'file %s from ref %s of project %s',
             file_path,
-            branch,
-            repo
+            ref,
+            project
         )
-        cmd = f'git archive --remote=ssh://git@git.ligo.org/pycbc/pygrb-offline-analysis.git {branch} {file_path} | tar -x -O {file_path}'
-        cmd_result = subprocess.run(
-            cmd, shell=True, capture_output=True, check=True
+        project = urllib.parse.quote(project, safe='')
+        ref = urllib.parse.quote(ref, safe='')
+        file_path = urllib.parse.quote(file_path, safe='')
+        # FIXME This code will break once GitLab changes their mind about the
+        # URL format. As a different approach, we could rely on the gitlab
+        # Python module to (arguably) make this more robust. For now I prefer
+        # to avoid adding one more dependency, and stick with ciecplib.
+        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}'
+        # Get the user's Personal Access Token and pass it as a header
+        xdg_config_home = (
+            os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
         )
-        content = cmd_result.stdout
-    else:
-        # Would like to move ciecplib import to top using import_optional, but
-        # it needs to be available when documentation runs in the CI, and I
-        # can't get it to install in the GitHub CI
-        import ciecplib
+        with open(f'{xdg_config_home}/pycbc/git-ligo-org.pat', 'rb') as pat_fh:
+            headers = {
+                'PRIVATE-TOKEN': pat_fh.read().decode('ascii').strip()
+            }
 
-        # Make the scitokens logger a little quieter
-        # (it is called through ciecpclib)
-        curr_level = logging.getLogger().level
-        logging.getLogger('scitokens').setLevel(curr_level + 10)
-        with ciecplib.Session() as s:
-            r = s.get(url, allow_redirects=True)
-            r.raise_for_status()
-        content = r.content
+    # Make the scitokens logger a little quieter
+    # (it is called through ciecpclib)
+    curr_level = logging.getLogger().level
+    logging.getLogger('scitokens').setLevel(curr_level + 10)
+
+    with ciecplib.Session() as s:
+        r = s.get(url, allow_redirects=True, headers=headers)
+        r.raise_for_status()
+    content = r.content
 
     with open(filename, "wb") as output_fp:
         output_fp.write(r.content)
@@ -145,7 +166,7 @@ def resolve_url(
     (the default).
     """
 
-    u = urlparse(url)
+    u = urllib.parse.urlparse(url)
 
     # determine whether the file exists locally
     islocal = u.scheme == "" or u.scheme == "file"
