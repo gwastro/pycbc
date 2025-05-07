@@ -105,10 +105,7 @@ def resolve_url_http(url, u, filename):
         re_match = re.match(
             'https://git.ligo.org/([^ ]+)/-/raw/([^ /]+)/(.+)', url
         )
-        assert (
-            re_match,
-            f'Failed to parse URL {url} for git.ligo.org special case'
-        )
+        assert re_match, f'Failed to parse URL {url} for git.ligo.org special case'
         project = re_match.group(1)
         ref = re_match.group(2)
         file_path = re_match.group(3)
