@@ -1025,6 +1025,8 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
         binary (in solar masses)
     f_ref : float
         The reference frequency.
+    phiref : float
+        The reference phase.
     thetajn : float
         Angle between the line of sight and the total angular momentume J.
     phijl : float
