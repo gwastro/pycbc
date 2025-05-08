@@ -27,6 +27,7 @@ workflow construction. This module is described in the page here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
 
+import re
 import os
 import logging
 import stat
@@ -34,7 +35,6 @@ import shutil
 import subprocess
 from shutil import which
 import urllib.parse
-from urllib.parse import urlparse
 
 from pycbc.types.config import InterpolatingConfigParser
 
@@ -43,6 +43,69 @@ from pycbc.types.config import InterpolatingConfigParser
 # We can add schemes explicitly, as below, but be careful with this!
 urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
+
+
+def resolve_url_http(url, u, filename):
+    """Helper function used by `resolve_url()` to handle HTTP and HTTPS URLs.
+    """
+
+    # Would like to move ciecplib import to top using import_optional, but
+    # it needs to be available when documentation runs in the CI, and I
+    # can't get it to install in the GitHub CI
+    import ciecplib
+
+    headers = None
+
+    if u.netloc == 'git.ligo.org':
+        # We need to do two ugly special things to download a file from
+        # git.ligo.org. First, we need to pass a per-user GitLab Personal Access
+        # Token via the headers. Second, we need to translate the raw-download
+        # URL scheme to a different scheme that uses GitLab's REST API.
+        re_match = re.match(
+            'https://git.ligo.org/([^ ]+(?<!/-))/(?:-/)?raw/([^ /]+)/(.+)', url
+        )
+        assert re_match, f'Failed to parse URL {url} for git.ligo.org special case'
+        project = re_match.group(1)
+        ref = re_match.group(2)
+        file_path = re_match.group(3)
+        logging.info(
+            'Special-case download from git.ligo.org: '
+            'file %s from ref %s of project %s',
+            file_path,
+            ref,
+            project
+        )
+        project = urllib.parse.quote(project, safe='')
+        ref = urllib.parse.quote(ref, safe='')
+        # GitLab's REST API does not seem to like double slashes
+        file_path = os.path.normpath(file_path)
+        file_path = urllib.parse.quote(file_path, safe='')
+        # FIXME This code will break once GitLab changes their mind about the
+        # URL format. As a different approach, we could rely on the gitlab
+        # Python module to (arguably) make this more robust. For now I prefer
+        # to avoid adding one more dependency, and stick with ciecplib.
+        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}'
+        # Get the user's Personal Access Token and pass it as a header
+        xdg_config_home = (
+            os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
+        )
+        with open(f'{xdg_config_home}/pycbc/git-ligo-org.pat', 'rb') as pat_fh:
+            headers = {
+                'PRIVATE-TOKEN': pat_fh.read().decode('ascii').strip()
+            }
+
+    # Make the scitokens logger a little quieter
+    # (it is called through ciecpclib)
+    curr_level = logging.getLogger().level
+    logging.getLogger('scitokens').setLevel(curr_level + 10)
+
+    with ciecplib.Session() as s:
+        r = s.get(url, allow_redirects=True, headers=headers)
+        r.raise_for_status()
+    content = r.content
+
+    with open(filename, "wb") as output_fp:
+        output_fp.write(r.content)
 
 
 def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
@@ -54,7 +117,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     (the default).
     """
 
-    u = urlparse(url)
+    u = urllib.parse.urlparse(url)
 
     # determine whether the file exists locally
     islocal = u.scheme == "" or u.scheme == "file"
@@ -83,24 +146,8 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
             else:
                 shutil.copy(u.path, filename)
 
-    elif u.scheme == "http" or u.scheme == "https":
-        # Would like to move ciecplib import to top using import_optional, but
-        # it needs to be available when documentation runs in the CI, and I
-        # can't get it to install in the GitHub CI
-        import ciecplib
-        # Make the scitokens logger a little quieter
-        # (it is called through ciecpclib)
-        logging.getLogger('scitokens').setLevel(logging.root.level + 10)
-        with ciecplib.Session() as s:
-            if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
-                # authenticate with git.ligo.org using callback
-                s.get("https://git.ligo.org/users/auth/shibboleth/callback")
-            r = s.get(url, allow_redirects=True)
-            r.raise_for_status()
-
-        output_fp = open(filename, "wb")
-        output_fp.write(r.content)
-        output_fp.close()
+    elif u.scheme in ("http", "https"):
+        resolve_url_http(url, u, filename)
 
     elif u.scheme == "osdf":
         # OSDF will require a scitoken to be present and stashcp to be
