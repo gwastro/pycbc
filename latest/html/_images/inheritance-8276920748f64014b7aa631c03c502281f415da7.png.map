@@ -1,0 +1,6 @@
+<map id="inheritancef9699c6d9c" name="inheritancef9699c6d9c">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,148,31"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" target="_top" title="This class is used to construct an MCMC sampler from the emcee" alt="" coords="146,79,378,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="173,5,351,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="375,5,594,31"/>
+</map>
