@@ -385,6 +385,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     """
     if fillcolor is None:
         htype = 'step'
+        fillcolor = 'none'
     else:
         htype = 'stepfilled'
     if rotated:
