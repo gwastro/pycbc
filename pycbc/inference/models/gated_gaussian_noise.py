@@ -646,10 +646,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        # We'll gate them here, but not in-paint. We'll do the in-painting
-        # once, on the residual. We'll gate the waveforms here so that
-        # zero before/after gate can be applied to them.
-        wfs = self.get_gated_waveforms()
+        wfs = self.get_waveforms()
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
