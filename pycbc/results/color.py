@@ -5,8 +5,7 @@ _ifo_color_map = {
     'G1': '#222222',  # dark gray
     'K1': '#ffb200',  # yellow/orange
     'H1': '#ee0000',  # red
-    'A1': '#b0dd8b',  # light green
-    'I1': '#b0dd8b',  # light green - deprecated, but needed until lalsuite updates
+    'I1': '#b0dd8b',  # light green
     'L1': '#4ba6ff',  # blue
     'V1': '#9b59b6',  # magenta/purple
 }
@@ -33,21 +32,21 @@ _coinc_color_map = {
     'H1K1V1': '#b65910',  # sienna
     'K1L1V1': '#00c2ce',  # turquoise
     'H1K1L1V1': '#82a200',  # olive
-    'A1H1': '#20869e',  # teal
-    'A1L1': '#b2baff',  # light blue
-    'A1H1L1': '#4db68e',  # sea green
-    'A1V1': '#8a7520',  # olive drab
-    'A1H1V1': '#92e7ff',  # sky blue
-    'A1L1V1': '#928ad2',  # medium purple
-    'A1H1L1V1': '#ffe77d',  # light yellow
-    'A1K1': '#c2c600',  # chartreuse
-    'A1H1K1': '#10ff00',  # neon green
-    'A1K1L1': '#087ddb',  # dodger blue
-    'A1H1K1L1': '#5dffa6',  # aquamarine
-    'A1K1V1': '#f36100',  # orange red
-    'A1H1K1V1': '#ce5dff',  # medium orchid
-    'A1K1L1V1': '#00927d',  # dark cyan
-    'A1H1K1L1V1': '#00ae31',  # forest green
+    'H1I1': '#20869e',  # teal
+    'I1L1': '#b2baff',  # light blue
+    'H1I1L1': '#4db68e',  # sea green
+    'I1V1': '#8a7520',  # olive drab
+    'H1I1V1': '#92e7ff',  # sky blue
+    'I1L1V1': '#928ad2',  # medium purple
+    'H1I1L1V1': '#ffe77d',  # light yellow
+    'I1K1': '#c2c600',  # chartreuse
+    'H1I1K1': '#10ff00',  # neon green
+    'I1K1L1': '#087ddb',  # dodger blue
+    'H1I1K1L1': '#5dffa6',  # aquamarine
+    'I1K1V1': '#f36100',  # orange red
+    'H1I1K1V1': '#ce5dff',  # medium orchid
+    'I1K1L1V1': '#00927d',  # dark cyan
+    'H1I1K1L1V1': '#00ae31',  # forest green
 }
 
 def ifo_color(ifo):
@@ -61,12 +60,13 @@ def source_color(source):
     return _source_color_map[source]
 
 def coinc_color(coinc):
-    """ Return a color for the coincidence type 
+    """ Return a color for the coincidence type
 
     Parameters:
     coinc: string
         A strings for the IFOs in the coincidence.
-        
+        This will be in alphabetical order, i.e. H1L1V1.
+
     Returns:
     string
         The RGB color for the corresponding coinc
