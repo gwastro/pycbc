@@ -33,7 +33,7 @@ from setuptools import find_packages
 requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires = setup_requires + [
-    'cython>=0.29',
+    'cython>=0.29,<3.1.0',
     'numpy>=1.16.0,!=1.19.0,<2.0.0',
     'scipy>=0.16.0,<1.14.0',
     'astropy>=2.0.3,!=4.2.1,!=4.0.5',

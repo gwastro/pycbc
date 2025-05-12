@@ -11,7 +11,7 @@ h5py>=3.0.0,!=3.7.0
 jinja2
 mpld3>=0.3
 beautifulsoup4>=4.6.0
-cython
+cython<3.1.0
 lalsuite!=7.2,<7.25
 lscsoft-glue>=1.59.3
 ligo-segments
