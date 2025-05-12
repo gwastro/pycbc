@@ -73,9 +73,9 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
 
 
 def get_coinc_triggers(snrs, idx, t_delay_idx):
-    """Returns a dictionary, indexed by IFO, that collects the single
-    IFO SNRs of coincident triggers by searching for the indices of such
-    triggers withing the complete SNR timeseries of each IFO.
+    """Returns a dictionary, indexed by IFO, that collects the individual
+    IFO SNRs of coincident triggers by using the indices of such triggers
+    within the complete SNR timeseries of each IFO.
 
     Parameters
     ----------
