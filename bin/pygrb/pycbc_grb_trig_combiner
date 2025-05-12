@@ -51,7 +51,7 @@ TQDM_KW = {
 }
 
 
-# -- utilties -----------------------------------
+# -- utilities -----------------------------------
 
 def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     """Merge several HDF5 files into a single file
@@ -168,7 +168,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
             h5out.create_dataset(dset, data=numpy.concatenate(data),
                                  **compression_kw)
             del data
-        # END OF DATSET LOOP
+        # END OF DATASET LOOP
 
         # Handling event_id datasets seprately
         dset = all_event_id_names[0]
@@ -269,7 +269,7 @@ def bin_events(inputfile, bins, outdir, filetag,
                             h5in.copy(h5in[old.name], h5out, old.name)
                             bar.update()
                 for ifo in ifos:
-                    idx = numpy.in1d(h5in[ifo]["event_id"][()], ifo_index[ifo])
+                    idx = numpy.isin(h5in[ifo]["event_id"][()], ifo_index[ifo])
                     for old in h5in[ifo].values():
                         if isinstance(old, h5py.Dataset):
                             h5out.create_dataset(
@@ -298,7 +298,7 @@ def read_segment_files(segdir):
             with open(os.path.join(segdir, filename), "r") as f:
                 segs[name], = fromsegwizard(f)
         except ValueError as exc:
-            exc.args = ("more than one segment, an error has occured",)
+            exc.args = ("more than one segment, an error has occurred",)
             raise
     return segs
 
