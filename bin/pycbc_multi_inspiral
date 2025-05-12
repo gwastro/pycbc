@@ -50,7 +50,7 @@ from pycbc.vetoes import sgchisq
 from pycbc.tmpltbank.sky_grid import SkyGrid
 
 
-def slide_limiter(args):
+def slide_limiter(n_ifos, slide_shift, segment_length):
     '''
     This function computes the number of shortslides used by the coherent
     matched filter statistic to obtain as many background triggers as
@@ -58,20 +58,32 @@ def slide_limiter(args):
 
     It bounds the number of slides to avoid counting triggers more than once.
     If the data is not time slid, there is a single slide for the zero-lag.
+
+    Parameters
+    ----------
+    n_ifos: int
+        The number of detectors used in the analysis
+    slide_shift: float
+        The shift of each timeslide in seconds
+    segment_length: float
+        The duration of segments in the analysis in seconds
+
+    Returns
+    -------
+    num_slides: int
+        The number of independent timeslides
     '''
-    low, upp = 1, args.segment_length[args.instruments[0]]
-    n_ifos = len(args.instruments)
-    if args.do_shortslides and n_ifos > 1:
-        stride_dur = args.segment_length[args.instruments[0]]/2
+    low, upp = 1, segment_length
+    num_slides = 1
+    if n_ifos > 1:
+        stride_dur = segment_length/2
         num_slides = np.int32(1 +
                               np.floor(stride_dur /
-                                       (args.slide_shift*(n_ifos-1))))
+                                       (slide_shift*(n_ifos-1))))
         assert np.logical_and(num_slides >= low, num_slides <= upp), \
                "the combination (slideshift, segment_dur)"\
-               f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
+               f" = ({slide_shift:.2f},{stride_dur*2:.2f})"\
                f" goes over the allowed upper bound {upp}"
-    else:
-        num_slides = 1
     return num_slides
 
 
@@ -336,18 +348,22 @@ inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 init_logging(args.verbose)
-# Setting the number of Shortslides
-num_slides = slide_limiter(args)
+# Setting the number of shortslides
+nifo = len(args.instruments)
+num_slides = slide_limiter(
+    nifo,
+    args.slide_shift,
+    args.segment_length[args.instruments[0]]
+) if args.do_shortslides else 1
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 # Check that the number of IFOs requested to have single SNR above threshold
 # is compatible with the number of detectors in the analysis
-if len(args.instruments) > 1 and \
-   len(args.instruments) < args.nifo_sngl_snr_threshold:
+if nifo > 1 and nifo < args.nifo_sngl_snr_threshold:
     parser.error("--nifo-sngl-snr-threshold "
                  f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
                  "number of detectors in the analysis "
-                 f"({len(args.instruments)}) because this would "
+                 f"({nifo}) because this would "
                  "never yield any trigger.")
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
@@ -382,7 +398,6 @@ with ctx:
     fft.from_cli(args)
     # Set some convenience variables: number of IFOs, lower frequency,
     # GRB time, sky positions to search (either a grid or single sky point)
-    nifo = len(args.instruments[:])
     flow = args.low_frequency_cutoff
     t_gps = args.trigger_time
     sky_positions = SkyGrid.from_cli(parser, args)
