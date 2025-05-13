@@ -345,7 +345,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
             # The dataset contains search information or missed injections
             # information, not properties of triggers or found injections:
             # just copy it
-            if 'search' in path or 'missed' in path:
+            if 'search' in path or 'missed' in path or 'gating' in path:
                 trigs_dict[path] = dset[:]
             # The dataset is trig/inj info at an IFO:
             # cut with the correct index
