@@ -731,7 +731,8 @@ with ctx:
                     # Indices are kept only if they do not get time shifted
                     # out of the time we are looking at, i.e., require
                     # idx[ifo] - time_delay_idx[slide][position_index][ifo]
-                    # to be in (0, len(snr_dict[ifo]))
+                    # (which applies the necessary time shift by operating on
+                    # indices) to be between 0 and len(snr_dict[ifo]).
                     idx_dict = {
                         ifo: idx[ifo][
                             np.logical_and(
@@ -744,28 +745,27 @@ with ctx:
                         ]
                         for ifo in args.instruments
                     }
-                    # Find triggers that are coincident (in geocent time) in
-                    # multiple IFOs. If a single IFO analysis then just use the
-                    # indices from that IFO, i.e., IFO 0; otherwise, this
-                    # method finds coincidences and applies the single IFO cut,
-                    # namely, triggers must have SNR >= args.sngl_snr_threshold
-                    # in at least args.nifo_sngl_snr_threshold IFOs.
-                    if nifo > 1:
-                        coinc_idx = coh.get_coinc_indexes(
-                            idx_dict, time_delay_idx[slide][position_index],
-                            args.nifo_sngl_snr_threshold
-                        )
-                    else:
-                        coinc_idx = (
-                            idx_dict[args.instruments[0]]
-                            - time_delay_idx[slide][position_index][
-                                args.instruments[0]
-                            ]
-                        )
+                    # Find indexes (related to geocenter time) of triggers that
+                    # are coincident (in geocentier time) in multiple IFOs.
+                    # This is done by calling the method that finds coincidences
+                    # and applies the single IFO SNR cut asking for triggers to
+                    # have SNR >= args.sngl_snr_threshold in at least
+                    # args.nifo_sngl_snr_threshold IFOs; recall that idx_dict
+                    # tracks (at the geocent) triggers above threshold in
+                    # individual detectors. If only one IFO is available, then
+                    # the metheod returns trigger indices for that IFO. Given
+                    # that we are looping over timeslides and sky positions,
+                    # the appropriate dictionary of time delays wrt to the
+                    # geocenter must be passed to operate at the geocenter.
+                    coinc_idx = coh.get_coinc_indexes(
+                        idx_dict, time_delay_idx[slide][position_index],
+                        args.nifo_sngl_snr_threshold
+                    )
                     logging.debug(
                         "Found %d coincident triggers", len(coinc_idx)
                     )
-                    # Time delay is applied to indices to have them at the IFOs
+                    # Time delay is applied to indices at the geocenter to have
+                    # them at the IFOs (hence the + which undoes the delay).
                     coinc_idx_det_frame = {
                         ifo: (
                             coinc_idx
@@ -780,7 +780,9 @@ with ctx:
                     # incoherent one.  It is referred to as coincident SNR
                     # throughout the code, even in the single IFO case.
                     # The calculation is performed only if triggers were
-                    # gathered so far.
+                    # gathered so far. Once again, the appropriate dictionary
+                    # of time delays wrt to the geocenter must be passed to
+                    # operate at the geocenter.
                     if len(coinc_idx) != 0:
                         # Find coinc SNR at trigger times and apply coinc SNR
                         # threshold (which depopulates coinc_idx accordingly)
@@ -950,7 +952,9 @@ with ctx:
                     # (surviving) triggers in the detector frame.
                     if len(coinc_idx) != 0:
                         # Updated coinc_idx_det_frame to account for the
-                        # effect of the cuts applied to far
+                        # effect of the cuts applied so far (operate on the
+                        # time related indices with a +time_delay_idx to
+                        # transform geocenter time to IFO time).
                         coinc_idx_det_frame = {
                             ifo: (
                                 coinc_idx

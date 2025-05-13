@@ -42,7 +42,7 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
         detector
     time_delay_idx: dict
         Dictionary giving time delay index (time_delay*sample_rate) for
-        each ifo
+        each detector
     min_nifos: int
         The minimum number of detectors needed to be above threshold
         for a coincidence to be produced
@@ -55,9 +55,10 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
     """
     coinc_list = np.array([], dtype=int)
     for ifo in idx_dict.keys():
-        # Create list of indexes above threshold in single detector in geocent
-        # time. Can then search for triggers that appear in multiple detectors
-        # later.
+        # Create list of indexes above single detector threshold, in geocent
+        # time (-time_delay_idx[ifo] applies the time delay for the specific
+        # detector). This can be searched later for triggers appearing in
+        # multiple detectors.
         if len(idx_dict[ifo]) != 0:
             coinc_list = np.hstack(
                 [coinc_list, idx_dict[ifo] - time_delay_idx[ifo]]
