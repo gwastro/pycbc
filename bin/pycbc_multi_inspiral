@@ -74,16 +74,16 @@ def slide_limiter(n_ifos, slide_shift, segment_length):
         The number of independent timeslides
     '''
     low, upp = 1, segment_length
-    num_slides = 1
-    if n_ifos > 1:
-        stride_dur = segment_length/2
-        num_slides = np.int32(1 +
-                              np.floor(stride_dur /
-                                       (slide_shift*(n_ifos-1))))
-        assert np.logical_and(num_slides >= low, num_slides <= upp), \
-               "the combination (slideshift, segment_dur)"\
-               f" = ({slide_shift:.2f},{stride_dur*2:.2f})"\
-               f" goes over the allowed upper bound {upp}"
+    if n_ifos == 1:
+        return 1
+    stride_dur = segment_length/2
+    num_slides = 1 + int(stride_dur /
+                         (slide_shift*(n_ifos-1)))
+    assert (num_slides >= low) and (num_slides <= upp), \
+           "the combination (slideshift, segment_dur)"\
+           f" = ({slide_shift:.2f},{stride_dur*2:.2f})"\
+           f" goes over the allowed upper bound {upp}"
+
     return num_slides
 
 
@@ -350,11 +350,13 @@ args = parser.parse_args()
 init_logging(args.verbose)
 # Setting the number of shortslides
 nifo = len(args.instruments)
-num_slides = slide_limiter(
-    nifo,
-    args.slide_shift,
-    args.segment_length[args.instruments[0]]
-) if args.do_shortslides else 1
+num_slides = 1
+if args.do_shortslides:
+    num_slides = slide_limiter(
+        nifo,
+        args.slide_shift,
+        args.segment_length[args.instruments[0]]
+    )
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 # Check that the number of IFOs requested to have single SNR above threshold
