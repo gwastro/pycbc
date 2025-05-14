@@ -373,7 +373,6 @@ def reweight_snr_by_null(
     See Eq. 16 of Williamson et al. (2014) [arXiv:1410.6042] and note
     that the 4.25 appearing there is actually linked to the 5.25 of
     Eq. 12, hence the -1 carried out in this function.
-.
 
     Parameters
     ----------
