@@ -61,7 +61,7 @@ def sfr_grb_2008(z):
     return rho_z
 
 
-def sfr_madau_dickinson_2014(z):
+def sfr_madau_dickinson_2014(z, gamma=2.7, kappa=5.6, z_peak=1.9):
     r""" The madau-dickinson 2014 star formation rate (SFR).
 
     Parameters
@@ -79,7 +79,7 @@ def sfr_madau_dickinson_2014(z):
          Pease see Eq.(15) in <arXiv:1403.0007> for more details.
     """
 
-    rho_z = 0.015 * (1+z)**2.7 / (1 + ((1+z)/2.9)**5.6)
+    rho_z = 0.015 * (1+z)**gamma / (1 + ((1+z)/(1+z_peak))**kappa)
     return rho_z
 
 
