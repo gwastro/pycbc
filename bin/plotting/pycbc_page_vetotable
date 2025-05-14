@@ -23,8 +23,8 @@ import logging
 import numpy
 import sys
 
-from ligo.lw import lsctables
-from ligo.lw import utils
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils
 
 import pycbc.results
 from pycbc.results import save_fig_with_metadata

@@ -32,7 +32,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 import lal
-from ligo.lw import utils as ligolw_utils, ligolw, lsctables
+from igwn_ligolw import utils as ligolw_utils, ligolw, lsctables
 
 from pycbc import waveform, frame, libutils
 from pycbc.opt import LimitedSizeDict
@@ -313,7 +313,7 @@ class _XMLInjectionSet(object):
         """
         xmldoc = ligolw.Document()
         xmldoc.appendChild(ligolw.LIGO_LW())
-        simtable = lsctables.New(lsctables.SimInspiralTable)
+        simtable = lsctables.SimInspiralTable.new()
         xmldoc.childNodes[0].appendChild(simtable)
         if static_args is None:
             static_args = {}

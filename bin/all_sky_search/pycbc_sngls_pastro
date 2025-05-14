@@ -12,7 +12,7 @@ coincidences.
 
 import pycbc, pycbc.io, copy
 import argparse, logging, numpy as np
-from ligo.lw import lsctables, utils as ligolw_utils
+from igwn_ligolw import lsctables, utils as ligolw_utils
 from pycbc import conversions as conv
 from pycbc.events import veto
 from pycbc.io.ligolw import LIGOLWContentHandler

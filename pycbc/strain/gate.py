@@ -168,9 +168,7 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     # Copy the data and zero inside the hole
     if copy:
         data = data.copy()
-    # Here's ambiguity about when gate end time exactly is, rindex-1 or rindex?
     data[lindex:rindex] = 0
-
     # get the over-whitened gated data
     tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
     owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()

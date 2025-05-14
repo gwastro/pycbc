@@ -34,7 +34,7 @@ import logging
 import urllib.parse
 
 import igwn_segments as segments
-from ligo.lw import utils, table
+from igwn_ligolw import utils, ligolw
 from gwdatafind import find_urls as find_frame_urls
 
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
@@ -888,7 +888,7 @@ def get_segment_summary_times(scienceFile, segmentName):
     )
 
     # Get the segment_def_id for the segmentName
-    segmentDefTable = table.Table.get_table(xmldoc, "segment_definer")
+    segmentDefTable = ligolw.Table.get_table(xmldoc, "segment_definer")
     for entry in segmentDefTable:
         if (entry.ifos == ifo) and (entry.name == channel):
             if len(segmentName) == 2 or (entry.version==version):
@@ -899,7 +899,7 @@ def get_segment_summary_times(scienceFile, segmentName):
                          %(segmentName))
 
     # Get the segmentlist corresponding to this segmentName in segment_summary
-    segmentSummTable = table.Table.get_table(xmldoc, "segment_summary")
+    segmentSummTable = ligolw.Table.get_table(xmldoc, "segment_summary")
     summSegList = segments.segmentlist([])
     for entry in segmentSummTable:
         if entry.segment_def_id == segDefID:

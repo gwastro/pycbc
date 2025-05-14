@@ -204,7 +204,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
         # the flag used in `_loglr`
         self.return_sh_hh = False
-        self.sample_rate = float(sample_rate)
+        self.sample_rate = float(sample_rate) if sample_rate is not None else None
         self.kwargs = kwargs
         variable_params, kwargs = self.setup_marginalization(
                                variable_params,
@@ -298,9 +298,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 tlen = int(round(self.sample_rate *
                            self.whitened_data[det].duration))
                 flen = tlen // 2 + 1
-                hp.resize(flen)
-                hc.resize(flen)
-                self._whitened_data[det].resize(flen)
+            else:
+                flen = len(self._whitened_data[det])
+            
+            hp.resize(flen)
+            hc.resize(flen)
+            self._whitened_data[det].resize(flen)
 
             cplx_hpd[det], _, _ = matched_filter_core(
                                  hp,
@@ -332,6 +335,10 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
+                pol_phase = numpy.exp(-2.0j * params['polarization'])
+                f = (fp + 1.0j * fc) * pol_phase
+                fp = f.real
+                fc = f.imag
             else:
                 fp, fc = self.dets[det].antenna_pattern(
                                         params['ra'],
@@ -504,7 +511,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         # store the maxl polarization
         setattr(self._current_stats,
                 'maxl_polarization',
-                params['polarization'])
+                params['polarization'][idx])
         setattr(self._current_stats, 'maxl_loglr', maxl)
 
         # just store the maxl optimal snrsq

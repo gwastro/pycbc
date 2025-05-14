@@ -6,7 +6,7 @@
 import argparse, numpy, logging, sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 from scipy.special import erfc, erfinv
 from pycbc.io.hdf import HFile
@@ -101,7 +101,7 @@ if h_inc_back_num is None:
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
     import sys
-    fig = pylab.figure()
+    fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.set_xlim(0, 1)
@@ -129,42 +129,38 @@ if h_inc_back_num > h_iterations:
 args.cumulative = not args.not_cumulative
 
 foreground_livetime = conv.sec_to_year(f.attrs['foreground_time'])
-try:
     
-    if args.cumulative:
-        cstat_fore = f['foreground/stat'][:]
-        cstat_fore.sort()
-        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / foreground_livetime
-        fap_end = f['foreground/fap'][:].min() * args.trials_factor
-    else:
-        cstat_fore = f['foreground/stat'][:]
-        ssort = cstat_fore.argsort()
-        cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
-         # Correct the foreground ifars depending on the values calculated
-         # under a particular inclusive background distribution.
+if args.cumulative:
+    cstat_fore = f['foreground/stat'][:]
+    cstat_fore.sort()
+    cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / foreground_livetime
+else:
+    cstat_fore = f['foreground/stat'][:]
+    ssort = cstat_fore.argsort()
+    cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
+     # Correct the foreground ifars depending on the values calculated
+     # under a particular inclusive background distribution.
 
-        try:
-            ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
-        except KeyError:
-            ifar_h_inc = []
+    try:
+        ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
+    except KeyError:
+        ifar_h_inc = []
 
-        try:
-            stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
-        except KeyError:
-            stat_h_inc = []
+    try:
+        stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
+    except KeyError:
+        stat_h_inc = []
 
-        for i in range(len(ifar_h_inc)):
-            orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
-            if orig_idx is not None:
-                cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
+    for i in range(len(ifar_h_inc)):
+        orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
+        if orig_idx is not None:
+            cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
 
-        cstat_rate = cstat_rate[ssort]
-        cstat_fore = cstat_fore[ssort]
-        cstat_fap = p_from_far(cstat_rate, foreground_livetime)
-    
-    logging.info('Found %s foreground triggers' % len(cstat_fore))
-except:
-    cstat_fore = None
+    cstat_rate = cstat_rate[ssort]
+    cstat_fore = cstat_fore[ssort]
+    cstat_fap = p_from_far(cstat_rate, foreground_livetime)
+
+logging.info('Found %s foreground triggers' % len(cstat_fore))
 
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
@@ -240,12 +236,12 @@ else:
         plot_xmax = max(cstat_back.max(), cstat_fore.max())
     plot_xmax += (plot_xmax - plot_xmin)/10.
 
-fig = pylab.figure(1)
+fig = plt.figure(1)
 back_marker = 'x'
-pylab.scatter(cstat_back_exc, far_back_exc, color='gray', marker=back_marker, s=10, label='Closed Box Background')
+plt.scatter(cstat_back_exc, far_back_exc, color='gray', marker=back_marker, s=10, label='Closed Box Background')
 
 if not args.closed_box:
-    pylab.scatter(cstat_back, far_back, color='black', marker=back_marker, s=10,
+    plt.scatter(cstat_back, far_back, color='black', marker=back_marker, s=10,
         label='Open Box Background')
 
     if cstat_fore is not None and len(cstat_fore):
@@ -267,12 +263,12 @@ if not args.closed_box:
                 cstat_fore = numpy.delete(cstat_fore, rm_idx)
                 cstat_rate = numpy.delete(cstat_rate, rm_idx)
 
-            pylab.scatter(cstat_fore_h_rm, cstat_rate_h_rm, s=60, color='#b66dff',
+            plt.scatter(cstat_fore_h_rm, cstat_rate_h_rm, s=60, color='#b66dff',
                           marker=args.fg_marker_h_rm,
                           label='Hierarchically Removed Foreground', zorder=100,
                           linewidth=0.5, edgecolors='white')
 
-        pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
+        plt.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
                       marker=args.fg_marker, label='Foreground', zorder=100,
                       linewidth=0.5, edgecolors='white')
 
@@ -284,11 +280,11 @@ if not args.closed_box:
                 arr_start = cstat_rate[ii]
                 # make the arrow length 1/15 the height of the plot
                 arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
-                pylab.plot([r, r], [arr_start, arr_end], lw=2, color='black',
+                plt.plot([r, r], [arr_start, arr_end], lw=2, color='black',
                            zorder=99)
-                pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
+                plt.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
                            zorder=97)
-                pylab.scatter([r], [arr_end], marker='v', c='black',
+                plt.scatter([r], [arr_end], marker='v', c='black',
                               edgecolors='white', lw=0.5, s=40, zorder=98) 
 
             if h_inc_back_num > 0:
@@ -300,56 +296,56 @@ if not args.closed_box:
                         continue
                     # make the arrow length 1/15 the height of the plot
                     arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
-                    pylab.plot([r, r], [arr_start, arr_end], lw=2,
+                    plt.plot([r, r], [arr_start, arr_end], lw=2,
                               color='black', zorder=99)
-                    pylab.plot([r, r], [arr_start, arr_end], lw=2.6,
+                    plt.plot([r, r], [arr_start, arr_end], lw=2.6,
                               color='white', zorder=97)
-                    pylab.scatter([r], [arr_end], marker='v', c='black',
+                    plt.scatter([r], [arr_end], marker='v', c='black',
                                  edgecolors='white', lw=0.5, s=40, zorder=98)
 
 if not args.cumulative:
     # add second y-axis for probabilities, sigmas
     sigmas = numpy.arange(6)+1
-    ax1 = pylab.gca()
+    ax1 = plt.gca()
     if hasattr(ax1, 'set_facecolor'):
         ax1.set_facecolor('none')
     else:
         ax1.set_axis_bgcolor('none')
     ax2 = ax1.twinx()
     ax1.set_zorder(ax2.get_zorder()+1) # put axis1 on top
-    pylab.sca(ax2)
+    plt.sca(ax2)
     # where to stick the sigma lables; we'll put them 1/25th from the
     # right axis
     anntx = plot_xmax - (plot_xmax - plot_xmin)/25.
     sigps = p_from_sigma(sigmas)
     for ii,p in enumerate(sigps[:-1]):
         nextp = sigps[ii+1]
-        pylab.axhspan(far_from_p(nextp, foreground_livetime, far_back.max()),
+        plt.axhspan(far_from_p(nextp, foreground_livetime, far_back.max()),
                       far_from_p(p, foreground_livetime, far_back.max()),
                       linewidth=0,
-                      color=pylab.cm.Blues(float(sigmas[ii+1]) / sigmas.size),
+                      color=plt.cm.Blues(float(sigmas[ii+1]) / sigmas.size),
                       alpha=0.3, zorder=-1) 
             # add sigma label
-        pylab.annotate('%1.0f$\sigma$' % sigmas[ii],
+        plt.annotate('%1.0f$\sigma$' % sigmas[ii],
                        (anntx, far_from_p(p, foreground_livetime,
                        far_back.max())), zorder=100)
         ax2.plot([],[])
-    pylab.sca(ax1)
+    plt.sca(ax1)
 
-pylab.xlabel(r'Ranking Statistic')
-pylab.yscale('log')
-pylab.ylim(plot_ymin, plot_ymax * 10.0)
-pylab.xlim(plot_xmin, plot_xmax)
-pylab.legend(loc="upper right", fontsize=9)
-pylab.grid()
+plt.xlabel(r'Ranking Statistic')
+plt.yscale('log')
+plt.ylim(plot_ymin, plot_ymax * 10.0)
+plt.xlim(plot_xmin, plot_xmax)
+plt.legend(loc="upper right", fontsize=9)
+plt.grid()
     
 if args.cumulative:
-    pylab.ylabel('Cumulative Rate (yr$^{-1}$)')   
+    plt.ylabel('Cumulative Rate (yr$^{-1}$)')   
 else:
     if args.trials_factor == 1:
-        pylab.ylabel('False Alarm Rate (yr$^{-1}$)')
+        plt.ylabel('False Alarm Rate (yr$^{-1}$)')
     elif args.trials_factor >= 1:
-        pylab.ylabel('Combined False Alarm Rate (yr$^{-1}$)')
+        plt.ylabel('Combined False Alarm Rate (yr$^{-1}$)')
     ax2.set_ylabel('p-value')
     ax2.set_yscale('log')
     ymin, ymax = ax1.get_ylim()
@@ -371,11 +367,11 @@ else:
     pticks = numpy.arange(tick_min, tick_max+1)
     # Convert back to FAR
     fticks = far_from_p(10**pticks, foreground_livetime, far_back.max())
-    ax2.yaxis.set_major_locator(pylab.NullLocator())
+    ax2.yaxis.set_major_locator(plt.NullLocator())
     ax2.set_yticks(fticks)
     # Set the labels
     ax2.set_yticklabels(['$10^{%i}$' %(val) for val in pticks.astype(int)])
-pylab.tight_layout()
+plt.tight_layout()
 figure_title = "%s: " % f.attrs['ifos'] if 'ifos' in f.attrs else ""
 figure_title += "%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank"
 

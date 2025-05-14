@@ -36,7 +36,7 @@ from pycbc.results import pygrb_postprocessing_utils as ppu
 plt.switch_backend('Agg')
 rc('font', size=14)
 
-__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
@@ -91,11 +91,12 @@ ax.grid()
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
 # Trigger RA/Dec data is stored in radians, so convert to degrees
-ax.plot(numpy.rad2deg(trig_data['network/ra']), numpy.rad2deg(trig_data['network/dec']),
-        'ko', markerfacecolor='blue')
+ax.plot(numpy.rad2deg(trig_data['network/ra']),
+        numpy.rad2deg(trig_data['network/dec']),
+        'ko',
+        markerfacecolor='blue')
 # Wrap up
 plt.tight_layout()
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=plot_caption)
-                       #fig_kwds=fig_kwds,
 plt.close()

@@ -94,8 +94,8 @@ def mkdir(dir_name):
         pass
 
 def mc_min_max_from_sorted_file(fname):
-    from ligo.lw.utils import load_filename
-    from ligo.lw.table import Table
+    from igwn_ligolw.utils import load_filename
+    from igwn_ligolw.ligolw import Table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     from pycbc.io.ligolw import LIGOLWContentHandler
 
@@ -303,7 +303,8 @@ f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 import numpy as np
-from ligo.lw import utils, table
+from igwn_ligolw import utils
+from igwn_ligolw.ligolw import Table
 import glob
 
 from pycbc.io.ligolw import LIGOLWContentHandler
@@ -329,12 +330,12 @@ for row in res:
     if row['bank'] not in btables:
         indoc = utils.load_filename(eval(row['bank']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        btables[row['bank']] = table.Table.get_table(indoc, "sngl_inspiral")
+        btables[row['bank']] = Table.get_table(indoc, "sngl_inspiral")
 
     if row['sim'] not in itables:
         indoc = utils.load_filename(eval(row['sim']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral")
+        itables[row['sim']] = Table.get_table(indoc, "sim_inspiral")
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
@@ -456,10 +457,9 @@ f = open("scripts/pycbc_banksim_plots", "w")
 f.write("""#!/usr/bin/env python
 import matplotlib
 matplotlib.use('agg')
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 from pycbc import pnutils
 import numpy
-import pylab
 
 goldenratio = 2 / (1 + 5**.5)
 #matplotlib.rcParams.update({
@@ -515,40 +515,40 @@ s1m = (ispin1x**2+ispin1y**2+ispin1z**2)**0.5
 s2m = (ispin2x**2+ispin2y**2+ispin2z**2)**0.5
 
 def mhist(c1, name, cum=False, normed=True, log=False, bins=100, xl="", yl=""):
-    pylab.figure()
-    pylab.xlabel(xl)
-    pylab.ylabel(yl)
+    plt.figure()
+    plt.xlabel(xl)
+    plt.ylabel(yl)
     if log:
-        pylab.yscale('log')
-    pylab.hist(c1, bins=bins, density=normed, histtype='step', cumulative=cum)
-    pylab.savefig(name)
+        plt.yscale('log')
+    plt.hist(c1, bins=bins, density=normed, histtype='step', cumulative=cum)
+    plt.savefig(name)
 
 def mplot(c1, c2, c, name, xl="", yl="", vmin=None, vmax=None):
-    pylab.figure()
-    pylab.axes((0.15, 0.15, 0.8, 0.8))
-    pylab.scatter(c1, c2, c=c, linewidth=0, s=1, vmin=vmin, vmax=vmax)
-    pylab.colorbar()
-    pylab.xlim(min(c1), max(c1))
-    pylab.ylim(min(c2), max(c2))
-    pylab.xlabel(xl)
-    pylab.ylabel(yl)
-    pylab.savefig(name)
+    plt.figure()
+    plt.axes((0.15, 0.15, 0.8, 0.8))
+    plt.scatter(c1, c2, c=c, linewidth=0, s=1, vmin=vmin, vmax=vmax)
+    plt.colorbar()
+    plt.xlim(min(c1), max(c1))
+    plt.ylim(min(c2), max(c2))
+    plt.xlabel(xl)
+    plt.ylabel(yl)
+    plt.savefig(name)
 
 mhist(imchirp-tmchirp, "plots/hist-mchirp-diff.png")
 mhist((imchirp-tmchirp)/imchirp, "plots/hist-mchirp-reldiff.png")
 mhist(match, "plots/hist-match.png")
 mhist(match, "plots/hist-match-cum.png", cum=1, log=True, bins=10000, xl = "Match", yl="Fraction of injections < Match")
 
-pylab.figure(102)
-pylab.ylabel('Fraction of Injections')
-pylab.xlabel('Fitting factor')
-pylab.yscale('log')
-pylab.xlim(0.95, 1.0)
-pylab.ylim(1e-4, 1)
-hBins = pylab.arange(0.,1.,0.0005,dtype=float)
-n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,density=True)
-pylab.grid()
-pylab.savefig("plots/cum_hist.png")
+plt.figure(102)
+plt.ylabel('Fraction of Injections')
+plt.xlabel('Fitting factor')
+plt.yscale('log')
+plt.xlim(0.95, 1.0)
+plt.ylim(1e-4, 1)
+hBins = numpy.arange(0.,1.,0.0005,dtype=float)
+n, bins,patches=plt.hist(match,cumulative=1,bins=hBins,density=True)
+plt.grid()
+plt.savefig("plots/cum_hist.png")
 
 mplot(imass1, imass2, match, "plots/m1-m2-match.png")
 mplot(tmass1, tmass2, match, "plots/tm1-tm2-match.png")

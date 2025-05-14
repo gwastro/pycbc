@@ -147,7 +147,7 @@ dag.add_node(pnode)
 f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 import numpy as np
-from ligo.lw import utils, table, lsctables
+from igwn_ligolw import utils, lsctables
 import glob
 from pycbc.io.ligolw import LIGOLWContentHandler
 
@@ -216,10 +216,9 @@ f.write("""#!/usr/bin/env python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm
-import pylab
+from matplotlib import pyplot as plt
 import numpy as np
-from ligo.lw import utils, table, lsctables
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import MultipleLocator
 import glob
 
 from pycbc import pnutils
@@ -237,14 +236,14 @@ def basic_scatter(out_name, xname, yname, title, xval, yval,
                   ymin=None, majorL=None, minorL=None):
     cmap = matplotlib.cm.jet
     cmap.set_under(color='gray')
-    fig = pylab.figure(num=None, figsize=(10, 5))
-    pylab.scatter(xval, yval, c=cval, linewidths=0, s=3, vmin=vmin, vmax=vmax, cmap=cmap, alpha=0.7)
+    fig = plt.figure(num=None, figsize=(10, 5))
+    plt.scatter(xval, yval, c=cval, linewidths=0, s=3, vmin=vmin, vmax=vmax, cmap=cmap, alpha=0.7)
     if cval is not None:
-        bar = pylab.colorbar()
+        bar = plt.colorbar()
         bar.set_label(cname)
         
-    pylab.xlabel(xname)
-    pylab.ylabel(yname)
+    plt.xlabel(xname)
+    plt.ylabel(yname)
     
     if xmin is None:
         xmin = min(xval)
@@ -252,8 +251,8 @@ def basic_scatter(out_name, xname, yname, title, xval, yval,
     if ymin is None:
         ymin = min(yval)
         
-    pylab.xlim(xmin, max(xval))
-    pylab.ylim(ymin, max(yval))
+    plt.xlim(xmin, max(xval))
+    plt.ylim(ymin, max(yval))
     
     ax = fig.gca()
     if majorL:
@@ -266,10 +265,10 @@ def basic_scatter(out_name, xname, yname, title, xval, yval,
     
     fol = 'plots/' 
     
-    pylab.grid()
-    pylab.title(title)
-    pylab.savefig(fol + 'THUMB-' + out_name, dpi=50)
-    pylab.savefig(fol + out_name, dpi=500)
+    plt.grid()
+    plt.title(title)
+    plt.savefig(fol + 'THUMB-' + out_name, dpi=50)
+    plt.savefig(fol + out_name, dpi=500)
 
 fils = glob.glob("result*.dat")
 for fil in fils:

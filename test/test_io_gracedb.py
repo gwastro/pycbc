@@ -25,8 +25,8 @@ from utils import parse_args_cpu_only, simple_exit
 from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 from lal import series as lalseries
 
 # if we have the GraceDb module then we can do deeper tests,
@@ -37,10 +37,10 @@ except ImportError:
     GraceDb = None
 
 
-parse_args_cpu_only("io.live")
+parse_args_cpu_only("io.gracedb")
 
 
-class TestIOLive(unittest.TestCase):
+class TestIOGraceDB(unittest.TestCase):
     def setUp(self):
         self.template = {'template_id': 0,
                          'mass1': 10,
@@ -167,7 +167,7 @@ class TestIOLive(unittest.TestCase):
 
 
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestIOLive))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestIOGraceDB))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)

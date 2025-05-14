@@ -22,7 +22,7 @@ import os
 import glob
 import tempfile
 
-from ligo.lw import lsctables, utils as ligolw_utils
+from igwn_ligolw import lsctables, utils as ligolw_utils
 
 import pycbc
 from pycbc.waveform import bank as wavebank

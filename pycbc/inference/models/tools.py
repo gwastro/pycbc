@@ -545,6 +545,7 @@ class DistMarg():
         # If we had really poor efficiency at finding a point, we should
         # give up and just use the original random draws
         if len(ix) < 0.05 * vsamples:
+            self.marginalize_vector_params['logw_partial'] = numpy.zeros(vsamples)
             return
 
         # fill back to fixed size with repeat samples
