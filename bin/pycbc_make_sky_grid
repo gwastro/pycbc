@@ -55,8 +55,15 @@ def make_single_det_grid(args):
     Since a one-detector network has no sky localization capability,
     we just put a single point at the center of the input distribution.
     """
-    sky_grid = SkyGrid(
-        [args.ra], [args.dec], args.instruments, args.trigger_time
+    if "Uniform" not in args.input_dist:
+        input_dist = eval(args.input_dist)
+        sky_grid = SkyGrid(
+            input_dist.get_max_prob_point()[0], input_dist.get_max_prob_point()[1],
+            args.instruments, args.trigger_time
+    )
+    else:
+        sky_grid = SkyGrid(
+            [args.ra], [args.dec], args.instruments, args.trigger_time
     )
     return sky_grid
 
@@ -75,10 +82,10 @@ def make_multi_det_grid(args):
         sky_dist = input_dist.to_uniform_patch(args.coverage) 
     else: 
         sky_dist = eval(args.input_dist)
-    if 'FisherSky' in args.input_dist:
+    if 'Uniform' not in args.input_dist:
         grid = np.vstack((np.empty((0,2)), input_dist.get_max_prob_point()))
-    elif 'HealpixSky' in args.input_dist:
-        grid = np.vstack((np.empty((0,2)), input_dist.get_max_pixel_prob()))
+    else:
+        grid = np.vstack((np.empty((0,2)), (args.ra, args.dec)))
 
     while True:
         prev_size = grid.shape[0]
@@ -159,15 +166,17 @@ parser.add_argument(
 parser.add_argument(
     "--input-dist",
     type=str,
-    default='UniformSky()',
+    default='UniformDiskSky()',
     help="Input distribution of the sky map that you have, could "
     "be HealpixSky or FisherSky. See sky location documentation for "
-    "more details",
+    "more details. If you not specify any input distribution, it "
+    "will generate a UniformDiskSky distribution and you will need "
+    "to specify ra dec and sky error.",
 )
 parser.add_argument(
     '--coverage',
     type=float,
-    help="Percentage of probability that you want to cover",
+    help="Fraction of probability that you want to cover",
 )
 parser.add_argument(
     '--trigger-time',

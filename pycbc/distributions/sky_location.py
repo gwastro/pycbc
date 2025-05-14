@@ -48,10 +48,7 @@ class UniformSky(angular.UniformSolidAngle):
 
 
 class UniformDiskSky:
-    """A distribution that is a uniform disk on the sky and is the uniform 
-    the patch of the FisherSky distribution. The scale parameter of the 
-    FisherSky distribution become a radius parameter to describe the radius 
-    of the distribution on the sky. As in UniformSky, the declination 
+    """A distribution that represents a uniform disk on the sky. The declination
     varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
              
     Parameters
@@ -85,7 +82,7 @@ class UniformDiskSky:
             )
         if radius < 0 or radius > 2 * numpy.pi:
             raise ValueError(
-                'Radius must be non-negative and smaller than 2π '
+                'Radius must be non-negative and smaller than 2π'
             )
         # Prepare a rotation that puts the North Pole at the mean position
         self.rotation = Rotation.from_euler(
@@ -112,7 +109,7 @@ class UniformDiskSky:
         return cls(
             mean_ra=mean_ra,
             mean_dec=mean_dec,
-            raidus=radius,
+            radius=radius,
         )
 
     def get_max_prob_point(self):
@@ -335,17 +332,12 @@ class HealpixSky:
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
         return cls(healpix_file=healpix_file)
 
-    def get_max_pixel_prob(self):
+    def get_max_prob_point(self):
         coords = self.healpix_map.pix2ang(
                 numpy.where(self.pix_probs==self.pix_probs.max())[0],
                 lonlat=True
         )
-
-        pixel_coord = numpy.array([
-                numpy.deg2rad(coords[0]), 
-                numpy.deg2rad(coords[1])
-        ]).reshape(1,2)
-        return pixel_coord
+        return numpy.deg2rad(coords[0]), numpy.deg2rad(coords[1])
 
     def pixel_corners(self, indices):
         """Return the Cartesian vectors corresponding to the corners of one or
@@ -365,7 +357,8 @@ class HealpixSky:
         return phi
 
     def to_uniform_patch(self, coverage):
-        """Apply the coverage criterion on the skymap
+        """Return a new HealpixSky object that represents a patch of uniform probability,
+        defined as the region that encloses a given probability in the original map.
         """
         uniform_patch = copy.deepcopy(self)
         non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
@@ -375,9 +368,7 @@ class HealpixSky:
         ind_prob_sorted = numpy.sort(ind_prob, order='prob')
         prob = numpy.sort(prob)
         ind_prob_rev_sorted = ind_prob_sorted[::-1]
-        list_ind = []
-        for i in range(len(ind_prob_sorted)):
-            list_ind.append(ind_prob_rev_sorted[i][0])
+        list_ind = [(ind_prob_rev_sorted[i][0]) for i in range(len(ind_prob_sorted))]
         cum_sum_prob = numpy.cumsum(prob[::-1])
         covered_sky = cum_sum_prob[cum_sum_prob<coverage]
         uniform_patch.pix_probs[list_ind[:len(covered_sky)]] = 1/len(covered_sky)
