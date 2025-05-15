@@ -302,7 +302,7 @@ def null_snr(
     and null SNR > (null_grad * rho_coh + null_min) elsewhere. See
     Eq. 3.1 of Harry & Fairhurst (2011) [arXiv:1012.4939] or
     Eqs. 11 and 12 of Williamson et al. (2014) [arXiv:1410.6042].
-    Note that in Eq. 12 rho_coh should instead by rho_coh-null_step as
+    Note that in Eq. 12 rho_coh should instead be rho_coh-null_step as
     reported in Eq. 4.73 of https://orca.cardiff.ac.uk/id/eprint/128124/.
 
     Parameters
