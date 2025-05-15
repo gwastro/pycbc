@@ -781,7 +781,7 @@ with ctx:
                     # throughout the code, even in the single IFO case.
                     # The calculation is performed only if triggers were
                     # gathered so far. Once again, the appropriate dictionary
-                    # of time delays wrt to the geocenter must be passed to
+                    # of time delays wrt the geocenter must be passed to
                     # operate at the geocenter.
                     if len(coinc_idx) != 0:
                         # Find coinc SNR at trigger times and apply coinc SNR
