@@ -1152,15 +1152,15 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # add constant and this detector's normalization to log likelihood
             logL += C
             logL += norm
-            print(f'df: {df}')
-            print(f'C: {C}, x: {x}, y: {y}')
-            print(f'dd: {dd}, h1d: {h1d}, hjd: {hjd}')
-            print(f'h1h1: {h1h1}, h1hj: {h1hj}, hjhk: {hjhk}')
-            print(f'logL (before det sum): {logL}')
+            #print(f'df: {df}')
+            #print(f'C: {C}, x: {x}, y: {y}')
+            #print(f'dd: {dd}, h1d: {h1d}, hjd: {hjd}')
+            #print(f'h1h1: {h1h1}, h1hj: {h1hj}, hjhk: {hjhk}')
+            #print(f'logL (before det sum): {logL}')
         # evaluate the Bessel fn over all detectors
         A = numpy.sqrt(x_net*x_net + y_net*y_net)
         logL += numpy.log(special.i0e(A)) + abs(A)
-        print(f'A: {A}, logL (after det sum): {logL}')
+        #print(f'A: {A}, logL (after det sum): {logL}')
         # save the maxL phase for the ref mode
         maxl_phase = numpy.angle(x_net + 1j*y_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
