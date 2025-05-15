@@ -1053,19 +1053,14 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         """Adds the maxL polarization and corresponding likelihood."""
         return ['maxl_phase']
     
+    @catch_waveform_error
     def _loglikelihood(self):
         r"""Computes the log likelihood.
         """
         # get the zero-phase waveforms
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
-        # get the gated data
+        wfs = self.get_waveforms()
+        # get data
+        data = self.get_data()
         gated_data = self.get_gated_data()
         # gating params
         gate_times = self.get_gate_times()
@@ -1082,10 +1077,10 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
-            # whiten the gated data in this detector
-            invasd = self._invasds[det][slc]
+            # overwhiten the gated data in this detector
             invpsd = self._invpsds[det][slc]
-            d_gated = gated_data[det][slc] * invasd
+            d = data[det][slc]
+            d_gated = gated_data[det][slc] * invpsd
             # gate params in this detector
             gatestartdelay, dgatedelay = gate_times[det]
             # calculate the antenna pattern for each mode
@@ -1111,59 +1106,61 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # gate and whiten the first mode
             h1_gated = h1.to_timeseries()
             h1_gated = h1_gated.gate(gatestartdelay + dgatedelay/2,
-                           window=dgatedelay/2, copy=False,
-                           kernel=invasd, method='paint',
-                           zero_before_gate=self.zero_before_gate,
-                           zero_after_gate=self.zero_after_gate)
+                                     window=dgatedelay/2, copy=True,
+                                     invpsd=invpsd, method='paint')
             h1_gated = h1_gated.to_frequencyseries()
-            h1_gated *= invasd
+            h1_gated *= invpsd
             # gate and whiten the sum of modes
             if higher_modes:
                 hj_gated = hj.to_timeseries()
                 hj_gated = hj_gated.gate(gatestartdelay + dgatedelay/2,
-                                         window=dgatedelay/2, copy=False,
-                                         kernel=invasd, method='paint',
-                                         zero_before_gate=self.zero_before_gate,
-                                         zero_after_gate=self.zero_after_gate)
+                                         window=dgatedelay/2, copy=True,
+                                         invpsd=invpsd, method='paint')
                 hj_gated = hj_gated.to_frequencyseries()
-                hj_gated *= invasd
+                hj_gated *= invpsd
             # evaluate the inner products with data
-            dd = d_gated.inner(d_gated) # <d, d>
-            h1d = h1_gated.inner(d_gated) # O(h1, d)
+            dd = d.inner(d_gated) # <d, d>
+            h1d = h1.inner(d_gated) # O(h1, d)
+            dh1 = d.inner(h1_gated) # O(d, h1)
             hjd = 0.
+            dhj = 0.
             if higher_modes:
-                hjd += hj_gated.inner(d_gated) # <sum(hj), d>
+                hjd += hj.inner(d_gated) # <sum(hj), d>
+                dhj += d.inner(hj_gated) # <d, sum(hj)>
             # take inner products with h1
-            h1h1 = h1_gated.inner(h1_gated) # <h1, h1>
+            h1h1 = h1.inner(h1_gated) # <h1, h1>
             h1hj = 0.
+            hjh1 = 0.
             if higher_modes:
-                h1hj += h1_gated.inner(hj_gated) # O(h1, sum(hj))
+                h1hj += h1.inner(hj_gated) # O(h1, sum(hj))
+                hjh1 += hj.inner(h1_gated)
             # gate the sum of the other modes
             hjhk = 0.
             if higher_modes:
                 # take inner product with sum(hj)
-                hjhk = hj_gated.inner(hj_gated) # <sum(hj), sum(hk)>
+                hjhk = hj.inner(hj_gated) # <sum(hj), sum(hk)>
             # evaluate the constant
             # each inner product carries a term 4*df for the full integral
-            df = invasd.delta_f
-            C = 4*df*(-0.5*dd.real - 0.5*h1h1.real - 0.5*hjhk.real + hjd.real)
+            df = invpsd.delta_f
+            C = 4*df*(-0.5*dd.real - 0.5*h1h1.real - 0.5*hjhk.real + 0.5*(hjd.real + dhj.real))
             # evaluate x and y in the Bessel fn
-            x = 4*df*(h1d.real - h1hj.real)
-            y = 4*df*h1d.imag
+            # divide by factor of 2 to account for cross terms
+            x = 2*df*(h1d.real + dh1.real - h1hj.real - hjh1.real)
+            y = 2*df*(h1d.imag - dh1.imag)
             x_net += x
             y_net += y
             # add constant and this detector's normalization to log likelihood
             logL += C
             logL += norm
-            # print(f'df: {df}')
-            # print(f'C: {C}, x: {x}, y: {y}')
-            # print(f'dd: {dd}, h1d: {h1d}, hjd: {hjd}')
-            # print(f'h1h1: {h1h1}, h1hj: {h1hj}, hjhk: {hjhk}')
-            # print(f'logL (before det sum): {logL}')
+            print(f'df: {df}')
+            print(f'C: {C}, x: {x}, y: {y}')
+            print(f'dd: {dd}, h1d: {h1d}, hjd: {hjd}')
+            print(f'h1h1: {h1h1}, h1hj: {h1hj}, hjhk: {hjhk}')
+            print(f'logL (before det sum): {logL}')
         # evaluate the Bessel fn over all detectors
         A = numpy.sqrt(x_net*x_net + y_net*y_net)
         logL += numpy.log(special.i0e(A)) + abs(A)
-        # print(f'A: {A}, logL (after det sum): {logL}')
+        print(f'A: {A}, logL (after det sum): {logL}')
         # save the maxL phase for the ref mode
         maxl_phase = numpy.angle(x_net + 1j*y_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
@@ -1176,6 +1173,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         """
         return [type(self)]
 
+    @catch_waveform_error
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
