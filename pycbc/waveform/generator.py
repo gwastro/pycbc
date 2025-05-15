@@ -1414,6 +1414,9 @@ def get_td_generator(approximant, modes=False):
         if modes:
             return TDomainCBCModesGenerator
         return TDomainCBCGenerator
+    
+    if approximant in waveform_modes._mode_waveform_td:
+        return TDomainCBCModesGenerator
 
     if approximant in ringdown.ringdown_td_approximants:
         if approximant in ['TdQNMfromFinalMassSpin', 'TdModesfromFinalMassSpin']:
@@ -1432,6 +1435,9 @@ def get_fd_generator(approximant, modes=False):
         if modes:
             return FDomainCBCModesGenerator
         return FDomainCBCGenerator
+    
+    if approximant in waveform_modes._mode_waveform_fd:
+        return FDomainCBCModesGenerator
 
     if approximant in ringdown.ringdown_fd_approximants:
         if approximant == ['FdQNMfromFinalMassSpin', 'FdModesfromFinalMassSpin']:
