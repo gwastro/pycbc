@@ -755,7 +755,7 @@ with ctx:
                     # individual detectors. If only one IFO is available, then
                     # the method returns trigger indices for that IFO. Given
                     # that we are looping over timeslides and sky positions,
-                    # the appropriate dictionary of time delays wrt to the
+                    # the appropriate dictionary of time delays wrt the
                     # geocenter must be passed to operate at the geocenter.
                     coinc_idx = coh.get_coinc_indexes(
                         idx_dict, time_delay_idx[slide][position_index],
