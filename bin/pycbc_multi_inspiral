@@ -746,7 +746,7 @@ with ctx:
                         for ifo in args.instruments
                     }
                     # Find indexes (related to geocenter time) of triggers that
-                    # are coincident (in geocentier time) in multiple IFOs.
+                    # are coincident (in geocenter time) in multiple IFOs.
                     # This is done by calling the method that finds coincidences
                     # and applies the single IFO SNR cut asking for triggers to
                     # have SNR >= args.sngl_snr_threshold in at least
