@@ -195,7 +195,14 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
 
 ifos = sorted(sciSegs.keys())
 wflow.ifos = ifos
-datafind_veto_files = _workflow.FileList([])
+
+# input_files will contain:
+# 1) the output files produced by the datafind
+# 2) the veto file determined by looking up the segments being used
+# 3) the sky grid file (if one is produced)
+# 4) the bank-veto file
+# 5) the IPN search points file (if one is produced)
+input_files = _workflow.FileList([])
 
 # Convenience variable to operate on sciSegs within this executable
 ifo = ifos[0]
@@ -237,7 +244,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
         gated_frames.convert_to_lal_cache().tofile(
                             open(gated_cache.storage_path, "w"))
         datafind_files.append(gated_cache)
-datafind_veto_files.extend(datafind_files)
+input_files.extend(datafind_files)
 
 # Retrieve vetoes
 veto_file = None
@@ -247,7 +254,7 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
                                             'segments-vetoes',
                                             seg_dir,
                                             tags=['veto'])
-    datafind_veto_files.append(veto_file)
+    input_files.append(veto_file)
 # Check that the onsource is free from vetoes
 for ifo in ifos:
     avail_segs = select_segments_by_definer(veto_file.storage_path, ifo=ifo)
@@ -270,7 +277,7 @@ skygrid_file = None
 if wflow.cp.has_option("workflow", "sky-error"):
     logging.info("Generating sky-grid file.")
     skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=['SEARCH'])
-    datafind_veto_files.extend(skygrid_file)
+    input_files.extend(skygrid_file)
 
 # Config file consistency check for IPN GRBs
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
@@ -295,7 +302,7 @@ if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
                                                 'bank-veto-bank-file')
     bank_veto_file.description += '_BANK_VETO_BANK'
     bank_veto_file = _workflow.FileList([bank_veto_file])
-    datafind_veto_files.extend(bank_veto_file)
+    input_files.extend(bank_veto_file)
 
 if IPN:
     file_attrs = {
@@ -308,9 +315,9 @@ if IPN:
                                                  'workflow-inspiral',
                                                  'ipn-search-points',
                                                  file_attrs=file_attrs)
-    datafind_veto_files.append(search_pts_file)
+    input_files.append(search_pts_file)
 
-all_files.extend(datafind_veto_files)
+all_files.extend(input_files)
 
 # TEMPLATE BANK AND SPLIT BANK
 bank_files = _workflow.setup_tmpltbank_workflow(wflow, sciSegs,
@@ -410,7 +417,7 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(
-            wflow, sciSegs, datafind_veto_files, inj_splitbank_files,
+            wflow, sciSegs, input_files, inj_splitbank_files,
             inj_dir, injs, tags=[mf_tag + "_injections"])
     for inj_insp_file in inj_insp_files:
         split_str = [s for s in inj_insp_file.name.split("_")
@@ -449,7 +456,7 @@ if wflow.cp.has_section("workflow-injections"):
 insp_dir = os.path.join(curr_dir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(
         wflow, sciSegs,
-        datafind_veto_files, splitbank_files, insp_dir,
+        input_files, splitbank_files, insp_dir,
         tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
 # TODO: Remove .lcf caches here?

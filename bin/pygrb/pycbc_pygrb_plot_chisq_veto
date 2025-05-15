@@ -161,7 +161,7 @@ if opts.plot_caption is None:
         opts.plot_caption += ("Gray shaded region: area cut by the " +
                               "reweighted SNR threshold. " +
                               "Black line: reweighted SNR threshold. Yellow " +
-                              "lines: contours of constant rewighted SNR.")
+                              "lines: contours of constant reweighted SNR.")
 
 logging.info("Imported and ready to go.")
 
