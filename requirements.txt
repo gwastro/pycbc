@@ -50,5 +50,5 @@ sphinx_design
 # Needed for ringdown and time-domain injection (fix wrap-around issue for SMBHB)
 pykerr
 
-GPry integration: A package for Bayesian inference of expensive likelihoods with Gaussian Processes
+# GPry integration: A package for Bayesian inference of expensive likelihoods with Gaussian Processes
 gpry
