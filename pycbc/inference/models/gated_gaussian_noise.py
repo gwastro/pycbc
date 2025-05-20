@@ -1006,20 +1006,12 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
             generator_class = generator.FDomainDetFrameModesGenerator,
-            gates=self.gates, **self.static_params)
-        # caches
-        self._current_wf_modes = None
-    
-    def update(self, **params):
-        # update
-        super().update(**params)
-        # reset current waveforms
-        self._current_wf_modes = None
+            **self.static_params)
     
     def get_waveforms(self):
         r"""Generate the waveform modes.
         """
-        if self._current_wf_modes is None:
+        if self._current_wfs is None:
             params = self.current_params
             wf_modes = self.waveform_generator.generate(**params)
             for det, modes in wf_modes.items():
@@ -1037,8 +1029,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                              hc.to_timeseries(),
                              frequency=self.highpass_waveforms).to_frequencyseries()
                 wf_modes[det][mode] = (hp, hc)
-            self._current_wf_modes = wf_modes
-        return self._current_wf_modes
+            self._current_wfs = wf_modes
+        return self._current_wfs
 
     def get_gated_waveforms(self):
         """Putting in a dummy function for now since we're not actually gating
