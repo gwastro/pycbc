@@ -686,8 +686,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             for key in self.template_event_dict:
                 self.template_event_dict[key] = \
                     self.template_event_dict[key][indices]
-        else:
-            indices = numpy.arange(len(tvec))
 
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
