@@ -555,6 +555,9 @@ def read_calibration_envelop_file(calibration_file, correction_type,
         amplitude_sigma = abs(1/calibration_data[3] - 1/calibration_data[5]) / 2
         phase_sigma = abs(calibration_data[6] - calibration_data[4]) / 2
 
+    else:
+        raise ValueError("Invalid calibration_type. Please choose from 'template' or 'data'.")
+
     # Some sanity checks
     if calibration_data[0][-1] < maximum_frequency:
         if maximum_frequency - calibration_data[0][-1] < 0.5:
