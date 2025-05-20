@@ -28,6 +28,7 @@ import unittest
 import copy
 from utils import simple_exit
 import numpy
+from scipy import special
 from pycbc.catalog import Merger
 from pycbc.psd import interpolate, inverse_spectrum_truncation, aLIGOZeroDetHighPower
 from pycbc.noise import noise_from_psd
@@ -341,9 +342,125 @@ class TestWaveformErrors(unittest.TestCase):
         self._run_tests(model)
 
 
+class TestMarginalizedPolModels(unittest.TestCase):
+    """Tests that marginalized polarization models return the same
+    loglikelihood as the unmarginalized model numerically integrated over the
+    same set of polarization samples.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # Use the same setup as TestWaveformErrors
+        cls.psds = {}
+        cls.data = {}
+        tc = 1187008882.42840
+        flow = 20
+        cls.static = {
+            'approximant': "IMRPhenomD",
+            'mass1': 40.,
+            'mass2': 40.,
+            'ra': 3.44615914,
+            'dec': -0.40808407,
+            'tc': tc,
+            'distance': 100.,
+            'inclination': 2.5,
+            'f_lower': flow
+        }
+        cls.marg_variable = ['spin1z']
+        cls.orig_variable = cls.marg_variable + ['polarization']
+        ifos = ['H1', 'L1', 'V1']
+        seglen = 8
+        delta_f = 1. / seglen
+        sample_rate = 4096
+        delta_t = 1. / sample_rate
+        flen = int(sample_rate * seglen / 2) + 1
+        psd = aLIGOZeroDetHighPower(flen, delta_f, flow)
+        psd[0:int(flow / delta_f + 1)] = psd[int(flow / delta_f + 1)]
+        psd[-2:] = psd[-2]
+        seed = 1000
+        cls.flow = {'H1': flow, 'L1': flow, 'V1': flow}
+        for ifo in ifos:
+            tsamples = int(seglen * sample_rate)
+            ts = noise_from_psd(tsamples, delta_t, psd, seed=seed)
+            ts._epoch = cls.static['tc'] - seglen / 2
+            seed += 1027
+            cls.data[ifo] = ts.to_frequencyseries()
+            cls.psds[ifo] = psd
+        # Set up the static parameters for the gated models
+        staticgate = cls.static.copy()
+        staticgate['t_gate_start'] = tc - 0.5
+        staticgate['t_gate_end'] = tc
+        cls.staticgate = staticgate
+
+    def _test_models(self, margpol_model, orig_model, polarization_samples):
+        """Tests that manual integration of the loglikelihood over
+        polarizations gives the same result as the marginalized model."""
+        # Get the loglikelihood from the margpol model
+        params = {'spin1z': 0.}
+        margpol_model.update(**params)
+        margpol_logl = margpol_model.loglikelihood
+        # Numerically integrate the loglikelihood over polarizations
+        logls = numpy.zeros(len(polarization_samples))
+        norm = numpy.log(len(logls))
+        for ii,pol in enumerate(polarization_samples):
+            params['polarization'] = pol
+            orig_model.update(**params)
+            logls[ii] = orig_model.loglikelihood
+        integrated_logl = special.logsumexp(logls) - norm
+        # Assert that the loglikelihoods are close
+        self.assertAlmostEqual(
+            margpol_logl, integrated_logl, places=2,
+            msg=f"Loglikelihood mismatch: MargPol={margpol_logl}, "
+                f"Integrated={integrated_logl}"
+        ) 
+
+    def test_gaussian_models(self):
+        """Tests that the GaussianNoise models are consistent."""
+        margpol_model = models.MarginalizedPolarization(
+            self.marg_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.static,
+            ignore_failed_waveforms=True
+        )
+        orig_model = models.GaussianNoise(
+            self.orig_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.static,
+            ignore_failed_waveforms=True
+        )
+        # now test
+        polsamples = margpol_model.marginalize_vector_params['polarization']
+        self._test_models(margpol_model, orig_model, polsamples)
+
+    def test_gated_models(self):
+        """Tests that the Gated models are consistent."""
+        # Initialize the GatedGaussianMargPol model
+        margpol_model = models.GatedGaussianMargPol(
+            self.marg_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.staticgate,
+            ignore_failed_waveforms=True
+        )
+        # Initialize the GatedGaussianNoise model
+        orig_model = models.GatedGaussianNoise(
+            self.orig_variable, data=copy.deepcopy(self.data),
+            low_frequency_cutoff=self.flow,
+            psds=self.psds,
+            static_params=self.staticgate,
+            ignore_failed_waveforms=True
+        )
+        # now test
+        polsamples = margpol_model.pol
+        self._test_models(margpol_model, orig_model, polsamples)
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestModels))
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestWaveformErrors))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMarginalizedPolModels))
 
 if __name__ == '__main__':
     from astropy.utils import iers

@@ -25,7 +25,7 @@ import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import pylab as pl
+from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 import sys
@@ -127,9 +127,9 @@ fig_caption = f"This plot shows the {opts.z_var} of single detector " + \
 
 if not any(mask):
     # All triggers removed - make a blank plot which says so:
-    fig = pl.figure()
+    fig = plt.figure()
     ax = fig.gca()
-    pl.text(0.5, 0.5, 'no triggers in the range')
+    plt.text(0.5, 0.5, 'no triggers in the range')
 
     pycbc.results.save_fig_with_metadata(
         fig,
@@ -160,7 +160,7 @@ maxz = opts.max_z
 hexbin_style['norm'] = LogNorm(vmin=minz, vmax=maxz)
 
 logging.info('Plotting')
-fig = pl.figure()
+fig = plt.figure()
 ax = fig.gca()
 
 if opts.z_var == 'density':

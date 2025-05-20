@@ -128,7 +128,7 @@ def lfilter(coefficients, timeseries):
     else:
         # recursively perform which saves a bit on memory usage
         # but must keep within recursion limit
-        chunksize = max(fillen * 5, len(timeseries) // 128)
+        chunksize = max(fillen * 5, len(timeseries) // 2)
         part1 = lfilter(coefficients, timeseries[0:chunksize])
         part2 = lfilter(coefficients, timeseries[chunksize - fillen:])
         out = timeseries.copy()

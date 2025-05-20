@@ -227,7 +227,7 @@ class HierarchicalModel(BaseModel):
             sampattrs = fp.getattrs(group=fp.samples_group)
             lognl = [self.submodels[k].lognl for k in self.submodels]
             sampattrs['{}lognl'.format(prefix)] = sum(lognl)
-        except AttributeError:
+        except (AttributeError, ValueError):
             pass
 
     @classmethod
@@ -286,6 +286,9 @@ class HierarchicalModel(BaseModel):
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
             provided keyword will override what is in the config file.
+            Preferencing a keyword argument by ``{submodel}__`` will send
+            the parameter as a keyword argument to the specified submodel's
+            ``from_config`` method.
         """
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
@@ -356,8 +359,14 @@ class HierarchicalModel(BaseModel):
             for param in wfparam_map[lbl]:
                 subcp.set('static_params', param.subname, 'REPLACE')
 
+            # extra any kwargs to pass
+            subkwargs = {}
+            for p, kwarg in list(kwargs.items()):
+                if p.startswith(lbl+'__'):
+                    val = kwargs.pop(p)
+                    subkwargs[p.replace(lbl+'__', '', 1)] = val
             # initialize
-            submodel = read_from_config(subcp)
+            submodel = read_from_config(subcp, **subkwargs)
             # move the static params back to variable
             for p in vparam_map[lbl]:
                 submodel.static_params.pop(p.subname)

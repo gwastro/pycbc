@@ -4,7 +4,8 @@ import sys
 import numpy, argparse, matplotlib
 from matplotlib import colors
 matplotlib.use('Agg')
-import pylab, pycbc.results
+from matplotlib import pyplot as plt
+import pycbc.results
 from pycbc.io import (
     get_chisq_from_file_choice, chisq_choices, SingleDetTriggers, HFile
 )
@@ -79,8 +80,8 @@ bkg_chisq = bkg_chisq[bkg_tid_idx_inverse]
 bkg_pos = bkg_chisq > 0
 bkg_snr = bkg_snr[bkg_pos]
 bkg_chisq = bkg_chisq[bkg_pos]
-fig = pylab.figure()
-pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
+fig = plt.figure()
+plt.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
               linewidth=0, s=4, label='Background', alpha=0.6,
               zorder=args.background_front)
 
@@ -152,7 +153,7 @@ inj_pos = inj_chisq > 0
 if len(coloring[args.colorbar_choice][0]) == 0:
     coloring[args.colorbar_choice] = (None, None, None)
 else:  # Only plot positive chisq
-    pylab.scatter(inj_snr[inj_pos], inj_chisq[inj_pos],
+    plt.scatter(inj_snr[inj_pos], inj_chisq[inj_pos],
                   c=coloring[args.colorbar_choice][0][inj_pos],
                   norm=coloring[args.colorbar_choice][2], s=20,
                   marker='^', linewidth=0, label="Injections",
@@ -170,34 +171,34 @@ except ValueError:
 if args.newsnr_contours:
     for cval in args.newsnr_contours:
         snrv = snr_from_chisq(r, cval)
-        pylab.plot(snrv, r, '--', color='grey', linewidth=1)
+        plt.plot(snrv, r, '--', color='grey', linewidth=1)
 
-ax = pylab.gca()
+ax = plt.gca()
 ax.set_xscale('log')
 ax.set_yscale('log')
 
 try:
-    cb = pylab.colorbar()
+    cb = plt.colorbar()
     cb.set_label(coloring[args.colorbar_choice][1], size='large')
 except (TypeError, ZeroDivisionError):
     # Catch case of no injection triggers
     if len(inj_chisq):
         raise
 
-pylab.title('%s Coincident Triggers' % ifo, size='large')
-pylab.xlabel('SNR', size='large')
-pylab.ylabel('Reduced $\chi^2$', size='large')
+plt.title('%s Coincident Triggers' % ifo, size='large')
+plt.xlabel('SNR', size='large')
+plt.ylabel('Reduced $\chi^2$', size='large')
 try:
-    pylab.xlim(min(inj_snr.min(), bkg_snr.min()) * 0.99,
+    plt.xlim(min(inj_snr.min(), bkg_snr.min()) * 0.99,
                max(inj_snr.max(), bkg_snr.max()) * 1.4)
-    pylab.ylim(min(bkg_chisq.min(), inj_chisq[inj_pos].min()) * 0.7,
+    plt.ylim(min(bkg_chisq.min(), inj_chisq[inj_pos].min()) * 0.7,
                max(bkg_chisq.max(), inj_chisq.max()) * 1.4)
 except ValueError:
     # Raised if no injection triggers
     pass
-pylab.legend(loc='lower right', prop={'size': 10})
-pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
-pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
+plt.legend(loc='lower right', prop={'size': 10})
+plt.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
+plt.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
 
 title = '%s %s chisq vs SNR. %s background with injections %s' \
         % (ifo.upper(), args.chisq_choice, ''.join(ifos).upper(),
