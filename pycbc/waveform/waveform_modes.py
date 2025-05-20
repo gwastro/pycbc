@@ -372,9 +372,6 @@ _mode_waveform_td = {'EOBNRv2': get_lalsimulation_modes,
                      'TaylorT4': get_lalsimulation_modes,
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
-                     'FdModesfromFinalMassSpin':
-                         ringdown.get_fd_modes_from_final_mass_spin,
-                     'FdModesfromFreqTau': ringdown.get_fd_modes_from_freqtau,
                      }
 # 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
 # LAL function do not split strain mode by mode
