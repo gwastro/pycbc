@@ -1078,9 +1078,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
             # overwhiten the gated data in this detector
-            invpsd = self._invpsds[det][slc]
-            d = data[det][slc]
-            d_gated = gated_data[det][slc] * invpsd
+            invpsd = self._invpsds[det]
+            d = data[det]
+            d_gated = gated_data[det] * invpsd
             # gate params in this detector
             gatestartdelay, dgatedelay = gate_times[det]
             # calculate the antenna pattern for each mode
@@ -1095,7 +1095,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             h = {}
             for mode in modes:
                 hp, hc = wfs[det][mode]
-                h[mode] = fp*hp[slc] + fc*hc[slc]
+                h[mode] = fp*hp + fc*hc
             # save the first mode for marginalization; sum over the rest
             h1 = h[modes[0]]
             if len(modes) > 1:
@@ -1119,26 +1119,26 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                 hj_gated = hj_gated.to_frequencyseries()
                 hj_gated *= invpsd
             # evaluate the inner products with data
-            dd = d.inner(d_gated) # <d, d>
-            h1d = h1.inner(d_gated) # O(h1, d)
-            dh1 = d.inner(h1_gated) # O(d, h1)
+            dd = d[slc].inner(d_gated[slc]) # <d, d>
+            h1d = h1[slc].inner(d_gated[slc]) # O(h1, d)
+            dh1 = d[slc].inner(h1_gated[slc]) # O(d, h1)
             hjd = 0.
             dhj = 0.
             if higher_modes:
-                hjd += hj.inner(d_gated) # <sum(hj), d>
-                dhj += d.inner(hj_gated) # <d, sum(hj)>
+                hjd += hj[slc].inner(d_gated[slc]) # <sum(hj), d>
+                dhj += d[slc].inner(hj_gated[slc]) # <d, sum(hj)>
             # take inner products with h1
-            h1h1 = h1.inner(h1_gated) # <h1, h1>
+            h1h1 = h1[slc].inner(h1_gated[slc]) # <h1, h1>
             h1hj = 0.
             hjh1 = 0.
             if higher_modes:
-                h1hj += h1.inner(hj_gated) # O(h1, sum(hj))
-                hjh1 += hj.inner(h1_gated)
+                h1hj += h1[slc].inner(hj_gated[slc]) # O(h1, sum(hj))
+                hjh1 += hj[slc].inner(h1_gated[slc])
             # gate the sum of the other modes
             hjhk = 0.
             if higher_modes:
                 # take inner product with sum(hj)
-                hjhk = hj.inner(hj_gated) # <sum(hj), sum(hk)>
+                hjhk = hj[slc].inner(hj_gated[slc]) # <sum(hj), sum(hk)>
             # evaluate the constant
             # each inner product carries a term 4*df for the full integral
             df = invpsd.delta_f
@@ -1152,15 +1152,15 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # add constant and this detector's normalization to log likelihood
             logL += C
             logL += norm
-            #print(f'df: {df}')
-            #print(f'C: {C}, x: {x}, y: {y}')
-            #print(f'dd: {dd}, h1d: {h1d}, hjd: {hjd}')
-            #print(f'h1h1: {h1h1}, h1hj: {h1hj}, hjhk: {hjhk}')
-            #print(f'logL (before det sum): {logL}')
+            print(f'df: {df}')
+            print(f'C: {C}, x: {x}, y: {y}')
+            print(f'dd: {dd}, h1d: {h1d}, hjd: {hjd}')
+            print(f'h1h1: {h1h1}, h1hj: {h1hj}, hjhk: {hjhk}')
+            print(f'logL (before det sum): {logL}')
         # evaluate the Bessel fn over all detectors
         A = numpy.sqrt(x_net*x_net + y_net*y_net)
         logL += numpy.log(special.i0e(A)) + abs(A)
-        #print(f'A: {A}, logL (after det sum): {logL}')
+        print(f'A: {A}, logL (after det sum): {logL}')
         # save the maxL phase for the ref mode
         maxl_phase = numpy.angle(x_net + 1j*y_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
