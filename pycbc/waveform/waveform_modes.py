@@ -371,9 +371,6 @@ _mode_waveform_td = {'EOBNRv2': get_lalsimulation_modes,
                      'TaylorT2': get_lalsimulation_modes,
                      'TaylorT3': get_lalsimulation_modes,
                      'TaylorT4': get_lalsimulation_modes,
-                     'TdModesfromFinalMassSpin':
-                         ringdown.get_td_modes_from_final_mass_spin,
-                     'TdModesfromFreqTau': ringdown.get_td_modes_from_freqtau,
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
                      'FdModesfromFinalMassSpin':
