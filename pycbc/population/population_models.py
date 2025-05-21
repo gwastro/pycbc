@@ -61,7 +61,7 @@ def sfr_grb_2008(z):
     return rho_z
 
 
-def sfr_madau_dickinson_2014(z):
+def sfr_madau_dickinson_2014(z, gamma=2.7, kappa=5.6, z_peak=1.9):
     r""" The madau-dickinson 2014 star formation rate (SFR).
 
     Parameters
@@ -79,7 +79,7 @@ def sfr_madau_dickinson_2014(z):
          Pease see Eq.(15) in <arXiv:1403.0007> for more details.
     """
 
-    rho_z = 0.015 * (1+z)**2.7 / (1 + ((1+z)/2.9)**5.6)
+    rho_z = 0.015 * (1+z)**gamma / (1 + ((1+z)/(1+z_peak))**kappa)
     return rho_z
 
 
@@ -169,14 +169,14 @@ def p_tau(tau, td_model="inverse"):
 
     Returns
     -------
-    p_t : float
+    p_t : float or ndarray or sympy.core.mul.Mul based on input
           The probability at time delay tau.
 
     Notes
     -----
          Pease see the Appendix in <arXiv:2011.02717v3> for more details.
     """
-    from sympy import sqrt, exp, log
+    from sympy import sqrt, exp, log, Piecewise
 
     if td_model == "log_normal":
         t_ln = 2.9  # Gyr
@@ -191,7 +191,15 @@ def p_tau(tau, td_model="inverse"):
         alpha_t = 0.81
         p_t = tau**(-alpha_t)
     elif td_model == "inverse":
-        p_t = tau**(-0.999)  # Try to avoid dividing zero.
+        # make sure that there is a minimum and maximum time delay
+        td_min = 0.02 # Taken from Regimbau et al. https://journals.aps.org/prd/abstract/10.1103/PhysRevD.86.122001
+        td_max = cosmological_quantity_from_redshift(0, 'age')
+        norm_const = 1/np.log(td_max/td_min)
+        if isinstance(tau, (float, int)) or isinstance(tau, np.ndarray):
+            p_t = np.where((tau < td_min) | (tau > td_max), 0, norm_const * tau**(-0.999))
+        else:
+            p_t = Piecewise((0, tau < td_min), (0, tau > td_max), (norm_const * tau**(-0.999), True))
+
     else:
         raise ValueError("'model' must choose from \
         ['log_normal', 'gaussian', 'power_law', 'inverse'].")
