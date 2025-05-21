@@ -83,7 +83,10 @@ def make_multi_det_grid(args):
     else: 
         sky_dist = eval(args.input_dist)
     if 'Uniform' not in args.input_dist:
-        grid = np.vstack((np.empty((0,2)), input_dist.get_max_prob_point()))
+        grid = np.vstack(
+                (np.empty((0,2)), 
+                np.reshape(input_dist.get_max_prob_point(),(1,2)))
+        )
     else:
         grid = np.vstack((np.empty((0,2)), (args.ra, args.dec)))
 

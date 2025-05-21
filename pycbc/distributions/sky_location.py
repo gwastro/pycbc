@@ -337,7 +337,7 @@ class HealpixSky:
                 numpy.where(self.pix_probs==self.pix_probs.max())[0],
                 lonlat=True
         )
-        return numpy.deg2rad(coords[0]), numpy.deg2rad(coords[1])
+        return (numpy.deg2rad(coords[0]), numpy.deg2rad(coords[1]))
 
     def pixel_corners(self, indices):
         """Return the Cartesian vectors corresponding to the corners of one or
