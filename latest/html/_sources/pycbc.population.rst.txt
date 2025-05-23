@@ -1,0 +1,77 @@
+pycbc.population package
+========================
+
+Submodules
+----------
+
+pycbc.population.fgmc\_functions module
+---------------------------------------
+
+.. automodule:: pycbc.population.fgmc_functions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.fgmc\_laguerre module
+--------------------------------------
+
+.. automodule:: pycbc.population.fgmc_laguerre
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.fgmc\_plots module
+-----------------------------------
+
+.. automodule:: pycbc.population.fgmc_plots
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.live\_pastro module
+------------------------------------
+
+.. automodule:: pycbc.population.live_pastro
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.live\_pastro\_utils module
+-------------------------------------------
+
+.. automodule:: pycbc.population.live_pastro_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.population\_models module
+------------------------------------------
+
+.. automodule:: pycbc.population.population_models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.rates\_functions module
+----------------------------------------
+
+.. automodule:: pycbc.population.rates_functions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.population.scale\_injections module
+-----------------------------------------
+
+.. automodule:: pycbc.population.scale_injections
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.population
+   :members:
+   :undoc-members:
+   :show-inheritance:

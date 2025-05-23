@@ -1,0 +1,223 @@
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| Name                            | Syntax                             | Description                                              |
++=================================+====================================+==========================================================+
+| ``instruments``                 | INSTRUMENTS [INSTRUMENTS ...]      | Instruments to analyze, eg. H1 L1.                       |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``trigger-time``                | TRIGGER_TIME                       | Reference GPS time (at geocenter) from which the         |
+|                                 |                                    | (anlaysis|psd)-(start|end)-time options are measured.    |
+|                                 |                                    | The integer seconds will be used. Default is 0; i.e.,    |
+|                                 |                                    | if not provided, the analysis and psd times should be    |
+|                                 |                                    | in GPS seconds.                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``analysis-start-time``         | IFO:TIME [IFO:TIME ...]            | The start time to use for the analysis, measured with    |
+|                                 |                                    | respect to the trigger-time. If psd-inverse-length is    |
+|                                 |                                    | provided, the given start time will be padded by half    |
+|                                 |                                    | that length to account for wrap-around effects.          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``analysis-end-time``           | IFO:TIME [IFO:TIME ...]            | The end time to use for the analysis, measured with      |
+|                                 |                                    | respect to the trigger-time. If psd-inverse-length is    |
+|                                 |                                    | provided, the given end time will be padded by half      |
+|                                 |                                    | that length to account for wrap-around effects.          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-start-time``              | IFO:TIME [IFO:TIME ...]            | Start time to use for PSD estimation, measured with      |
+|                                 |                                    | respect to the trigger-time.                             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-end-time``                | IFO:TIME [IFO:TIME ...]            | End time to use for PSD estimation, measured with        |
+|                                 |                                    | respect to the trigger-time.                             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``data-conditioning-low-freq``  | IFO:FLOW [IFO:FLOW ...]            | Low frequency cutoff of the data. Needed for PSD         |
+|                                 |                                    | estimation and when creating fake strain. If not         |
+|                                 |                                    | provided, will use the model's low-frequency-cutoff.     |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| Options to select the method of PSD generation:                                                                                 |
+| The options ``psd-model``, ``psd-file``, ``asd-file``, and ``psd-estimation`` are                                               |
+| mutually exclusive.                                                                                                             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-model``                   | IFO:MODEL [IFO:MODEL ...]          | Get PSD from given analytical model. Choose from any     |
+|                                 |                                    | available PSD model.                                     |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-extra-args``              | DETECTOR:PARAM:VALUE               | (optional) Extra arguments passed to the PSD models.     |
+|                                 | [DETECTOR:PARAM:VALUE ...]         |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-file``                    | IFO:FILE [IFO:FILE ...]            | Get PSD using given PSD ASCII file                       |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``asd-file``                    | IFO:FILE [IFO:FILE ...]            | Get PSD using given ASD ASCII file                       |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-estimation``              | IFO:FILE [IFO:FILE ...]            | Measure PSD from the data, using given average method.   |
+|                                 |                                    | Choose from mean, median or median-mean.                 |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-segment-length``          | IFO:LENGTH [IFO:LENGTH ...]        | (Required for ``psd-estimation``) The segment length for |
+|                                 |                                    | PSD estimation (s)                                       |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-segment-stride``          | IFO:STRIDE [IFO:STRIDE ...]        | (Required for ``psd-estimation``) The separation between |
+|                                 |                                    | consecutive segments (s)                                 |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-num-segments``            | IFO:NUM [IFO:NUM ...]              | (Optional, used only with ``psd-estimation``). If given  |
+|                                 |                                    | PSDs will be estimated using only this number of         |
+|                                 |                                    | segments. If more data is given than needed to make      |
+|                                 |                                    | this number of segments than excess data will not be     |
+|                                 |                                    | used in the PSD estimate. If not enough data is given    |
+|                                 |                                    | the code will fail.                                      |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-inverse-length``          | IFO:LENGTH [IFO:LENGTH ...]        | (Optional) The maximum length of the impulse response    |
+|                                 |                                    | of the overwhitening filter (s)                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``invpsd-trunc-method``         | {hann}                             | (Optional) What truncation method to use when applying   |
+|                                 |                                    | psd-inverse-length. If not provided, a hard truncation   |
+|                                 |                                    | will be used.                                            |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-output``                  | IFO:FILE [IFO:FILE ...]            | (Optional) Write PSD to specified file                   |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-segment``              | SECONDS                            | Length of segment when calculating the PSD               |
+|                                 |                                    | variability.                                             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-short-segment``        | SECONDS                            | Length of short segment for outliers removal in PSD      |
+|                                 |                                    | variability calculation.                                 |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-long-segment``         | SECONDS                            | Length of long segment when calculating the PSD          |
+|                                 |                                    | variability.                                             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-psd-duration``         | SECONDS                            | Duration of short segments for PSD estimation.           |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-psd-stride``           | SECONDS                            | Separation between PSD estimation segments.              |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-low-freq``             | HERTZ                              | Minimum frequency to consider in strain bandpass.        |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psdvar-high-freq``            | HERTZ                              | Maximum frequency to consider in strain bandpass.        |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| Options for obtaining h(t):                                                                                                     |
+| These options are used for generating h(t) either by reading from a file                                                        |
+| or by generating it. This is only needed if the PSD is to be estimated                                                          |
+| from the data, ie. if the ``psd-estimation`` option is given. This group                                                        |
+| supports reading from multiple ifos simultaneously.                                                                             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``strain-high-pass``            | IFO:FREQUENCY [IFO:FREQUENCY ...]  | High pass frequency                                      |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``strain-low-pass``             | IFO:FREQUENCY [IFO:FREQUENCY ...]  | Low pass frequency                                       |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``pad-data``                    | IFO:LENGTH [IFO:LENGTH ...]        | Extra padding to remove highpass corruption (integer     |
+|                                 |                                    | seconds, default 8)                                      |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``taper-data``                  | IFO:LENGTH [IFO:LENGTH ...]        | Taper ends of data to zero using the supplied length     |
+|                                 |                                    | as a window (integer seconds)                            |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``sample-rate``                 | IFO:RATE [IFO:RATE ...]            | The sample rate to use for h(t) generation (integer      |
+|                                 |                                    | Hz).                                                     |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``channel-name``                | IFO:CHANNEL [IFO:CHANNEL ...]      | The channel containing the gravitational strain data     |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``frame-cache``                 | IFO:FRAME_CACHE [IFO:FRAME_CACHE   | Cache file containing the frame locations.               |
+|                                 | ...]                               |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``frame-files``                 | IFO:FRAME_FILES [IFO:FRAME_FILES   | list of frame files                                      |
+|                                 | ...]                               |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``hdf-store``                   | IFO:HDF_STORE_FILE                 | Store of time series data in hdf format                  |
+|                                 | [IFO:HDF_STORE_FILE ...]           |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``frame-type``                  | IFO:FRAME_TYPE [IFO:FRAME_TYPE     | (optional) Replaces frame-files. Use datafind to get     |
+|                                 | ...]                               | the needed frame file(s) of this type.                   |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``frame-sieve``                 | IFO:FRAME_SIEVE [IFO:FRAME_SIEVE   | (optional), Only use frame files where the URL matches   |
+|                                 | ...]                               | the regular expression given.                            |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain``                 | IFO:CHOICE [IFO:CHOICE ...]        | Name of model PSD for generating fake gaussian noise.    |
+|                                 |                                    | Choose from any available PSD model, or ``zeroNoise``.   |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain-extra-args``      | DETECTOR:PARAM:VALUE               | (optional) Extra arguments passed to the PSD models.     |
+|                                 | [DETECTOR:PARAM:VALUE ...]         |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain-seed``            | IFO:SEED [IFO:SEED ...]            | Seed value for the generation of fake colored gaussian   |
+|                                 |                                    | noise                                                    |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain-from-file``       | IFO:FILE [IFO:FILE ...]            | File containing ASD for generating fake noise from it.   |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain-flow``            | FAKE_STRAIN_FLOW [FAKE_STRAIN_FLOW | Low frequency cutoff of the fake strain                  |
+|                                 | ...]                               |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain-filter-duration`` | FAKE_STRAIN_FILTER_DURATION        | Duration in seconds of the fake data coloring filter     |
+|                                 | [FAKE_STRAIN_FILTER_DURATION ...]  |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``fake-strain-sample-rate``     | FAKE_STRAIN_SAMPLE_RATE            | Sample rate of the fake data generation                  |
+|                                 | [FAKE_STRAIN_SAMPLE_RATE ...]      |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``injection-file``              | IFO:FILE [IFO:FILE ...]            | (optional) Injection file containing parametersof CBC    |
+|                                 |                                    | signals to be added to the strain                        |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``sgburst-injection-file``      | IFO:FILE [IFO:FILE ...]            | (optional) Injection file containing parametersof        |
+|                                 |                                    | sine-Gaussian burst signals to add to the strain         |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``injection-scale-factor``      | IFO:VAL [IFO:VAL ...]              | Divide injections by this factor before adding to the    |
+|                                 |                                    | strain data                                              |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``injection-sample-rate``       | IFO:VAL [IFO:VAL ...]              | Sample rate to use for injections (integer Hz).          |
+|                                 |                                    | Typically similar to the strain data sample rate.If      |
+|                                 |                                    | not provided, the strain sample rate will be used        |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``injection-f-ref``             | IFO:VALUE [IFO:VALUE ...]          | Reference frequency in Hz for creating CBC injections    |
+|                                 |                                    | from an XML file                                         |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``injection-f-final``           | IFO:VALUE [IFO:VALUE ...]          | Override the f_final field of a CBC XML injection file   |
+|                                 |                                    | (frequency in Hz)                                        |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``gating-file``                 | IFO:FILE [IFO:FILE ...]            | (optional) Text file of gating segments to apply.        |
+|                                 |                                    | Format of each line (units s) : gps_time                 |
+|                                 |                                    | zeros_half_width pad_half_width                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``autogating-threshold``        | IFO:SIGMA [IFO:SIGMA ...]          | If given, find and gate glitches producing a deviation   |
+|                                 |                                    | larger than SIGMA in the whitened strain time series     |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``autogating-max-iterations``   | SIGMA                              | If given, iteratively apply autogating                   |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``autogating-cluster``          | IFO:SECONDS [IFO:SECONDS ...]      | Length of clustering window for detecting glitches for   |
+|                                 |                                    | autogating.                                              |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``autogating-width``            | IFO:SECONDS [IFO:SECONDS ...]      | Half-width of the gating window.                         |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``autogating-taper``            | IFO:SECONDS [IFO:SECONDS ...]      | Taper the strain before and after each gating window     |
+|                                 |                                    | over a duration of SECONDS.                              |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``autogating-pad``              | IFO:SECONDS [IFO:SECONDS ...]      | Ignore the given length of whitened strain at the ends   |
+|                                 |                                    | of a segment, to avoid filters ringing.                  |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``gating-method``               | {hard,taper,paint}                 | Choose the method for gating. Default: `taper`           |
+|                                 | [{hard,taper,paint} ...]           |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``normalize-strain``            | IFO:VALUE [IFO:VALUE ...]          | (optional) Divide frame data by constant.                |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``zpk-z``                       | IFO:VALUE [IFO:VALUE ...]          | (optional) Zero-pole-gain (zpk) filter strain. A list    |
+|                                 |                                    | of zeros for transfer function                           |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``zpk-p``                       | IFO:VALUE [IFO:VALUE ...]          | (optional) Zero-pole-gain (zpk) filter strain. A list    |
+|                                 |                                    | of poles for transfer function                           |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``zpk-k``                       | IFO:VALUE [IFO:VALUE ...]          | (optional) Zero-pole-gain (zpk) filter strain.           |
+|                                 |                                    | Transfer function gain                                   |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| Options for gating data:                                                                                                        |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``gate``                        | IFO:CENTRALTIME:HALFDUR:TAPERDUR   | Apply one or more gates to the data before filtering.    |
+|                                 | [IFO:CENTRALTIME:HALFDUR:TAPERDUR  |                                                          |
+|                                 | ...]                               |                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``gate-overwhitened``           |                                    | Overwhiten data first, then apply the gates specified    |
+|                                 |                                    | in ``gate``. Overwhitening allows for sharper tapers to  |
+|                                 |                                    | be used, since lines are not blurred.                    |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``psd-gate``                    | IFO:CENTRALTIME:HALFDUR:TAPERDUR   | Apply one or more gates to the data used for computing   |
+|                                 | [IFO:CENTRALTIME:HALFDUR:TAPERDUR  | the PSD. Gates are applied prior to FFT-ing the data     |
+|                                 | ...]                               | for PSD estimation.                                      |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| Options for quering data quality (DQ):                                                                                          |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``dq-segment-name``             | DQ_SEGMENT_NAME                    | The status flag to query for data quality. Default is    |
+|                                 |                                    | "DATA".                                                  |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``dq-source``                   | {any,GWOSC,dqsegdb}                | Where to look for DQ information. If "any" (the          |
+|                                 |                                    | default) will first try GWOSC, then dqsegdb.             |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``dq-server``                   | DQ_SERVER                          | The server to use for dqsegdb.                           |
++---------------------------------+------------------------------------+----------------------------------------------------------+
+| ``veto-definer``                | VETO_DEFINER                       | Path to a veto definer file that defines groups of       |
+|                                 |                                    | flags, which themselves define a set of DQ segments.     |
++---------------------------------+------------------------------------+----------------------------------------------------------+
