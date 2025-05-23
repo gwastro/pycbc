@@ -39,8 +39,10 @@ from .dynesty import DynestyFile
 from .ultranest import UltranestFile
 from .snowline import SnowlineFile
 from .nessai import NessaiFile
+from .gpry import GPryIO
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
+from .base_hdf import BaseInferenceFile  # Add this line if missing
 
 filetypes = {
     EmceeFile.name: EmceeFile,
@@ -53,6 +55,7 @@ filetypes = {
     UltranestFile.name: UltranestFile,
     NessaiFile.name: NessaiFile,
     SnowlineFile.name: SnowlineFile,
+    GPryIO.name: GPryIO,
 }
 
 try:
