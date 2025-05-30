@@ -728,7 +728,7 @@ class Workflow(object):
 
         # Set up convenience scripts
         with open('status', 'w') as fp:
-            fp.write('pegasus-status --verbose ')
+            fp.write('pegasus-status ')
             fp.write('--long {}/work $@'.format(submitdir))
 
         with open('debug', 'w') as fp:
