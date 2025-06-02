@@ -34,6 +34,7 @@ EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "external", "external_func_fromfile",
                       "fisher_sky",
                       "healpix_sky",
+                      "uniform_disk_sky",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
                       "uniform_f0_tau", "fixed_samples"]
