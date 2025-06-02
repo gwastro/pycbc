@@ -20,7 +20,7 @@ import argparse
 import itertools
 
 import pycbc
-from pycbc.distributions import UniformSky, FisherSky, HealpixSky
+import pycbc.distributions
 from pycbc.detector import Detector
 from pycbc.types import angle_as_radians
 from pycbc.tmpltbank.sky_grid import SkyGrid
@@ -56,7 +56,7 @@ def make_single_det_grid(args):
     we just put a single point at the center of the input distribution.
     """
     if "Uniform" not in args.input_dist:
-        input_dist = eval(args.input_dist)
+        input_dist = eval('pycbc.distributions.' + args.input_dist)
         sky_grid = SkyGrid(
             input_dist.get_max_prob_point()[0], input_dist.get_max_prob_point()[1],
             args.instruments, args.trigger_time
@@ -82,16 +82,19 @@ def make_multi_det_grid(args):
     detectors = [Detector(d) for d in detectors]
     detector_pairs = list(itertools.combinations(detectors, 2))
     
-    sky_dist = eval(args.input_dist)
+    
 
     if 'Uniform' not in args.input_dist:
+        sky_dist = eval('pycbc.distributions.' + args.input_dist)
         grid = np.vstack(
                 (np.empty((0,2)), 
                 np.reshape(sky_dist.get_max_prob_point(),(1,2)))
         )
     elif (args.ra or args.dec or args.sky_error) == None and "Uniform" in args.input_dist:
+        sky_dist = eval('pycbc.distributions.' + args.input_dist)
         grid = np.vstack((np.empty((0,2)), (0.0, 0.0)))
     else:
+        sky_dist = pycbc.distributions.UniformDiskSky(mean_ra=args.ra, mean_dec=args.dec, radius=args.sky_error)
         grid = np.vstack((np.empty((0,2)), (args.ra, args.dec)))
     if args.coverage is not None: 
         sky_dist = sky_dist.to_uniform_patch(args.coverage)
@@ -174,11 +177,11 @@ parser.add_argument(
 parser.add_argument(
     "--input-dist",
     type=str,
-    default='UniformDiskSky()',
+    default='UniformSky()',
     help="Input distribution of the sky map that you have, could "
     "be HealpixSky or FisherSky. See sky location documentation for "
     "more details. If you not specify any input distribution, it "
-    "will generate a UniformDiskSky.",
+    "will generate a UniformSky() distribution.",
 )
 parser.add_argument(
     '--coverage',
