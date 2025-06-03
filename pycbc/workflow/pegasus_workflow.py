@@ -737,7 +737,7 @@ class Workflow(object):
 
         with open('debug', 'w') as fp:
             fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-analyzer -r ')
-            fp.write(f'-v {submitdir}/work $@'))
+            fp.write(f'-v {submitdir}/work $@')
 
         with open('stop', 'w') as fp:
             fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-remove ')
