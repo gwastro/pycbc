@@ -83,6 +83,13 @@ def _noreal(func):
             raise TypeError( func.__name__ + " does not support real types")
     return noreal
 
+@schemed(BACKEND_PREFIX)
+def _scheme_get_numpy_dtype(dtype):
+    """Get the NumPy dtype corresponding to the scheme's data type."""
+    # This function is intended to be overridden by schemes.
+    # If not overridden, it will raise NotImplementedError.
+    raise NotImplementedError("_scheme_get_numpy_dtype not implemented for this scheme.")
+
 def force_precision_to_match(scalar, precision):
     if _numpy.iscomplexobj(scalar):
         if precision == 'single':
@@ -169,12 +176,12 @@ class Array(object):
                 self._data = initial_array
 
             # Check that the dtype is supported.
-            if self._data.dtype not in _ALLOWED_DTYPES:
+            data_dtype = _scheme_get_numpy_dtype(self._data.dtype)
+            if data_dtype not in _ALLOWED_DTYPES:
                 raise TypeError(str(self._data.dtype) + ' is not supported')
 
-            if dtype and dtype != self._data.dtype:
+            if dtype and dtype != _scheme_get_numpy_dtype(self._data.dtype):
                 raise TypeError("Can only set dtype when allowed to copy data")
-
 
         if copy:
             # First we will check the dtype that we are given
@@ -981,7 +988,12 @@ class Array(object):
 
     @property
     def dtype(self):
-        return self._data.dtype
+        """Return the NumPy dtype of the array."""
+        try:
+            return _scheme_get_numpy_dtype(self._data.dtype)
+        except (NotImplementedError, AttributeError):
+            # Fallback: assume self._data.dtype is a NumPy dtype
+            return self._data.dtype
     
     def save(self, path, group=None):
         """
