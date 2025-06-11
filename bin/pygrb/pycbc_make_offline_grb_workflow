@@ -274,7 +274,7 @@ for ifo in ifos:
 
 # Generate sky grid if needed
 skygrid_file = None
-if wflow.cp.has_option("workflow", "sky-error"):
+if wflow.cp.has_option("workflow", "sky-error") or wflow.cp.has_option("workflow", "input-dist"):
     logging.info("Generating sky-grid file.")
     skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=['SEARCH'])
     input_files.extend(skygrid_file)
