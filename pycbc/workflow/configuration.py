@@ -125,7 +125,7 @@ def resolve_url_http(url, u, filename):
         # URL format. As a different approach, we could rely on the gitlab
         # Python module to (arguably) make this more robust. For now I prefer
         # to avoid adding one more dependency, and stick with ciecplib.
-        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}'
+        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}&lfs=true'
         # Get the user's Personal Access Token and pass it as a header
         xdg_config_home = (
             os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
