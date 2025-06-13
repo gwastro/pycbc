@@ -125,7 +125,7 @@ def resolve_url_http(url, u, filename):
         # URL format. As a different approach, we could rely on the gitlab
         # Python module to (arguably) make this more robust. For now I prefer
         # to avoid adding one more dependency, and stick with ciecplib.
-        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}'
+        url = f'https://git.ligo.org/api/v4/projects/{project}/repository/files/{file_path}/raw?ref={ref}&lfs=true'
         # Get the user's Personal Access Token and pass it as a header
         xdg_config_home = (
             os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
@@ -205,9 +205,10 @@ def resolve_url(
         # OSDF will require a scitoken to be present and stashcp to be
         # available. Thanks Dunky for the code here!
         cmd = [
-            which("pelican") or "pelican", 
-            "object get", 
-            u.scheme + "://" + u.path, 
+            which("pelican") or "pelican",
+            "object",
+            "get",
+            u.scheme + "://" + u.path,
             filename
         ]
 
@@ -215,12 +216,12 @@ def resolve_url(
             subprocess.run(cmd, check=True, capture_output=True)
         except subprocess.CalledProcessError as err:
             # Print information about the failure
-            print(err.cmd, "failed with")
-            print(err.stderr.decode())
-            print(err.stdout.decode())
+            logging.error(
+                'Command %s failed with the following output:', err.cmd
+            )
+            logging.error(err.stderr.decode())
+            logging.error(err.stdout.decode())
             raise
-
-        return filename
 
     else:
         # TODO: We could support other schemes as needed
