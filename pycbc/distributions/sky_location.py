@@ -46,6 +46,14 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
+    def to_uniform_patch(self, coverage):
+        if coverage < 1:
+            logging.warning(
+                'Attempt to convert UniformSky to a '
+                'uniform patch assumes 100% coverage'
+            )
+        return self
+
 
 class UniformDiskSky:
     """A distribution that represents a uniform disk on the sky. The declination
@@ -139,6 +147,14 @@ class UniformDiskSky:
         rot_radec['ra'][neg_mask] += 2 * numpy.pi
         rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
         return rot_radec
+
+    def to_uniform_patch(self, coverage):
+        if coverage < 1:
+            logging.warning(
+                'Attempt to convert UniformDiskSky to a '
+                'uniform patch assumes 100% coverage'
+            )
+        return self
 
 
 class FisherSky:
