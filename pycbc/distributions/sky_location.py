@@ -50,23 +50,22 @@ class UniformSky(angular.UniformSolidAngle):
 class UniformDiskSky:
     """A distribution that represents a uniform disk on the sky. The declination
     varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
-             
+
     Parameters
     ----------
     mean_ra: float or str
         RA of the center of the distribution. Use the rad or deg suffix to
         specify units, otherwise radians are assumed.
     mean_dec: float or str
-        Declination of the center of the distribution. Use the rad or deg   
+        Declination of the center of the distribution. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
     radius: float or str
-        Radius of the disk. Use the rad or deg suffix to specify units, 
+        Radius of the disk. Use the rad or deg suffix to specify units,
         otherwise radians are assumed.
-        
     """
     name = 'uniform_disk_sky'
     _params = ['ra', 'dec']
-    
+
     def __init__(self, **params):
         mean_ra = angle_as_radians(params['mean_ra'])
         mean_dec = angle_as_radians(params['mean_dec'])
@@ -142,7 +141,6 @@ class UniformDiskSky:
         return rot_radec
 
 
-
 class FisherSky:
     """A distribution that returns a random angle drawn from an approximate
     `Von_Mises-Fisher distribution`_. Assumes that the Fisher concentration
@@ -170,14 +168,13 @@ class FisherSky:
         RA of the center of the distribution. Use the rad or deg suffix to
         specify units, otherwise radians are assumed.
     mean_dec: float or str
-        Declination of the center of the distribution. Use the rad or deg 
+        Declination of the center of the distribution. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
     sigma: float or str
         Spread of the distribution. For the precise interpretation, see Eq 8
         of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
-        about 20 deg for the approximation to be valid. Use the rad or deg 
+        about 20 deg for the approximation to be valid. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
-
     """
 
     name = 'fisher_sky'
@@ -236,7 +233,7 @@ class FisherSky:
             mean_dec=mean_dec,
             sigma=sigma,
         )
-    
+
     def get_max_prob_point(self):
         return (self.mean_ra, self.mean_dec)
 
