@@ -90,7 +90,7 @@ utc_time = datetime(*lal.GPSToUTC(opts.trigger_time)[0:6]).strftime("%Y-%m-%d %H
 data[0].append(utc_time)
 headers.append('UTC Time')
 
-if opts.input_dist != None:
+if opts.input_dist is not None:
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
     ra = input_dist.get_max_prob_point()[0][0]
     dec = input_dist.get_max_prob_point()[1][0]
