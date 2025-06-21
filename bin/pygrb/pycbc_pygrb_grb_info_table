@@ -92,8 +92,7 @@ headers.append('UTC Time')
 
 if opts.input_dist is not None:
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
-    ra = input_dist.get_max_prob_point()[0]
-    dec = input_dist.get_max_prob_point()[1]
+    ra, dec = input_dist.get_max_prob_point()
     sky_error = None
 
 else:
