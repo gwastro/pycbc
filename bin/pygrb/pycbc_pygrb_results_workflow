@@ -150,6 +150,12 @@ parser.add_argument(
     help="The location of the full template bank file",
 )
 parser.add_argument(
+    "--full-inj-files",
+    action="store",
+    nargs="+",
+    help="Location(s) of the generated injections file(s)",
+)
+parser.add_argument(
     "--segment-dir",
     action="store",
     help="The location of the segment files",
@@ -228,6 +234,7 @@ if not set(inj_sets).issubset(eff_secs):
     logging.error(err_msg, inj_sets, eff_secs)
 inj_sets = [i.upper() for i in inj_sets]
 inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.inj_files)
+full_inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.full_inj_files)
 
 # File instance of the veto file
 veto_file = args.veto_file
@@ -284,9 +291,15 @@ plot_node, skygrid_plot = _workflow.make_pygrb_plot(
     sky_grid_file=sky_grid_file
 )
 plotting_nodes.append(plot_node)
+# Plot the template bank
+plot_node, bank_plot = _workflow.make_pygrb_plot(
+    wflow, 'pycbc_plot_bank_corner', out_dir, bank_file=bank_file
+)
+
 # Retrieve the segments plot (produced in the preprocessing stage)
 seg_plot = display_seg_plot(out_dir, args.segment_dir)
-summary_layout = [(grb_info_table[0],), (seg_plot, skygrid_plot[0])]
+summary_layout = [(grb_info_table[0],), (seg_plot, skygrid_plot[0]),
+                  (bank_plot[0],)]
 layout.two_column_layout(out_dir, summary_layout)
 
 #
@@ -479,6 +492,25 @@ layout.two_column_layout(coinc_out_dir, coinc_files)
 #
 out_dir = rdir['injections']
 _workflow.makedir(out_dir)
+## Create corner plot
+files = _workflow.FileList([])
+for inj_set in inj_sets:
+    # Retrieve the injections full files
+    inj_file = full_inj_files.find_output_with_tag(
+        inj_set, fail_if_not_single_file=True
+    )
+    # Genereta a corner bank plot for each injection set
+    tags = [inj_set]
+    plot_node, output_files = _workflow.make_pygrb_plot(
+                            wflow,
+                            'pycbc_plot_bank_corner',
+                            out_dir,
+                            inj_file=inj_file,
+                            tags=tags,
+                        )
+    plotting_nodes.append(plot_node)
+    files.append(output_files[0])
+layout.single_layout(out_dir, files)
 # Loop over injection plots requested by the user
 inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 # The command above also picks up the injection set names so we remove them
