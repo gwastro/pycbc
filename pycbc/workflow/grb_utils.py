@@ -580,12 +580,12 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
                 node.add_opt('--'+log_flag)
     elif exec_name == 'pycbc_plot_bank_corner':
         params = workflow.cp.options(exec_name)
-        node.add_list_opt('--parameters', params)
+        node.add_opt('--parameters', " ".join(params))
         node.add_opt('--no-suptitle')
         if inj_file:
-            node.add_opt('--title', f'{tags[0]} injections')
+            node.add_opt('--title', f'\"{tags[0]} injections\"')
         else:
-            node.add_opt('--title', f'Template bank')
+            node.add_opt('--title', f'\"Template bank\"')
 
     # Add job node to workflow
     workflow += node
