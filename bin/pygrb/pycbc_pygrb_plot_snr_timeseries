@@ -214,12 +214,12 @@ y_label = y_labels[snr_type]
 # Determine title and caption
 if opts.plot_title is None:
     opts.plot_title = y_label + " vs Time"
-if inj_file:
-    if opts.plot_caption is None:
+
+if opts.plot_caption is None:
+    if inj_file:
         opts.plot_caption = ("Blue crosses: background triggers.  "\
             "Red crosses: injections triggers.")
-else:
-    if opts.plot_caption is None:
+    else:
         opts.plot_caption = ("Distribution of background triggers.")
 
 # Single IFO SNR versus time plots
