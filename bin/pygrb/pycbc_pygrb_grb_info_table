@@ -91,9 +91,13 @@ data[0].append(utc_time)
 headers.append('UTC Time')
 
 if opts.input_dist is not None:
+    if opts.ra is not None or opts.dec is not None:
+        parser.error(
+            "You can't use input-dist argument and (ra,dec) at the same, please choose one"
+        ) 
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
     ra, dec = input_dist.get_max_prob_point()
-    sky_error = None
+    sky_error = opts.sky_error
 
 else:
     ra = opts.ra
@@ -106,7 +110,7 @@ headers.append('R.A. (deg)')
 data[0].append(f'{math.degrees(dec):.3f}')
 headers.append('Dec (deg)')
 
-if sky_error is not None:
+if sky_error != 0:
     data[0].append(f'{math.degrees(sky_error):.3f}')
     headers.append('Sky Error (deg)')
 
