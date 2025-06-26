@@ -579,8 +579,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
                                            tags=[subsection]):
                 node.add_opt('--'+log_flag)
     elif exec_name == 'pycbc_plot_bank_corner':
-        params = workflow.cp.get_opt_tags(exec_name, 'parameters', [None])
-        node.add_opt('--parameters', params)
+        #params = workflow.cp.get_opt_tags(exec_name, 'parameters', [None])
+        #node.add_opt('--parameters', params)
         node.add_opt('--no-suptitle')
         if inj_file:
             node.add_opt('--title', f'\"{tags[0]} injections\"')
