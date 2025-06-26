@@ -208,7 +208,7 @@ class TestMatchedFilter(unittest.TestCase):
                 psd=ligo_psd
             )
 
-            o, _,  = match(
+            o, _, _ = match(
                 NL_waveform,
                 L_waveform,
                 return_phase=True,
