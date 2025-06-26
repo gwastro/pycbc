@@ -199,6 +199,7 @@ class TestMatchedFilter(unittest.TestCase):
 
             NL_waveform = FrequencySeries(NL_waveform, delta_f=0.25)
             L_waveform = FrequencySeries(L_waveform, delta_f=0.25)
+            ligo_psd = FrequencySeries(ligo_psd, delta_f=0.25)
 
             o_optimized, _, _ = optimized_match(
                 NL_waveform,
