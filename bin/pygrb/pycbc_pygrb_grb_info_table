@@ -97,8 +97,7 @@ if opts.input_dist is not None:
         ) 
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
     ra, dec = input_dist.get_max_prob_point()
-    sky_error = opts.sky_error
-
+    
 else:
     ra = opts.ra
     dec = opts.dec
