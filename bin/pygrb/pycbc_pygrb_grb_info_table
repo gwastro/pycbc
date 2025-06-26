@@ -97,7 +97,8 @@ if opts.input_dist is not None:
         ) 
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
     ra, dec = input_dist.get_max_prob_point()
-    
+    sky_error = None
+
 else:
     ra = opts.ra
     dec = opts.dec
@@ -109,7 +110,7 @@ headers.append('R.A. (deg)')
 data[0].append(f'{math.degrees(dec):.3f}')
 headers.append('Dec (deg)')
 
-if sky_error != 0:
+if sky_error is not None:
     data[0].append(f'{math.degrees(sky_error):.3f}')
     headers.append('Sky Error (deg)')
 
