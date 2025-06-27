@@ -24,13 +24,9 @@ from pycbc.pool import BroadcastPool as Pool
 from scipy.special import logsumexp
 
 from .gaussian_noise import BaseGaussianNoise
-from .tools import draw_sample, marginalize_likelihood, DistMarg
+from .tools import draw_sample, DistMarg
 
-
-from pycbc.waveform import td_taper
-from pycbc.waveform import get_waveform_filter_length_in_time
 from pycbc.conversions import mass1_from_mtotal_q, mass2_from_mtotal_q
-from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.distributions import JointDistribution
 
 _model = None
