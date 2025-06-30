@@ -2191,7 +2191,6 @@ def optimized_match(
     res = minimize_scalar(
         to_minimize,
         method="bounded",
-        bounds=(-delta_t, delta_t),
         tol=1e-6
     )
     m, angle = product_offset(res.x)
