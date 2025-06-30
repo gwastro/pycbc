@@ -2192,9 +2192,7 @@ def optimized_match(
         to_minimize,
         method="bounded",
         bounds=(-delta_t, delta_t),
-        options = {
-            'xatol': 1e-6 # 1e-5 is the default value but loses 1 decimal value of accuracy
-        }
+        tol=1e-6
     )
     m, angle = product_offset(res.x)
 
