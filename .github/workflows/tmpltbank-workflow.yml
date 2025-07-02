@@ -36,7 +36,7 @@ jobs:
         python -m pip install --upgrade pip setuptools
         pip install GitPython # This shouldn't really be needed!
         pip install -r requirements.txt
-        pip install sbank
+        pip install sbank "python-ligo-lw!=2.2.0,!=2.1.0,!=2.0.0,!=1.8.4"
         pip install .
     - name: generating, submitting and running workflow
       env:

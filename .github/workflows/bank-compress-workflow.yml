@@ -40,7 +40,7 @@ jobs:
         pip install .
     - name: installing sbank
       run: |
-        pip install sbank
+        pip install sbank "python-ligo-lw!=2.2.0,!=2.1.0,!=2.0.0,!=1.8.4"
     - name: generating template bank
       run: bash -e examples/search/bank.sh
     - name: running workflow
