@@ -243,10 +243,13 @@ class TimeSeries(Array):
 
     def at_time(self, time, nearest_sample=False,
                 interpolate=None, extrapolate=None):
-        """ Return the value at the specified gps time
+        """Return the value of the TimeSeries at the specified GPS time.
 
         Parameters
         ----------
+        time: scalar or array-like
+            GPS time at which the value is wanted. Note that LIGOTimeGPS
+            objects count as scalar.
         nearest_sample: bool
             Return the sample at the time nearest to the chosen time rather
             than rounded down.
@@ -254,7 +257,7 @@ class TimeSeries(Array):
             Return the interpolated value of the time series. Choices
             are simple linear or quadratic interpolation.
         extrapolate: str or float, None
-            Value to return if time is outsidde the range of the vector or
+            Value to return if time is outside the range of the vector or
             method of extrapolating the value.
         """
         if nearest_sample:
@@ -278,9 +281,9 @@ class TimeSeries(Array):
                 keep_idx = _numpy.where(left & right)[0]
                 vtime = vtime[keep_idx]
             else:
-                raise ValueError("Unsuported extrapolate: %s" % extrapolate)
+                raise ValueError(f"Unsupported extrapolate: {extrapolate}")
 
-        fi = (vtime - float(self.start_time))*self.sample_rate
+        fi = (vtime - float(self.start_time)) * self.sample_rate
         i = _numpy.asarray(_numpy.floor(fi)).astype(int)
         di = fi - i
 
@@ -305,10 +308,9 @@ class TimeSeries(Array):
             ans[keep_idx] = old
             ans = _numpy.array(ans, ndmin=1)
 
-        if _numpy.isscalar(time):
+        if _numpy.ndim(time) == 0:
             return ans[0]
-        else:
-            return ans
+        return ans
 
     at_times = at_time
 
@@ -561,6 +563,31 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
+    def get_gate_indices(self, time, window):
+        """Calculates the indices at which a gate should be applied.
+
+        Parameters
+        ----------
+        time: float
+            Central time of the gate in seconds
+        window: float
+            Half-length in seconds to remove data around gate time.
+
+        Returns
+        -------
+        lindex: int
+            The left index of the gate
+        rindex: int
+            The right index of the gate
+        """
+        st = float(self.start_time)
+        dt = float(self.delta_t)
+        lindex = int((time - window - st) / dt)
+        rindex = int((time + window - st) / dt)
+        lindex = lindex if lindex >= 0 else 0
+        rindex = rindex if rindex <= len(self) else len(self)
+        return lindex, rindex
+
     def gate(self, time, window=0.25, method='taper', copy=True,
              taper_width=0.25, invpsd=None):
         """ Gate out portion of time series
@@ -601,10 +628,7 @@ class TimeSeries(Array):
                 # These are some bare minimum settings, normally you
                 # should probably provide a psd
                 invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
-            lindex = int((time - window - self.start_time) / self.delta_t)
-            rindex = int((time + window - self.start_time) / self.delta_t)
-            lindex = lindex if lindex >= 0 else 0
-            rindex = rindex if rindex <= len(self) else len(self)
+            lindex, rindex = self.get_gate_indices(time, window)
             rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:
@@ -760,10 +784,11 @@ class TimeSeries(Array):
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                interp_amp = interp2d(times, freqs, abs(q_plane.T))
-                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane.T))
+                interp_amp = interp2d(freqs, times, abs(q_plane), kx=1, ky=1)
+                interp_phase = interp2d(freqs, times, _numpy.angle(q_plane),
+                                        kx=1, ky=1)
             else:
-                interp = interp2d(times, freqs, q_plane.T)
+                interp = interp2d(freqs, times, q_plane, kx=1, ky=1)
 
         if delta_t:
             times = _numpy.arange(float(self.start_time),
@@ -777,12 +802,12 @@ class TimeSeries(Array):
 
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                q_plane = _numpy.exp(1.0j * interp_phase(times, freqs))
-                q_plane *= interp_amp(times, freqs)
+                q_plane = _numpy.exp(1.0j * interp_phase(freqs, times))
+                q_plane *= interp_amp(freqs, times)
             else:
-                q_plane = interp(times, freqs)
+                q_plane = interp(freqs, times)
 
-        return times, freqs, q_plane.T
+        return times, freqs, q_plane
 
     def notch_fir(self, f1, f2, order, beta=5.0, remove_corrupted=True):
         """ notch filter the time series using an FIR filtered generated from

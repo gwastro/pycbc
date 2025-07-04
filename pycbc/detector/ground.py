@@ -26,12 +26,12 @@
 # =============================================================================
 #
 """This module provides utilities for calculating detector responses and timing
-between observatories.
+between ground-based observatories.
 """
 import os
 import logging
 import numpy as np
-from numpy import cos, sin, pi
+from numpy import cos, sin
 
 import lal
 from astropy.time import Time
@@ -56,8 +56,6 @@ def gmst_accurate(gps_time):
 def get_available_detectors():
     """ List the available detectors """
     dets = list(_ground_detectors.keys())
-    for pfx, name in get_available_lal_detectors():
-        dets += [pfx]
     return dets
 
 def get_available_lal_detectors():
@@ -81,7 +79,8 @@ _ground_detectors = {}
 
 def add_detector_on_earth(name, longitude, latitude,
                           yangle=0, xangle=None, height=0,
-                          xlength=4000, ylength=4000):
+                          xlength=4000, ylength=4000,
+                          xaltitude=0, yaltitude=0):
     """ Add a new detector on the earth
 
     Parameters
@@ -98,6 +97,10 @@ def add_detector_on_earth(name, longitude, latitude,
     xangle: float
         Azimuthal angle of the x-arm (angle drawn from point north). If not set
         we assume a right angle detector following the right-hand rule.
+    xaltitude: float
+        The altitude angle of the x-arm measured from the local horizon.
+    yaltitude: float
+        The altitude angle of the y-arm measured from the local horizon.
     height: float
         The height in meters of the detector above the standard
         reference ellipsoidal earth
@@ -106,27 +109,23 @@ def add_detector_on_earth(name, longitude, latitude,
         # assume right angle detector if no separate xarm direction given
         xangle = yangle + np.pi / 2.0
 
-    # Rotation matrix to move detector to correct orientation
-    rm1 = rotation_matrix(longitude * units.rad, 'z')
-    rm2 = rotation_matrix((np.pi / 2.0 - latitude) * units.rad, 'y')
-    rm = np.matmul(rm2, rm1)
-
+    # baseline response of a single arm pointed in the -X direction
+    resp = np.array([[-1, 0, 0], [0, 0, 0], [0, 0, 0]])
+    rm2 = rotation_matrix(-longitude * units.rad, 'z')
+    rm1 = rotation_matrix(-1.0 * (np.pi / 2.0 - latitude) * units.rad, 'y')
+    
     # Calculate response in earth centered coordinates
     # by rotation of response in coordinates aligned
     # with the detector arms
     resps = []
     vecs = []
-    for angle in [yangle, xangle]:
-        a, b = cos(2 * angle), sin(2 * angle)
-        resp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
-
+    for angle, azi in [(yangle, yaltitude), (xangle, xaltitude)]:
+        rm0 = rotation_matrix(angle * units.rad, 'z')
+        rmN = rotation_matrix(-azi *  units.rad, 'y')
+        rm = rm2 @ rm1 @ rm0 @ rmN
         # apply rotation
-        resp = np.matmul(resp, rm)
-        resp = np.matmul(rm.T, resp) / 4.0
-        resps.append(resp)
-
-        vec = np.matmul(rm.T, np.array([-np.cos(angle), np.sin(angle), 0]))
-        vecs.append(vec)
+        resps.append(rm @ resp @ rm.T / 2.0)
+        vecs.append(rm @ np.array([-1, 0, 0]))
 
     full_resp = (resps[0] - resps[1])
     loc = coordinates.EarthLocation.from_geodetic(longitude * units.rad,
@@ -142,8 +141,8 @@ def add_detector_on_earth(name, longitude, latitude,
                                'yangle': yangle,
                                'xangle': xangle,
                                'height': height,
-                               'xaltitude': 0.0,
-                               'yaltitude': 0.0,
+                               'xaltitude': xaltitude,
+                               'yaltitude': yaltitude,
                                'ylength': ylength,
                                'xlength': xlength,
                               }
@@ -191,6 +190,22 @@ def load_detector_config(config_files):
         method(det.upper(), *args, **kwds)
 
 
+# prepopulate using detectors hardcoded into lalsuite
+for pref, name in get_available_lal_detectors():
+    lalsim = pycbc.libutils.import_optional('lalsimulation')
+    lal_det = lalsim.DetectorPrefixToLALDetector(pref).frDetector
+    add_detector_on_earth(pref,
+                          lal_det.vertexLongitudeRadians,
+                          lal_det.vertexLatitudeRadians,
+                          height=lal_det.vertexElevation,
+                          xangle=lal_det.xArmAzimuthRadians,
+                          yangle=lal_det.yArmAzimuthRadians,
+                          xlength=lal_det.xArmMidpoint * 2,
+                          ylength=lal_det.yArmMidpoint * 2,
+                          xaltitude=lal_det.xArmAltitudeRadians,
+                          yaltitude=lal_det.yArmAltitudeRadians,
+                          )
+
 # autoload detector config files
 if 'PYCBC_DETECTOR_CONFIG' in os.environ:
     load_detector_config(os.environ['PYCBC_DETECTOR_CONFIG'].split(':'))
@@ -218,11 +233,6 @@ class Detector(object):
             self.info = _ground_detectors[detector_name]
             self.response = self.info['response']
             self.location = self.info['location']
-        elif detector_name in lal_detectors:
-            lalsim = pycbc.libutils.import_optional('lalsimulation')
-            self._lal = lalsim.DetectorPrefixToLALDetector(self.name)
-            self.response = self._lal.response
-            self.location = self._lal.location
         else:
             raise ValueError("Unkown detector {}".format(detector_name))
 
@@ -247,29 +257,27 @@ class Detector(object):
 
     def lal(self):
         """ Return lal data type detector instance """
-        if hasattr(self, '_lal'):
-            return self._lal
-        else:
-            import lal
-            d = lal.FrDetector()
-            d.vertexLongitudeRadians = self.longitude
-            d.vertexLatitudeRadians = self.latitude
-            d.vertexElevation = self.info['height']
-            d.xArmAzimuthRadians = self.info['xangle']
-            d.yArmAzimuthRadians = self.info['yangle']
-            d.xArmAltitudeRadians = self.info['yaltitude']
-            d.xArmAltitudeRadians = self.info['xaltitude']
+        import lal
+        d = lal.FrDetector()
+        d.vertexLongitudeRadians = self.longitude
+        d.vertexLatitudeRadians = self.latitude
+        d.vertexElevation = self.info['height']
+        d.xArmAzimuthRadians = self.info['xangle']
+        d.yArmAzimuthRadians = self.info['yangle']
+        d.xArmAltitudeRadians = self.info['xaltitude']
+        d.yArmAltitudeRadians = self.info['yaltitude']
 
-            # This is somewhat abused by lalsimulation at the moment
-            # to determine a filter kernel size. We set this only so that
-            # value gets a similar number of samples as other detectors
-            # it is used for nothing else
-            d.yArmMidpoint = 4000.0
+        # This is somewhat abused by lalsimulation at the moment
+        # to determine a filter kernel size. We set this only so that
+        # value gets a similar number of samples as other detectors
+        # it is used for nothing else
+        d.yArmMidpoint = self.info['ylength'] / 2.0
+        d.xArmMidpoint = self.info['xlength'] / 2.0
 
-            x = lal.Detector()
-            r = lal.CreateDetector(x, d, lal.LALDETECTORTYPE_IFODIFF)
-            self._lal = r
-            return r
+        x = lal.Detector()
+        r = lal.CreateDetector(x, d, lal.LALDETECTORTYPE_IFODIFF)
+        self._lal = r
+        return r
 
     def gmst_estimate(self, gps_time):
         if self.reference_time is None:
@@ -647,136 +655,6 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     return f_plus, f_cross
 
 
-"""     LISA class      """
-
-
-class LISA(object):
-    """For LISA detector
-    """
-    def __init__(self):
-        None
-
-    def get_pos(self, ref_time):
-        """Return the position of LISA detector for a given reference time
-        Parameters
-        ----------
-        ref_time : numpy.ScalarType
-
-        Returns
-        -------
-        location : numpy.ndarray of shape (3,3)
-               Returns the position of all 3 sattelites with each row
-               correspoding to a single axis.
-        """
-        ref_time = Time(val=ref_time, format='gps', scale='utc').jyear
-        n = np.array(range(1, 4))
-        kappa, _lambda_ = 0, 0
-        alpha = 2. * np.pi * ref_time/1 + kappa
-        beta_n = (n - 1) * 2.0 * pi / 3.0 + _lambda_
-        a, L = 1., 0.03342293561
-        e = L/(2. * a * np.sqrt(3))
-
-        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
-        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*cos(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
-        z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
-        self.location = np.array([x, y, z])
-
-        return self.location
-
-    def get_gcrs_pos(self, location):
-        """ Transforms ICRS frame to GCRS frame
-
-        Parameters
-        ----------
-        loc : numpy.ndarray shape (3,1) units: AU
-              Cartesian Coordinates of the location
-              in ICRS frame
-
-        Returns
-        ----------
-        loc : numpy.ndarray shape (3,1) units: meters
-              GCRS coordinates in cartesian system
-        """
-        loc = location
-        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
-                frame='icrs', representation_type='cartesian').transform_to('gcrs')
-        loc.representation_type = 'cartesian'
-        conv = np.float32(((loc.x.unit/units.m).decompose()).to_string())
-        loc = np.array([np.float32(loc.x), np.float32(loc.y),
-                        np.float32(loc.z)])*conv
-        return loc
-
-    def time_delay_from_location(self, other_location, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector to detector for
-        a signal with the given sky location. In other words return
-        `t1 - t2` where `t1` is the arrival time in this detector and
-        `t2` is the arrival time in the other location. Units(AU)
-
-        Parameters
-        ----------
-        other_location : numpy.ndarray of coordinates in ICRS frame
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
-
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        dx = self.location - other_location
-        cosd = cos(declination)
-        e0 = cosd * cos(right_ascension)
-        e1 = cosd * -sin(right_ascension)
-        e2 = sin(declination)
-        ehat = np.array([e0, e1, e2])
-        return dx.dot(ehat) / constants.c.value
-
-    def time_delay_from_detector(self, det, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector for a signal with
-        the given sky location in ICRS frame; i.e. return `t1 - t2` where
-        `t1` is the arrival time in this detector and `t2` is the arrival
-        time in the other detector.
-
-        Parameters
-        ----------
-        other_detector : detector.Detector
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
-
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        loc = Detector(det, t_gps).get_icrs_pos()
-        return self.time_delay_from_location(loc, right_ascension,
-                                             declination, t_gps)
-
-    def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
-        """Return the time delay from the earth center in ICRS frame
-        """
-        t_gps = Time(val=t_gps, format='gps', scale='utc')
-        earth = coordinates.get_body('earth', t_gps,
-                                     location=None).transform_to('icrs')
-        earth.representation_type = 'cartesian'
-        return self.time_delay_from_location(
-            np.array([np.float32(earth.x), np.float32(earth.y),
-                      np.float32(earth.z)]), right_ascension,
-            declination, t_gps)
-
-
 def ppdets(ifos, separator=', '):
     """Pretty-print a list (or set) of detectors: return a string listing
     the given detectors alphabetically and separated by the given string
@@ -785,3 +663,10 @@ def ppdets(ifos, separator=', '):
     if ifos:
         return separator.join(sorted(ifos))
     return 'no detectors'
+
+__all__ = ['Detector', 'get_available_detectors',
+           'get_available_lal_detectors',
+           'gmst_accurate', 'add_detector_on_earth',
+           'single_arm_frequency_response', 'ppdets',
+           'overhead_antenna_pattern', 'load_detector_config',
+           '_ground_detectors',]

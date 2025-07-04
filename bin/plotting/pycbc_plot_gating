@@ -7,14 +7,13 @@ import logging
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import pylab as pl
+from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 import mpld3
 import mpld3.plugins
 
 import pycbc
 from pycbc.results.color import ifo_color
-from pycbc.results.mpld3_utils import MPLSlide
 from pycbc.io.hdf import HFile
 
 
@@ -49,7 +48,7 @@ for fn in args.input_file:
         have_gates = have_gates or (len(gate_data[key]) > 0)
 
 mpld3.plugins.DEFAULT_PLUGINS = []
-fig = pl.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(10, 5))
 ax = fig.gca()
 ax.set_yticks([])
 

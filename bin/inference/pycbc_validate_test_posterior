@@ -7,9 +7,9 @@ import numpy
 import argparse
 from matplotlib import use
 use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
-from scipy.stats import gaussian_kde, ks_2samp
+from scipy.stats import ks_2samp
 
 from pycbc.distributions.utils import prior_from_config
 from pycbc.inference import models, io
@@ -52,7 +52,7 @@ for dist in prior.distributions:
     ref = ref[(bound.min < ref[param]) & (ref[param] < bound.max)]
 
 nparam = len(model.variable_params)
-fig, axs = pylab.subplots(1, nparam, figsize=[6*nparam, 4], dpi=100)
+fig, axs = plt.subplots(1, nparam, figsize=[6*nparam, 4], dpi=100)
 
 result = d1.read_samples(model.variable_params)
 failed = False
@@ -62,16 +62,16 @@ for param, ax in zip(model.variable_params, axs):
     kv, pvalue = ks_2samp(ref[param], rpart)
     print("{}, p-value={:.3f}".format(param, pvalue))
 
-    pylab.sca(ax)
-    pylab.hist(ref[param], density=True, bins=30, label='reference')
-    pylab.hist(result[param], density=True, bins=30, alpha=0.5, label='sampler')
-    pylab.title('KS p-value = {:.4f}'.format(pvalue))
-    pylab.xlabel(param)
-    pylab.legend()
+    plt.sca(ax)
+    plt.hist(ref[param], density=True, bins=30, label='reference')
+    plt.hist(result[param], density=True, bins=30, alpha=0.5, label='sampler')
+    plt.title('KS p-value = {:.4f}'.format(pvalue))
+    plt.xlabel(param)
+    plt.legend()
     ax.get_yaxis().set_visible(False)
 
     if pvalue < args.p_value_threshold:
         failed = True
 
-pylab.savefig(args.output_file)
+plt.savefig(args.output_file)
 sys.exit(failed)

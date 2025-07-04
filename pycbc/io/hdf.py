@@ -12,9 +12,9 @@ from itertools import chain
 from io import BytesIO
 from lal import LIGOTimeGPS
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 from pycbc.io.ligolw import (
     return_search_summary,
@@ -28,7 +28,40 @@ from pycbc.events import mean_if_greater_than_zero
 logger = logging.getLogger('pycbc.io.hdf')
 
 
-class HFile(h5py.File):
+class HGroup(h5py.Group):
+    """ Low level extensions to the h5py group object
+    """
+    def create_group(self, name, track_order=None):
+        """
+        Wrapper around h5py's create_group in order to redirect to the
+        manual HGroup object defined here
+        """
+        if track_order is None:
+            track_order = h5py.h5.get_config().track_order
+
+        with h5py._objects.phil:
+            name, lcpl = self._e(name, lcpl=True)
+            gcpl = HGroup._gcpl_crt_order if track_order else None
+            gid = h5py.h5g.create(self.id, name, lcpl=lcpl, gcpl=gcpl)
+            return HGroup(gid)
+
+    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
+        """
+        Wrapper around h5py's create_dataset so that checksums are used
+        """
+        if isinstance(data, np.ndarray) and not data.dtype == object:
+            kwds['fletcher32'] = True
+        return h5py.Group.create_dataset(
+            self,
+            name,
+            shape=shape,
+            dtype=dtype,
+            data=data,
+            **kwds
+        )
+
+
+class HFile(HGroup, h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
     def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
@@ -543,7 +576,7 @@ class SingleDetTriggers(object):
             logger.info("Applying threshold of %.3f on %s",
                         filter_threshold, filter_rank)
             fcn_dsets = (ranking.sngls_ranking_function_dict[filter_rank],
-                         ranking.required_datasets[filter_rank])
+                         ranking.reqd_datasets[filter_rank])
             idx, _ = self.trigs_f.select(
                  lambda rank: rank > filter_threshold,
                  filter_rank,
@@ -626,6 +659,7 @@ class SingleDetTriggers(object):
                     mtrigs[k] = self.trigs[k][self.mask]
                 else:
                     mtrigs[k] = self.trigs[k][:]
+        mtrigs['ifo'] = self.ifo
         return mtrigs
 
     @classmethod
@@ -687,30 +721,32 @@ class SingleDetTriggers(object):
         self.mask[and_indices.astype(np.uint64)] = True
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
-                                           ranking_threshold=6,
+                                           statistic_threshold=None,
                                            n_loudest=10,
-                                           cluster_window=10):
+                                           cluster_window=10,
+                                           ):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
         Events are clustered so that no more than 1 event within +/-
         cluster_window will be considered. Can apply a threshold on the
-        ranking using ranking_threshold
+        statistic using statistic_threshold
         """
 
         sds = rank_method.single(self.trig_dict())
-        stat = rank_method.rank_stat_single((self.ifo, sds))
+        stat = rank_method.rank_stat_single(
+            (self.ifo, sds),
+        )
         if len(stat) == 0:
             # No triggers at all, so just return here
             self.apply_mask(np.array([], dtype=np.uint64))
+            self.stat = np.array([], dtype=np.uint64)
             return
 
         times = self.end_time
-        if ranking_threshold:
-            # Threshold on sngl_ranking
-            # Note that we can provide None or zero to do no thresholding
-            # but the default is to do some
-            keep = stat >= ranking_threshold
+        if statistic_threshold is not None:
+            # Threshold on statistic
+            keep = stat >= statistic_threshold
             stat = stat[keep]
             times = times[keep]
             self.apply_mask(keep)
@@ -744,6 +780,7 @@ class SingleDetTriggers(object):
         index.sort()
         # Apply to the existing mask
         self.apply_mask(index)
+        self.stat = stat[index]
 
     @property
     def mask_size(self):
@@ -1082,7 +1119,7 @@ class ForegroundTriggers(object):
         )
         proc_id = proc_table.process_id
 
-        search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
+        search_summ_table = lsctables.SearchSummaryTable.new()
         coinc_h5file = self.coinc_file.h5file
         try:
             start_time = coinc_h5file['segments']['coinc']['start'][:].min()
@@ -1104,12 +1141,12 @@ class ForegroundTriggers(object):
         search_summ_table.append(search_summary)
         outdoc.childNodes[0].appendChild(search_summ_table)
 
-        sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
-        coinc_def_table = lsctables.New(lsctables.CoincDefTable)
-        coinc_event_table = lsctables.New(lsctables.CoincTable)
-        coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
-        coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
-        time_slide_table = lsctables.New(lsctables.TimeSlideTable)
+        sngl_inspiral_table = lsctables.SnglInspiralTable.new()
+        coinc_def_table = lsctables.CoincDefTable.new()
+        coinc_event_table = lsctables.CoincTable.new()
+        coinc_inspiral_table = lsctables.CoincInspiralTable.new()
+        coinc_event_map_table = lsctables.CoincMapTable.new()
+        time_slide_table = lsctables.TimeSlideTable.new()
 
         # Set up time_slide table
         time_slide_id = lsctables.TimeSlideID(0)
@@ -1472,40 +1509,58 @@ chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
-    f = hdfile
+    """
+    Retrieves the reduced chi-squared values based on the specified choice.
+
+    Parameters
+    ----------
+    hdfile: HDF file object, or dictionary, or ReadByTemplate object 
+            or SingleDetTriggers object
+        The object to retrieve the chi-squared values from.
+    chisq_choice: str 
+        The choice of chi-squared values to retrieve.
+
+    Returns
+    -------
+    chisq: numpy.ndarray
+        The reduced chi-squared values based on the specified choice.
+    """
+    # Get the reduced chi-squared values
     if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
                              'max_bank_cont_trad']:
-        trad_chisq = f['chisq'][:]
+        trad_chisq = hdfile['chisq'][:]
         # We now need to handle the case where chisq is not actually calculated
         # 0 is used as a sentinel value
-        trad_chisq_dof = f['chisq_dof'][:]
-        trad_chisq /= (trad_chisq_dof * 2 - 2)
+        trad_chisq_dof = hdfile['chisq_dof'][:]
+        red_trad_chisq = trad_chisq / (trad_chisq_dof * 2 - 2)
     if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
                              'max_bank_cont_trad']:
-        cont_chisq = f['cont_chisq'][:]
-        cont_chisq_dof = f['cont_chisq_dof'][:]
-        cont_chisq /= cont_chisq_dof
+        cont_chisq = hdfile['cont_chisq'][:]
+        cont_chisq_dof = hdfile['cont_chisq_dof'][:]
+        red_cont_chisq = cont_chisq / cont_chisq_dof
     if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
                              'max_bank_cont_trad']:
-        bank_chisq = f['bank_chisq'][:]
-        bank_chisq_dof = f['bank_chisq_dof'][:]
-        bank_chisq /= bank_chisq_dof
+        bank_chisq = hdfile['bank_chisq'][:]
+        bank_chisq_dof = hdfile['bank_chisq_dof'][:]
+        red_bank_chisq = bank_chisq / bank_chisq_dof
+
+    # return the corresponding reduced chi-squared values depending on the choice
     if chisq_choice == 'sg':
-        chisq = f['sg_chisq'][:]
+        chisq = hdfile['sg_chisq'][:]
     elif chisq_choice == 'traditional':
-        chisq = trad_chisq
+        chisq = red_trad_chisq
     elif chisq_choice == 'cont':
-        chisq = cont_chisq
+        chisq = red_cont_chisq
     elif chisq_choice == 'bank':
-        chisq = bank_chisq
+        chisq = red_bank_chisq
     elif chisq_choice == 'max_cont_trad':
-        chisq = np.maximum(trad_chisq, cont_chisq)
+        chisq = np.maximum(red_trad_chisq, red_cont_chisq)
     elif chisq_choice == 'max_bank_cont':
-        chisq = np.maximum(bank_chisq, cont_chisq)
+        chisq = np.maximum(red_bank_chisq, red_cont_chisq)
     elif chisq_choice == 'max_bank_trad':
-        chisq = np.maximum(bank_chisq, trad_chisq)
+        chisq = np.maximum(red_bank_chisq, red_trad_chisq)
     elif chisq_choice == 'max_bank_cont_trad':
-        chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
+        chisq = np.maximum(np.maximum(red_bank_chisq, red_cont_chisq), red_trad_chisq)
     else:
         err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)

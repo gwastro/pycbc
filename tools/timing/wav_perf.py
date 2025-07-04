@@ -1,7 +1,7 @@
 #!/usr/bin/python
-from pycbc.scheme import *
-from pycbc.types import *
-from pycbc.waveform import *
+from pycbc.scheme import CPUScheme, CUDAScheme
+from pycbc.types import zeros, complex64
+from pycbc.waveform import get_fd_waveform
 import pycbc
 from optparse import OptionParser
 import gc

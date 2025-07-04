@@ -9,13 +9,11 @@ import argparse
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.cm
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-import pylab
+from matplotlib.ticker import MultipleLocator
+from matplotlib import pyplot as plt
 import numpy as np
 
-from ligo.lw import utils, table, lsctables
-
-from pycbc import pnutils, init_logging, add_common_pycbc_options
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.conversions import (
     mtotal_from_mass1_mass2,
     q_from_mass1_mass2,
@@ -55,8 +53,8 @@ def basic_scatter(
     if vmax is not None:
         vmax = float(vmax)
 
-    fig = pylab.figure(num=None)
-    pylab.scatter(
+    fig = plt.figure(num=None)
+    plt.scatter(
         xval,
         yval,
         c=cval,
@@ -69,7 +67,7 @@ def basic_scatter(
     )
 
     if len(neg_idx) > 0:
-        pylab.scatter(
+        plt.scatter(
             xval[neg_idx],
             yval[neg_idx],
             c="red",
@@ -79,11 +77,11 @@ def basic_scatter(
         matplotlib.pyplot.legend()
 
     if cval is not None:
-        bar = pylab.colorbar()
+        bar = plt.colorbar()
         bar.set_label(cname)
 
-    pylab.xlabel(xname)
-    pylab.ylabel(yname)
+    plt.xlabel(xname)
+    plt.ylabel(yname)
 
     if xmin is None:
         xmin = min(xval)
@@ -95,8 +93,8 @@ def basic_scatter(
     else:
         ymin = float(ymin)
 
-    pylab.xlim(xmin, max(xval))
-    pylab.ylim(ymin, max(yval))
+    plt.xlim(xmin, max(xval))
+    plt.ylim(ymin, max(yval))
 
     ax = fig.gca()
     if majorL:
@@ -108,10 +106,10 @@ def basic_scatter(
         ax.xaxis.set_minor_locator(MultipleLocator(minorL))
         ax.yaxis.set_minor_locator(MultipleLocator(minorL))
 
-    pylab.grid()
-    pylab.title(title)
+    plt.grid()
+    plt.title(title)
 
-    pylab.savefig(out_name, dpi=500)
+    plt.savefig(out_name, dpi=500)
 
 
 parser = argparse.ArgumentParser(description=__doc__)

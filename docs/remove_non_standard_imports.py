@@ -24,7 +24,6 @@ requested in sphinx, remove this code and use it if it gets added.
 We may need to write a patch for Sphinx to add this functionality.
 """
 
-import os,sys
 import glob
 
 

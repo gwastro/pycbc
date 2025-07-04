@@ -149,8 +149,8 @@ def findchirp_cluster_over_window(times, values, window_length):
 
     indices = numpy.zeros(len(times), dtype=numpy.int32)
     tlen = len(times)
-    absvalues = numpy.array(abs(values), copy=False)
-    times = numpy.array(times, dtype=numpy.int32, copy=False)
+    absvalues = numpy.asarray(abs(values))
+    times = numpy.asarray(times, dtype=numpy.int32)
     k = findchirp_cluster_over_window_cython(times, absvalues, window_length,
                                              indices, tlen)
 
@@ -686,8 +686,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             for key in self.template_event_dict:
                 self.template_event_dict[key] = \
                     self.template_event_dict[key][indices]
-        else:
-            indices = numpy.arange(len(tvec))
 
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """

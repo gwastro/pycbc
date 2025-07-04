@@ -2,7 +2,7 @@ import logging
 import numpy
 
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
-from ligo.lw import ligolw, lsctables, utils as ligolw_utils
+from igwn_ligolw import ligolw, lsctables, utils as ligolw_utils
 
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
@@ -33,7 +33,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
     SnglInspiralTable
         Bank of templates in SnglInspiralTable format
     '''
-    sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
+    sngl_inspiral_table = lsctables.SnglInspiralTable.new()
     col_names = ['mass1','mass2','spin1z','spin2z']
 
     for values in params:
@@ -267,7 +267,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, programName="",
         end_time = optDict['gps_end_time']
 
     # make search summary table
-    search_summary_table = lsctables.New(lsctables.SearchSummaryTable)
+    search_summary_table = lsctables.SearchSummaryTable.new()
     search_summary = return_search_summary(
         start_time, end_time, len(sngl_inspiral_table), ifos
     )

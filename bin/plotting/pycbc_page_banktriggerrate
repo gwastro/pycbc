@@ -3,7 +3,8 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-import numpy, argparse, os, pylab, pycbc.pnutils
+from matplotlib import pyplot as plt
+import numpy, argparse, pycbc.pnutils
 from pycbc.io.hdf import HFile
 
 from pycbc import init_logging, add_common_pycbc_options
@@ -56,15 +57,15 @@ for trig_filename in args.trigger_files:
 chisq = numpy.concatenate(chisqs) / (float(args.chisq_bins) * 2 - 2)
 snr = numpy.concatenate(snrs)
 
-pylab.figure()
-pylab.scatter(snr[0:1000000], chisq[0:1000000])
-pylab.xlim(6, 8)
-pylab.ylim(.8, 3)
-pylab.savefig('snrchi.png')
+plt.figure()
+plt.scatter(snr[0:1000000], chisq[0:1000000])
+plt.xlim(6, 8)
+plt.ylim(.8, 3)
+plt.savefig('snrchi.png')
    
-pylab.figure() 
-pylab.scatter(et, m1+m2, c=template_num, s=template_num/template_num.max()*50)
-pylab.ylabel('Total Mass')
-pylab.xlabel('Eta')
-pylab.colorbar()
-pylab.savefig(args.output_file)
+plt.figure() 
+plt.scatter(et, m1+m2, c=template_num, s=template_num/template_num.max()*50)
+plt.ylabel('Total Mass')
+plt.xlabel('Eta')
+plt.colorbar()
+plt.savefig(args.output_file)

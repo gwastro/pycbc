@@ -10,12 +10,11 @@ launched with mpirun.
 See https://arxiv.org/abs/1805.11174 for an overview."""
 
 import sys
-import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
+import argparse, numpy, pycbc, logging, cProfile, h5py, json
 import os.path
 import itertools
 import platform
 import subprocess
-import multiprocessing
 from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
@@ -43,7 +42,6 @@ from pycbc.detector import ppdets
 from pycbc.filter import resample
 from pycbc.psd import estimate
 from pycbc.psd import variation
-from pycbc.live import snr_optimizer
 from pycbc import conversions as conv
 
 # Use cached class-based FFTs in the resample and estimate module
@@ -330,7 +328,7 @@ class LiveEventManager(object):
             * self.bank.sample_rate)
         flen = int(tlen / 2 + 1)
         delta_f = self.bank.sample_rate / float(tlen)
-        cmd = 'timeout {} '.format(args.snr_opt_timeout)
+        cmd = f'timeout {args.snr_opt_timeout} '
         exepath = which('pycbc_optimize_snr')
         cmd += exepath + ' '
 
@@ -342,17 +340,16 @@ class LiveEventManager(object):
         data_fils_str = '--data-files '
         psd_fils_str = '--psd-files '
         for ifo in live_ifos:
-            curr_fname = \
-                fname.replace('.xml.gz',
-                              '_{}_data_overwhitened.hdf'.format(ifo))
+            curr_fname = fname.replace(
+                '.xml.gz', f'_{ifo}_data_overwhitened.hdf'
+            )
             curr_data = self.data_readers[ifo].overwhitened_data(delta_f)
             curr_data.save(curr_fname)
-            data_fils_str += '{}:{} ' .format(ifo, curr_fname)
-            curr_fname = fname.replace('.xml.gz',
-                                       '_{}_psd.hdf'.format(ifo))
+            data_fils_str += f'{ifo}:{curr_fname} '
+            curr_fname = fname.replace('.xml.gz', f'_{ifo}_psd.hdf')
             curr_psd = curr_data.psd
             curr_psd.save(curr_fname)
-            psd_fils_str += '{}:{} ' .format(ifo, curr_fname)
+            psd_fils_str += f'{ifo}:{curr_fname} '
         cmd += data_fils_str
         cmd += psd_fils_str
 
@@ -386,10 +383,10 @@ class LiveEventManager(object):
                                                     'mc_area_args/',
                                                     self.mc_area_args)
 
-        cmd += '--params-file {} '.format(curr_fname)
-        cmd += '--approximant {} '.format(apr)
-        cmd += '--gracedb-server {} '.format(self.gracedb_server)
-        cmd += '--gracedb-search {} '.format(self.gracedb_search)
+        cmd += f'--params-file {curr_fname} '
+        cmd += f'--approximant {apr} '
+        cmd += f'--gracedb-server {self.gracedb_server} '
+        cmd += f'--gracedb-search {self.gracedb_search} '
 
         labels = self.snr_opt_label
         labels += ' '.join(self.gracedb_labels or [])
@@ -408,7 +405,7 @@ class LiveEventManager(object):
             cmd += '--enable-gracedb-upload '
 
         if self.fu_cores:
-            cmd += '--cores {} '.format(self.fu_cores)
+            cmd += f'--cores {self.fu_cores} '
 
         if args.processing_scheme:
             # we will use the cores for multiple workers of the
@@ -420,11 +417,11 @@ class LiveEventManager(object):
             # unlikely to benefit from a processing scheme with more
             # than 1 thread anyway.
             opt_scheme = args.processing_scheme.split(':')[0]
-            cmd += '--processing-scheme {}:1 '.format(opt_scheme)
+            cmd += f'--processing-scheme {opt_scheme}:1 '
 
         # Save the command which would be used:
         snroc_fname = os.path.join(out_dir_path, 'snr_optimize_command.txt')
-        with open(snroc_fname,'w') as snroc_file:
+        with open(snroc_fname, 'w') as snroc_file:
             snroc_file.write(cmd)
 
         return cmd, out_dir_path
@@ -490,10 +487,10 @@ class LiveEventManager(object):
         if optimize_snr_checks:
             logging.info('Optimizing SNR for event above threshold ..')
             self.run_optimize_snr(
-                    cmd,
-                    out_dir_path,
-                    fname.replace('.xml.gz', '_attributes.hdf'),
-                    gid
+                cmd,
+                out_dir_path,
+                fname.replace('.xml.gz', '_attributes.hdf'),
+                gid
             )
 
     def check_coincs(self, ifos, coinc_results, psds):
@@ -572,8 +569,7 @@ class LiveEventManager(object):
         # prevent singles being uploaded as well for coinc events
         self.last_few_coincs_uploaded.append(event.merger_time)
         # Only need to keep a few (10) events
-        self.last_few_coincs_uploaded = \
-            self.last_few_coincs_uploaded[-10:]
+        self.last_few_coincs_uploaded = self.last_few_coincs_uploaded[-10:]
 
         # Save the event
         if not upload_checks:
@@ -773,8 +769,7 @@ class LiveEventManager(object):
 
             for ifo in results:
                 for k in results[ifo]:
-                    f['%s/%s' % (ifo, k)] = \
-                            h5py_unicode_workaround(results[ifo][k])
+                    f[f'{ifo}/{k}'] = h5py_unicode_workaround(results[ifo][k])
 
             for key in raw_results:
                 f[key] = h5py_unicode_workaround(raw_results[key])
@@ -797,12 +792,11 @@ class LiveEventManager(object):
                 gate_dtype = [('center_time', float),
                               ('zero_half_width', float),
                               ('taper_width', float)]
-                f['{}/gates'.format(ifo)] = \
-                        numpy.array(gates[ifo], dtype=gate_dtype)
+                f[f'{ifo}/gates'] = numpy.array(gates[ifo], dtype=gate_dtype)
 
         for ifo in (store_psd or {}):
             if store_psd[ifo] is not None:
-                store_psd[ifo].save(fname, group='%s/psd' % ifo)
+                store_psd[ifo].save(fname, group=f'{ifo}/psd')
 
 
 def check_max_length(args, waveforms):
@@ -821,7 +815,7 @@ def check_max_length(args, waveforms):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
-parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--verbose', action='count')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
 parser.add_argument('--bank-file', required=True,
                     help="Template bank file in XML or HDF format")
@@ -852,6 +846,8 @@ parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction
 parser.add_argument('--idq-threshold', type=float,
                     help='Threshold used to veto triggers at times of '
                     'low iDQ False Alarm Probability')
+parser.add_argument('--idq-reweighting', action='store_true',default=False,
+                    help='Reweight triggers based on iDQ False Alarm Probability')
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
@@ -1049,7 +1045,8 @@ parser.add_argument('--psd-variation', action='store_true',
                          "the search. Required when using a single detector "
                          "ranking statistic that includes psd variation.")
 parser.add_argument("--statistic-refresh-rate", type=float,
-                    help="How often to refresh the statistic object")
+                    help="How often to refresh the statistic object, "
+                         "in seconds. If omitted, no refreshing is done.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -1071,9 +1068,14 @@ if not args.enable_gracedb_upload and args.enable_single_detector_upload:
     parser.error('You are not allowed to enable single ifo upload without the '
                  '--enable-gracedb-upload option!')
 
-log_format = '%(asctime)s {} {} %(message)s'.format(platform.node(),
-                                                    mpi.COMM_WORLD.Get_rank())
-pycbc.init_logging(args.verbose, format=log_format)
+# Configure the log messages so that they are prefixed by the timestamp, the
+# hostname of the originating node and the MPI rank of the originating process
+pycbc.init_logging(
+    args.verbose,
+    format='%(asctime)s {} {} %(message)s'.format(
+        platform.node(), mpi.COMM_WORLD.Get_rank()
+    )
+)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
@@ -1083,8 +1085,13 @@ valid_pad = args.analysis_chunk
 total_pad = args.trim_padding * 2 + valid_pad
 lfc = None if args.enable_bank_start_frequency else args.low_frequency_cutoff
 bank = waveform.LiveFilterBank(
-        args.bank_file, args.sample_rate, total_pad, low_frequency_cutoff=lfc,
-        approximant=args.approximant, increment=args.increment)
+    args.bank_file,
+    args.sample_rate,
+    total_pad,
+    low_frequency_cutoff=lfc,
+    approximant=args.approximant,
+    increment=args.increment
+)
 if bank.min_f_lower < args.low_frequency_cutoff:
     parser.error('--low-frequency-cutoff ({} Hz) must not be larger than the '
                  'minimum f_lower across all templates '
@@ -1137,12 +1144,16 @@ with ctx:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
         check_max_length(args, waveforms)
-        mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
-                                    args.chisq_bins, sg_chisq,
-                                    snr_abort_threshold=args.snr_abort_threshold,
-                                    newsnr_threshold=args.newsnr_threshold,
-                                    max_triggers_in_batch=args.max_triggers_in_batch,
-                                    maxelements=args.max_batch_size)
+        mf = LiveBatchMatchedFilter(
+            waveforms,
+            args.snr_threshold,
+            args.chisq_bins,
+            sg_chisq,
+            snr_abort_threshold=args.snr_abort_threshold,
+            newsnr_threshold=args.newsnr_threshold,
+            max_triggers_in_batch=args.max_triggers_in_batch,
+            maxelements=args.max_batch_size
+        )
 
     # Synchronize start time if not provided on the command line
     if not args.start_time:
@@ -1187,8 +1198,9 @@ with ctx:
             global my_coinc_id
             my_coinc_id = i
             c = estimators[my_coinc_id]
-            setproctitle('PyCBC Live {} bg estimator'.format(
-                    ppdets(c.ifos, '-')))
+            setproctitle(
+                'PyCBC Live {} bg estimator'.format(ppdets(c.ifos, '-'))
+            )
 
         def estimator_refresh_threads(_):
             c = estimators[my_coinc_id]
@@ -1299,17 +1311,35 @@ with ctx:
                         if len(results[ifo][key]):
                             results[ifo][key] = results[ifo][key][idx]
                 if data_reader[ifo].idq is not None:
-                    logging.info("Checking %s's iDQ information", ifo)
+                    logging.info("Reading %s's iDQ information", ifo)
                     start = data_reader[ifo].start_time
                     times = results[ifo]['end_time']
-                    idx = data_reader[ifo].idq.indices_of_flag(
+                    flag_active = data_reader[ifo].idq.flag_at_times(
                             start, valid_pad, times,
-                            padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %d/%d %s triggers after iDQ',
-                                 len(idx), len(times), ifo)
-                    for key in results[ifo]:
-                        if len(results[ifo][key]):
-                            results[ifo][key] = results[ifo][key][idx]
+                            padding=data_reader[ifo].dq_padding
+                        )
+
+                    if args.idq_reweighting:
+                        logging.info(
+                            'iDQ flagged %d/%d %s triggers',
+                            numpy.sum(flag_active),
+                            len(times),
+                            ifo
+                        )
+                        results[ifo]['dq_state'] = flag_active.astype(int)
+                    else:
+                        # use idq as a veto
+                        keep = numpy.logical_not(flag_active)
+                        logging.info(
+                            'Keeping %d/%d %s triggers after iDQ',
+                            numpy.sum(keep),
+                            len(times),
+                            ifo
+                        )
+                        for key in results[ifo]:
+                            if len(results[ifo][key]):
+                                results[ifo][key] = \
+                                    results[ifo][key][keep]
 
             # Calculate and add the psd variation for the results
             if args.psd_variation:

@@ -16,7 +16,6 @@
 
 See https://arxiv.org/abs/2008.07494 for a description of the method."""
 
-import os
 import sys
 import argparse
 import logging
@@ -28,7 +27,6 @@ from pycbc.events import cuts, trigger_fits as trstats, stat
 from pycbc.io import DictArray, HFile
 from pycbc.io import live as liveio
 from pycbc.live import significance_fits as sngls_io
-from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
 from pycbc.types import MultiDetOptionAction
 
@@ -71,8 +69,6 @@ pycbc.init_logging(args.verbose)
 sngls_io.verify_live_significance_trigger_pruning_options(args, parser)
 sngls_io.verify_live_significance_duration_bin_options(args, parser)
 
-stat_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
-
 duration_bin_edges = sngls_io.duration_bins_from_cli(args)
 logging.info(
     "Duration bin edges: %s",
@@ -97,13 +93,6 @@ args.template_cuts.append(f"template_duration:{max(duration_bin_edges)}:upper_in
 args.trigger_cuts = args.trigger_cuts or []
 args.trigger_cuts.append(f"end_time:{args.gps_start_time}:lower_inc")
 args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
-
-# Efficiency saving: add SNR cut before any others as sngl_ranking can
-# only be less than SNR.
-args.trigger_cuts.insert(0, f"snr:{args.fit_threshold}:lower_inc")
-
-# Cut triggers with sngl-ranking below threshold
-args.trigger_cuts.append(f"{args.sngl_ranking}:{args.fit_threshold}:lower_inc")
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
@@ -199,7 +188,6 @@ for counter, filename in enumerate(files):
         sds = rank_method[ifo].single(triggers_cut)
         sngls_value = rank_method[ifo].rank_stat_single(
             (ifo, sds),
-            **stat_kwargs
         )
 
         triggers_cut['stat'] = sngls_value

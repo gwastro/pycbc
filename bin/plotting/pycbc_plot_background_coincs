@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """ Plot PyCBC's background coinc triggers
 """
-import numpy
 import argparse
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-import pylab
 from pycbc.io.hdf import HFile
 
 from pycbc import add_common_pycbc_options, init_logging
@@ -51,7 +50,7 @@ if args.min_z is not None:
 if args.max_z is not None:
     hexbin_style['vmax'] = args.max_z
 
-fig = pylab.figure()
+fig = plt.figure()
 ax = fig.gca()
 if args.z_var == 'density':
     hb = ax.hexbin(x, y, norm=LogNorm(), vmin=1, **hexbin_style)

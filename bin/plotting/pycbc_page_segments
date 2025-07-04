@@ -5,8 +5,8 @@ import argparse
 from itertools import cycle
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 import numpy
-import pylab
 import mpld3
 import mpld3.plugins
 from matplotlib.patches import Rectangle
@@ -40,12 +40,12 @@ def timestr(s):
     return t
 
 def get_name(segment_file):
-    from ligo.lw import table, utils as ligolw_utils
+    from igwn_ligolw import ligolw, utils as ligolw_utils
     from pycbc.io.ligolw import LIGOLWContentHandler
 
     indoc = ligolw_utils.load_filename(
             segment_file, False, contenthandler=LIGOLWContentHandler)
-    n = table.Table.get_table(indoc, 'segment_definer')[0]
+    n = ligolw.Table.get_table(indoc, 'segment_definer')[0]
     return "%s:%s:%s" % (n.ifos, n.name, n.version)
 
 def plot_segs(start, end, color=None, y=0, h=1):
@@ -57,7 +57,7 @@ def plot_segs(start, end, color=None, y=0, h=1):
         color = next(plot_segs.colors)
 
     for s, e in zip(start, end):
-        ax = pylab.gca()
+        ax = plt.gca()
         patch = Rectangle((s, y), (e-s), h, facecolor=color)
         ax.add_patch(patch)
         patches.append(patch)
@@ -87,7 +87,7 @@ css = """
 """
 
 mpld3.plugins.DEFAULT_PLUGINS = []
-fig = pylab.figure(figsize=[10, 5])
+fig = plt.figure(figsize=[10, 5])
 ax = fig.gca()
 
 names = []

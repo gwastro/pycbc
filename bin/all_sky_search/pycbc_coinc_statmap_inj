@@ -4,8 +4,8 @@ The program combines coincident output files generated
 by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
 with producing the combined foreground and background triggers
 """
-import argparse, logging, itertools, copy, pycbc.io, numpy, lal
-from pycbc.events import veto, coinc, significance
+import argparse, logging, pycbc.io, numpy
+from pycbc.events import significance
 import pycbc.conversions as conv
 from pycbc import init_logging
 
@@ -88,7 +88,7 @@ f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
 
-    _, fg_far_exc = significance.get_far(
+    _, fg_far_exc, exc_sig_info = significance.get_far(
         back_stat,
         zdata.stat,
         dec_fac,
@@ -105,6 +105,8 @@ if len(zdata) > 0:
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
+    for key, value in exc_sig_info.items():
+        f['foreground'].attrs[key + '_exc'] = value
 
 else:
     f['foreground/ifar_exc'] = numpy.array([])

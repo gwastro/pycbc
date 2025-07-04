@@ -27,12 +27,12 @@ import os
 import argparse
 import shutil
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version
 import pycbc.workflow as wf
-from pycbc.results import (static_table, layout)
+from pycbc.results import layout
 from pycbc.workflow.jobsetup import (select_generic_executable,
                                      int_gps_time_to_str,
                                      PycbcCreateInjectionsExecutable,

@@ -43,7 +43,7 @@ import matplotlib
 if 'matplotlib.backends' not in sys.modules:  # nopep8
     matplotlib.use('agg')
 
-from matplotlib import (offsetbox, pyplot, gridspec)
+from matplotlib import (offsetbox, pyplot, gridspec, colors)
 
 from pycbc.results import str_utils
 from pycbc.io import FieldArray
@@ -337,7 +337,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
                              linestyle='-', plot_marginal_lines=True,
                              title=True, expected_value=None,
                              expected_color='red', rotated=False,
-                             plot_min=None, plot_max=None):
+                             plot_min=None, plot_max=None, log_scale=False):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -380,16 +380,31 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         creates.
     scalefac : {1., float}
         Factor to scale the default font sizes by. Default is 1 (no scaling).
+    log_scale : boolean
+        Should the histogram bins be logarithmically spaced
     """
     if fillcolor is None:
         htype = 'step'
+        fillcolor = 'none'
     else:
         htype = 'stepfilled'
     if rotated:
         orientation = 'horizontal'
     else:
         orientation = 'vertical'
-    ax.hist(values, bins=50, histtype=htype, orientation=orientation,
+    if log_scale:
+        bins = numpy.logspace(
+            numpy.log10(numpy.nanmin(values)),
+            numpy.log10(numpy.nanmax(values)),
+            50
+        )
+    else:
+        bins = numpy.linspace(
+            numpy.nanmin(values),
+            numpy.nanmax(values),
+            50,
+        )
+    ax.hist(values, bins=bins, histtype=htype, orientation=orientation,
             facecolor=fillcolor, edgecolor=color, ls=linestyle, lw=2,
             density=True)
     if percentiles is None:
@@ -545,6 +560,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                          marginal_title=True, marginal_linestyle='-',
                          zvals=None, show_colorbar=True, cbar_label=None,
                          vmin=None, vmax=None, scatter_cmap='plasma',
+                         scatter_log_cmap=False, log_parameters=None,
                          plot_density=False, plot_contours=True,
                          density_cmap='viridis',
                          contour_color=None, label_contours=True,
@@ -614,6 +630,10 @@ def create_multidim_plot(parameters, samples, labels=None,
         zvals.
     scatter_cmap : {'plasma', string}
         The color map to use for the scatter points. Default is 'plasma'.
+    scatter_log_cmap : boolean
+        Should the scatter point coloring be on a log scale? Default False
+    log_parameters : list or None
+        Which parameters should be plotted on a log scale
     plot_density : {False, bool}
         Plot the density of points as a color map.
     plot_contours : {True, bool}
@@ -649,6 +669,8 @@ def create_multidim_plot(parameters, samples, labels=None,
     """
     if labels is None:
         labels = {p: p for p in parameters}
+    if log_parameters is None:
+        log_parameters = []
     # set up the figure with a grid of axes
     # if only plotting 2 parameters, make the marginal plots smaller
     nparams = len(parameters)
@@ -657,12 +679,6 @@ def create_multidim_plot(parameters, samples, labels=None,
         height_ratios = [1, 3]
     else:
         width_ratios = height_ratios = None
-
-    if plot_maxl:
-        # make sure loglikelihood is provide
-        if 'loglikelihood' not in samples.fieldnames:
-            raise ValueError("plot-maxl requires loglikelihood")
-        maxidx = samples['loglikelihood'].argmax()
 
     # only plot scatter if more than one parameter
     plot_scatter = plot_scatter and nparams > 1
@@ -682,6 +698,12 @@ def create_multidim_plot(parameters, samples, labels=None,
             zvals = 'gray'
             if plot_contours and contour_color is None:
                 contour_color = 'navy'
+
+    if plot_maxl:
+        # make sure loglikelihood is provide
+        if 'loglikelihood' not in samples.fieldnames:
+            raise ValueError("plot-maxl requires loglikelihood")
+        maxidx = samples['loglikelihood'].argmax()
 
     # create the axis grid
     if fig is None and axis_dict is None:
@@ -732,6 +754,7 @@ def create_multidim_plot(parameters, samples, labels=None,
             create_marginalized_hist(
                 ax, samples[param], label=labels[param],
                 color=hist_color, fillcolor=fill_color,
+                log_scale=param in log_parameters,
                 plot_marginal_lines=plot_marginal_lines,
                 linestyle=marginal_linestyle, linecolor=line_color,
                 title=marginal_title, expected_value=expected_value,
@@ -749,8 +772,13 @@ def create_multidim_plot(parameters, samples, labels=None,
                 alpha = 0.3
             else:
                 alpha = 1.
+            if scatter_log_cmap:
+                cmap_norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+            else:
+                cmap_norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
             plt = ax.scatter(x=samples[px], y=samples[py], c=zvals, s=5,
-                             edgecolors='none', vmin=vmin, vmax=vmax,
+                             edgecolors='none', norm=cmap_norm,
                              cmap=scatter_cmap, alpha=alpha, zorder=2)
 
         if plot_contours or plot_density:

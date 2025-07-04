@@ -23,30 +23,21 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import os
 import logging
 import argparse
 import copy
 import numpy
 import h5py
+import igwn_segments as segments
 
 from scipy import stats
-import ligo.segments as segments
+from igwn_segments.utils import fromsegwizard
 from pycbc.events.coherent import reweightedsnr_cut
+from pycbc.events import veto
 from pycbc import add_common_pycbc_options
 from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
-
-# All/most of these final imports will become obsolete with hdf5 switch
-try:
-    from ligo.lw import utils
-    from ligo.lw.table import Table
-    from ligo.segments.utils import fromsegwizard
-    from glue.ligolw import lsctables as glsctables
-    from glue.ligolw.ligolw import LIGOLWContentHandler
-except ImportError:
-    pass
 
 
 # =============================================================================
@@ -65,66 +56,81 @@ def pygrb_initialize_plot_parser(description=None):
     add_common_pycbc_options(parser)
     parser.add_argument("-o", "--output-file", default=None,
                         help="Output file.")
-    parser.add_argument("--x-lims", action="store", default=None,
-                        help="Comma separated minimum and maximum values " +
-                        "for the horizontal axis. When using negative " +
+    parser.add_argument("--x-lims", default=None,
+                        help="Comma separated minimum and maximum values "
+                        "for the horizontal axis. When using negative "
                         "values an equal sign after --x-lims is necessary.")
-    parser.add_argument("--y-lims", action="store", default=None,
-                        help="Comma separated minimum and maximum values " +
-                        "for the vertical axis. When using negative values " +
+    parser.add_argument("--y-lims", default=None,
+                        help="Comma separated minimum and maximum values "
+                        "for the vertical axis. When using negative values "
                         "an equal sign after --y-lims is necessary.")
     parser.add_argument("--use-logs", default=False, action="store_true",
                         help="Produce a log-log plot")
-    parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO " +
+    parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO "
                         "specific plots")
-    parser.add_argument("-a", "--seg-files", nargs="+", action="store",
-                        default=None, help="The location of the buffer, " +
-                        "onsource and offsource segment files.")
-    parser.add_argument("-V", "--veto-files", nargs="+", action="store",
-                        default=None, help="The location of the CATX veto " +
-                        "files provided as a list of space-separated values.")
-    parser.add_argument("-b", "--veto-category", action="store", type=int,
-                        default=None, help="Apply vetoes up to this level " +
-                        "inclusive.")
+    parser.add_argument("-a", "--seg-files", nargs="+",
+                        default=[], help="The location of the buffer, "
+                        "onsource and offsource txt segment files.")
+    parser.add_argument("-V", "--veto-file",
+                        help="The location of the xml veto file.")
     parser.add_argument('--plot-title', default=None,
-                        help="If provided, use the given string as the plot " +
+                        help="If provided, use the given string as the plot "
                         "title.")
     parser.add_argument('--plot-caption', default=None,
-                        help="If provided, use the given string as the plot " +
+                        help="If provided, use the given string as the plot "
                         "caption")
-
     return parser
+
+
+def pygrb_add_slide_opts(parser):
+    """Add to parser object arguments related to short timeslides"""
+    parser.add_argument("--slide-id", type=str, default='0',
+                        help="Select a specific slide or set to all to plot "
+                        "results from all short slides.")
+
+
+def slide_opts_helper(args):
+    """
+       This function overwrites the types of input slide_id information
+       when loading data in postprocessing scripts.
+    """
+    if args.slide_id.isdigit():
+        args.slide_id = int(args.slide_id)
+    elif args.slide_id.lower() == "all":
+        args.slide_id = None
+    else:
+        raise ValueError("--slide-id must be the string all or an int")
 
 
 def pygrb_add_injmc_opts(parser):
     """Add to parser object the arguments used for Monte-Carlo on distance."""
     if parser is None:
         parser = argparse.ArgumentParser()
-    parser.add_argument("-M", "--num-mc-injections", action="store",
-                        type=int, default=100, help="Number of Monte " +
+    parser.add_argument("-M", "--num-mc-injections",
+                        type=int, default=100, help="Number of Monte "
                         "Carlo injection simulations to perform.")
-    parser.add_argument("-S", "--seed", action="store", type=int,
+    parser.add_argument("-S", "--seed", type=int,
                         default=1234, help="Seed to initialize Monte Carlo.")
-    parser.add_argument("-U", "--upper-inj-dist", action="store",
-                        type=float, default=1000, help="The upper distance " +
+    parser.add_argument("-U", "--upper-inj-dist",
+                        type=float, default=1000, help="The upper distance "
                         "of the injections in Mpc, if used.")
-    parser.add_argument("-L", "--lower-inj-dist", action="store",
-                        type=float, default=0, help="The lower distance of " +
+    parser.add_argument("-L", "--lower-inj-dist",
+                        type=float, default=0, help="The lower distance of "
                         "the injections in Mpc, if used.")
-    parser.add_argument("-n", "--num-bins", action="store", type=int,
-                        default=0, help="The number of bins used to " +
+    parser.add_argument("-n", "--num-bins", type=int,
+                        default=0, help="The number of bins used to "
                         "calculate injection efficiency.")
-    parser.add_argument("-w", "--waveform-error", action="store",
-                        type=float, default=0, help="The standard deviation " +
+    parser.add_argument("-w", "--waveform-error",
+                        type=float, default=0, help="The standard deviation "
                         "to use when calculating the waveform error.")
     for ifo in ["g1", "h1", "k1", "l1", "v1"]:
-        parser.add_argument(f"--{ifo}-cal-error", action="store", type=float,
-                            default=0, help="The standard deviation to use " +
-                            f"when calculating the {ifo.upper()} " +
+        parser.add_argument(f"--{ifo}-cal-error", type=float,
+                            default=0, help="The standard deviation to use "
+                            f"when calculating the {ifo.upper()} "
                             "calibration amplitude error.")
-        parser.add_argument(f"--{ifo}-dc-cal-error", action="store",
-                            type=float, default=1.0, help="The scaling " +
-                            "factor to use when calculating the " +
+        parser.add_argument(f"--{ifo}-dc-cal-error",
+                            type=float, default=1.0, help="The scaling "
+                            "factor to use when calculating the "
                             f"{ifo.upper()} calibration amplitude error.")
 
 
@@ -132,37 +138,28 @@ def pygrb_add_bestnr_opts(parser):
     """Add to the parser object the arguments used for BestNR calculation"""
     if parser is None:
         parser = argparse.ArgumentParser()
-    parser.add_argument("-Q", "--chisq-index", action="store", type=float,
-                        default=6.0, help="chisq_index for newSNR " +
+    parser.add_argument("-Q", "--chisq-index", type=float,
+                        default=6.0, help="chisq_index for newSNR "
                         "calculation (default: 6)")
-    parser.add_argument("-N", "--chisq-nhigh", action="store", type=float,
-                        default=2.0, help="chisq_nhigh for newSNR " +
+    parser.add_argument("-N", "--chisq-nhigh", type=float,
+                        default=2.0, help="chisq_nhigh for newSNR "
                         "calculation (default: 2")
 
 
 def pygrb_add_null_snr_opts(parser):
     """Add to the parser object the arguments used for null SNR calculation
     and null SNR cut."""
-    parser.add_argument("-A", "--null-snr-threshold", action="store",
+    parser.add_argument("-A", "--null-snr-threshold",
                         default=5.25,
                         type=float,
                         help="Null SNR threshold for null SNR cut "
                         "(default: 5.25)")
-    parser.add_argument("-T", "--null-grad-thresh", action="store", type=float,
-                        default=20., help="Threshold above which to " +
+    parser.add_argument("-T", "--null-grad-thresh", type=float,
+                        default=20., help="Threshold above which to "
                         "increase the values of the null SNR cut")
-    parser.add_argument("-D", "--null-grad-val", action="store", type=float,
-                        default=0.2, help="Rate the null SNR cut will " +
+    parser.add_argument("-D", "--null-grad-val", type=float,
+                        default=0.2, help="Rate the null SNR cut will "
                         "increase above the threshold")
-
-
-def pygrb_add_single_snr_cut_opt(parser):
-    """Add to the parser object an argument to place a threshold on single
-    detector SNR."""
-    parser.add_argument("-B", "--sngl-snr-threshold", action="store",
-                        type=float, default=4.0, help="Single detector SNR " +
-                        "threshold, the two most sensitive detectors " +
-                        "should have SNR above this.")
 
 
 def pygrb_add_bestnr_cut_opt(parser):
@@ -171,8 +168,23 @@ def pygrb_add_bestnr_cut_opt(parser):
         parser = argparse.ArgumentParser()
     parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                         default=0.,
-                        help="Cut triggers with NewSNR less than THRESHOLD" +
+                        help="Cut triggers with NewSNR less than THRESHOLD. "
                         "Default 0: all events are considered.")
+
+
+# =============================================================================
+# Wrapper to pick triggers with a given slide_id
+# =============================================================================
+# Underscore starts name of functions not called outside this file
+def _slide_filter(trig_file, data, slide_id=None):
+    """
+    This function adds the capability to select triggers with specific
+    slide_ids during the postprocessing stage of PyGRB.
+    """
+    if slide_id is None:
+        return data
+    mask = numpy.where(trig_file['network/slide_id'][:] == slide_id)[0]
+    return data[mask]
 
 
 # =============================================================================
@@ -181,12 +193,13 @@ def pygrb_add_bestnr_cut_opt(parser):
 def _read_seg_files(seg_files):
     """Read segments txt files"""
 
-    if len(seg_files) != 3 or seg_files is None:
+    if len(seg_files) != 3:
         err_msg = "The location of three segment files is necessary."
         err_msg += "[bufferSeg.txt, offSourceSeg.txt, onSourceSeg.txt]"
         raise RuntimeError(err_msg)
 
     times = {}
+    # Needs to be in this order for consistency with build_segment_filelist
     keys = ["buffer", "off", "on"]
 
     for key, seg_file in zip(keys, seg_files):
@@ -200,126 +213,34 @@ def _read_seg_files(seg_files):
 
 
 # =============================================================================
-# Function to load a table from an xml file
-# =============================================================================
-def load_xml_table(file_name, table_name):
-    """Load xml table from file."""
-
-    xml_doc = utils.load_filename(
-        file_name,
-        compress='auto',
-        contenthandler=glsctables.use_in(LIGOLWContentHandler)
-    )
-    return Table.get_table(xml_doc, table_name)
-
-
-# =============================================================================
-# Function to load segments from an xml file
-# =============================================================================
-def _load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
-    """Read a ligo.segments.segmentlist from the file object file containing an
-    xml segment table.
-
-    Parameters
-    ----------
-        xml_doc: name of segment xml file
-
-        Keyword Arguments:
-            return_dict : [ True | False ]
-                return a ligo.segments.segmentlistdict containing coalesced
-                ligo.segments.segmentlists keyed by seg_def.name for each entry
-                in the contained segment_def_table. Default False
-            select_id : int
-                return a ligo.segments.segmentlist object containing only
-                those segments matching the given segment_def_id integer
-
-    """
-
-    # Load SegmentDefTable and SegmentTable
-    seg_def_table = load_xml_table(xml_doc,
-                                   glsctables.SegmentDefTable.tableName)
-    seg_table = load_xml_table(xml_doc, glsctables.SegmentTable.tableName)
-
-    if return_dict:
-        segs = segments.segmentlistdict()
-    else:
-        segs = segments.segmentlist()
-
-    seg_id = {}
-    for seg_def in seg_def_table:
-        seg_id[int(seg_def.segment_def_id)] = str(seg_def.name)
-        if return_dict:
-            segs[str(seg_def.name)] = segments.segmentlist()
-
-    for seg in seg_table:
-        if return_dict:
-            segs[seg_id[int(seg.segment_def_id)]]\
-                .append(segments.segment(seg.start_time, seg.end_time))
-            continue
-        if select_id and int(seg.segment_def_id) == select_id:
-            segs.append(segments.segment(seg.start_time, seg.end_time))
-            continue
-        segs.append(segments.segment(seg.start_time, seg.end_time))
-
-    if return_dict:
-        for seg_name in seg_id.values():
-            segs[seg_name] = segs[seg_name].coalesce()
-    else:
-        segs = segs.coalesce()
-
-    return segs
-
-
-# =============================================================================
 # Function to extract vetoes
 # =============================================================================
-def _extract_vetoes(all_veto_files, ifos, veto_cat):
-    """Extracts vetoes from veto filelist"""
+def _extract_vetoes(veto_file, ifos, offsource):
+    """Extracts the veto segments from the veto File"""
 
-    if all_veto_files and (veto_cat is None):
-        err_msg = "Must supply veto category to apply vetoes."
-        raise RuntimeError(err_msg)
-
-    # Initialize veto containers
+    clean_segs = {}
     vetoes = segments.segmentlistdict()
-    for ifo in ifos:
-        vetoes[ifo] = segments.segmentlist()
 
-    veto_files = []
-    veto_cats = range(2, veto_cat+1)
-    for cat in veto_cats:
-        veto_files += [vf for vf in all_veto_files if "CAT"+str(cat) in vf]
-    n_found = len(veto_files)
-    n_expected = len(ifos)*len(veto_cats)
-    if n_found != n_expected:
-        err_msg = f"Found {n_found} veto files instead of the expected "
-        err_msg += f"{n_expected}; check the options."
-        raise RuntimeError(err_msg)
+    if veto_file:
+        for ifo in ifos:
+            segs = veto.select_segments_by_definer(veto_file, ifo=ifo)
+            segs.coalesce()
+            if len(segs) > 0:
+                clean_segs[ifo] = segs
+            else:
+                clean_segs[ifo] = segments.segmentlist([offsource])
 
-    # Construct veto list from veto filelist
-    if veto_files:
-        for veto_file in veto_files:
-            ifo = os.path.basename(veto_file)[:2]
-            if ifo in ifos:
-                # This returns a coalesced list of the vetoes
-                tmp_veto_segs = _load_segments_from_xml(veto_file)
-                for entry in tmp_veto_segs:
-                    vetoes[ifo].append(entry)
-    for ifo in ifos:
-        vetoes[ifo].coalesce()
+    if clean_segs:
+        for ifo in ifos:
+            vetoes[ifo] = segments.segmentlist([offsource]) - clean_segs[ifo]
+        vetoes.coalesce()
+        for ifo in ifos:
+            for v in vetoes[ifo]:
+                v_span = v[1] - v[0]
+                logging.info("%ds of data vetoed at GPS time %d",
+                             v_span, v[0])
 
     return vetoes
-
-
-# =============================================================================
-# Function to get the ID numbers from a LIGO-LW table
-# =============================================================================
-def _get_id_numbers(ligolw_table, column):
-    """Grab the IDs of a LIGO-LW table"""
-
-    ids = [int(getattr(row, column)) for row in ligolw_table]
-
-    return ids
 
 
 # =============================================================================
@@ -329,7 +250,7 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
-    if vetoes is not None:
+    if vetoes:
         slid_vetoes = copy.deepcopy(vetoes)
         # Slide them
         for ifo in ifos:
@@ -340,39 +261,57 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     return slid_vetoes
 
 
-#
-# Used (also) in executables
-#
-
 # =============================================================================
-# Functions to load triggers
+# Recursive function to reach all datasets in an HDF file handle
 # =============================================================================
-def dataset_iterator(g, prefix=''):
-    """Reach all datasets in and HDF file"""
+def _dataset_iterator(g, prefix=''):
+    """Reach all datasets in an HDF file handle"""
 
     for key, item in g.items():
         # Avoid slash as first character
-        path = prefix[1:] + '/' + key
+        pref = prefix[1:] if prefix.startswith('/') else prefix
+        path = pref + '/' + key
         if isinstance(item, h5py.Dataset):
             yield (path, item)
         elif isinstance(item, h5py.Group):
-            yield from dataset_iterator(item, path)
+            yield from _dataset_iterator(item, path)
 
 
-def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
-    """Loads triggers from PyGRB output file, returning a dictionary"""
+# =============================================================================
+# Function to load trigger/injection data
+# =============================================================================
+def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
+              slide_id=None):
+    """Load data from a trigger/injection PyGRB output file, returning a
+    dictionary. If the input_file is None, None is returned. data_tag enables
+    logging information about the number of triggers/injections found, so the
+    user should not set it to 'trigs'/'injs' when processing the onsource."""
+
+    if not input_file:
+        return None
 
     trigs = HFile(input_file, 'r')
-    rw_snr = trigs['network/reweighted_snr'][:]
-    net_ids = trigs['network/event_id'][:]
+    rw_snr = trigs['network/reweighted_snr'][:] \
+        if 'network/reweighted_snr' in trigs.keys() else numpy.array([])
+    net_ids = trigs['network/event_id'][:] \
+        if 'network/event_id' in trigs.keys() \
+        else numpy.array([], dtype=numpy.int64)
+
+    # Output the number of items loaded only upon a request by the user who is
+    # expected not to set data_tag to 'trigs'or 'injs' when processing the
+    # onsource
+    if data_tag == 'trigs':
+        logging.info("%d triggers loaded.", len(rw_snr))
+    elif data_tag == 'injs':
+        logging.info("%d injections loaded.", len(rw_snr))
+    else:
+        logging.info("Loading triggers.")
     ifo_ids = {}
     for ifo in ifos:
-        ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
+        ifo_ids[ifo] = trigs[ifo+'/event_id'][:] \
+            if ifo+'/event_id' in trigs.keys() \
+            else numpy.array([], dtype=numpy.int64)
     trigs.close()
-
-    if vetoes is not None:
-        # Developers: see PR 3972 for previous implementation
-        raise NotImplementedError
 
     # Apply the reweighted SNR cut on the reweighted SNR
     if rw_snr_threshold is not None:
@@ -380,7 +319,16 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
 
     # Establish the indices of data not surviving the cut
     above_thresh = rw_snr > 0
-    num_orig_pts = len(above_thresh)
+
+    # Output the number of items surviging vetoes with the same logic as above
+    msg = ""
+    if data_tag == 'trigs':
+        msg += f"{sum(above_thresh)} triggers "
+    elif data_tag == 'injs':
+        msg = f"{sum(above_thresh)} injections "
+    if msg:
+        msg += f"surviving reweighted SNR cut at {rw_snr_threshold}."
+        logging.info(msg)
 
     # Do not assume that IFO and network datasets are sorted the same way:
     # find where each surviving network/event_id is placed in the IFO/event_id
@@ -390,15 +338,17 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
             numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
                          for net_id in net_ids[above_thresh]])
 
-    # Apply the cut on all the data by remove points with reweighted SNR = 0
+    # Apply the cut on all the data by removing points with reweighted SNR = 0
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
-        for (path, dset) in dataset_iterator(trigs):
-            # The dataset contains information other than trig/inj properties:
+        for (path, dset) in _dataset_iterator(trigs):
+            # The dataset contains search information or missed injections
+            # information, not properties of triggers or found injections:
             # just copy it
-            if len(dset) != num_orig_pts:
+            if 'search' in path or 'missed' in path or 'gating' in path:
                 trigs_dict[path] = dset[:]
-            # The dataset is relative to an IFO: cut with the correct index
+            # The dataset is trig/inj info at an IFO:
+            # cut with the correct index
             elif path[:2] in ifos:
                 ifo = path[:2]
                 if ifo_ids_above_thresh_locations[ifo].size != 0:
@@ -406,11 +356,96 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
                         dset[:][ifo_ids_above_thresh_locations[ifo]]
                 else:
                     trigs_dict[path] = numpy.array([])
-            # The dataset is relative to the network: cut it before copying
+            # The dataset is trig/inj network info: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
 
+            if 'network/slide_id' in trigs.keys():
+                if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                    trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
+                                                     slide_id=slide_id)
+
     return trigs_dict
+
+
+# =============================================================================
+# Function to apply vetoes to found injections
+# =============================================================================
+def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
+                               veto_file=None, keys=None):
+    """Separate injections surviving vetoes from vetoed injections.
+
+    Parameters
+    ----------
+        found_missed_file: injections results File
+
+        found_injs: dictionary of found injections
+
+        ifos: list of interferometers to use in vetoing
+
+        veto_file: vetoed segments File (optional)
+
+        keys: list of desired dataset names (optional)
+
+    Return
+    ------
+        found_after_vetoes: dictionary of injections surviving vetoes
+
+        missed_after_vetoes: dictionary of vetoed injections
+
+        found_idx: numpy.array of indices of surviving injections
+
+        veto_idx: numpy.array of indices of vetoed injections
+    """
+
+    keep_keys = keys if keys else found_injs.keys()
+
+    if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
+        t_id_key = 'network/template_id'
+        if t_id_key not in keep_keys:
+            keep_keys = list(keep_keys+[t_id_key])
+        empty_dict = dict.fromkeys(keep_keys, numpy.array([]))
+        empty_dict[t_id_key] = \
+            empty_dict[t_id_key].astype(dtype=numpy.int64)
+        return (empty_dict, empty_dict, None, None)
+
+    found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
+    veto_idx = numpy.array([], dtype=numpy.int64)
+
+    if veto_file:
+        logging.info("Applying data vetoes to found injections...")
+        for ifo in ifos:
+            inj_time = found_injs[ifo+'/end_time'][:]
+            segs = veto.select_segments_by_definer(veto_file,
+                                                   segment_name=None,
+                                                   ifo=ifo)
+            if len(segs) > 0:
+                idx, _ = veto.indices_outside_segments(inj_time,
+                                                       [veto_file],
+                                                       ifo,
+                                                       None)
+                veto_idx = numpy.append(veto_idx, idx)
+                logging.info("%d injections vetoed due to %s.", len(idx), ifo)
+                idx, _ = veto.indices_within_segments(inj_time,
+                                                      [veto_file],
+                                                      ifo,
+                                                      None)
+                found_idx = numpy.intersect1d(found_idx, idx)
+
+        veto_idx = numpy.unique(veto_idx)
+        logging.info("%d injections vetoed.", len(veto_idx))
+        logging.info("%d injections surviving vetoes.", len(found_idx))
+
+    found_after_vetoes = {}
+    missed_after_vetoes = {}
+    for key in keep_keys:
+        if key == 'network/coincident_snr':
+            found_injs[key] = get_coinc_snr(found_injs)
+        if isinstance(found_injs[key], numpy.ndarray):
+            found_after_vetoes[key] = found_injs[key][found_idx]
+            missed_after_vetoes[key] = found_injs[key][veto_idx]
+
+    return found_after_vetoes, missed_after_vetoes, found_idx, veto_idx
 
 
 # =============================================================================
@@ -447,7 +482,8 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 # Construct sorted triggers from trials
 # =============================================================================
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
-    """Constructs sorted triggers from a trials dictionary"""
+    """Constructs sorted triggers from a trials dictionary for the slides
+    requested via slide_dict."""
 
     sorted_trigs = {}
 
@@ -456,7 +492,8 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         sorted_trigs[slide_id] = []
     for slide_id, event_id in zip(trigs['network/slide_id'],
                                   trigs['network/event_id']):
-        sorted_trigs[slide_id].append(event_id)
+        if slide_id in slide_dict:
+            sorted_trigs[slide_id].append(event_id)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
@@ -480,57 +517,62 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         # END OF CHECK #
 
         # Keep triggers that are in trial_dict
+        num_trigs_before = len(sorted_trigs[slide_id])
         sorted_trigs[slide_id] = [event_id for event_id in
                                   sorted_trigs[slide_id]
                                   if trigs['network/end_time_gc'][
                                       trigs['network/event_id'] == event_id][0]
                                   in trial_dict[slide_id]]
 
+        # Check that the number of triggers has not increased after vetoes
+        assert len(sorted_trigs[slide_id]) <= num_trigs_before, \
+            f"Slide {slide_id} has {num_trigs_before} triggers before the "\
+            f"trials dictionary was used and {len(sorted_trigs[slide_id])} "\
+            "after. This should not happen."
+        # END OF CHECK #
+
     return sorted_trigs
 
 
 # =============================================================================
-# Extract basic trigger properties and store them as dictionaries
+# Extract trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
-                                  opts):
-    """Extract and store as dictionaries time, SNR, and BestNR of
-    time-slid triggers"""
+def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
+    """Extract and store as dictionaries specific keys of time-slid
+    triggers (trigs) compatibly with the trials dictionary (trial_dict)"""
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    logger.info("Triggers sorted.")
+    n_surviving_trigs = sum(len(i) for i in sorted_trigs.values())
+    msg = f"{n_surviving_trigs} triggers found within the trials dictionary "
+    msg += "and sorted."
+    logging.info(msg)
 
-    # Build the 3 dictionaries
-    trig_time = {}
-    trig_snr = {}
-    trig_bestnr = {}
+    found_trigs = {}
+    for key in keys:
+        found_trigs[key] = {}
+
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
         indices = numpy.nonzero(
             numpy.isin(trigs['network/event_id'], slide_trigs))[0]
-        if slide_trigs:
-            trig_time[slide_id] = trigs['network/end_time_gc'][
-                indices]
-            trig_snr[slide_id] = trigs['network/coherent_snr'][
-                indices]
-        else:
-            trig_time[slide_id] = numpy.asarray([])
-            trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = reweightedsnr_cut(
-            trigs['network/reweighted_snr'][indices],
-            opts.newsnr_threshold)
+        for key in keys:
+            if slide_trigs:
+                found_trigs[key][slide_id] = get_coinc_snr(trigs)[indices] \
+                    if key == 'network/coincident_snr' else trigs[key][indices]
+            else:
+                found_trigs[key][slide_id] = numpy.asarray([])
 
-    logger.info("Time, SNR, and BestNR of triggers extracted.")
+    logging.info("Triggers information extracted.")
 
-    return trig_time, trig_snr, trig_bestnr
+    return found_trigs
 
 
 # =============================================================================
 # Function to extract ifos from hdfs
 # =============================================================================
-def extract_ifos(trig_file):
-    """Extracts IFOs from hdf file"""
+def extract_ifos(trig_file, ifo=None):
+    """Extracts IFOs from hdf file and checks for presence of a specific IFO"""
 
     # Load hdf file
     hdf_file = HFile(trig_file, 'r')
@@ -538,31 +580,17 @@ def extract_ifos(trig_file):
     # Extract IFOs
     ifos = sorted(list(hdf_file.keys()))
 
-    # Remove 'network' key from list of ifos
-    if 'network' in ifos:
-        ifos.remove('network')
+    # Remove unwanted keys from key list to reduce it to the ifos
+    for key in ['network', 'found', 'missed']:
+        if key in ifos:
+            ifos.remove(key)
+
+    # Exit gracefully if the requested IFO is not available
+    if ifo and ifo not in ifos:
+        err_msg = "The IFO selected with --ifo is unavailable in the data."
+        raise RuntimeError(err_msg)
 
     return ifos
-
-
-# =============================================================================
-# Function to extract IFOs and vetoes
-# =============================================================================
-def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
-    """Extracts IFOs from HDF files and vetoes from a directory"""
-
-    logger.info("Extracting IFOs and vetoes.")
-
-    # Extract IFOs
-    ifos = extract_ifos(trig_file)
-
-    # Extract vetoes
-    if veto_files is not None:
-        vetoes = _extract_vetoes(veto_files, ifos, veto_cat)
-    else:
-        vetoes = None
-
-    return ifos, vetoes
 
 
 # =============================================================================
@@ -570,6 +598,7 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 # =============================================================================
 def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
+    logging.info("Loading timeslides.")
     hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
@@ -603,6 +632,8 @@ def load_segment_dict(hdf_file_path):
     {slide_id: segmentlist(segments analyzed)}
     """
 
+    logging.info("Loading segments.")
+
     # Long time slides will require mapping between slides and segments
     hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
@@ -625,9 +656,11 @@ def load_segment_dict(hdf_file_path):
 # =============================================================================
 # Construct the trials from the timeslides, segments, and vetoes
 # =============================================================================
-def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
-    """Constructs trials from triggers, timeslides, segments and vetoes"""
+def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
+                     hide_onsource=True):
+    """Constructs trials from segments, timeslides, and vetoes"""
 
+    logging.info("Constructing trials.")
     trial_dict = {}
 
     # Get segments
@@ -636,19 +669,23 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
     # Separate segments
     trial_time = abs(segs['on'])
 
+    # Determine the veto segments
+    vetoes = _extract_vetoes(veto_file, ifos, segs['off'])
+
+    # Slide vetoes over trials: this can only *reduce* the analysis time
     for slide_id in slide_dict:
-        # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
-        # Construct the buffer segment list
+        # Fill in the buffer segment list if the onsource data must be hidden
         seg_buffer = segments.segmentlist()
-        for ifo in ifos:
-            slide_offset = slide_dict[slide_id][ifo]
-            seg_buffer.append(segments.segment(segs['buffer'][0] -
-                                               slide_offset,
-                                               segs['buffer'][1] -
-                                               slide_offset))
-        seg_buffer.coalesce()
+        if hide_onsource:
+            for ifo in ifos:
+                slide_offset = slide_dict[slide_id][ifo]
+                seg_buffer.append(segments.segment(segs['buffer'][0] -
+                                                   slide_offset,
+                                                   segs['buffer'][1] -
+                                                   slide_offset))
+            seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
         slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
@@ -672,7 +709,10 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
 
                 iter_int += 1
 
-    return trial_dict
+    total_trials = sum(len(trial_dict[slide_id]) for slide_id in slide_dict)
+    logging.info("%d trials generated.", total_trials)
+
+    return trial_dict, total_trials
 
 
 # =============================================================================
@@ -692,10 +732,10 @@ def sort_stat(time_veto_max_stat):
 # Find max and median of loudest SNRs or BestNRs
 # =============================================================================
 def max_median_stat(slide_dict, time_veto_max_stat, trig_stat, total_trials):
-    """Deterine the maximum and median of the loudest SNRs/BestNRs"""
+    """Return maximum and median of trig_stat and sorted time_veto_max_stat"""
 
-    max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size
-                   else 0 for slide_id in slide_dict])
+    max_stat = max(trig_stat[slide_id].max() if trig_stat[slide_id].size
+                   else 0 for slide_id in slide_dict)
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
 
@@ -738,9 +778,12 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 def get_coinc_snr(trigs_or_injs):
     """ Calculate coincident SNR using coherent and null SNRs"""
 
-    coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
-    null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
-    coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
+    coinc_snr = numpy.array([])
+    if 'network/coherent_snr' in trigs_or_injs.keys() and \
+            'network/null_snr' in trigs_or_injs.keys():
+        coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
+        null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
+        coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
 
     return coinc_snr
 
@@ -755,9 +798,11 @@ def template_hash_to_id(trigger_file, bank_path):
     trigger_file: HFile object for trigger file
     bank_file: filepath for template bank
     """
+    ifos = [k for k in trigger_file.keys() if k != 'network']
+    if ifos[0]+'/template_hash' not in trigger_file.keys():
+        return numpy.array([], dtype=int)
     with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
-    ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
     for idx, t_hash in enumerate(hashes):

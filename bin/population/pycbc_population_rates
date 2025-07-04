@@ -32,11 +32,8 @@ __email__ = "vaibhav.tiwari@ligo.org"
 __version__ = "0.0"
 __date__ = "31.10.2017"
 
-import logging
 import argparse
 import numpy as np
-import scipy.stats as ss
-from numpy import logaddexp, log, newaxis, expm1
 
 import pycbc
 from pycbc.population import scale_injections as si
@@ -149,7 +146,7 @@ alpha, mu, sigma = rf.fit(R)
 
 #Estimate rates
 rate_samples = {}
-log_R = log(R)
+log_R = np.log(R)
 mu_log_vt = np.log(vol_time/1e9)
 sigma_log_vt = sigma_w_cal_uncrt
 Rf_samp = rf.skew_lognormal_samples(alpha, mu, sigma, min(log_R), max(log_R))

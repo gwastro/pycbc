@@ -440,7 +440,7 @@ def get_mu_params(lambdas, metricParams, fUpper):
     mus : list of floats or numpy.arrays
         Position of the system(s) in the mu coordinate system
     """
-    lambdas = numpy.array(lambdas, copy=False)
+    lambdas = numpy.asarray(lambdas)
     # If original inputs were floats we need to make this a 2D array
     if len(lambdas.shape) == 1:
         resize_needed = True
@@ -451,7 +451,7 @@ def get_mu_params(lambdas, metricParams, fUpper):
     evecs = metricParams.evecs[fUpper]
     evals = metricParams.evals[fUpper]
 
-    evecs = numpy.array(evecs, copy=False)
+    evecs = numpy.asarray(evecs)
 
     mus = ((lambdas.T).dot(evecs)).T
     mus = mus * numpy.sqrt(evals)[:,None]
@@ -479,7 +479,7 @@ def get_covaried_params(mus, evecsCV):
     xis : list of floats or numpy.arrays
         Position of the system(s) in the xi coordinate system
     """
-    mus = numpy.array(mus, copy=False)
+    mus = numpy.asarray(mus)
     # If original inputs were floats we need to make this a 2D array
     if len(mus.shape) == 1:
         resize_needed = True

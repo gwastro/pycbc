@@ -724,22 +724,28 @@ class Workflow(object):
         #        file. This is overridden for subworkflows, but is not for
         #        main workflows with submit_dax. If we ever remove submit_dax
         #        we should include the location explicitly here.
+
+        # Need to set this to avoid pegasus pulling in other environment
+        os.environ['PEGASUS_UPDATE_PYTHONPATH'] = '0'
+
         self._adag.plan(**planner_args)
 
         # Set up convenience scripts
         with open('status', 'w') as fp:
-            fp.write('pegasus-status --verbose ')
-            fp.write('--long {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-status ')
+            fp.write(f'--long {submitdir}/work $@')
 
         with open('debug', 'w') as fp:
-            fp.write('pegasus-analyzer -r ')
-            fp.write('-v {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-analyzer -r ')
+            fp.write(f'-v {submitdir}/work $@')
 
         with open('stop', 'w') as fp:
-            fp.write('pegasus-remove {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-remove ')
+            fp.write(f'{submitdir}/work $@')
 
         with open('start', 'w') as fp:
-            fp.write('pegasus-run {}/work $@'.format(submitdir))
+            fp.write('export PEGASUS_UPDATE_PYTHONPATH=0; pegasus-run ')
+            fp.write(f'{submitdir}/work $@')
 
         os.chmod('status', 0o755)
         os.chmod('debug', 0o755)
@@ -800,9 +806,13 @@ class SubWorkflow(dax.SubWorkflow):
         # change the attribute here.
         # WORSE, we only want to set this if the pegasus *planner* is version
         # 5.0.4 or larger
-        sproc_out = subprocess.check_output(['pegasus-version']).strip()
-        sproc_out = sproc_out.decode()
-        if version.parse(sproc_out) >= version.parse('5.0.4'):
+        try:
+            sproc_out = subprocess.check_output(['pegasus-version']).strip()
+            sproc_out = sproc_out.decode()
+            if version.parse(sproc_out) >= version.parse('5.0.4'):
+                output_map_file.for_planning=True
+        except:
+            logging.warning("Could not execute pegasus-version, assuming >= 5.0.4")
             output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 

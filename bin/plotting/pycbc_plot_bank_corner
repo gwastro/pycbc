@@ -33,7 +33,6 @@ from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
 from pycbc.io import FieldArray, HFile
 from pycbc.inference import option_utils
 from pycbc.tmpltbank import bank_conversions as bconv
-from pycbc.pnutils import get_imr_duration
 from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.results import metadata
 
@@ -72,10 +71,13 @@ parser.add_argument("--parameters",
          "property of that parameter will be used. If not "
          "provided, will plot all of the parameters in the "
          "bank.")
-parser.add_argument("--log-parameters",
-    nargs="+",
+parser.add_argument(
+    '--log-parameters',
+    nargs='+',
     default=[],
-    help="Plot these parameters on a log scale")
+    help="Which parameters are to be plotted on a log scale? "
+         "Must be also given in parameters"
+)
 parser.add_argument('--plot-histogram',
     action='store_true',
     help="Plot 1D histograms of parameters on the "
@@ -107,6 +109,11 @@ parser.add_argument("--color-parameter",
     help="Color scatter points according to the parameter given. "
          "May optionally provide a label in the same way as for "
          "--parameters. Default=No scatter point coloring.")
+parser.add_argument(
+    '--log-colormap',
+    action='store_true',
+    help="Should the colorbar be plotted on a log scale?"
+)
 parser.add_argument('--dpi',
     type=int,
     default=200,
@@ -120,6 +127,13 @@ parser.add_argument('--title',
 
 add_style_opt_to_parser(parser)
 args = parser.parse_args()
+
+for lp in args.log_parameters:
+    if not lp in args.parameters:
+        parser.error(
+            "--log-parameters should be in --parameters. "
+            f"{lp} not in [{', '.join(args.parameters)}]"
+        )
 
 pycbc.init_logging(args.verbose)
 set_style_from_cli(args)
@@ -150,7 +164,7 @@ if args.fits_file is not None:
             param = fits_f[p][:].astype(float)
             # We need to check for the cardinal '-1' value which means
             # that the fit is invalid
-            param[param <= 0] = 0 if 'count' in p and 'log' not in p else np.nan
+            param[param <= 0] = np.nan
             bank[p] = param
 
 logging.info("Got %d templates from the bank", banklen)
@@ -231,12 +245,21 @@ if cpar:
 for p in required_minmax:
     minval = np.nanmin(bank_fa[p][bank_fa[p] != -np.inf])
     maxval = np.nanmax(bank_fa[p][bank_fa[p] != np.inf])
-    valrange = maxval - minval
+    if (p in args.log_parameters) or (p == cpar and args.log_colormap):
+        # Extend the range by 10% in log-space
+        logvalrange = np.log(maxval) - np.log(minval)
+        if p not in mins:
+            mins[p] = np.exp(np.log(minval) - 0.05 * logvalrange)
+        if p not in maxs:
+            maxs[p] = np.exp(np.log(maxval) + 0.05 * logvalrange)
+    else:
+        # Extend the range by 10%
+        valrange = maxval - minval
+        if p not in mins:
+            mins[p] = minval - 0.05 * valrange
+        if p not in maxs:
+            maxs[p] = maxval + 0.05 * valrange
 
-    if p not in mins:
-        mins[p] = minval - 0.05 * valrange
-    if p not in maxs:
-        maxs[p] = maxval + 0.05 * valrange
 
 # Deal with non-coloring case:
 zvals = bank_fa[cpar] if cpar else None
@@ -251,6 +274,7 @@ fig, axis_dict = create_multidim_plot(
     plot_scatter=True,
     plot_contours=False,
     scatter_cmap="viridis",
+    scatter_log_cmap=args.log_colormap,
     marginal_title=False,
     marginal_percentiles=[],
     fill_color='g',
@@ -262,6 +286,7 @@ fig, axis_dict = create_multidim_plot(
     hist_color=hist_color,
     mins=mins,
     maxs=maxs,
+    log_parameters=args.log_parameters,
 )
 
 title_text = f"{os.path.basename(args.bank_file)}"
@@ -296,6 +321,19 @@ for i in range(len(args.parameters)):
     if len(sharex_axes) > 1:
         for s0, s1 in zip(sharex_axes[:-1], sharex_axes[1:]):
             s0.sharex(s1)
+
+for (p1, p2), ax in axis_dict.items():
+    if p1 == p2 and p1 in args.log_parameters:
+        if p1 == args.parameters[-1] and len(args.parameters) == 2:
+            # This will be turned on its side, so set _y_ axis to log
+            ax[0].semilogy()
+        else:
+            ax[0].semilogx()
+    else:
+        if p1 in args.log_parameters:
+            ax[0].semilogx()
+        if p2 in args.log_parameters:
+            ax[0].semilogy()
 
 logging.info("Plot generated")
 fig.set_dpi(args.dpi)

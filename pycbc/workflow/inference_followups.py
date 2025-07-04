@@ -44,7 +44,7 @@ def make_inference_plot(workflow, input_file, output_dir,
     name: str
         The name in the [executables] section of the configuration file
         to use.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -121,7 +121,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_prior``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -156,7 +156,7 @@ def create_posterior_files(workflow, samples_files, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``extract_posterior``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -215,7 +215,7 @@ def create_fits_file(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``create_fits_file``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -258,7 +258,7 @@ def make_inference_skymap(workflow, fits_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_skymap``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -299,7 +299,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``table_summary``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -349,7 +349,7 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_posterior``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -391,7 +391,7 @@ def make_inference_samples_plot(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_samples``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -425,7 +425,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_acceptance_rate``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -459,7 +459,7 @@ def make_inference_plot_mcmc_history(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_mcmc_history``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -493,7 +493,7 @@ def make_inference_dynesty_run_plot(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_dynesty_run``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -527,7 +527,7 @@ def make_inference_dynesty_trace_plot(workflow, inference_file, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_dynesty_traceplot``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -568,7 +568,7 @@ def make_inference_pp_table(workflow, posterior_files, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``table_summary``.
-    analysis_segs : ligo.segments.Segment, optional
+    analysis_segs : igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags : list, optional
@@ -618,7 +618,7 @@ def make_inference_pp_plot(workflow, posterior_files, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``plot_pp``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional
@@ -666,7 +666,7 @@ def make_inference_inj_recovery_plot(workflow, posterior_files, output_dir,
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
         the executable. Default is ``inj_recovery``.
-    analysis_segs: ligo.segments.Segment, optional
+    analysis_segs: igwn_segments.segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: list, optional

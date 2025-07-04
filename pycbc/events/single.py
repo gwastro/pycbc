@@ -3,7 +3,6 @@
 import logging
 import copy
 import threading
-from datetime import datetime as dt
 import time
 import numpy as np
 
@@ -26,6 +25,8 @@ class LiveSingle(object):
                  fixed_ifar=None,
                  maximum_ifar=None,
                  statistic=None,
+                 stat_features=None,
+                 stat_keywords=None,
                  sngl_ranking=None,
                  stat_files=None,
                  statistic_refresh_rate=None,
@@ -55,6 +56,10 @@ class LiveSingle(object):
             threshold criteria
         statistic: str
             The name of the statistic to rank events.
+        stat_features: list of str
+            The names of features to use for the statistic
+        stat_keywords: list of key:value strings
+            argument for statistic keywords
         sngl_ranking: str
             The single detector ranking to use with the background statistic
         stat_files: list of strs
@@ -76,16 +81,20 @@ class LiveSingle(object):
         self.fixed_ifar = fixed_ifar
         self.maximum_ifar = maximum_ifar
 
-        self.time_stat_refreshed = dt.now()
+        self.time_stat_refreshed = time.time()
         self.stat_calculator_lock = threading.Lock()
         self.statistic_refresh_rate = statistic_refresh_rate
 
         stat_class = stat.get_statistic(statistic)
+        stat_extras = stat.parse_statistic_feature_options(
+            stat_features,
+            stat_keywords,
+        )
         self.stat_calculator = stat_class(
             sngl_ranking,
             stat_files,
             ifos=[ifo],
-            **kwargs
+            **stat_extras
         )
 
         self.thresholds = {
@@ -224,7 +233,6 @@ class LiveSingle(object):
         # (may be empty)
         stat_files = sum(stat_files, [])
 
-        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
         return cls(
            ifo, ranking_threshold=args.single_ranking_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
@@ -235,9 +243,10 @@ class LiveSingle(object):
            sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo],
            statistic=args.ranking_statistic,
            sngl_ranking=args.sngl_ranking,
+           stat_features=args.statistic_features,
+           stat_keywords=args.statistic_keywords,
            stat_files=stat_files,
            statistic_refresh_rate=args.statistic_refresh_rate,
-           **kwargs
            )
 
     def check(self, trigs, data_reader):
@@ -304,7 +313,8 @@ class LiveSingle(object):
 
         # fill in a new candidate event
         candidate = {
-            f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
+            f'foreground/{self.ifo}/{k}': cut_trigs[k][sngl_idx][i]
+            for k in trigs
         }
         candidate['foreground/stat'] = rank[i]
         candidate['foreground/ifar'] = ifar
@@ -320,7 +330,7 @@ class LiveSingle(object):
             with HFile(self.fit_file, 'r') as fit_file:
                 bin_edges = fit_file['bins_edges'][:]
                 live_time = fit_file[self.ifo].attrs['live_time']
-                thresh = fit_file.attrs['fit_threshold']
+                thresh = fit_file[self.ifo].attrs['fit_threshold']
                 dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
                 rates = dist_grp['counts'][:] / live_time
                 coeffs = dist_grp['fit_coeff'][:]
@@ -360,9 +370,13 @@ class LiveSingle(object):
         """
         Start a thread managing whether the stat_calculator will be updated
         """
+        if self.statistic_refresh_rate is None:
+            logger.info("Statistic refresh disabled for %s", self.ifo)
+            return
         thread = threading.Thread(
             target=self.refresh_statistic,
-            daemon=True
+            daemon=True,
+            name="Stat refresh " + self.ifo
         )
         logger.info("Starting %s statistic refresh thread", self.ifo)
         thread.start()
@@ -373,26 +387,21 @@ class LiveSingle(object):
         """
         while True:
             # How long since the statistic was last updated?
-            since_stat_refresh = \
-                (dt.now() - self.time_stat_refreshed).total_seconds()
+            since_stat_refresh = time.time() - self.time_stat_refreshed
             if since_stat_refresh > self.statistic_refresh_rate:
-                self.time_stat_refreshed = dt.now()
+                self.time_stat_refreshed = time.time()
                 logger.info(
-                    "Checking %s statistic for updated files",
-                    self.ifo,
+                    "Checking %s statistic for updated files", self.ifo
                 )
                 with self.stat_calculator_lock:
                     self.stat_calculator.check_update_files()
             # Sleep one second for safety
             time.sleep(1)
             # Now use the time it took the check / update the statistic
-            since_stat_refresh = \
-                (dt.now() - self.time_stat_refreshed).total_seconds()
+            since_stat_refresh = time.time() - self.time_stat_refreshed
             logger.debug(
                 "%s statistic: Waiting %.3fs for next refresh",
                 self.ifo,
                 self.statistic_refresh_rate - since_stat_refresh
             )
-            time.sleep(
-                self.statistic_refresh_rate - since_stat_refresh
-            )
+            time.sleep(self.statistic_refresh_rate - since_stat_refresh)

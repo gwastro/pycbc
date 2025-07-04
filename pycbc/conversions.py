@@ -77,9 +77,9 @@ def ensurearray(*args):
         inputs was an array.
     """
     input_is_array = any(isinstance(arg, numpy.ndarray) for arg in args)
-    args = numpy.broadcast_arrays(*args)
+    args = list(numpy.broadcast_arrays(*args))
     args.append(input_is_array)
-    return args
+    return tuple(args)
 
 
 def formatreturn(arg, input_is_array=False):
@@ -101,6 +101,66 @@ def sec_to_year(sec):
     """ Converts number of seconds to number of years """
     return sec / lal.YRJUL_SI
 
+
+def hypertriangle(*params, bounds=(0, 1)):
+    """
+    Apply a hypertriangle map to a series of input parameter values.
+    This will output a series of parameter values in ascending order
+    that can be used to impose a distinguishibility constraint on the
+    posterior. Adapted from Buscicchio et al (PhysRevD.100.084041).
+
+    This transformation assumes that the input parameters were sampled
+    from the same uniform prior distribution defined by bounds.
+
+    Parameters
+    ----------
+    params : float(s) or array(s)
+        The input parameter values. Parameters are assumed to be
+        sampled from the same uniform prior distribution. Each
+        argument is treated as one parameter; input arrays will
+        be treated as multiple values for that one parameter.
+
+    bounds : tuple (optional)
+        The lower and upper bounds of the input parameter priors.
+        Default (0, 1) for a unit hypercube.
+
+    Returns
+    -------
+    array
+        The mapped parameters. Output values are in ascending order.
+    """
+    # check inputs all have the same shape
+    ref_shape = numpy.shape(params[0])
+    assert numpy.all([numpy.shape(params[i]) == ref_shape for i in range(len(params))]), \
+        "All inputs must have the same number of elements"
+    
+    # map to numpy array
+    params, input_is_array = ensurearray(params)
+
+    # check all values lie within bounds
+    assert numpy.all(params >= bounds[0]) and numpy.all(params <= bounds[1]), \
+        "Input parameters lie outside of given bounds"
+
+    # rescale the parameters to the unit hypercube
+    scaled_params = (params - bounds[0])/(bounds[1] - bounds[0])
+    
+    # hypertriangulate
+    try:
+        K, num_pts = scaled_params.shape
+    except ValueError:
+        K = numpy.size(scaled_params)
+        num_pts = 1
+    idx = numpy.repeat(numpy.arange(K), repeats=num_pts)
+    scaled_params.resize(K, num_pts)
+    idx.resize(K, num_pts)
+    fac = numpy.power(1 - scaled_params, 1/(K - idx))
+    out_scaled_params = 1 - numpy.cumprod(fac, axis=0)
+
+    # rescale to prior bounds
+    out_params = (out_scaled_params * (bounds[1] - bounds[0])) + bounds[0]
+    if num_pts == 1:
+        out_params = [out_params[i][0] for i in range(K)]
+    return out_params
 
 #
 # =============================================================================
@@ -431,10 +491,80 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     mask = m1 < m2
     ldiff[mask] = -ldiff[mask]
     eta = eta_from_mass1_mass2(m1, m2)
+    eta[eta > 0.25] = 0.25 # Account for numerical error, 0.25 is the max
     p1 = (lsum) * (1 + 7. * eta - 31 * eta ** 2.0)
     p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * (ldiff)
     return formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
 
+def delta_lambda_tilde(mass1, mass2, lambda1, lambda2):
+    """ Delta lambda tilde parameter defined as
+    equation 15 in
+    https://journals.aps.org/prd/pdf/10.1103/PhysRevD.91.043002
+    """
+    m1, m2, lambda1, lambda2, input_is_array = ensurearray(
+        mass1, mass2, lambda1, lambda2)
+    lsum = lambda1 + lambda2
+    ldiff, _ = ensurearray(lambda1 - lambda2)
+    mask = m1 < m2
+    ldiff[mask] = -ldiff[mask]
+    eta = eta_from_mass1_mass2(m1, m2)
+    p1 = numpy.sqrt(1 - 4 * eta) * (
+        1 - (13272 / 1319) * eta +
+        (8944 / 1319) * eta ** 2
+    ) * lsum
+    p2 = (
+        1 - (15910 / 1319) * eta +
+        (32850 / 1319) * eta ** 2 +
+        (3380 / 1319) * eta ** 3
+    ) * ldiff
+    return formatreturn(1 / 2 * (p1 + p2), input_is_array)
+
+def lambda1_from_delta_lambda_tilde_lambda_tilde(delta_lambda_tilde,
+                                                 lambda_tilde,
+                                                 mass1,
+                                                 mass2):
+    """ Returns lambda1 parameter by using delta lambda tilde,
+    lambda tilde, mass1, and mass2.
+    """
+    m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
+        mass1, mass2, delta_lambda_tilde, lambda_tilde)
+    eta = eta_from_mass1_mass2(m1, m2)
+    p1 = 1 + 7.0*eta - 31*eta**2.0
+    p2 = (1 - 4*eta)**0.5 * (1 + 9*eta - 11*eta**2.0)
+    p3 = (1 - 4*eta)**0.5 * (1 - 13272/1319*eta + 8944/1319*eta**2)
+    p4 = 1 - (15910/1319)*eta + (32850/1319)*eta**2 + (3380/1319)*eta**3
+    amp = 1/((p1*p4)-(p2*p3))
+    l_tilde_lambda1 = 13/16 * (p3-p4) * lambda_tilde
+    l_delta_tilde_lambda1 = (p1-p2) * delta_lambda_tilde
+    lambda1 = formatreturn(
+        amp * (l_delta_tilde_lambda1 - l_tilde_lambda1),
+        input_is_array
+    )
+    return lambda1
+
+def lambda2_from_delta_lambda_tilde_lambda_tilde(
+        delta_lambda_tilde,
+        lambda_tilde,
+        mass1,
+        mass2):
+    """ Returns lambda2 parameter by using delta lambda tilde,
+    lambda tilde, mass1, and mass2.
+    """
+    m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
+        mass1, mass2, delta_lambda_tilde, lambda_tilde)
+    eta = eta_from_mass1_mass2(m1, m2)
+    p1 = 1 + 7.0*eta - 31*eta**2.0
+    p2 = (1 - 4*eta)**0.5 * (1 + 9*eta - 11*eta**2.0)
+    p3 = (1 - 4*eta)**0.5 * (1 - 13272/1319*eta + 8944/1319*eta**2)
+    p4 = 1 - (15910/1319)*eta + (32850/1319)*eta**2 + (3380/1319)*eta**3
+    amp = 1/((p1*p4)-(p2*p3))
+    l_tilde_lambda2 = 13/16 * (p3+p4) * lambda_tilde
+    l_delta_tilde_lambda2 = (p1+p2) * delta_lambda_tilde
+    lambda2 = formatreturn(
+        amp * (l_tilde_lambda2 - l_delta_tilde_lambda2),
+        input_is_array
+    )
+    return lambda2
 
 def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     """Return the lambda parameter(s) corresponding to the input mass(es)
@@ -552,6 +682,8 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, \
         input_is_array = \
         ensurearray(mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar)
+    assert numpy.all(spin1_a >= 0) and numpy.all(spin2_a >= 0), \
+        "Spin magnitude MUST be null or positive"
     # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
     if swap_companions:
         mass1, mass2, spin1_a, spin2_a, spin1_polar, spin2_polar = \
@@ -1774,5 +1906,8 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
            'freqlmn_from_other_lmn', 'taulmn_from_other_lmn',
            'remnant_mass_from_mass1_mass2_spherical_spin_eos',
-           'remnant_mass_from_mass1_mass2_cartesian_spin_eos'
+           'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
+           'lambda1_from_delta_lambda_tilde_lambda_tilde',
+           'lambda2_from_delta_lambda_tilde_lambda_tilde',
+           'delta_lambda_tilde', 'hypertriangle'
           ]

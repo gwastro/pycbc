@@ -228,6 +228,14 @@ class DistMarg():
             self.distance_interpolator = i
 
         kwargs['static_params']['distance'] = dist_ref
+
+        # Save marginalized parameters' name into one place,
+        # coa_phase will be a static param if been marginalized
+        if marginalize_distance:
+            self.marginalized_params_name =\
+                list(self.marginalize_vector_params.keys()) +\
+                [marginalize_distance_param]
+
         return variable_params, kwargs
 
     def reset_vector_params(self):
@@ -434,8 +442,11 @@ class DistMarg():
             ifos = self.keep_ifos
         ikey = ''.join(ifos)
 
+        vsamples = size if size is not None else self.vsamples
+
         # No good SNR peaks, go with prior draw
         if len(ifos) == 0:
+            self.marginalize_vector_params['logw_partial'] = numpy.zeros(vsamples)
             return
 
         def make_init():
@@ -484,8 +495,6 @@ class DistMarg():
             self.tinfo[ikey] = make_init()
 
         dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior = self.tinfo[ikey]
-
-        vsamples = size if size is not None else self.vsamples
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
@@ -537,6 +546,7 @@ class DistMarg():
         # If we had really poor efficiency at finding a point, we should
         # give up and just use the original random draws
         if len(ix) < 0.05 * vsamples:
+            self.marginalize_vector_params['logw_partial'] = numpy.zeros(vsamples)
             return
 
         # fill back to fixed size with repeat samples

@@ -19,7 +19,6 @@
 """
 
 import argparse
-import h5py
 import logging
 import os
 import shlex
@@ -27,17 +26,11 @@ import socket
 import sys
 import numpy
 
-from ligo import segments
-
 import pycbc
-import pycbc.workflow.minifollowups as mini
 from pycbc import results
 from pycbc.results import layout
-from pycbc.types import MultiDetOptionAction
-from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import configuration
 from pycbc.workflow import core
-from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc.workflow import versioning
 import pycbc.workflow.inference_followups as inffu

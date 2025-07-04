@@ -7,6 +7,11 @@ echo -e "\\n>> [`date`] Python Major Version:" $PYTHON_VERSION
 PYTHON_MINOR_VERSION=`python -c 'import sys; print(sys.version_info.minor)'`
 echo -e "\\n>> [`date`] Python Minor Version:" $PYTHON_MINOR_VERSION
 
+# This will work from anywhere within the pycbc directory
+this_script_dir=`dirname -- "$( readlink -f -- "$0"; )"`
+cd $this_script_dir
+cd ..
+
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
 
 RESULT=0
@@ -29,7 +34,8 @@ function test_result {
 if [ "$PYCBC_TEST_TYPE" = "unittest" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     for prog in `find test -name '*.py' -print | egrep -v '(long|lalsim|test_waveform)'`
     do
-        echo -e ">> [`date`] running unit test for $prog"
+        prog_short=`echo $prog | rev | cut -d"/" -f1 | rev`
+        echo -e ">> [`date`] running unit test for $prog_short"
         python $prog &> $LOG_FILE
         test_result
     done
@@ -38,7 +44,7 @@ fi
 if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     # check that all executables that do not require
     # special environments can return a help message
-    for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_mvsc_get_features|pycbc_coinc_time)' | sort | uniq`
+    for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_mvsc_get_features)' | sort | uniq`
     do
         echo -e ">> [`date`] running $prog --help"
         $prog --help &> $LOG_FILE
@@ -76,18 +82,18 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     popd
 
     # run PyCBC Live test
-    if ((${PYTHON_MINOR_VERSION} > 7)); then
-      # ligo.skymap is only supporting python3.8+, and older releases are
-      # broken by a new release of python-ligo-lw
-      pushd examples/live
-      bash -e run.sh
-      test_result
-      popd
-    fi
+    pushd examples/live
+    bash -e run.sh
+    test_result
+    popd
 
     # run pycbc_multi_inspiral (PyGRB) test
     pushd examples/multi_inspiral
-    bash -e run.sh
+    bash -e gw170817_h.sh
+    test_result
+    bash -e gw170817_hl.sh
+    test_result
+    bash -e gw170817_hlv.sh
     test_result
     popd
 fi
@@ -143,14 +149,10 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     popd
 
     ## Run pycbc_make_skymap example
-    if ((${PYTHON_MINOR_VERSION} > 7)); then
-      # ligo.skymap is only supporting python3.8+, and older releases are
-      # broken by a new release of python-ligo-lw
-      pushd examples/make_skymap
-      bash -e simulated_data.sh
-      test_result
-      popd
-    fi
+    pushd examples/make_skymap
+    bash -e simulated_data.sh
+    test_result
+    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "docs" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then

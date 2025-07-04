@@ -17,20 +17,17 @@
 """ Prepare files for upload to GraceDB for foreground events
 """
 import os
-import sys
 import argparse
 import logging
-import re
 import numpy as np
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as wf
-from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer, coinc
-from pycbc.io import get_all_subkeys, HFile
+from pycbc.events import select_segments_by_definer
+from pycbc.io import HFile
 import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file, resolve_td_option
 

@@ -7,7 +7,7 @@ import h5py
 import numpy
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 import inspect
 from itertools import cycle
 
@@ -119,22 +119,22 @@ x_var_name = getattr(bank, args.x_var + '_param').__doc__
 y_var = getattr(bank, args.y_var + '_param')()
 y_var_name = getattr(bank, args.y_var + '_param').__doc__
 
-fig = pylab.figure()
-pylab.grid()
+fig = plt.figure()
+plt.grid()
 for name in locs_dict:
     locs = locs_dict[name]
-    pylab.scatter(x_var[locs], y_var[locs], label=name, edgecolor='none', s=1,
+    plt.scatter(x_var[locs], y_var[locs], label=name, edgecolor='none', s=1,
                   c=next(color))
 
-pylab.legend(loc='upper left', markerscale=5)
-pylab.xlabel(x_var_name)
-pylab.ylabel(y_var_name)
-pylab.xlim(x_var.min(), x_var.max())
-pylab.ylim(y_var.min(), y_var.max())
+plt.legend(loc='upper left', markerscale=5)
+plt.xlabel(x_var_name)
+plt.ylabel(y_var_name)
+plt.xlim(x_var.min(), x_var.max())
+plt.ylim(y_var.min(), y_var.max())
 if args.log_x:
-    pylab.xscale('log')
+    plt.xscale('log')
 if args.log_y:
-    pylab.yscale('log')
+    plt.yscale('log')
 
 title = "Template Bank and Bins Used to Compute Background"
 caption = """This plot shows the template bank in the {x_var}-{y_var} plane.

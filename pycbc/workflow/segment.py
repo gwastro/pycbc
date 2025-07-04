@@ -32,8 +32,8 @@ import shutil
 import itertools
 import logging
 
-from ligo import segments
-from ligo.segments import utils as segmentsUtils
+import igwn_segments as segments
+from igwn_segments import utils as segmentsUtils
 
 from pycbc.workflow.core import SegFile, make_analysis_dir
 from pycbc.workflow.core import resolve_url
@@ -161,10 +161,10 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     Returns
     --------
-    onsource : ligo.segments.segmentlistdict
+    onsource : igwn_segments.segmentlistdict
         A dictionary containing the on source segments for network IFOs
 
-    offsource : ligo.segments.segmentlistdict
+    offsource : igwn_segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
     """
 
@@ -198,6 +198,9 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                 offsrc = seg
     else:
         offsrc = offsrclist[0]
+    # Force int boundaries in case we get floats as input,
+    # which can create problems downstream
+    offsrc = segments.segment(int(offsrc[0]), int(offsrc[1]))
 
     if abs(offsrc) < minduration + 2 * padding:
         fail = segments.segment([triggertime - minduration / 2. - padding,
@@ -218,7 +221,6 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     logger.info("%ds of padding applied at beginning and end of segment.",
                 padding)
-
 
     # Construct on-source
     onstart = triggertime - onbefore

@@ -23,11 +23,10 @@ import logging
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
-from matplotlib import rc
 import numpy
 import pycbc
 from pycbc import results
-from pycbc.inference import (option_utils, io)
+from pycbc.inference import io
 import sys
 
 # command line usage

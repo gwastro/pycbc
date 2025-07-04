@@ -84,7 +84,7 @@ print("Running {0} unit tests for {1}:".format('CPU', "Lalsimulation Waveforms")
 import matplotlib
 if not opt.show_plots:
     matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 def get_waveform(p, **kwds):
     """ Given the input parameters get me the waveform, whether it is TD or
@@ -129,52 +129,52 @@ class TestLALSimulation(unittest.TestCase):
         else:
             sample_attr = 'sample_frequencies'
 
-        f = pylab.figure()
-        pylab.axes([.1, .2, 0.8, 0.70])
+        f = plt.figure()
+        plt.axes([.1, .2, 0.8, 0.70])
         hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
-        pylab.plot(getattr(hp_ref, sample_attr), hp_ref.real(), label="phiref")
+        plt.plot(getattr(hp_ref, sample_attr), hp_ref.real(), label="phiref")
 
         hp, hc = get_waveform(self.p, coa_phase=lal.PI/4)
         m, i = match(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=2)
         o = overlap(hp_ref, hp)
-        pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/4$")
+        plt.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/4$")
 
         hp, hc = get_waveform(self.p, coa_phase=lal.PI/2)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(-1, o, places=7)
-        pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/2$")
+        plt.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/2$")
 
         hp, hc = get_waveform(self.p, coa_phase=lal.PI)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(1, o, places=7)
-        pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi$")
+        plt.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi$")
 
-        pylab.xlim(min(getattr(hp, sample_attr)), max(getattr(hp, sample_attr)))
-        pylab.title("Vary %s oribital phiref, h+" % self.p.approximant)
+        plt.xlim(min(getattr(hp, sample_attr)), max(getattr(hp, sample_attr)))
+        plt.title("Vary %s oribital phiref, h+" % self.p.approximant)
 
         if self.p.approximant in td_approximants():
-            pylab.xlabel("Time to coalescence (s)")
+            plt.xlabel("Time to coalescence (s)")
         else:
-            pylab.xlabel("GW Frequency (Hz)")
+            plt.xlabel("GW Frequency (Hz)")
 
-        pylab.ylabel("GW Strain (real part)")
-        pylab.legend(loc="upper left")
+        plt.ylabel("GW Strain (real part)")
+        plt.legend(loc="upper left")
 
         info = self.version_txt
-        pylab.figtext(0.05, 0.05, info)
+        plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-phase.png" % self.p.approximant
-            pylab.savefig(pname)
+            plt.savefig(pname)
         if self.show_plots:
-            pylab.show()
+            plt.show()
         else:
-            pylab.close(f)
+            plt.close(f)
 
 
     def test_distance_scaling(self):
@@ -189,37 +189,37 @@ class TestLALSimulation(unittest.TestCase):
         hpf, hcf = get_waveform(self.p, distance=distance*fac*fac)
         hpn, hcn = get_waveform(self.p, distance=distance/fac)
 
-        f = pylab.figure()
-        pylab.axes([.1, .2, 0.8, 0.70])
+        f = plt.figure()
+        plt.axes([.1, .2, 0.8, 0.70])
         htilde = make_frequency_series(hpc)
-        pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D")
+        plt.loglog(htilde.sample_frequencies, abs(htilde), label="D")
 
         htilde = make_frequency_series(hpm)
-        pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" %fac)
+        plt.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" %fac)
 
         htilde = make_frequency_series(hpf)
-        pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" %(fac*fac))
+        plt.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" %(fac*fac))
 
         htilde = make_frequency_series(hpn)
-        pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D / %s" %fac)
+        plt.loglog(htilde.sample_frequencies, abs(htilde), label="D / %s" %fac)
 
-        pylab.title("Vary %s distance, $\\tilde{h}$+" % self.p.approximant)
-        pylab.xlabel("GW Frequency (Hz)")
-        pylab.ylabel("GW Strain")
-        pylab.legend()
-        pylab.xlim(xmin=self.p.f_lower)
+        plt.title("Vary %s distance, $\\tilde{h}$+" % self.p.approximant)
+        plt.xlabel("GW Frequency (Hz)")
+        plt.ylabel("GW Strain")
+        plt.legend()
+        plt.xlim(xmin=self.p.f_lower)
 
         info = self.version_txt
-        pylab.figtext(0.05, .05, info)
+        plt.figtext(0.05, .05, info)
 
         if self.save_plots:
             pname = self.plot_dir + "/%s-distance-scaling.png" % self.p.approximant
-            pylab.savefig(pname)
+            plt.savefig(pname)
 
         if self.show_plots:
-            pylab.show()
+            plt.show()
         else:
-            pylab.close(f)
+            plt.close(f)
 
         self.assertTrue(hpc.almost_equal_elem(hpm * fac, tolerance, relative=True))
         self.assertTrue(hpc.almost_equal_elem(hpf * fac * fac, tolerance, relative=True))
@@ -296,24 +296,24 @@ class TestLALSimulation(unittest.TestCase):
             s = sigma(hp, low_frequency_cutoff=self.p.f_lower)
             sigmas.append(s)
 
-        f = pylab.figure()
-        pylab.axes([.1, .2, 0.8, 0.70])
-        pylab.plot(incs, sigmas)
-        pylab.title("Vary %s inclination, $\\tilde{h}$+" % self.p.approximant)
-        pylab.xlabel("Inclination (radians)")
-        pylab.ylabel("sigma (flat PSD)")
+        f = plt.figure()
+        plt.axes([.1, .2, 0.8, 0.70])
+        plt.plot(incs, sigmas)
+        plt.title("Vary %s inclination, $\\tilde{h}$+" % self.p.approximant)
+        plt.xlabel("Inclination (radians)")
+        plt.ylabel("sigma (flat PSD)")
 
         info = self.version_txt
-        pylab.figtext(0.05, 0.05, info)
+        plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-inclination.png" % self.p.approximant
-            pylab.savefig(pname)
+            plt.savefig(pname)
 
         if self.show_plots:
-            pylab.show()
+            plt.show()
         else:
-            pylab.close(f)
+            plt.close(f)
 
         self.assertAlmostEqual(sigmas[-1], sigmas[0], places=7)
         self.assertAlmostEqual(max(sigmas), sigmas[0], places=7)
@@ -349,26 +349,26 @@ class TestLALSimulation(unittest.TestCase):
         hpTS=TimeSeries(hpdec, delta_t=self.p.delta_t*2.,epoch=hp.start_time)
         hcTS=TimeSeries(hcdec, delta_t=self.p.delta_t*2.,epoch=hc.start_time)
 
-        f = pylab.figure()
-        pylab.plot(hp.sample_times, hp.data,label="rate %s Hz" %"{:.0f}".format(1./self.p.delta_t))
-        pylab.plot(hp2dec.sample_times, hp2dec.data, label="rate %s Hz" %"{:.0f}".format(1./(self.p.delta_t*2.)))
+        f = plt.figure()
+        plt.plot(hp.sample_times, hp.data,label="rate %s Hz" %"{:.0f}".format(1./self.p.delta_t))
+        plt.plot(hp2dec.sample_times, hp2dec.data, label="rate %s Hz" %"{:.0f}".format(1./(self.p.delta_t*2.)))
 
-        pylab.title("Halving %s rate, $\\tilde{h}$+" % self.p.approximant)
-        pylab.xlabel("time (sec)")
-        pylab.ylabel("amplitude")
-        pylab.legend()
+        plt.title("Halving %s rate, $\\tilde{h}$+" % self.p.approximant)
+        plt.xlabel("time (sec)")
+        plt.ylabel("amplitude")
+        plt.legend()
 
         info = self.version_txt
-        pylab.figtext(0.05, 0.05, info)
+        plt.figtext(0.05, 0.05, info)
 
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-rate.png" % self.p.approximant
-            pylab.savefig(pname)
+            plt.savefig(pname)
 
         if self.show_plots:
-            pylab.show()
+            plt.show()
         else:
-            pylab.close(f)
+            plt.close(f)
 
         op=overlap(hpTS,hp2dec)
         self.assertAlmostEqual(1., op, places=2)

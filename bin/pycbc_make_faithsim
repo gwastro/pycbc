@@ -52,7 +52,6 @@ def mkdir(dir_name):
         pass
 
 def matches_in_list(slist, match):
-    import re
     matches = []
     for st in slist:
         if st.startswith(match):
@@ -147,8 +146,8 @@ dag.add_node(pnode)
 
 f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
-from numpy import *
-from ligo.lw import utils, table, lsctables
+import numpy as np
+from igwn_ligolw import utils, lsctables
 import glob
 from pycbc.io.ligolw import LIGOLWContentHandler
 
@@ -173,7 +172,7 @@ if __name__ == "__main__":
     btables = {}
     for tag in tags:
         parts = glob.glob("match/match-" + tag + "-*.dat")
-        data = zeros(0, dtype=dtypeo)   
+        data = np.zeros(0, dtype=dtypeo)
         for part in parts:
             btag = part.split('-')[2].split('.')[0]
             bname = "bank/bank" + btag + ".xml.gz"
@@ -182,12 +181,12 @@ if __name__ == "__main__":
                 btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
             bt = btables[bname]
             try:      
-                md = loadtxt(part, dtype=dtypem)
+                md = np.loadtxt(part, dtype=dtypem)
                 if md.size == 0:
                     continue  
             except IOError:
                 continue
-            pdata = zeros(len(bt), dtype=dtypeo)
+            pdata = np.zeros(len(bt), dtype=dtypeo)
             
             for field in mfields: 
                 pdata[field] = md[field]
@@ -196,7 +195,7 @@ if __name__ == "__main__":
                 if field not in mfields:
                     pdata[field] = bt.get_column(field)
             
-            data = append(data, pdata)
+            data = np.append(data, pdata)
         savetxt('result-' + tag + '.dat', data)
 """)
 os.chmod('scripts/pycbc_faithsim_collect_results', 0o0777)
@@ -217,10 +216,9 @@ f.write("""#!/usr/bin/env python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm
-import pylab
-from numpy import *
-from ligo.lw import utils, table, lsctables
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib import pyplot as plt
+import numpy as np
+from matplotlib.ticker import MultipleLocator
 import glob
 
 from pycbc import pnutils
@@ -238,14 +236,14 @@ def basic_scatter(out_name, xname, yname, title, xval, yval,
                   ymin=None, majorL=None, minorL=None):
     cmap = matplotlib.cm.jet
     cmap.set_under(color='gray')
-    fig = pylab.figure(num=None, figsize=(10, 5))
-    pylab.scatter(xval, yval, c=cval, linewidths=0, s=3, vmin=vmin, vmax=vmax, cmap=cmap, alpha=0.7)
+    fig = plt.figure(num=None, figsize=(10, 5))
+    plt.scatter(xval, yval, c=cval, linewidths=0, s=3, vmin=vmin, vmax=vmax, cmap=cmap, alpha=0.7)
     if cval is not None:
-        bar = pylab.colorbar()
+        bar = plt.colorbar()
         bar.set_label(cname)
         
-    pylab.xlabel(xname)
-    pylab.ylabel(yname)
+    plt.xlabel(xname)
+    plt.ylabel(yname)
     
     if xmin is None:
         xmin = min(xval)
@@ -253,8 +251,8 @@ def basic_scatter(out_name, xname, yname, title, xval, yval,
     if ymin is None:
         ymin = min(yval)
         
-    pylab.xlim(xmin, max(xval))
-    pylab.ylim(ymin, max(yval))
+    plt.xlim(xmin, max(xval))
+    plt.ylim(ymin, max(yval))
     
     ax = fig.gca()
     if majorL:
@@ -267,22 +265,22 @@ def basic_scatter(out_name, xname, yname, title, xval, yval,
     
     fol = 'plots/' 
     
-    pylab.grid()
-    pylab.title(title)
-    pylab.savefig(fol + 'THUMB-' + out_name, dpi=50)
-    pylab.savefig(fol + out_name, dpi=500)
+    plt.grid()
+    plt.title(title)
+    plt.savefig(fol + 'THUMB-' + out_name, dpi=50)
+    plt.savefig(fol + out_name, dpi=500)
 
 fils = glob.glob("result*.dat")
 for fil in fils:
     tag = fil.split('-')[1].split('.')[0]
-    data = loadtxt(fil, dtype=dtypeo)
+    data = np.loadtxt(fil, dtype=dtypeo)
 
-    mmass1 = maximum(data['mass1'], data['mass2'])
-    mmass2 = minimum(data['mass1'], data['mass2'])
+    mmass1 = np.maximum(data['mass1'], data['mass2'])
+    mmass2 = np.minimum(data['mass1'], data['mass2'])
     mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(mmass1, mmass2)
 
     M = data['mass1'] + data['mass2']    
-    q = maximum(data['mass1'] / data['mass2'], data['mass2'] / data['mass1'])
+    q = np.maximum(data['mass1'] / data['mass2'], data['mass2'] / data['mass1'])
     s1 = (data['spin1x']**2 + data['spin1y']**2 + data['spin1z']**2)**0.5
     s2 = (data['spin2x']**2 + data['spin2y']**2 + data['spin2z']**2)**0.5
     

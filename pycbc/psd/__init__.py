@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright (C) 2014 Alex Nitz, Andrew Miller, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -15,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import copy
-from ligo import segments
+import igwn_segments as segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.analytical_space import *
@@ -44,9 +43,9 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     length : int
         The length in samples of the output PSD.
     delta_f : float
-        The frequency step of the output PSD.
+        The frequency step of the output PSD in hertz.
     low_frequency_cutoff: float
-        The low frequncy cutoff to use when calculating the PSD.
+        The low frequency cutoff to use when calculating the PSD, in hertz.
     strain : {None, TimeSeries}
         Time series containing the data from which the PSD should be measured,
         when psd_estimation is in use.
@@ -60,6 +59,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         If 'single' the PSD will be converted to float32, if not already in
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
+
     Returns
     -------
     psd : FrequencySeries
@@ -95,8 +95,10 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
                 psd = from_txt(psd_file_name, length,
                                delta_f, f_low, is_asd_file=is_asd_file)
             elif opt.asd_file:
-                err_msg = "ASD files are only valid as ASCII files (.dat or "
-                err_msg += ".txt). Supplied {}.".format(psd_file_name)
+                raise ValueError(
+                    "ASD files must be in ASCII format (extension .dat or "
+                    f".txt). Got {psd_file_name} instead"
+                )
             elif psd_file_name.endswith(('.xml', '.xml.gz')):
                 psd = from_xml(psd_file_name, length, delta_f, f_low,
                                ifo_string=opt.psd_file_xml_ifo_string,
@@ -121,7 +123,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
 
     else:
         # Shouldn't be possible to get here
-        raise ValueError("Shouldn't be possible to raise this!")
+        raise RuntimeError("Shouldn't be possible to raise this!")
 
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd,
@@ -138,10 +140,10 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         return psd.astype(float32)
     elif precision == 'double':
         return psd.astype(float64)
-    else:
-        err_msg = "If provided the precision kwarg must be either 'single' "
-        err_msg += "or 'double'. You provided %s." %(precision)
-        raise ValueError(err_msg)
+    raise ValueError(
+        "If provided, the precision kwarg must be either 'single' or "
+        f"'double'. You provided {precision}"
+    )
 
 def from_cli_single_ifo(opt, length, delta_f, low_frequency_cutoff, ifo,
              **kwargs):
@@ -430,9 +432,9 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     flen : int
         The length in samples of the output PSDs.
     delta_f : float
-        The frequency step of the output PSDs.
+        The frequency step of the output PSDs in hertz.
     flow: float
-        The low frequncy cutoff to use when calculating the PSD.
+        The low frequency cutoff to use when calculating the PSD, in hertz.
     dyn_range_factor : {1, float}
         For PSDs taken from models or text files, if `dyn_range_factor` is
         not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
@@ -522,7 +524,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
     delta_f : float
         The frequency step of the output PSDs.
     flow: float
-        The low frequncy cutoff to use when calculating the PSD.
+        The low frequency cutoff to use when calculating the PSD, in hertz.
     dyn_range_factor : {1, float}
         For PSDs taken from models or text files, if `dyn_range_factor` is
         not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
@@ -551,8 +553,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
                     psd_overlap = curr_overlap
                     best_psd = psd
         if best_psd is None:
-            err_msg = "No PSDs found intersecting segment!"
-            raise ValueError(err_msg)
+            raise ValueError("No PSDs found intersecting segment!")
         fd_segment.psd = best_psd
 
 def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,

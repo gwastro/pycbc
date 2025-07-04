@@ -94,7 +94,7 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
                         h5in.copy(h5in[old.name], h5out, old.name)
                         bar.update()
             for ifo in ifos:
-                idx = numpy.in1d(h5in[ifo]["event_id"][()], ifo_index[ifo])
+                idx = numpy.isin(h5in[ifo]["event_id"][()], ifo_index[ifo])
                 for old in h5in[ifo].values():
                     if isinstance(old, h5py.Dataset):
                         h5out.create_dataset(
@@ -109,15 +109,12 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
                             h5in.copy(h5in[old.name], h5out, old.name)
                             bar.update()
         bar.close()
-        if verbose:
-            print("Slice written to {}".format(outfile))
+        logging.info("Slice written to %s", outfile)
 
 
 # -- parse command line -------------------------
 
-parser = argparse.ArgumentParser(
-    description=__doc__,
-)
+parser = argparse.ArgumentParser(description=__doc__)
 
 add_common_pycbc_options(parser)
 
@@ -190,9 +187,11 @@ if not all_times.size:
 
 unique_slide_ids = numpy.unique(slide_ids)
 max_slide_id = max(unique_slide_ids)
-msg = 'Clustering '+str(len(slide_ids))+' triggers from '
-msg += str(len(unique_slide_ids))+' slides'
-logging.info(msg)
+logging.info(
+    'Clustering %d triggers from %d slides',
+    len(slide_ids),
+    len(unique_slide_ids)
+)
 
 for slide_id in unique_slide_ids:
     # indices to slice current slide
@@ -295,12 +294,15 @@ for slide_id in unique_slide_ids:
     # so look up the indices [clusters] within the absolute indexing array
     # slide_id_pos which is built at each slide_id
     all_clusters += list(slide_id_pos[clusters])
-    msg = 'Slide '+str(slide_id)+'/'+str(max_slide_id)
-    msg += ' has '+str(len(slide_id_pos))
-    msg += ' trigers that were clustered to '+str(len(clusters))
-    logging.info(msg)
+    logging.info(
+        'Slide %s/%s has %d triggers that were clustered to %d',
+        slide_id,
+        max_slide_id,
+        len(slide_id_pos),
+        len(clusters)
+    )
 
-logging.info('Total clustered triggers: '+str(len(all_clusters)))
+logging.info('Total clustered triggers: %d', len(all_clusters))
 
 # -- write output --------------------------------
 

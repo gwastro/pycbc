@@ -29,7 +29,7 @@ waves.
 """
 
 import types, re, copy, numpy, inspect
-from ligo.lw import types as ligolw_types
+from igwn_ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
 from pycbc.population import population_models
 from pycbc.waveform import parameters
@@ -708,7 +708,7 @@ class FieldArray(numpy.recarray):
     Convert a LIGOLW xml table:
 
     >>> type(sim_table)
-        ligo.lw.lsctables.SimInspiralTable
+        igwn_ligolw.lsctables.SimInspiralTable
     >>> sim_array = FieldArray.from_ligolw_table(sim_table)
     >>> sim_array.mass1
     array([ 2.27440691,  1.85058105,  1.61507106, ...,  2.0504961 ,
@@ -1507,7 +1507,7 @@ def _isstring(dtype):
     """Given a numpy dtype, determines whether it is a string. Returns True
     if the dtype is string or unicode.
     """
-    return dtype.type == numpy.unicode_ or dtype.type == numpy.string_
+    return dtype.type == numpy.unicode_ or dtype.type == numpy.bytes_
 
 
 def aliases_from_fields(fields):

@@ -22,10 +22,8 @@ files. It is assumed that input files have analysed the same set of injections.
 Concatenation of injections is done separately.
 """
 
-from os.path import isfile
 import argparse
-import logging
-from numpy import *
+import numpy as np
 
 import pycbc
 
@@ -46,25 +44,25 @@ options = parser.parse_args()
 
 pycbc.init_logging(options.verbose)
 
-dtypef = dtype([('match', float64), ('bank', unicode_, 256),
-                ('bank_i', int32), ('sim', unicode_, 256),
-                ('sim_i', int32), ('sigmasq', float64)])
+dtypef = np.dtype([('match', np.float64), ('bank', np.str_, 256),
+                   ('bank_i', np.int32), ('sim', np.str_, 256),
+                   ('sim_i', np.int32), ('sigmasq', np.float64)])
 
 matches=[]
 maxmatch = []
 for fil in options.input_files:
-    matches.append(loadtxt(fil, dtype=dtypef))
+    matches.append(np.loadtxt(fil, dtype=dtypef))
 
 # It is possible for the input files to only contain a single injection
 # if the user has split the injections many times.
-if array(matches, dtype=dtypef)['match'].ndim == 1:
-    index = array(matches, dtype=dtypef)['match'].argmax()
+if np.array(matches, dtype=dtypef)['match'].ndim == 1:
+    index = np.array(matches, dtype=dtypef)['match'].argmax()
     maxmatch.append(matches[index])
 else:
-    indices = array(matches, dtype=dtypef)['match'].argmax(0)
+    indices = np.array(matches, dtype=dtypef)['match'].argmax(0)
     for i, j in enumerate(indices):
         maxmatch.append(matches[j][i])
 
-maxmatch=array(maxmatch, dtype=dtypef)
-savetxt(options.output_file, maxmatch, 
+maxmatch = np.array(maxmatch, dtype=dtypef)
+np.savetxt(options.output_file, maxmatch, 
         fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')

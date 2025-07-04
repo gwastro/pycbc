@@ -400,7 +400,7 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
             from pycbc.io.ligolw import make_psd_xmldoc
-            from ligo.lw import utils
+            from igwn_ligolw import utils
 
             if self.kind != 'real':
                 raise ValueError('XML only supports real frequency series')
@@ -472,12 +472,13 @@ class FrequencySeries(Array):
             tmp = self
         else:
             tmp = FrequencySeries(zeros(flen, dtype=self.dtype),
-                             delta_f=self.delta_f, epoch=self.epoch)
+                             delta_f=self.delta_f, epoch=self.epoch,
+                             copy=False)
             tmp[:len(self)] = self[:]
 
         f = TimeSeries(zeros(tlen,
                            dtype=real_same_precision_as(self)),
-                           delta_t=delta_t)
+                           delta_t=delta_t, copy=False)
         ifft(tmp, f)
         f._delta_t = delta_t
         return f

@@ -33,8 +33,9 @@ import numpy, matplotlib
 import sys
 if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
-import pylab, mpld3, mpld3.plugins
-from ligo.segments import segment
+    from matplotlib import pyplot as plt
+import mpld3, mpld3.plugins
+from igwn_segments import segment
 from pycbc.io.hdf import HFile
 
 def columns_from_file_list(file_list, columns, ifo, start, end):
@@ -81,7 +82,7 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
 ifo_color = {'H1': 'blue', 'L1':'red', 'V1':'green'}
 
 def coinc_timeseries_plot(coinc_file, start, end):
-    fig = pylab.figure()
+    fig = plt.figure()
     f = HFile(coinc_file, 'r')
 
     stat1 = f['foreground/stat1']
@@ -91,34 +92,34 @@ def coinc_timeseries_plot(coinc_file, start, end):
     ifo1 = f.attrs['detector_1']
     ifo2 = f.attrs['detector_2']
 
-    pylab.scatter(time1, stat1, label=ifo1, color=ifo_color[ifo1])
-    pylab.scatter(time2, stat2, label=ifo2, color=ifo_color[ifo2])
+    plt.scatter(time1, stat1, label=ifo1, color=ifo_color[ifo1])
+    plt.scatter(time2, stat2, label=ifo2, color=ifo_color[ifo2])
 
     fmt = '.12g'
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
-    pylab.legend()
-    pylab.xlabel('Time (s)')
-    pylab.ylabel('NewSNR')
-    pylab.grid()
+    plt.legend()
+    plt.xlabel('Time (s)')
+    plt.ylabel('NewSNR')
+    plt.grid()
     return mpld3.fig_to_html(fig)
 
 def trigger_timeseries_plot(file_list, ifos, start, end):
 
-    fig = pylab.figure()
+    fig = plt.figure()
     for ifo in ifos:
         trigs = columns_from_file_list(file_list,
                                        ['snr', 'end_time'],
                                        ifo, start, end)
         print(trigs)
-        pylab.scatter(trigs['end_time'], trigs['snr'], label=ifo,
+        plt.scatter(trigs['end_time'], trigs['snr'], label=ifo,
                       color=ifo_color[ifo])
 
         fmt = '.12g'
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
-    pylab.legend()
-    pylab.xlabel('Time (s)')
-    pylab.ylabel('SNR')
-    pylab.grid()
+    plt.legend()
+    plt.xlabel('Time (s)')
+    plt.ylabel('SNR')
+    plt.grid()
     return mpld3.fig_to_html(fig)
 
 def times_to_urls(times, window, tag):

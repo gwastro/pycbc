@@ -31,10 +31,11 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 
 import os
 import logging
+import math
 import configparser as ConfigParser
 
 import pycbc
-from pycbc.workflow.core import FileList
+from pycbc.workflow.core import FileList, Executable
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
 
@@ -53,7 +54,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     ----------
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
-    science_segs : Keyed dictionary of ligo.segments.segmentlist objects
+    science_segs : Keyed dictionary of igwn_segments.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
         ifo.
     datafind_outs : pycbc.workflow.core.FileList
@@ -148,7 +149,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     ----------
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
-    science_segs : Keyed dictionary of ligo.segments.segmentlist objects
+    science_segs : Keyed dictionary of igwn_segments.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
         ifo.
     datafind_outs : pycbc.workflow.core.FileList
@@ -335,3 +336,66 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
 
     return tmplt_banks
 
+
+def make_compress_split_banks(workflow, bank_files, out_dir,
+                       tags=None):
+    tags = [] if tags is None else tags
+    compressed_banks = FileList([])
+    n_dp = math.ceil(math.log10(len(bank_files)))
+    for i, bank_file in enumerate(bank_files):
+        node = Executable(
+            workflow.cp,
+            'compress',
+            ifos=workflow.ifos,
+            out_dir=out_dir,
+            tags=tags + [f'bank%0{n_dp}d' % i]
+        ).create_node()
+        node.add_input_opt('--bank-file', bank_file)
+        node.new_output_file_opt(
+            workflow.analysis_time,
+            '.hdf',
+            '--output'
+        )
+        workflow += node
+        compressed_banks += node.output_files
+    return compressed_banks
+
+def make_combine_split_banks(workflow, bank_files, out_dir,
+                       tags=None):
+    tags = [] if tags is None else tags
+    if workflow.cp.has_option_tags(
+        "workflow-splittable",
+        "recombine-num-banks",
+        tags
+    ):
+        n_banks_combined = int(workflow.cp.get_opt_tags(
+            "workflow-splittable",
+            "recombine-num-banks",
+            tags
+        ))
+    else:
+        n_banks_combined = 1
+
+    out_files = FileList([])
+    n_dp = math.ceil(math.log10(n_banks_combined))
+    for i in range(n_banks_combined):
+        node = Executable(
+            workflow.cp,
+            'combine_banks',
+            ifos=workflow.ifos,
+            out_dir=out_dir,
+            tags=tags + [f'%0{n_dp}d' % i]
+        ).create_node()
+        start = int(i / n_banks_combined * len(bank_files))
+        end = int((i + 1) / n_banks_combined * len(bank_files))
+        bank_files_subset = bank_files[start:end]
+        node.add_input_list_opt('--input-filenames', bank_files_subset)
+        node.new_output_file_opt(
+            workflow.analysis_time,
+            '.hdf',
+            '--output-file'
+        )
+        workflow += node
+        out_files += node.output_files
+
+    return out_files

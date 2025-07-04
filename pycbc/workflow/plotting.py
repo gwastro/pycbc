@@ -146,6 +146,7 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     node.add_input_list_opt('--input-file', insp_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
+    return node.output_files[0]
 
 
 def make_foreground_table(workflow, trig_file, bank_file, out_dir,
@@ -333,6 +334,24 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     workflow += node
     return node.output_files[0]
 
+def make_farstat_plot(workflow, trigger_files, out_dir, tags=None,
+                   hierarchical_level=None, require=None, executable='page_farstat'):
+    """ Creates a node in the workflow for plotting cumulative histogram
+    of IFAR vs stat values.
+    """
+
+    makedir(out_dir)
+    opt = list(trigger_files.values())
+    ifo_combos = ' '.join(sorted(trigger_files.keys(), key=lambda x: (len(x), x)))
+
+    exe = PlotExecutable(workflow.cp, executable, ifos=workflow.ifos,
+                         out_dir=out_dir, tags=tags)
+    node = exe.create_node()
+    node.add_input_list_opt('--trigger-files', opt)
+    node.add_opt('--ifo-combos', ifo_combos)
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files[0]
 
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                      out_dir, exclude=None, require=None, tags=None):
@@ -573,3 +592,31 @@ def make_template_bin_table(workflow, dq_file, out_dir, tags=None):
     node.new_output_file_opt(dq_file.segment, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
+
+
+def make_bank_compression_plots(workflow, bank_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    secs = workflow.cp.get_subsections("plot_bank_compression")
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(
+            workflow.cp,
+            "plot_bank_compression",
+            ifos=workflow.ifos,
+            out_dir=out_dir,
+            tags=[tag] + tags
+        ).create_node()
+        node.add_input_list_opt(
+            "--bank-files",
+            bank_files
+        )
+
+        node.new_output_file_opt(
+            workflow.analysis_time,
+            '.png',
+            '--output'
+        )
+        workflow += node
+        files += node.output_files
+    return files

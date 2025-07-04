@@ -21,12 +21,12 @@ Reduce a MERGE triggers file to a reduced template bank
 """
 
 import logging
-import imp
 import argparse
 import numpy
 import h5py
 import pycbc
 from pycbc.io import HFile
+from pycbc import load_source
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -50,7 +50,7 @@ pycbc.init_logging(opt.verbose)
 
 bank_fd = HFile(opt.full_template_bank, 'r')
 
-modl = imp.load_source('filter_func', opt.filter_func_file)
+modl = load_source('filter_func', opt.filter_func_file)
 func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
