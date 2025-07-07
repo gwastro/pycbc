@@ -973,6 +973,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                 # skip
                 continue
             if domain == 'td':
+                print('{}: Frequency: {}, Tau: {}'.format(lmn, freqs[lmn], taus[lmn]))
                 hplus, hcross = td_damped_sinusoid(
                     freqs[lmn], taus[lmn], amps[lmn], phis[lmn], sample_times,
                     l=int(lmn[0]), m=int(lmn[1]), n=int(lmn[2]),
@@ -984,6 +985,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                 outplus += hplus
                 outcross += hcross
             elif domain == 'fd':
+                print('{}: Frequency: {}, Tau: {}'.format(lmn, freqs[lmn], taus[lmn]))
                 hplus, hcross = fd_damped_sinusoid(
                     freqs[lmn], taus[lmn], amps[lmn], phis[lmn], sample_freqs,
                     l=int(lmn[0]), m=int(lmn[1]), n=int(lmn[2]),
@@ -999,6 +1001,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                 # skip
                 continue
             if domain == 'td':
+                print('{}: Frequency: {}, Tau: {}'.format(qlmn, qfreqs[qlmn], qtaus[qlmn]))
                 hplus, hcross = td_damped_sinusoid(
                     qfreqs[qlmn], qtaus[qlmn], q_amps[qlmn], q_phis[qlmn],
                     sample_times, l=int(qlmn[0]), m=int(qlmn[1]), n=int(qlmn[2]),
@@ -1010,6 +1013,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                 outplus += hplus
                 outcross += hcross
             elif domain == 'fd':
+                print('{}: Frequency: {}, Tau: {}'.format(qlmn, qfreqs[qlmn], qtaus[qlmn]))
                 hplus, hcross = fd_damped_sinusoid(
                     qfreqs[qlmn], qtaus[qlmn], q_amps[qlmn], q_phis[qlmn],
                     sample_freqs, l=int(qlmn[0]), m=int(qlmn[1]), n=int(qlmn[2]),
