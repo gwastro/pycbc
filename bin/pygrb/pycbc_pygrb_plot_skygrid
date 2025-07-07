@@ -26,12 +26,15 @@ import sys
 import os
 import logging
 import numpy
+import h5py
 from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.detector import Detector
+from pycbc.distributions import UniformSky
 
 plt.switch_backend('Agg')
 rc('font', size=14)
@@ -49,11 +52,14 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
+parser.add_argument("--sky-grid", required=True,
+                    help="The location of the sky grid file")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
 
 trig_file = os.path.abspath(opts.trig_file)
+sky_grid = os.path.abspath(opts.sky_grid)
 outfile = opts.output_file
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
@@ -69,10 +75,9 @@ for outdir in outdirs:
 
 # Extract IFOs
 ifos = ppu.extract_ifos(trig_file)
+detectors = [Detector(d) for d in ifos]
 
 # Load trigger data: the sky-grid points are not time-slid in the plot
-trig_data = ppu.load_data(trig_file, ifos, data_tag=None, slide_id=0)
-
 #
 # Generate sky grid plot
 #
@@ -80,23 +85,46 @@ trig_data = ppu.load_data(trig_file, ifos, data_tag=None, slide_id=0)
 xlabel = "RA (deg)"
 ylabel = "Dec (deg)"
 
-if opts.verbose:
-    sys.stdout.write("\nPlotting...\n")
-    fig_name = os.path.split(os.path.abspath(outfile))[1]
-    sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
+uni_points = UniformSky().rvs(100000)
 
-fig = plt.figure()
-ax = fig.gca()
-ax.grid()
-ax.set_xlabel(xlabel)
-ax.set_ylabel(ylabel)
-# Trigger RA/Dec data is stored in radians, so convert to degrees
-ax.plot(numpy.rad2deg(trig_data['network/ra']),
-        numpy.rad2deg(trig_data['network/dec']),
-        'ko',
-        markerfacecolor='blue')
-# Wrap up
-plt.tight_layout()
-save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
-                       title=opts.plot_title, caption=plot_caption)
-plt.close()
+ant_pat = {}
+quad_ant = {}
+
+with h5py.File(f"{sky_grid}","r") as f:
+    ra , dec = f['ra'][:], f['dec'][:]
+
+#Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
+uni_ra = numpy.remainder(uni_points['ra'] + 2*numpy.pi, 2*numpy.pi)
+uni_ra[uni_ra > numpy.pi] -= 2*numpy.pi
+
+grb_ra = numpy.remainder(ra + 2*numpy.pi, 2*numpy.pi)
+grb_ra[grb_ra > numpy.pi] -= 2*numpy.pi
+
+#Compute the antenna pattern on which we will scatter the sky grid
+for det in detectors:
+    out = outfile
+    ant_pat[det] = det.antenna_pattern(uni_points['ra'], uni_points['dec'], 0, t_gps=1401148818)
+    quad_ant[det] = numpy.sqrt(ant_pat[det][0]**2 + ant_pat[det][1]**2)
+
+    if opts.verbose:
+        sys.stdout.write("\nPlotting...\n")
+        fig_name = os.path.split(os.path.abspath(outfile))[1]
+        sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
+    
+    splitted = outfile.split('/')
+    splitted[-1] = f'{det.name}_' + splitted[-1]
+    out = '/'.join(splitted)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="mollweide")
+    ax.grid()
+    sc = ax.scatter((uni_ra), (uni_points["dec"]), c=quad_ant[det], cmap="viridis")
+    ax.scatter((grb_ra), (dec),c='red', marker='.', label="Sky grid")
+    plt.title(f"Sky grid over {det.name} antenna pattern")
+    plt.colorbar(sc, label="(F+² + Fx²)", location="bottom")
+    plt.grid(True)
+    plt.legend()
+    # Wrap up
+    plt.tight_layout()
+    save_fig_with_metadata(fig, out, cmd=' '.join(sys.argv),
+                           title=opts.plot_title, caption=plot_caption)
+    plt.close()
