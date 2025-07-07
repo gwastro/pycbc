@@ -91,6 +91,9 @@ with h5py.File(sky_grid, "r") as f:
     ifos = f.attrs["detectors"]
     detectors = [Detector(d) for d in ifos]
     gps_time = f.attrs['ref_gps_time']
+# Extract IFOs
+ifos = ppu.extract_ifos(trig_file)
+detectors = [Detector(d) for d in ifos]
 
 xlabel = "RA (deg)"
 ylabel = "DEC (deg)"
