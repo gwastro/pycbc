@@ -499,7 +499,7 @@ for inj_set in inj_sets:
     inj_file = full_inj_files.find_output_with_tag(
         inj_set, fail_if_not_single_file=True
     )
-    # Genereta a corner bank plot for each injection set
+    # Generate a corner bank plot for each injection set
     tags = [inj_set]
     plot_node, output_files = _workflow.make_pygrb_plot(
                             wflow,
