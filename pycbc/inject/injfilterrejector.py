@@ -181,8 +181,7 @@ class InjFilterRejector(object):
         ):
             self.enabled = False
             return
-        else:
-            self.enabled = True
+        self.enabled = True
 
         # Store parameters
         self.chirp_time_window = chirp_time_window
