@@ -393,7 +393,10 @@ class SingleDetPowerChisq(object):
                 if num_above > 0:
                     chisq_out[above] = _chisq
             else:
-                chisq_out = _chisq
+                if num_above == 0:
+                    chisq_out = numpy.zeros(0, dtype=numpy.float32)
+                else:
+                    chisq_out = _chisq
 
             return chisq_out, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
         else:
