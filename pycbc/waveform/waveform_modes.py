@@ -94,6 +94,10 @@ def default_modes(approximant):
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
         # add the -m modes
         ma += [(l, -m) for l, m in ma]
+    elif apprxoimant in ['IMRPhenomTPHM_J']:
+        # according to arXiv:2105.06360
+        ma = [(2, 2), (2, 1), (3, 3), (4, 4), (4, 3), (5, 5)]
+        ma += [(l, -m) for l, m in ma]
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
         ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
@@ -228,6 +232,61 @@ def get_nrhybsur_modes(**params):
         ret = ret.next
     return hlms
 
+def get_imrphenomtphmj_modes(**params):
+    """Generates IMRPhenomTPHM waveform in J-frame mode-by-mode.
+
+    All waveform parameters should be provided as keyword arguments.
+    Recognized parameters are listed below. Unrecognized arguments are ignored.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    approximant : str
+        The approximant to generate. Must be one of the ``NRSur*`` models.
+    {delta_t}
+    {mass1}
+    {mass2}
+    {spin1x}
+    {spin1y}
+    {spin1z}
+    {spin2x}
+    {spin2y}
+    {spin2z}
+    {f_lower}
+    {f_ref}
+    {distance}
+    {mode_array}
+
+    Returns
+    -------
+    dict :
+        Dictionary of ``(l, m)`` -> ``(h_+, -h_x)`` ``TimeSeries``.
+    """
+    laldict = _check_lal_pars(params)
+    ret, _, _, _, _ = lalsimulation.SimIMRPhenomTPHM_JModes(
+        params['mass1']*lal.MSUN_SI,
+        params['mass2']*lal.MSUN_SI,
+        params['spin1x'], params['spin1y'], params['spin1z'],
+        params['spin2x'], params['spin2y'], params['spin2z'],
+        params['distance']*1e6*lal.PC_SI,
+        0,  # inclination is not used in this approximant
+        params['delta_t'],
+        params['f_lower'],
+        params['f_ref'],
+        0,  # coa_phase is not used in this approximant
+        laldict,
+        0, # only22 is set to be False, that is, using all the modes
+        )
+
+    hlms = {}
+    while ret:
+        hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
+                         epoch=ret.mode.epoch)
+        hlms[ret.l, ret.m] = (hlm.real(), hlm.imag())
+        ret = ret.next
+    return hlms
 
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 get_nrhybsur_modes.__doc__ = _formatdocstr(get_nrhybsur_modes.__doc__)
@@ -355,6 +414,7 @@ def get_imrphenomxh_modes(**params):
 _mode_waveform_td = {'EOBNRv2': get_lalsimulation_modes,
                      'EOBNRv2HM': get_lalsimulation_modes,
                      'IMRPhenomTPHM': get_lalsimulation_modes,
+                     'IMRPhenomTPHM_J': get_imrphenomtphmj_modes,
                      'NRSur7dq2': get_lalsimulation_modes,
                      'NRSur7dq4': get_nrsur_modes,
                      'NRHybSur3dq8': get_nrhybsur_modes,
