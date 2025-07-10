@@ -20,12 +20,10 @@
 Also plots the calibration envelop for each detector for sanity checks.
 """
 
-import h5py, os, argparse
+import os, argparse
 import numpy
-from scipy.interpolate import InterpolatedUnivariateSpline
 import matplotlib.pyplot as plt
 
-import pycbc
 from pycbc.types import MultiDetOptionAction
 from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibration_envelop_file
 
