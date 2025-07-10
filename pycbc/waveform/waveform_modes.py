@@ -236,11 +236,6 @@ def get_imrphenomtphmj_modes(**params):
 
     Parameters
     ----------
-    template: object
-        An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table.
-    approximant : str
-        The approximant to generate. Must be one of the ``NRSur*`` models.
     {delta_t}
     {mass1}
     {mass2}
