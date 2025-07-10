@@ -489,6 +489,7 @@ if post_proc_method == "PYGRB_OFFLINE":
                                                                clustered_files,
                                                                inj_find_files,
                                                                full_bank_file,
+                                                               skygrid_file,
                                                                seg_dir,
                                                                skygrid_file[0],
                                                                veto_file=veto_file)
