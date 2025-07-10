@@ -760,7 +760,8 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
                                  inj_files, bank_file, seg_dir,
-                                 veto_file=None, tags=None,
+                                 sky_grid_file, veto_file=None, 
+                                 tags=None, 
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -798,6 +799,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
+    node.add_input_opt('--sky-grid', sky_grid_file)
     node.add_opt('--segment-dir', seg_dir)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
