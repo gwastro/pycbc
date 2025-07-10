@@ -94,10 +94,6 @@ def default_modes(approximant):
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
         # add the -m modes
         ma += [(l, -m) for l, m in ma]
-    elif apprxoimant in ['IMRPhenomTPHM_J']:
-        # according to arXiv:2105.06360
-        ma = [(2, 2), (2, 1), (3, 3), (4, 4), (4, 3), (5, 5)]
-        ma += [(l, -m) for l, m in ma]
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
         ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
