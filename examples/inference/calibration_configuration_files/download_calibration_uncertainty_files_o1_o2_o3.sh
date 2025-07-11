@@ -1,14 +1,8 @@
 
 # Provide the path to download calibration files
 
-OUT_DIR=$1
-
-if [[ -z $OUT_DIR ]]
-  then
-    echo "ERROR: output-directory is mandatory argument. \n";
-    exit 1;
-  fi
-
+OUT_DIR=calibration_uncertainty_files
+mkdir -p $OUT_DIR
 cd $OUT_DIR
 
 # Download LIGO calibration uncertainties
