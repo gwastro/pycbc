@@ -589,8 +589,6 @@ def get_calibration_files_O1_O2_O3(ifos, gps_time, calibration_file_path):
     for each IFO around a given GPS time for O1, O2, and O3 observation
     run.
 
-    For H1 and L1 detectors
-    -----------
     Input:
      ifos: List of detectors in the network
      gps_time: GPS time around which the calibration envelop is required
