@@ -38,10 +38,6 @@ parser = argparse.ArgumentParser(
                         "to be used woth pycbc_inference.")
 pycbc.add_common_pycbc_options(parser)
 
-parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
-                                 description=__doc__)
-pycbc.add_common_pycbc_options(parser)
-
 parser.add_argument('--calibration-files-path',
                     help='Calibration envelope file path. It can be pre-'
                           'downloaded or downloaded on the fly',
