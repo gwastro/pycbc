@@ -21,6 +21,7 @@ Also plots the calibration envelop for each detector for sanity checks.
 """
 
 import os, argparse
+import pycbc
 import numpy
 import matplotlib.pyplot as plt
 
@@ -30,6 +31,10 @@ from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibr
 
 parser = argparse.ArgumentParser()
 
+# command line usage
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 
 parser.add_argument('--calibration-files-path',
                     help='Calibration envelope file path. It can be pre-'
