@@ -32,10 +32,11 @@ from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibr
 parser = argparse.ArgumentParser()
 
 # command line usage
-parser = argparse.ArgumentParser(
-            usage="pycbc_inference_create_calibration_config [--options]",
-            description="Generate the calibration configuration files "
-                        "to be used woth pycbc_inference.")
+#parser = argparse.ArgumentParser(
+#            usage="pycbc_inference_create_calibration_config [--options]",
+#            description="Generate the calibration configuration files "
+#                        "to be used woth pycbc_inference.")
+
 pycbc.add_common_pycbc_options(parser)
 
 parser.add_argument('--calibration-files-path',
