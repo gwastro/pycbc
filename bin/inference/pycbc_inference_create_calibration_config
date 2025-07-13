@@ -32,6 +32,12 @@ from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibr
 parser = argparse.ArgumentParser()
 
 # command line usage
+parser = argparse.ArgumentParser(
+            usage="pycbc_inference_create_calibration_config [--options]",
+            description="Generate the calibration configuration files "
+                        "to be used woth pycbc_inference.")
+pycbc.add_common_pycbc_options(parser)
+
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -48,10 +54,6 @@ parser.add_argument('--calibration-files', nargs='+', action=MultiDetOptionActio
 
 parser.add_argument('--ifos', nargs='+',
                         help='Specify ifos for the analysis')
-
-#parser.add_argument('--detectors',  nargs='+',
-#                    help='List of detectors', required=True,
-#                    type=str)
 
 parser.add_argument('--minimum-frequency', nargs='+', action=MultiDetOptionAction,
                         metavar='DETECTOR:COLUMN', type=float,
@@ -107,9 +109,7 @@ if opts.calibration_files_path and opts.calibration_files:
                     "--calibration-files-path and --calibration-files")
 
 
-#args = parser.parse_args()
 calibration_files_path = opts.calibration_files_path
-#detector_list = args.detectors
 min_freq_list = opts.minimum_frequency
 max_freq_list = opts.maximum_frequency
 correction_type_list = opts.correction_type
@@ -135,7 +135,6 @@ print(calibration_files_dict)
 
 input_dict = {}
 for ii in range(len(opts.ifos)):
-    #ifo = str(opts.ifos[ii]).lower()
     ifo = str(opts.ifos[ii])
     input_dict['min_freq_%s'%ifo]=min_freq_list[ifo]
     input_dict['max_freq_%s'%ifo]=max_freq_list[ifo]
@@ -156,8 +155,6 @@ for ifo in opts.ifos:
     log_nodes, amplitude_median_nodes, amplitude_sigma_nodes, phase_median_nodes, phase_sigma_nodes = \
                read_calibration_envelop_file(calib_env_file, correction_type, 
                                              min_freq, max_freq, n_nodes)
-               #read_from_envelop_file(calib_env_path, min_freq,
-               #                       max_freq, n_nodes, ifo.upper())
     prior_dict['log_nodes_%s'%ifo] = log_nodes
     prior_dict['amplitude_median_nodes_%s'%ifo] = amplitude_median_nodes
     prior_dict['amplitude_sigma_nodes_%s'%ifo] = amplitude_sigma_nodes
@@ -171,7 +168,6 @@ if os.path.isfile(calibration_filename) != True:
     text_file = open(calibration_filename, "w")
     text_file.write("[calibration] \n")
     for ifo in opts.ifos:
-        #ifo = ifo.lower()
         min_freq = input_dict['min_freq_%s'%ifo]
         max_freq = input_dict['max_freq_%s'%ifo]
         text_file.write("%s_model = cubic_spline \n"%ifo.lower())
@@ -180,17 +176,13 @@ if os.path.isfile(calibration_filename) != True:
         text_file.write("%s_n_points = %d \n"%(ifo.lower(),n_nodes))
     text_file.write(" \n")
     text_file.write("[variable_params] \n")
-    #for ii in range(n_nodes):
     for ifo in opts.ifos:
         for ii in range(n_nodes):
-            #ifo = ifo.lower()
             text_file.write("recalib_amplitude_%s_%d = \n"%(ifo.lower(),ii))
             text_file.write("recalib_phase_%s_%d = \n"%(ifo.lower(),ii))
     text_file.write(" \n")
-   #for ii in range(n_nodes):
     for ifo in opts.ifos:
         for ii in range(n_nodes):
-            #ifo = ifo.lower()
             amplitude_median_nodes = prior_dict['amplitude_median_nodes_%s'%ifo][ii]
             amplitude_sigma_nodes = prior_dict['amplitude_sigma_nodes_%s'%ifo][ii]
             text_file.write("[prior-recalib_amplitude_%s_%d] \n"%(ifo.lower(),ii))
@@ -198,10 +190,8 @@ if os.path.isfile(calibration_filename) != True:
             text_file.write("recalib_amplitude_%s_%d_mean = %.3g \n"%(ifo.lower(),ii,amplitude_median_nodes))
             text_file.write("recalib_amplitude_%s_%d_var = %.3g \n"%(ifo.lower(),ii,amplitude_sigma_nodes**2))
             text_file.write(" \n")
-    #for ii in range(n_nodes):
     for ifo in opts.ifos:
         for ii in range(n_nodes):
-            #ifo = ifo.lower()
             phase_median_nodes = prior_dict['phase_median_nodes_%s'%ifo][ii]
             phase_sigma_nodes = prior_dict['phase_sigma_nodes_%s'%ifo][ii]
             text_file.write("[prior-recalib_phase_%s_%d] \n"%(ifo.lower(),ii))
