@@ -118,7 +118,8 @@ if opts.tag is None:
 else:
     tag = opts.tag
 
-print(min_freq_list['H1'])
+for ifo in opts.ifos:
+  logging.info("Minimum %s frequency: %.3f", ifs, min_freq_list[ifo])
 
 # Read calibration files
 if opts.calibration_files:
