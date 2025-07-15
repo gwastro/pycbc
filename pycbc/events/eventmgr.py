@@ -406,7 +406,7 @@ class EventManager(object):
                 refcheck=False
             )
 
-        self.events[self._events_size:new_event_size] = (
+        self._events[self._events_size:new_event_size] = (
             self.template_events[:self.template_event_size]
         )
         self._events_size = new_event_size
