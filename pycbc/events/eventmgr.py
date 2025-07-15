@@ -803,7 +803,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.write_gating_info_to_hdf(f)
         # Output network stuff
         f.prefix = 'network'
-        network_events = self.network_events
+        network_events = self.network_events[:self.network_events_size]
         for col in network_events.dtype.names:
             if col == 'time_index':
                 f['end_time_gc'] = (
