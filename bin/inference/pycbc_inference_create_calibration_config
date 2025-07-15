@@ -128,7 +128,7 @@ if opts.calibration_files:
 else:
     calibration_files_dict = get_calibration_files_O1_O2_O3(opts.ifos, gps_time, calibration_files_path)
 
-print(calibration_files_dict)
+logging.debug("Calibration files dictionary: %s", calibration_files_dict)
 
 input_dict = {}
 for ii in range(len(opts.ifos)):
