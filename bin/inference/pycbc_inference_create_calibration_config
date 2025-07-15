@@ -158,7 +158,7 @@ for ifo in opts.ifos:
     prior_dict['amplitude_sigma_nodes_%s'%ifo] = amplitude_sigma_nodes
     prior_dict['phase_median_nodes_%s'%ifo] = phase_median_nodes
     prior_dict['phase_sigma_nodes_%s'%ifo] =phase_sigma_nodes
-    print('Done for detector %s'%ifo)
+    logging.info('Done for detector %s', ifo)
 
 
 calibration_filename = '%s/calibration-%s.ini'%(output_dir, tag)
