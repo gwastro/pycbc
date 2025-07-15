@@ -138,7 +138,7 @@ for ii in range(len(opts.ifos)):
     input_dict['max_freq_%s'%ifo]=max_freq_list[ifo]
     input_dict['correction_type_%s'%ifo]=correction_type_list[ifo]
     input_dict['calibration_envelop_file_%s'%ifo] = calibration_files_dict[ifo.upper()]
-print(input_dict)
+logging.debug("Input dictionary: %s", input_dict)
 # Upper and Lower indices of detectors seems unnecessary
 # but they are there to make sure the correct convention
 # is followed for recalibration module in inference config
