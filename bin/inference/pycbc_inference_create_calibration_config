@@ -201,7 +201,11 @@ if os.path.isfile(calibration_filename) != True:
     text_file.write(" \n")
     text_file.close()
 else:
-    print('Calibration file already present. Either delete it or rename it. Overwriting this file is not allowed!!!')
+    raise ValueError(
+        'Calibration file already present. '
+        'Either delete it or rename it. Overwriting '
+        'this file is not allowed!!!'
+    )
 
 # Sanity check plots
 plots_dir = '%s/plots'%output_dir
