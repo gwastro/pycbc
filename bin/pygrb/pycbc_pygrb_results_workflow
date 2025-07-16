@@ -278,7 +278,7 @@ html_nodes.append(info_table_node)
 # Plot the search grid
 plot_node, skygrid_plot = _workflow.make_pygrb_plot(
     wflow, 'pygrb_plot_skygrid', out_dir, trig_file=offsource_file,
-    sky_grid=sky_grid_file
+    sky_grid_file=sky_grid_file
 )
 plotting_nodes.append(plot_node)
 # Retrieve the segments plot (produced in the preprocessing stage)
