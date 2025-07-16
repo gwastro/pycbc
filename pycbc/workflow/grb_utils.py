@@ -485,7 +485,8 @@ def build_segment_filelist(seg_dir):
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None,
                     onsource_file=None, bank_file=None,
-                    seg_files=None, veto_file=None, tags=None, **kwargs):
+                    seg_files=None, sky_grid_file=None,
+                     veto_file=None, tags=None, **kwargs):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -503,6 +504,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Pass the veto and segment files and options
     if seg_files:
         node.add_input_list_opt('--seg-files', seg_files)
+    if sky_grid_file:
+        node.add_input_list_opt('--sky-grid', sky_grid_file)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
     # Option to show the onsource trial if this is a plot of all data
