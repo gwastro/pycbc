@@ -714,9 +714,7 @@ with ctx:
                 idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
                 logging.debug(
-                    'Calculating power chi^2 for %s on %d points',
-                    ifo,
-                    len(idx[ifo])
+                    'Calculating power chi^2 for %s on %d points', ifo, len(ind)
                 )
                 power_chisq_arrays[ifo] = np.full(
                     len(snr_dict[ifo]), np.nan, dtype=np.float32
@@ -724,12 +722,12 @@ with ctx:
                 power_chisq_dof_arrays[ifo] = np.zeros(
                     len(snr_dict[ifo]), dtype=np.int32
                 )
-                power_chisq_arrays[ifo][idx[ifo]], power_chisq_dof_arrays[ifo][idx[ifo]] = power_chisq.values(
+                power_chisq_arrays[ifo][ind], power_chisq_dof_arrays[ifo][ind] = power_chisq.values(
                     corr,
-                    snr_dict[ifo][idx[ifo]] / norm,
+                    snr_dict[ifo][ind] / norm,
                     norm,
                     stilde[ifo].psd,
-                    idx[ifo] + stilde[ifo].analyze.start,
+                    ind + stilde[ifo].analyze.start,
                     template,
                 )
                 del snr_ts, norm, corr, ind, snrv
