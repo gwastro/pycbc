@@ -505,7 +505,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     if seg_files:
         node.add_input_list_opt('--seg-files', seg_files)
     if sky_grid_file:
-        node.add_input_list_opt('--sky-grid', sky_grid_file)
+        node.add_opt('--sky-grid', sky_grid_file)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
     # Option to show the onsource trial if this is a plot of all data
