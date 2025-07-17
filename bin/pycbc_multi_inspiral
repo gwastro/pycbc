@@ -684,6 +684,10 @@ with ctx:
             idx = dict.fromkeys(args.instruments)
             # - The list of normalized SNR values at the trigger locations
             snr = dict.fromkeys(args.instruments)
+            # - Power chi^2 and corresponding DoF for each time sample.
+            #   Typically only a tiny fraction will be populated.
+            all_power_chisq = dict.fromkeys(args.instruments)
+            all_power_chisq_dof = dict.fromkeys(args.instruments)
             for ifo in args.instruments:
                 logging.debug(
                     "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo
@@ -709,6 +713,22 @@ with ctx:
                 # or negative
                 idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
+                logging.debug(
+                    'Calculating power chi^2 for %s on %d points',
+                    ifo,
+                    len(idx[ifo])
+                )
+                all_power_chisq[ifo] = np.zeros(len(snr_dict[ifo]), dtype=np.float32) + np.nan
+                all_power_chisq_dof[ifo] = np.zeros(len(snr_dict[ifo]), dtype=np.int32)
+                all_power_chisq[ifo][idx[ifo]], all_power_chisq_dof[ifo][idx[ifo]] = power_chisq.values(
+                    corr,
+                    snr_dict[ifo][idx[ifo]] / norm,
+                    norm,
+                    stilde[ifo].psd,
+                    idx[ifo] + stilde[ifo].analyze.start,
+                    template,
+                )
+                del snr_ts, norm, corr, ind, snrv
 
             # Move onto next segment if there are no triggers.
             n_trigs = [len(snr[ifo]) for ifo in args.instruments]
@@ -969,24 +989,22 @@ with ctx:
                             ifo: snr_dict[ifo][coinc_idx_det_frame[ifo]]
                             for ifo in args.instruments
                         }
-                        # Calculate the powerchi2 values of remaining triggers
-                        # (this uses the SNR timeseries before the time delay,
-                        # so we undo it; the same holds for normalisation)
-                        chisq = {}
-                        chisq_dof = {}
+                        # Pick up the precalculated power-chi2 values for the
+                        # remaining triggers
+                        power_chisq = {}
+                        power_chisq_dof = {}
                         for ifo in args.instruments:
-                            chisq[ifo], chisq_dof[ifo] = power_chisq.values(
-                                corr_dict[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
-                                stilde[ifo].psd,
+                            power_chisq[ifo] = all_power_chisq[ifo][
                                 coinc_idx_det_frame[ifo]
-                                + stilde[ifo].analyze.start,
-                                template,
-                            )
+                            ]
+                            assert (power_chisq[ifo] > 0).all()
+                            power_chisq_dof[ifo] = all_power_chisq_dof[ifo][
+                                coinc_idx_det_frame[ifo]
+                            ]
+                            assert (power_chisq_dof[ifo] > 0).all()
                         # Calculate network chisq value
                         network_chisq_dict = coh.network_chisq(
-                            chisq, chisq_dof, coherent_ifo_trigs
+                            power_chisq, power_chisq_dof, coherent_ifo_trigs
                         )
                         # Calculate chisq reweighted SNR
                         if nifo > 1:
@@ -1047,8 +1065,8 @@ with ctx:
                                 stilde=stilde[ifo],
                                 low_frequency_cutoff=flow,
                             )
-                            ifo_out_vals['chisq'] = chisq[ifo]
-                            ifo_out_vals['chisq_dof'] = chisq_dof[ifo]
+                            ifo_out_vals['chisq'] = power_chisq[ifo]
+                            ifo_out_vals['chisq_dof'] = power_chisq_dof[ifo]
                             ifo_out_vals['time_index'] = (
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].cumulative_index
