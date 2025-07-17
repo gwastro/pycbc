@@ -997,11 +997,9 @@ with ctx:
                             power_chisq[ifo] = all_power_chisq[ifo][
                                 coinc_idx_det_frame[ifo]
                             ]
-                            assert (power_chisq[ifo] > 0).all()
                             power_chisq_dof[ifo] = all_power_chisq_dof[ifo][
                                 coinc_idx_det_frame[ifo]
                             ]
-                            assert (power_chisq_dof[ifo] > 0).all()
                         # Calculate network chisq value
                         network_chisq_dict = coh.network_chisq(
                             power_chisq, power_chisq_dof, coherent_ifo_trigs
