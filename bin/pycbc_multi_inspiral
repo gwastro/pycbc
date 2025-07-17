@@ -562,7 +562,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'auto_chisq': None,
-        'auto_chisq_dof': int,
+        'auto_chisq_dof': None,
         'slide_id': None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
