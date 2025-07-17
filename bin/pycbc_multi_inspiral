@@ -977,8 +977,8 @@ with ctx:
                         for ifo in args.instruments:
                             chisq[ifo], chisq_dof[ifo] = power_chisq.values(
                                 corr_dict[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
+                                coherent_ifo_trigs[ifo],
+                                1,  # coherent_ifo_trigs already normalized
                                 stilde[ifo].psd,
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
