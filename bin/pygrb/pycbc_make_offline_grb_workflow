@@ -275,7 +275,7 @@ if wflow.cp.has_option("workflow", "sky-error") or wflow.cp.has_option("workflow
     logging.info("Generating sky-grid file.")
     skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=['SEARCH'])
     input_files.extend(skygrid_file)
-    sky_grid_path = os.path.abspath(f"{skygrid_file[0]}")
+    sky_grid_path = os.path.join(df_dir, f"{skygrid_file[0]}")
 
 # Config file consistency check for IPN GRBs
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
