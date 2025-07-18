@@ -992,30 +992,31 @@ with ctx:
                             needed_idx = coinc_idx_det_frame[ifo]
                             available_idx = np.flatnonzero(np.logical_not(np.isnan(power_chisq_arrays[ifo])))
                             new_needed_idx = np.setdiff1d(needed_idx, available_idx)
+                            del available_idx
                             logging.info(
                                 'Calculating power chi^2 for %s at %d new points of %d needed',
                                 ifo,
-                                sum(new_needed_idx),
-                                sum(needed_idx)
+                                len(new_needed_idx),
+                                len(needed_idx)
                             )
-                            new_chisq, new_chisq_dof = power_chisq.values(
-                                corr_dict[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
-                                stilde[ifo].psd,
-                                new_needed_idx + stilde[ifo].analyze.start,
-                                template,
-                            )
-                            power_chisq_arrays[ifo][new_needed_idx] = new_chisq
-                            power_chisq_dof_arrays[ifo][new_needed_idx] = new_chisq_dof
+                            if len(new_needed_idx) > 0:
+                                new_chisq, new_chisq_dof = power_chisq.values(
+                                    corr_dict[ifo],
+                                    snr_dict[ifo][new_needed_idx] / norm_dict[ifo],
+                                    norm_dict[ifo],
+                                    stilde[ifo].psd,
+                                    new_needed_idx + stilde[ifo].analyze.start,
+                                    template,
+                                )
+                                power_chisq_arrays[ifo][new_needed_idx] = new_chisq
+                                power_chisq_dof_arrays[ifo][new_needed_idx] = new_chisq_dof
+                                del new_chisq, new_chisq_dof
                             chisq[ifo] = power_chisq_arrays[ifo][needed_idx]
                             chisq_dof[ifo] = power_chisq_dof_arrays[ifo][needed_idx]
-                            del needed_idx, available_idx, new_needed_idx
+                            del needed_idx, new_needed_idx
                         # Calculate network chisq value
                         network_chisq_dict = coh.network_chisq(
-                            power_chisq_values,
-                            power_chisq_dof_values,
-                            coherent_ifo_trigs
+                            chisq, chisq_dof, coherent_ifo_trigs
                         )
                         # Calculate chisq reweighted SNR
                         if nifo > 1:
@@ -1076,8 +1077,8 @@ with ctx:
                                 stilde=stilde[ifo],
                                 low_frequency_cutoff=flow,
                             )
-                            ifo_out_vals['chisq'] = power_chisq_values[ifo]
-                            ifo_out_vals['chisq_dof'] = power_chisq_dof_values[ifo]
+                            ifo_out_vals['chisq'] = chisq[ifo]
+                            ifo_out_vals['chisq_dof'] = chisq_dof[ifo]
                             ifo_out_vals['time_index'] = (
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].cumulative_index
