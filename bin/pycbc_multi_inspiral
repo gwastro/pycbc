@@ -684,7 +684,7 @@ with ctx:
             idx = dict.fromkeys(args.instruments)
             # - The list of normalized SNR values at the trigger locations
             snr = dict.fromkeys(args.instruments)
-            # - Power chi^2 and corresponding DoF for each time sample.
+            # - Cache for power chi^2 and corresponding DoF for each time sample.
             #   Typically only a tiny fraction will be populated.
             power_chisq_arrays = dict.fromkeys(args.instruments)
             power_chisq_dof_arrays = dict.fromkeys(args.instruments)
@@ -713,22 +713,12 @@ with ctx:
                 # or negative
                 idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
-                logging.debug(
-                    'Calculating power chi^2 for %s on %d points', ifo, len(ind)
-                )
+                # Initialize the cache for power chi^2
                 power_chisq_arrays[ifo] = np.full(
                     len(snr_dict[ifo]), np.nan, dtype=np.float32
                 )
                 power_chisq_dof_arrays[ifo] = np.zeros(
                     len(snr_dict[ifo]), dtype=np.int32
-                )
-                power_chisq_arrays[ifo][ind], power_chisq_dof_arrays[ifo][ind] = power_chisq.values(
-                    corr,
-                    snr_dict[ifo][ind] / norm,
-                    norm,
-                    stilde[ifo].psd,
-                    ind + stilde[ifo].analyze.start,
-                    template,
                 )
                 del snr_ts, norm, corr, ind, snrv
 
@@ -991,20 +981,36 @@ with ctx:
                             ifo: snr_dict[ifo][coinc_idx_det_frame[ifo]]
                             for ifo in args.instruments
                         }
-                        # Pick up the precalculated power-chi2 values for the
-                        # remaining triggers
-                        power_chisq_values = {
-                            ifo: power_chisq_arrays[ifo][
-                                coinc_idx_det_frame[ifo]
-                            ]
-                            for ifo in args.instruments
-                        }
-                        power_chisq_dof_values = {
-                            ifo: power_chisq_dof_arrays[ifo][
-                                coinc_idx_det_frame[ifo]
-                            ]
-                            for ifo in args.instruments
-                        }
+                        # Calculate the powerchi2 values of remaining triggers
+                        # (this uses the SNR timeseries before the time delay,
+                        # so we undo it; the same holds for normalisation)
+                        chisq = {}
+                        chisq_dof = {}
+                        for ifo in args.instruments:
+                            # Figure out which new indices we need to calculate
+                            # the chi^2 for
+                            needed_idx = coinc_idx_det_frame[ifo]
+                            available_idx = np.flatnonzero(np.logical_not(np.isnan(power_chisq_arrays[ifo])))
+                            new_needed_idx = np.setdiff1d(needed_idx, available_idx)
+                            logging.info(
+                                'Calculating power chi^2 for %s at %d new points of %d needed',
+                                ifo,
+                                sum(new_needed_idx),
+                                sum(needed_idx)
+                            )
+                            new_chisq, new_chisq_dof = power_chisq.values(
+                                corr_dict[ifo],
+                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
+                                norm_dict[ifo],
+                                stilde[ifo].psd,
+                                new_needed_idx + stilde[ifo].analyze.start,
+                                template,
+                            )
+                            power_chisq_arrays[ifo][new_needed_idx] = new_chisq
+                            power_chisq_dof_arrays[ifo][new_needed_idx] = new_chisq_dof
+                            chisq[ifo] = power_chisq_arrays[ifo][needed_idx]
+                            chisq_dof[ifo] = power_chisq_dof_arrays[ifo][needed_idx]
+                            del needed_idx, available_idx, new_needed_idx
                         # Calculate network chisq value
                         network_chisq_dict = coh.network_chisq(
                             power_chisq_values,
