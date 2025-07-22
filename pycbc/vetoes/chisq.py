@@ -370,6 +370,7 @@ class SingleDetPowerChisq(object):
         """
         if self.do:
             num_above = len(indices)
+            dof = -100
             if self.snr_threshold:
                 above = abs(snrv * snr_norm) > self.snr_threshold
                 num_above = above.sum()
@@ -377,7 +378,6 @@ class SingleDetPowerChisq(object):
                 above_indices = indices[above]
                 above_snrv = snrv[above]
                 chisq_out = numpy.zeros(len(indices), dtype=numpy.float32)
-                dof = -100
             else:
                 above_indices = indices
                 above_snrv = snrv
@@ -393,7 +393,10 @@ class SingleDetPowerChisq(object):
                 if num_above > 0:
                     chisq_out[above] = _chisq
             else:
-                chisq_out = _chisq
+                if num_above == 0:
+                    chisq_out = numpy.zeros(0, dtype=numpy.float32)
+                else:
+                    chisq_out = _chisq
 
             return chisq_out, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
         else:
