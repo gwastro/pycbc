@@ -46,30 +46,21 @@ def read_store(fname, channel, start_time, end_time):
 
     """
     fhandle = HFile(fname, 'r')
-    if channel not in fhandle:
-        raise ValueError('Could not find channel name {}'.format(channel))
 
-    # Determine which segment data lies in (can only read contiguous data now)
-    starts = fhandle[channel]['segments']['start'][:]
-    ends = fhandle[channel]['segments']['end'][:]
+    starts = fhandle['meta']['GPSstart'][()]
+    duration = fhandle['meta']['Duration'][()]
+    ends = starts + duration
 
-    diff = start_time - starts
-    loc = numpy.where(diff >= 0)[0]
-    sidx = loc[diff[loc].argmin()]
+    if starts > start_time:
+        raise ValueError("Cannot read data segment before {}".format(starts))
 
-    stime = starts[sidx]
-    etime = ends[sidx]
+    if ends < end_time:
+        raise ValueError("Cannot read data segment past {}".format(ends))
 
-    if stime > start_time:
-        raise ValueError("Cannot read data segment before {}".format(stime))
+    data = fhandle['strain']['Strain'][:]
+    sample_rate = len(data) / (ends - starts)
 
-    if etime < end_time:
-        raise ValueError("Cannot read data segment past {}".format(etime))
-
-    data = fhandle[channel][str(sidx)]
-    sample_rate = len(data) / (etime - stime)
-
-    start = int((start_time - stime) * sample_rate)
-    end = int((end_time - stime) * sample_rate)
-    return TimeSeries(data[start:end], delta_t=1.0/sample_rate,
+    start_inx = int((start_time - starts) * sample_rate)
+    end_inx = int((end_time - starts) * sample_rate)
+    return TimeSeries(data[start_inx:end_inx], delta_t=1.0/sample_rate,
                       epoch=start_time)
