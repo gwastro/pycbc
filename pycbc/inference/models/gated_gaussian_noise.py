@@ -694,8 +694,8 @@ class GatedGaussianNoise(BaseGatedGaussian):
         for det in self.data:
             # get max waveform length
             mlen = max([len(x[det]) for x in wfs])
-            [x[det].copy().resize(mlen) for x in wfs]
-            combine[det] = sum([x[det] for x in wfs])
+            wfs_resize = [x[det].copy().resize(mlen) for x in wfs]
+            combine[det] = sum([x[det] for x in wfs_resize])
 
         self._current_wfs = combine
         return self._loglikelihood()
