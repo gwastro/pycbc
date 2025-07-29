@@ -562,7 +562,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'auto_chisq': None,
-        'auto_chisq_dof': int,
+        'auto_chisq_dof': None,
         'slide_id': None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
@@ -1030,8 +1030,8 @@ with ctx:
                                 template,
                                 stilde[ifo].psd,
                                 stilde[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
+                                coherent_ifo_trigs[ifo],
+                                1,  # coherent_ifo_trigs already normalized
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
@@ -1039,11 +1039,11 @@ with ctx:
                                 ifo_out_vals['auto_chisq'],
                                 ifo_out_vals['auto_chisq_dof'],
                             ) = autochisq.values(
-                                snr_dict[ifo] / norm_dict[ifo],
+                                snr_dict[ifo],
                                 coinc_idx_det_frame[ifo],
                                 template,
                                 stilde[ifo].psd,
-                                norm_dict[ifo],
+                                1,  # snr_dict already normalized
                                 stilde=stilde[ifo],
                                 low_frequency_cutoff=flow,
                             )

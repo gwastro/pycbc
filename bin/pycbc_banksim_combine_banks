@@ -44,9 +44,9 @@ options = parser.parse_args()
 
 pycbc.init_logging(options.verbose)
 
-dtypef = np.dtype([('match', np.float64), ('bank', np.unicode_, 256),
-                ('bank_i', np.int32), ('sim', np.unicode_, 256),
-                ('sim_i', np.int32), ('sigmasq', np.float64)])
+dtypef = np.dtype([('match', np.float64), ('bank', np.str_, 256),
+                   ('bank_i', np.int32), ('sim', np.str_, 256),
+                   ('sim_i', np.int32), ('sigmasq', np.float64)])
 
 matches=[]
 maxmatch = []
