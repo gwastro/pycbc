@@ -514,8 +514,14 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         node.add_opt('--trigger-time', trig_time)
     # Pass the injection file as an input File instance
     if inj_file is not None and exec_name not in \
-            ['pygrb_plot_skygrid', 'pygrb_plot_stats_distribution']:
+            ['pygrb_plot_skygrid', 'pygrb_plot_stats_distribution',
+             'pycbc_plot_bank_corner']:
         node.add_input_opt('--found-missed-file', inj_file)
+    if exec_name == 'pycbc_plot_bank_corner':
+        if inj_file is not None:
+            node.add_input_opt('--bank-file', inj_file)
+        else:
+            node.add_input_opt('--bank-file', bank_file)
     # IFO option
     if ifo:
         node.add_opt('--ifo', ifo)
@@ -540,6 +546,9 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
             node.new_output_file_opt(workflow.analysis_time, '.json',
                                      '--exclusion-dist-output-file',
                                      tags=extra_tags)
+    elif exec_name == 'pycbc_plot_bank_corner':
+        node.new_output_file_opt(workflow.analysis_time, '.png',
+                                 '--output-plot-file', tags=extra_tags+tags)
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)
@@ -566,6 +575,15 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
             if workflow.cp.has_option_tags(exec_name, log_flag,
                                            tags=[subsection]):
                 node.add_opt('--'+log_flag)
+    elif exec_name == 'pycbc_plot_bank_corner':
+        node.add_opt('--no-suptitle')
+        #if inj_file:
+        #    node.add_opt('--title', f'\"{tags[0]} injections\"')
+        #    params = workflow.cp.get_opt_tags(exec_name, 'parameters', ['injs'])
+        #else:
+        #    node.add_opt('--title', '\"Template bank\"')
+        #    params = workflow.cp.get_opt_tags(exec_name, 'parameters', ['bank'])
+        #node.add_opt('--parameters', params)
 
     # Add job node to workflow
     workflow += node
@@ -759,7 +777,8 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
 
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
-                                 inj_files, bank_file, seg_dir,
+                                 full_injs_files, inj_files,
+                                 bank_file, seg_dir,
                                  veto_file=None, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
@@ -772,6 +791,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     res_dir: The post-processing directory where
         results (plots, etc.) will be stored
     trig_files: FileList of trigger files
+    full_injs_files: Filelist of generated injections
     inj_files: FileList of injection results
     bank_file: The template bank File object
     seg_dir: The directory path with the segments files
@@ -796,6 +816,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     # Grab and pass all necessary files
     node.add_input_list_opt('--trig-files', trig_files)
     # node.add_input_opt('--config-files', config_file)
+    node.add_input_list_opt('--full-inj-files', full_injs_files)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--segment-dir', seg_dir)
