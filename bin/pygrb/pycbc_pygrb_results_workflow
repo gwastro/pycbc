@@ -493,7 +493,7 @@ layout.two_column_layout(coinc_out_dir, coinc_files)
 out_dir = rdir['injections']
 _workflow.makedir(out_dir)
 ## Create corner plot
-files = _workflow.FileList([])
+inj_corner_plot_files = _workflow.FileList([])
 for inj_set in inj_sets:
     # Retrieve the injections full files
     inj_file = full_inj_files.find_output_with_tag(
@@ -509,8 +509,8 @@ for inj_set in inj_sets:
                             tags=tags,
                         )
     plotting_nodes.append(plot_node)
-    files.append(output_files[0])
-layout.single_layout(out_dir, files)
+    inj_corner_plot_files.append(output_files[0])
+layout.single_layout(out_dir, inj_corner_plot_files)
 # Loop over injection plots requested by the user
 inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 # The command above also picks up the injection set names so we remove them
