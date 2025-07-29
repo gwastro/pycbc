@@ -584,7 +584,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
             node.add_opt('--title', f'\"{tags[0]} injections\"')
             params = workflow.cp.get_opt_tags(exec_name, 'parameters', ['injs'])
         else:
-            node.add_opt('--title', f'\"Template bank\"')
+            node.add_opt('--title', '\"Template bank\"')
             params = workflow.cp.get_opt_tags(exec_name, 'parameters', ['bank'])
         node.add_opt('--parameters', params)
 
