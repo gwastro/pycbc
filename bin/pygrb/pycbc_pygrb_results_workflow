@@ -295,7 +295,7 @@ plotting_nodes.append(plot_node)
 plot_node, bank_plot = _workflow.make_pygrb_plot(
     wflow, 'pycbc_plot_bank_corner', out_dir, bank_file=bank_file
 )
-
+plotting_nodes.append(plot_node)
 # Retrieve the segments plot (produced in the preprocessing stage)
 seg_plot = display_seg_plot(out_dir, args.segment_dir)
 summary_layout = [(grb_info_table[0],), (seg_plot, skygrid_plot[0]),
