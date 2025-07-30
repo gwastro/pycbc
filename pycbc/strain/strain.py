@@ -343,13 +343,15 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
-                           inj_filter_rejector=inj_filter_rejector)
+                           inj_filter_rejector=inj_filter_rejector,
+                           generate_injections=opt.generate_injections)
 
     if opt.sgburst_injection_file:
         logger.info("Applying sine-Gaussian burst injections")
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
         injector.apply(strain, opt.channel_name.split(':')[0],
-                         distance_scale=opt.injection_scale_factor)
+                       distance_scale=opt.injection_scale_factor,
+                       generate_injections=opt.generate_injections)
 
     if precision == 'single':
         logger.info("Converting to float32")
@@ -576,6 +578,16 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file containing parameters"
                       "of sine-Gaussian burst signals to add to the strain")
+    data_reading_group.add_argument("--do-not-inject-from-file", type=bool,
+                      action="store_false", dest="generate_injections",
+                      default=True,
+                      help="If this options are given, the injections in "
+                           "injection-file or sgburst-injection-file are not "
+                           "added into the data. This can be used for "
+                           "debugging (ie. in minifollowups), or if using "
+                           "injections from frame files where you need to "
+                           "know injection parameters to allow the "
+                           "injection optimization settings.")
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                       default=1,
                       help="Divide injections by this factor "
