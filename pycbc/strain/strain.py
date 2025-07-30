@@ -282,8 +282,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
     if opt.injection_frame_files or opt.injection_frame_type:
         if opt.injection_frame_files and opt.injection_frame_type:
-            err_msg = "You cannot supply both injection-frame-files and "
-                      "injection-frame-type"
+            err_msg = (
+                "You cannot supply both injection-frame-files and "
+                "injection-frame-type"
+            )
             raise ValueError(err_msg)
 
         logging.info("Reading Frames containing injections")
