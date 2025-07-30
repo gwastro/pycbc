@@ -569,17 +569,20 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # There is a case where injections are not added to the data, but
         # still need to be generated for the match threshold option in the
         # InjFilterRejector. User needs to be careful with this though!
-        if inj_filter_rejector.match_threshold and not generate_injections:
-            warn_msg = (
-                "You have asked to use the match threshold option in "
-                "InjFilterRejector, but injections are not being "
-                "directly added from the supplied injection file. "
-                "Be very sure that the injection file exactly matches "
-                "how the injections were pregenerated!"
-            )
-            logging.warn(warn_msg)
+        if inj_filter_rejector is not None:
+            if inj_filter_rejector.match_threshold and not generate_injections:
+                warn_msg = (
+                    "You have asked to use the match threshold option in "
+                    "InjFilterRejector, but injections are not being "
+                    "directly added from the supplied injection file. "
+                    "Be very sure that the injection file exactly matches "
+                    "how the injections were pregenerated!"
+                )
+                logging.warn(warn_msg)
         must_make_injections = (
-            generate_injections or inj_filter_rejector.match_threshold
+            generate_injections or (
+               inj_filter_rejector and inj_filter_rejector.match_threshold
+            )
         )
 
         if strain.dtype not in (float32, float64):
