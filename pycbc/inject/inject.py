@@ -570,11 +570,13 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # still need to be generated for the match threshold option in the
         # InjFilterRejector. User needs to be careful with this though!
         if inj_filter_rejector.match_threshold and not generate_injections:
-            warn_msg = "You have asked to use the match threshold option in "
-                       "InjFilterRejector, but injections are not being "
-                       "directly added from the supplied injection file. "
-                       "Be very sure that the injection file exactly matches "
-                       "how the injections were pregenerated!"
+            warn_msg = (
+                "You have asked to use the match threshold option in "
+                "InjFilterRejector, but injections are not being "
+                "directly added from the supplied injection file. "
+                "Be very sure that the injection file exactly matches "
+                "how the injections were pregenerated!"
+            )
             logging.warn(warn_msg)
         must_make_injections = (
             generate_injections or inj_filter_rejector.match_threshold
