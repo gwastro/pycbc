@@ -280,11 +280,37 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             err_msg += "must be a multiple of 15 seconds."
             raise ValueError(err_msg)
 
+    if opt.injection_frame_files or opt.injection_frame_type:
+        if opt.injection_frame_files and opt.injection_frame_type:
+            err_msg = "You cannot supply both injection-frame-files and "
+                      "injection-frame-type"
+            raise ValueError(err_msg)
+
+        logging.info("Reading Frames containing injections")
+
+        if opt.injection_frame_type:
+            injection_strain = pycbc.frame.query_and_read_frame(
+                opt.injection_frame_type,
+                opt.injection_channel_name,
+                start_time=opt.gps_start_time-opt.pad_data,
+                end_time=opt.gps_end_time+opt.pad_data,
+                sieve=None
+            )
+        else:
+            injection_strain = pycbc.frame.read_frame(
+                opt.injection_frame_files,
+                opt.injection_channel_name,
+                start_time=opt.gps_start_time-opt.pad_data,
+                end_time=opt.gps_end_time+opt.pad_data,
+                sieve=None
+            )
+        strain.inject(injection_strain, copy=False)
+
     if not opt.channel_name and (opt.injection_file \
                                  or opt.sgburst_injection_file):
         raise ValueError('Please provide channel names with the format '
                          'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
-                         'simulated signals into fake strain')
+                         'simulated signals into strain')
 
     if opt.zpk_z and opt.zpk_p and opt.zpk_k:
         logger.info("Highpass Filtering")
@@ -565,6 +591,18 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--injection-f-final", type=float,
                       help="Override the f_final field of a CBC XML "
                            "injection file (frequency in Hz)")
+    # Options for getting injection from frame files
+    data_reading_group.add_argument("--injection-channel-name", type=str,
+                      help="The channel containing the injection strain data")
+    data_reading_group.add_argument("--injection-frame-type", type=str,
+                      help="We are going to add injections from frame files. "
+                           "This will use datafind to get the needed frame "
+                           "files of this type.")
+    data_reading_group.add_argument("--injection-frame-files",
+                      type=str, nargs="+",
+                      help="We are going to add injections from frame files. "
+                           "This provides the list of frame files containing "
+                           "injection strain.")
 
     # Gating options
     data_reading_group.add_argument("--gating-file", type=str,
