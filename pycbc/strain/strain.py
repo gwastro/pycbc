@@ -580,7 +580,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file containing parameters"
                       "of sine-Gaussian burst signals to add to the strain")
-    data_reading_group.add_argument("--do-not-inject-from-file", type=bool,
+    data_reading_group.add_argument("--do-not-inject-from-file",
                       action="store_false", dest="generate_injections",
                       default=True,
                       help="If this options are given, the injections in "
