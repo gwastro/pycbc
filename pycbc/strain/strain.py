@@ -814,7 +814,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     help="(optional) Injection file containing parameters"
                          "of CBC signals to be added to the strain")
     data_reading_group_multi.add_argument("--do-not-inject-from-file",
-                    type=bool, action="store_false",
+                    default=True, action="store_false",
                     dest="generate_injections",
                     help="If this options are given, the injections in "
                            "injection-file or sgburst-injection-file are not "
