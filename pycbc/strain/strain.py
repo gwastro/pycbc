@@ -813,6 +813,17 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     metavar='IFO:FILE',
                     help="(optional) Injection file containing parameters"
                          "of CBC signals to be added to the strain")
+    data_reading_group_multi.add_argument("--do-not-inject-from-file",
+                    type=bool, action="store_false",
+                    dest="generate_injections",
+                    help="If this options are given, the injections in "
+                           "injection-file or sgburst-injection-file are not "
+                           "added into the data. This can be used for "
+                           "debugging (ie. in minifollowups), or if using "
+                           "injections from frame files where you need to "
+                           "know injection parameters to allow the "
+                           "injection optimization settings.")
+
     data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
                     nargs="+", action=MultiDetOptionAction,
                     metavar='IFO:FILE',
@@ -839,6 +850,21 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     action=MultiDetOptionAction, metavar='IFO:VALUE',
                     help="Override the f_final field of a CBC XML "
                          "injection file (frequency in Hz)")
+    # Options for getting injection from frame files
+    data_reading_group_multi.add_argument("--injection-channel-name", type=str,
+                      action=MultiDetOptionAction, metavar='IFO:VALUE',
+                      help="The channel containing the injection strain data")
+    data_reading_group_multi.add_argument("--injection-frame-type", type=str,
+                      action=MultiDetOptionAction, metavar='IFO:VALUE',
+                      help="We are going to add injections from frame files. "
+                           "This will use datafind to get the needed frame "
+                           "files of this type.")
+    data_reading_group_multi.add_argument("--injection-frame-files",
+                      type=str, nargs="+", metavar='IFO:FRAME_FILES',
+                      action=MultiDetOptionAppendAction, 
+                      help="We are going to add injections from frame files. "
+                           "This provides the list of frame files containing "
+                           "injection strain.")
 
     # Gating options
     data_reading_group_multi.add_argument("--gating-file", nargs="+",
