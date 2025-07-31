@@ -732,7 +732,18 @@ class FilterBank(TemplateBank):
     def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
                                            low_frequency_cutoff=None,
                                            cached_mem=None):
-        """Generate the template with index t_num using custom length."""
+        """Generate the template with index t_num using custom length.
+
+        Parameters
+        ---------
+        t_num (int): The index of the template to generate.
+        max_freq (float): The maximum frequency of the generated waveform.
+        delta_f (float): The frequency resolution (frequency bin size).
+        low_frequency_cutoff (float, optional): The starting frequency. Defaults to None,
+            which uses the default for the approximant.
+        cached_mem (numpy.ndarray, optional): A pre-allocated array for storing the waveform.
+            If None, a new array is created. Defaults to None.
+        """
         approximant = self.approximant(t_num)
         # Don't want to use INTERP waveforms in here
         if approximant.endswith('_INTERP'):
@@ -750,8 +761,8 @@ class FilterBank(TemplateBank):
         if (self.has_compressed_waveforms and self.enable_compressed_waveforms):
             try:
                 htilde = self.get_decompressed_waveform(
-                    tempout,
-                    index,
+                    cached_mem,
+                    t_num,
                     f_lower=low_frequency_cutoff,
                     approximant=approximant,
                     df=None
