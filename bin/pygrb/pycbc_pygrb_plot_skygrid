@@ -100,6 +100,17 @@ ylabel = "DEC (deg)"
 
 uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
 
+fig = plt.figure()
+ax = fig.add_subplot(projection="mollweide")
+ax.grid()
+ax.scatter(ra, dec, label="Sky grid")
+plt.grid(True)
+plt.title("Sky grid")
+plt.legend()
+plt.tight_layout()
+save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
+                       title=opts.plot_title, caption=plot_caption)
+plt.close()
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = ra_to_ra_mollweide(uni_points["ra"])
 uni_dec = uni_points["dec"]
