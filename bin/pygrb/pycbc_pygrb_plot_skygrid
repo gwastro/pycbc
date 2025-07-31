@@ -93,6 +93,17 @@ quad_ant = {}
 with h5py.File(f"{sky_grid}","r") as f:
     ra , dec = f['ra'][:], f['dec'][:]
 
+fig = plt.figure()
+ax = fig.add_subplot(projection="mollweide")
+ax.grid()
+ax.scatter(ra, dec, label="Sky grid")
+plt.grid(True)
+plt.title("Sky grid")
+plt.legend()
+plt.tight_layout()
+save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
+                       title=opts.plot_title, caption=plot_caption)
+plt.close()
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = numpy.remainder(uni_points['ra'] + 2*numpy.pi, 2*numpy.pi)
 uni_ra[uni_ra > numpy.pi] -= 2*numpy.pi
@@ -114,9 +125,6 @@ for det in detectors:
     splitted = outfile.split('/')
     splitted[-1] = f'{det.name}_' + splitted[-1]
     out = '/'.join(splitted)
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="mollweide")
-    ax.grid()
     sc = ax.scatter((uni_ra), (uni_points["dec"]), c=quad_ant[det], cmap="viridis")
     ax.scatter((grb_ra), (dec),c='red', marker='.', label="Sky grid")
     plt.title(f"Sky grid over {det.name} antenna pattern")
@@ -128,3 +136,5 @@ for det in detectors:
     save_fig_with_metadata(fig, out, cmd=' '.join(sys.argv),
                            title=opts.plot_title, caption=plot_caption)
     plt.close()
+
+
