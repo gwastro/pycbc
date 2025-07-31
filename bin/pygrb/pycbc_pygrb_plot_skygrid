@@ -121,7 +121,9 @@ for det in detectors:
         sys.stdout.write("\nPlotting...\n")
         fig_name = os.path.split(os.path.abspath(outfile))[1]
         sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
-    
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="mollweide")
+    ax.grid()
     splitted = outfile.split('/')
     splitted[-1] = f'{det.name}_' + splitted[-1]
     out = '/'.join(splitted)
