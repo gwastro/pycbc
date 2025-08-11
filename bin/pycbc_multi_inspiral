@@ -990,16 +990,14 @@ with ctx:
                             # Figure out which new indices we need to calculate
                             # the chi^2 for
                             needed_idx = coinc_idx_det_frame[ifo]
-                            available_idx = np.flatnonzero(
-                                np.logical_not(
-                                    np.isnan(power_chisq_arrays[ifo])
-                                )
+                            unavailable_idx = np.flatnonzero(
+                                np.isnan(power_chisq_arrays[ifo])
                             )
-                            new_needed_idx = np.setdiff1d(
-                                needed_idx, available_idx
+                            new_needed_idx = np.intersect1d(
+                                needed_idx, unavailable_idx
                             )
-                            del available_idx
-                            if len(new_needed_idx) > 0:
+                            del unavailable_idx
+                            if new_needed_idx.size:
                                 new_chisq, new_chisq_dof = power_chisq.values(
                                     corr_dict[ifo],
                                     snr_dict[ifo][new_needed_idx] / norm_dict[ifo],
