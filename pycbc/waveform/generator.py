@@ -686,7 +686,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                 elif refframe == detname:
                     # do not apply a time shift; tc is being sampled in this det
                     tc = ref_tc
-                elif refframe in self.detectors.items():
+                elif refframe in self.detectors.keys():
                     # apply time shift from sampling det to current det
                     refdet = self.detectors[refframe]
                     tc = ref_tc + \
