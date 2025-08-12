@@ -676,18 +676,19 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                 dec = self.current_params['dec']
                 ref_tc = self.current_params['tc']
                 pol = self.current_params['polarization']
+                # apply response function
+                fp, fc = det.antenna_pattern(ra, dec, pol, ref_tc)
+                thish = fp*hp + fc*hc
+                # time shift
                 if refframe == 'geocentric':
-                    # apply detector response function
-                    fp, fc = det.antenna_pattern(ra, dec, pol, ref_tc)
-                    thish = fp*hp + fc*hc
-                    # apply the time shift from geocenter
+                    # from geocenter
                     tc = ref_tc + \
                         det.time_delay_from_earth_center(ra, dec, ref_tc)
                 elif refframe == detname:
-                    # do not apply a time shift; tc is being sampled in this det
+                    # no time shift; sampling in current det
                     tc = ref_tc
                 elif refframe in self.detectors.keys():
-                    # apply time shift from sampling det to current det
+                    # from sampling det
                     refdet = self.detectors[refframe]
                     tc = ref_tc + \
                         det.time_delay_from_detector(refdet, ra, dec, ref_tc)
