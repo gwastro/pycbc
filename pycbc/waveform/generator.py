@@ -671,16 +671,29 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         h = {}
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
-                # apply detector response function
-                fp, fc = det.antenna_pattern(self.current_params['ra'],
-                            self.current_params['dec'],
-                            self.current_params['polarization'],
-                            self.current_params['tc'])
-                thish = fp*hp + fc*hc
-                # apply the time shift
-                tc = self.current_params['tc'] + \
-                    det.time_delay_from_earth_center(self.current_params['ra'],
-                         self.current_params['dec'], self.current_params['tc'])
+                refframe = self.current_params.get('tc_ref_frame')
+                ra = self.current_params['ra']
+                dec = self.current_params['dec']
+                ref_tc = self.current_params['tc']
+                pol = self.current_params['polarization']
+                if refframe == 'geocentric':
+                    # apply detector response function
+                    fp, fc = det.antenna_pattern(ra, dec, pol, ref_tc)
+                    thish = fp*hp + fc*hc
+                    # apply the time shift from geocenter
+                    tc = ref_tc + \
+                        det.time_delay_from_earth_center(ra, dec, ref_tc)
+                elif refframe == detname:
+                    # do not apply a time shift; tc is being sampled in this det
+                    tc = ref_tc
+                elif refframe in self.detectors.items():
+                    # apply time shift from sampling det to current det
+                    refdet = self.detectors[refframe]
+                    tc = ref_tc + \
+                        det.time_delay_from_detector(refdet, ra, dec, ref_tc)
+                else:
+                    raise ValueError('tc_ref_frame param must be a detector name',
+                                     'or "geocentric"')
                 h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
                 if self.recalib:
                     # recalibrate with given calibration model
