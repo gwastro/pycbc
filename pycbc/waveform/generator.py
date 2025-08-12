@@ -671,7 +671,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         h = {}
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
-                refframe = self.current_params.get('tc_ref_frame')
+                refframe = self.current_params.get('tc_ref_frame', 'geocentric')
                 ra = self.current_params['ra']
                 dec = self.current_params['dec']
                 ref_tc = self.current_params['tc']
