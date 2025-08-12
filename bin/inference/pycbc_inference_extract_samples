@@ -43,6 +43,8 @@ import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
                                 PosteriorFile, loadfile)
 from pycbc.inference.io.base_hdf import format_attr
+from scipy.special import logsumexp
+import warnings
 
 
 def isthesame(current_val, val):
@@ -83,6 +85,18 @@ parser.add_argument("--skip-groups", default=None, nargs="+",
                          "to write all groups if only one file is provided, "
                          "and all groups from the first file except "
                          "sampler_info if multiple files are provided.")
+parser.add_argument("--combine-via-sampling", action='store_true', default=False,
+                    help="Specify whether to combine the posteriors by sampling."
+                         "By default, pycbc_inference_extract_samples will"
+                         "dump all samples from multiple inputs into one output"
+                         "file. If this option is specified, the samples will"
+                         "be randomly sampled with weighting based on the evidence"
+                         "in each input. For example, if the log evidence"
+                         "of one input is twice that of the other, the resulting"
+                         "posterior file with this option specified will have"
+                         "twice as many points from input 1 than input 2."
+                         "The output will have the same number of samples as the"
+                         "smallest input file.")
 
 opts = parser.parse_args()
 
@@ -101,10 +115,42 @@ if len(opts.input_file) == 1:
 # convert samples to a dict in which the keys are the labels
 # also stack results if multiple files were provided
 if len(opts.input_file) > 1:
-    samples = {labels[p]: numpy.concatenate([s[p] for s in samples])
-               for p in params}
+    if opts.combine_via_sampling:
+        raw_samples = {labels[p]: numpy.concatenate([s[p] for s in samples])
+                   for p in params}
+        logz_list = []
+        dlogz_list = []
+        len_list = []
+        raw_samps_list = []
+        weights_list = []
+        # get samples and parameters from each file
+        for file in opts.input_file:
+            fp = loadfile(file, 'r')
+            logz, dlogz = fp.log_evidence
+            file_samps = fp.read_samples(list(fp['samples'].keys()))
+            logz_list.append(logz)
+            dlogz_list.append(dlogz)
+            len_list.append(len(file_samps))
+            raw_samps_list.append(file_samps)
+        # compute sampling weight from evidences
+        logz_net = logsumexp(logz_list)
+        len_net = sum(len_list)
+        out_size = min(len_list)
+        for i in range(len(opts.input_file)):
+            logwt = logz_list[i] - logz_net
+            weights_list.append([numpy.exp(logwt)/len_list[i] for j in range(len_list[i])])
+        # randomly sample indexes from all samples
+        weights = numpy.concatenate(weights_list)
+        idx = numpy.random.choice(int(len_net), size=out_size, replace=True, p=weights)
+        samples = {param: raw_samples[param][idx] for param in raw_samples.keys()}
+    else:
+        samples = {labels[p]: numpy.concatenate([s[p] for s in samples])
+                   for p in params}
 else:
     samples = {labels[p]: samples[p] for p in params}
+    if opts.combine_via_sampling:
+        warnings.warn("Specified combine_via_sampling with only one input file."
+                      "This option will have no effect.")
 
 # create the file
 outtype = PosteriorFile.name
@@ -137,8 +183,8 @@ for fp in fps:
 skip_attrs = ['filetype', 'thin_start', 'thin_interval', 'thin_end',
               'thinned_by', 'cmd', 'resume_points', 'effective_nsamples',
               'run_start_time', 'run_end_time']
-# also skip evidence if multiple files are being combined, since that will
-# not be the same
+# also skip evidence if multiple files are being combined w/out sampling, since
+# that will not be the same
 if len(opts.input_file) > 1:
     skip_attrs += ['log_evidence', 'dlog_evidence']
 for fp in fps:
@@ -157,6 +203,11 @@ for fp in fps:
 
 # store what parameters were renamed
 out.attrs['remapped_params'] = list(labels.items())
+
+# write combined evidence and dlog evidence if combining via sampling
+if opts.combine_via_sampling:
+    out.attrs['log_evidence'] = logsumexp(logz_list)
+    out.attrs['dlog_evidence'] = numpy.sqrt(sum([i**2 for i in dlogz_list]))
 
 # write the other groups using the first file
 fp = fps[0]
