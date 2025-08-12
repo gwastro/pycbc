@@ -196,6 +196,10 @@ for fp in fps:
             except KeyError:
                 out.attrs[key] = val
                 current_val = format_attr(out.attrs[key])
+            ### FIXME: this error is being called when running on extracted
+            ### posteriors. Sample keys are identical between files but
+            ### are out of order. Is there a way to enforce order among files?
+            ### Does the order matter?
             if not isthesame(current_val, val):
                 raise ValueError("cannot combine all files; file attr {} is "
                                  "not the same across all files ({} vs {})"
