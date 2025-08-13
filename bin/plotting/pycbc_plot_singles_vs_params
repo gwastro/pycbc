@@ -51,7 +51,10 @@ parser.add_argument('--veto-file', type=str,
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
 parser.add_argument('--filter-string', default=None, type=str,
-                    help='Optional, boolean expression for filtering triggers')
+                    help='Optional, boolean expression for filtering triggers'
+                         'Example: "self.snr >=6"'
+                         'Parameter in "self.parameter" should be either from'
+                         'trigger params or bank params.')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
