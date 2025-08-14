@@ -884,8 +884,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             ref_tc = self.current_params['tc']
             ra = self.current_params['ra']
             dec = self.current_params['dec']
-            tc = self.waveform_generator.convert_tc(ref_tc, ra, dec, det,
-                                                    refframe)
+            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
+            # evaluate antenna pattern
             fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)

@@ -561,45 +561,6 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     def select_rframe_generator(self, approximant):
         """Method to select waveform generator based on an approximant."""
         pass
-    
-    def convert_tc(self, ref_tc, ra, dec, current_frame,
-                   ref_frame='geocentric'):
-        """Convert tc from reference frame to another detector.
-        
-        Parameters
-        ----------
-        ref_tc : {float, lal.LIGOTimeGPS}
-            The coalescence time to convert, defined in ref_frame
-        ra : float
-            Right ascension.
-        dec : float
-            Declination.
-        current_frame : str
-            The detector to convert to.
-        ref_frame : str (optional)
-            The detector to convert from, in which tc is sampled. Default
-            'geocentric'.
-            
-        Returns
-        -------
-        float : 
-            The coalescence time converted to the detector specified by
-            current_frame.
-        """
-        cdet = Detector(current_frame)
-        if ref_frame == 'geocentric':
-            # from geocenter
-            tc = ref_tc + \
-                cdet.time_delay_from_earth_center(ra, dec, ref_tc)
-        elif ref_frame == current_frame:
-            # no time shift; sampling in current det
-            tc = ref_tc
-        else:
-            # from sampling det
-            refdet = Detector(ref_frame)
-            tc = ref_tc + \
-                cdet.time_delay_from_detector(refdet, ra, dec, ref_tc)
-        return tc
 
 
 class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
