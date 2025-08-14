@@ -332,7 +332,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-
+            refframe = params.get('tc_ref_frame', 'geocentric')
+            ra = params['ra']
+            dec = params['dec']
+            ref_tc = params['tc']
+            tc = self.waveform_generator.convert_tc(ref_tc, ra, dec, 
+                                                    det, refframe)
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
                 pol_phase = numpy.exp(-2.0j * params['polarization'])
@@ -340,12 +345,6 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 fp = f.real
                 fc = f.imag
             else:
-                refframe = params.get('tc_ref_frame', 'geocentric')
-                ra = params['ra']
-                dec = params['dec']
-                ref_tc = params['tc']
-                tc = self.waveform_generator.convert_tc(ref_tc, ra, dec, 
-                                                        det, refframe)
                 fp, fc = self.dets[det].antenna_pattern(
                                         ra, dec,
                                         params['polarization'], tc)
