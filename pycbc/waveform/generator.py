@@ -678,7 +678,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                 dec = self.current_params['dec']
                 ref_tc = self.current_params['tc']
                 pol = self.current_params['polarization']
-                tc = self.convert_tc(ref_tc, ra, dec, detname, refframe)
+                tc = self.det.convert_tc(ref_tc, ra, dec, refframe)
                 # apply response function
                 fp, fc = det.antenna_pattern(ra, dec, pol, tc)
                 thish = fp*hp + fc*hc

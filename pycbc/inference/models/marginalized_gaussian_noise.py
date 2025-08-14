@@ -336,8 +336,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             ra = params['ra']
             dec = params['dec']
             ref_tc = params['tc']
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, 
-                                                    det, refframe)
+            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
                 pol_phase = numpy.exp(-2.0j * params['polarization'])
@@ -473,8 +472,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
             ra = params['ra']
             dec = params['dec']
             ref_tc = params['tc']
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, 
-                                                    det, refframe)
+            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec,
                                     params['polarization'], tc)
 
@@ -676,8 +674,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             ra = params['ra']
             dec = params['dec']
             ref_tc = params['tc']
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, 
-                                                    det, refframe)
+            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
 
             # loop over modes and prepare the waveform modes
