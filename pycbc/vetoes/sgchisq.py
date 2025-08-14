@@ -108,6 +108,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
 
         # This is implemented slowly, so let's not call it often, OK?
         chisq = numpy.ones(len(snrv))
+        gtem = [None for _ in values]
         for i, snrvi in enumerate(snrv):
             #Skip if newsnr too low
             snr = abs(snrvi * snr_norm)
@@ -142,7 +143,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
 
             dof = 0
             # Calculate the sum of SNR^2 for the sine-Gaussians specified
-            for descr in values:
+            for idxx, descr in enumerate(values):
                 # Get the q and frequency offset from the descriptor
                 q, offset = descr.split('-')
                 q, offset = float(q), float(offset)
@@ -159,15 +160,19 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 kmax = int(fhigh / template.delta_f)
 
                 #Calculate sine-gaussian tile
-                gtem = sinegauss.fd_sine_gaussian(1.0, q, fcen, flow,
+                if gtem[idxx] is None:
+                    # These are always the same values for a template, so
+                    # if computing 10 sgchisq points, don't want to call
+                    # this 10 times (for each SG template)
+                    gtem[idxx] = sinegauss.fd_sine_gaussian(1.0, q, fcen, flow,
                                       len(template) * template.delta_f,
                                       template.delta_f).astype(numpy.complex64)
-                gsigma = sigma(gtem, psd=psd,
+                gsigma = sigma(gtem[idxx], psd=psd,
                                      low_frequency_cutoff=flow,
                                      high_frequency_cutoff=fhigh)
                 #Calculate the SNR of the tile
-                gsnr = (gtem[kmin:kmax] * stilde_shift[kmin:kmax]).sum()
-                gsnr *= 4.0 * gtem.delta_f / gsigma
+                gsnr = (gtem[idxx][kmin:kmax] * stilde_shift[kmin:kmax]).sum()
+                gsnr *= 4.0 * gtem[idxx].delta_f / gsigma
                 chisq[i] += abs(gsnr)**2.0
                 dof += 2
             if dof == 0:
