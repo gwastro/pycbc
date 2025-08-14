@@ -884,21 +884,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             ref_tc = self.current_params['tc']
             ra = self.current_params['ra']
             dec = self.current_params['dec']
-            if refframe == 'geocentric':
-                # from geocenter
-                tc = ref_tc + \
-                    self.dets[det].time_delay_from_earth_center(ra, dec, ref_tc)
-            elif refframe == det:
-                # no time shift; sampling in current det
-                tc = ref_tc
-            elif refframe in self.dets.keys():
-                # from sampling det
-                refdet = self.dets[refframe]
-                tc = ref_tc + \
-                    self.dets[det].time_delay_from_detector(refdet, ra, dec, ref_tc)
-            else:
-                raise ValueError('tc_ref_frame param must be a detector name ',
-                                 'or "geocentric"')
+            tc = self.waveform_generator.convert_tc(ref_tc, ra, dec, det,
+                                                    refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)

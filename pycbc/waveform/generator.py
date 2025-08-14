@@ -561,7 +561,45 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     def select_rframe_generator(self, approximant):
         """Method to select waveform generator based on an approximant."""
         pass
-
+    
+    def convert_tc(self, ref_tc, ra, dec, current_frame,
+                   ref_frame='geocentric'):
+        """Convert tc from reference frame to another detector.
+        
+        Parameters
+        ----------
+        ref_tc : {float, lal.LIGOTimeGPS}
+            The coalescence time to convert, defined in ref_frame
+        ra : float
+            Right ascension.
+        dec : float
+            Declination.
+        current_frame : str
+            The detector to convert to.
+        ref_frame : str (optional)
+            The detector to convert from, in which tc is sampled. Default
+            'geocentric'.
+            
+        Returns
+        -------
+        float : 
+            The coalescence time converted to the detector specified by
+            current_frame.
+        """
+        cdet = Detector(current_frame)
+        if ref_frame == 'geocentric':
+            # from geocenter
+            tc = ref_tc + \
+                cdet.time_delay_from_earth_center(ra, dec, ref_tc)
+        elif ref_frame == current_frame:
+            # no time shift; sampling in current det
+            tc = ref_tc
+        else:
+            # from sampling det
+            refdet = Detector(ref_frame)
+            tc = ref_tc + \
+                cdet.time_delay_from_detector(refdet, ra, dec, ref_tc)
+        return tc
 
 
 class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
@@ -679,22 +717,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                 dec = self.current_params['dec']
                 ref_tc = self.current_params['tc']
                 pol = self.current_params['polarization']
-                # convert tc to detector frame
-                if refframe == 'geocentric':
-                    # from geocenter
-                    tc = ref_tc + \
-                        det.time_delay_from_earth_center(ra, dec, ref_tc)
-                elif refframe == detname:
-                    # no time shift; sampling in current det
-                    tc = ref_tc
-                elif refframe in self.detectors.keys():
-                    # from sampling det
-                    refdet = self.detectors[refframe]
-                    tc = ref_tc + \
-                        det.time_delay_from_detector(refdet, ra, dec, ref_tc)
-                else:
-                    raise ValueError('tc_ref_frame param must be a detector name ',
-                                     'or "geocentric"')
+                tc = self.convert_tc(ref_tc, ra, dec, detname, refframe)
                 # apply response function
                 fp, fc = det.antenna_pattern(ra, dec, pol, tc)
                 thish = fp*hp + fc*hc
@@ -831,22 +854,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
                 ra = self.current_params['ra']
                 dec = self.current_params['dec']
                 ref_tc = self.current_params['tc']
-                # convert tc to detector frame
-                if refframe == 'geocentric':
-                    # from geocenter
-                    tc = ref_tc + \
-                        det.time_delay_from_earth_center(ra, dec, ref_tc)
-                elif refframe == detname:
-                    # no time shift; sampling in current det
-                    tc = ref_tc
-                elif refframe in self.detectors.keys():
-                    # from sampling det
-                    refdet = self.detectors[refframe]
-                    tc = ref_tc + \
-                        det.time_delay_from_detector(refdet, ra, dec, ref_tc)
-                else:
-                    raise ValueError('tc_ref_frame param must be a detector name ',
-                                     'or "geocentric"')
+                tc = self.convert_tc(ref_tc, ra, dec, detname, refframe)
                 # apply time shift
                 dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
                 dethc = apply_fd_time_shift(hc, tc+tshift, copy=True)
@@ -1099,22 +1107,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
                     ra = self.current_params['ra']
                     dec = self.current_params['dec']
                     ref_tc = self.current_params['tc']
-                    # convert tc to detector frame
-                    if refframe == 'geocentric':
-                        # from geocenter
-                        tc = ref_tc + \
-                            det.time_delay_from_earth_center(ra, dec, ref_tc)
-                    elif refframe == detname:
-                        # no time shift; sampling in current det
-                        tc = ref_tc
-                    elif refframe in self.detectors.keys():
-                        # from sampling det
-                        refdet = self.detectors[refframe]
-                        tc = ref_tc + \
-                            det.time_delay_from_detector(refdet, ra, dec, ref_tc)
-                    else:
-                        raise ValueError('tc_ref_frame param must be a detector name ',
-                                         'or "geocentric"')
+                    tc = self.convert_tc(ref_tc, ra, dec, detname, refframe)
                     # apply time shift
                     detulm = apply_fd_time_shift(ulm, tc+tshift, copy=True)
                     detvlm = apply_fd_time_shift(vlm, tc+tshift, copy=True)
