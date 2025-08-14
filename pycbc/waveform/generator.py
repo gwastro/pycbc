@@ -690,7 +690,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
                     tc = ref_tc + \
                         det.time_delay_from_detector(refdet, ra, dec, ref_tc)
                 else:
-                    raise ValueError('tc_ref_frame param must be a detector name',
+                    raise ValueError('tc_ref_frame param must be a detector name ',
                                      'or "geocentric"')
                 # apply response function
                 fp, fc = det.antenna_pattern(ra, dec, pol, tc)
@@ -821,10 +821,27 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         h = {}
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
-                # apply the time shift
-                tc = self.current_params['tc'] + \
-                    det.time_delay_from_earth_center(self.current_params['ra'],
-                         self.current_params['dec'], self.current_params['tc'])
+                refframe = self.current_params.get('tc_ref_frame', 'geocentric')
+                ra = self.current_params['ra']
+                dec = self.current_params['dec']
+                ref_tc = self.current_params['tc']
+                # convert tc to detector frame
+                if refframe == 'geocentric':
+                    # from geocenter
+                    tc = ref_tc + \
+                        det.time_delay_from_earth_center(ra, dec, ref_tc)
+                elif refframe == detname:
+                    # no time shift; sampling in current det
+                    tc = ref_tc
+                elif refframe in self.detectors.keys():
+                    # from sampling det
+                    refdet = self.detectors[refframe]
+                    tc = ref_tc + \
+                        det.time_delay_from_detector(refdet, ra, dec, ref_tc)
+                else:
+                    raise ValueError('tc_ref_frame param must be a detector name ',
+                                     'or "geocentric"')
+                # apply time shift
                 dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
                 dethc = apply_fd_time_shift(hc, tc+tshift, copy=True)
                 if self.recalib:
@@ -1069,12 +1086,27 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
             ulm._epoch = vlm._epoch = self._epoch
             if self.detector_names != ['RF']:
                 for detname, det in self.detectors.items():
-                    # apply the time shift
-                    tc = self.current_params['tc'] + \
-                        det.time_delay_from_earth_center(
-                            self.current_params['ra'],
-                            self.current_params['dec'],
-                            self.current_params['tc'])
+                    refframe = self.current_params.get('tc_ref_frame', 'geocentric')
+                    ra = self.current_params['ra']
+                    dec = self.current_params['dec']
+                    ref_tc = self.current_params['tc']
+                    # convert tc to detector frame
+                    if refframe == 'geocentric':
+                        # from geocenter
+                        tc = ref_tc + \
+                            det.time_delay_from_earth_center(ra, dec, ref_tc)
+                    elif refframe == detname:
+                        # no time shift; sampling in current det
+                        tc = ref_tc
+                    elif refframe in self.detectors.keys():
+                        # from sampling det
+                        refdet = self.detectors[refframe]
+                        tc = ref_tc + \
+                            det.time_delay_from_detector(refdet, ra, dec, ref_tc)
+                    else:
+                        raise ValueError('tc_ref_frame param must be a detector name ',
+                                         'or "geocentric"')
+                    # apply time shift
                     detulm = apply_fd_time_shift(ulm, tc+tshift, copy=True)
                     detvlm = apply_fd_time_shift(vlm, tc+tshift, copy=True)
                     if self.recalib:
