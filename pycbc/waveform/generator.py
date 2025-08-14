@@ -639,10 +639,13 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         generator class; instead, they are used to apply the detector response
         function and/or shift the waveform in time. The parameters are:
 
-          * tc: The GPS time of coalescence (should be geocentric time).
+          * tc: The GPS time of coalescence.
           * ra: Right ascension.
           * dec: declination
           * polarization: polarization.
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
@@ -785,9 +788,12 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         generator class; instead, they are used to apply the detector response
         function and/or shift the waveform in time. The parameters are:
 
-          * tc: The GPS time of coalescence (should be geocentric time).
+          * tc: The GPS time of coalescence.
           * ra: Right ascension.
           * dec: declination
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
@@ -1048,6 +1054,9 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
           * tc: The GPS time of coalescence (should be geocentric time).
           * ra: Right ascension.
           * dec: declination
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
