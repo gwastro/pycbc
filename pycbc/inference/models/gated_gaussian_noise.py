@@ -879,10 +879,14 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # get the antenna patterns
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
-                                                    self.current_params['dec'],
-                                                    self.pol,
-                                                    self.current_params['tc'])
+            # calculate tc in frame
+            refframe = self.current_params.get('tc_ref_frame', 'geocentric')
+            ref_tc = self.current_params['tc']
+            ra = self.current_params['ra']
+            dec = self.current_params['dec']
+            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
+            # evaluate antenna pattern
+            fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)
             # we always filter the entire segment starting from kmin, since the
