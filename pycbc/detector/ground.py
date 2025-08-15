@@ -227,7 +227,7 @@ class Detector(object):
         using a slower but higher precision method.
         """
         self.name = str(detector_name)
-        
+
         lal_detectors = [pfx for pfx, name in get_available_lal_detectors()]
         if detector_name in _ground_detectors:
             self.info = _ground_detectors[detector_name]
@@ -246,6 +246,12 @@ class Detector(object):
         self.reference_time = reference_time
         self.sday = None
         self.gmst_reference = None
+
+    @property
+    def sky_coords(self):
+        """ List the sky coordinates used in response function.
+        """
+        return 'ra', 'dec'
 
     def set_gmst_reference(self):
         if self.reference_time is not None:
@@ -477,7 +483,8 @@ class Detector(object):
 
     def project_wave(self, hp, hc, ra, dec, polarization,
                      method='lal',
-                     reference_time=None):
+                     reference_time=None,
+                     **kwargs):
         """Return the strain of a waveform as measured by the detector.
         Apply the time shift for the given detector relative to the assumed
         geocentric frame and apply the antenna patterns to the plus and cross
@@ -663,10 +670,3 @@ def ppdets(ifos, separator=', '):
     if ifos:
         return separator.join(sorted(ifos))
     return 'no detectors'
-
-__all__ = ['Detector', 'get_available_detectors',
-           'get_available_lal_detectors',
-           'gmst_accurate', 'add_detector_on_earth',
-           'single_arm_frequency_response', 'ppdets',
-           'overhead_antenna_pattern', 'load_detector_config',
-           '_ground_detectors',]

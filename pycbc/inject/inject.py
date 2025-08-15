@@ -41,8 +41,12 @@ from pycbc.waveform import (get_td_waveform, fd_det,
 from pycbc.waveform import utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from pycbc.types import float64, float32, TimeSeries, load_timeseries
-from pycbc.detector import Detector
-from pycbc.conversions import tau0_from_mass1_mass2
+from pycbc.detector import (Detector, SpaceDetector, _space_detectors,
+                            get_available_space_detectors, parse_det_name)
+from pycbc.conversions import (tau0_from_mass1_mass2,
+                               get_final_from_initial,
+                               tau_from_final_mass_spin)
+from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
@@ -85,19 +89,33 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     """ Use the injection row to project the polarizations into the
     detector frame
     """
-    detector = Detector(detector_name)
+    if detector_name in get_available_space_detectors():
+        # FIXME : This should probably be moved to project_wave;
+        # wait on code reviews to see if this is OK here
+        apply_offset = False
+        offset = TIME_OFFSET_20_DEGREES
+        if 'apply_offset' in inj.dtype.names:
+            apply_offset = inj.apply_offset
+        if 'offset' in inj.dtype.names:
+            offset = inj.offset
+        detector = SpaceDetector(detector_name,
+                                     apply_offset=apply_offset, 
+                                     offset=offset)
+    else:
+        detector = Detector(detector_name)
 
     hp /= distance_scale
     hc /= distance_scale
 
     try:
         tc = inj.tc
-        ra = inj.ra
-        dec = inj.dec
+        sky1_name, sky2_name = detector.sky_coords
+        sky1 = inj[sky1_name]
+        sky2 = inj[sky2_name]
     except:
         tc = inj.time_geocent
-        ra = inj.longitude
-        dec = inj.latitude
+        sky1 = inj.longitude
+        sky2 = inj.latitude
 
     hp.start_time += tc
     hc.start_time += tc
@@ -117,10 +135,15 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     logger.info('Injecting at %s, method is %s', tc, projection_method)
 
     # compute the detector response and add it to the strain
+    extra_args = dict(method = projection_method,
+                      reference_time = tc)
+    pos_args = [sky1_name, sky2_name, 'polarization']
+    for field in inj.dtype.names:
+        if field not in pos_args:
+            extra_args[field] = inj[field]
     signal = detector.project_wave(hp_tapered, hc_tapered,
-                                   ra, dec, inj.polarization,
-                                   method=projection_method,
-                                   reference_time=tc,)
+                                   sky1, sky2, inj.polarization,
+                                   **extra_args)
     return signal
 
 def legacy_approximant_name(apx):
@@ -541,6 +564,14 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         if self.table[0]['approximant'] in fd_det:
             t0 = float(strain.start_time)
             t1 = float(strain.end_time)
+        elif detector_name in get_available_space_detectors():
+            au_travel_time = lal.AU_SI / lal.C_SI
+            try:
+                arm_travel_time = _space_detectors[detector_name]['armlength'] / lal.C_SI
+            except:
+                arm_travel_time = 2.5e9 / lal.C_SI # default to LISA
+            t0 = float(strain.start_time) - au_travel_time - arm_travel_time
+            t1 = float(strain.end_time) + au_travel_time + arm_travel_time
         else:
             earth_travel_time = lal.REARTH_SI / lal.C_SI
             t0 = float(strain.start_time) - earth_travel_time
@@ -561,12 +592,15 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         for ii, inj in enumerate(injections):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
-            # Add 2s to end_time to account for ringdown and light-travel delay
-            end_time = inj.tc + 2
+            # Add to end_time to account for ringdown and light-travel delay
+            # The ringdown buffer corresponds to ~2s for a final mass of 70M
+            mf, chif = get_final_from_initial(inj.mass1, inj.mass2)
+            rd_buffer = 500*tau_from_final_mass_spin(mf, chif)
+            end_time = inj.tc + rd_buffer
             inj_length = tau0_from_mass1_mass2(inj.mass1, inj.mass2, f_l)
             # Start time is taken as twice approx waveform length with a 1s
             # safety buffer
-            start_time = inj.tc - 2 * (inj_length + 1)
+            start_time = inj.tc - 2 * (inj_length + rd_buffer/2)
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(inj, delta_t,
@@ -638,8 +672,13 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             # compute the waveform time series
             hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
                                      **self.extra_args)
-            strain = projector(detector_name,
-                               inj, hp, hc, distance_scale=distance_scale)
+            if detector_name in get_available_space_detectors():
+                # call a specific TDI channel
+                strain = projector(detector_name, inj, hp, hc,
+                                   distance_scale=distance_scale)[detector_name]
+            else:
+                strain = projector(detector_name, inj, hp, hc,
+                                   distance_scale=distance_scale)
         return strain
 
     def end_times(self):
@@ -757,13 +796,15 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
 
     def end_times(self):
         """Return the approximate end times of all injections.
-
-        Currently, this just assumes all ringdowns are 2 seconds long.
         """
         # the start times are the tcs
         tcs = self.table.tc
-        # FIXME: this could be figured out using the ringdown module
-        return tcs + 2
+        mfs = self.table.final_mass
+        chifs = self.table.final_spin
+        # end time is calculated from damping time such that a 70M final mass
+        # returns a ringdown roughly 2s long
+        rd_buffs = 500*tau_from_final_mass_spin(mfs, chifs)
+        return tcs + rd_buffs
 
     @staticmethod
     def supported_approximants():
