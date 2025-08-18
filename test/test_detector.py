@@ -146,7 +146,7 @@ class TestDetector(unittest.TestCase):
                     ra1, dec1, _ = vals[i]
                     ref_tc = ref_times[i]
                     # convert the reference time to the target detector
-                    tc = d.convert_tc(ref_tc, ra1, dec1, ref_frame = ref_ifo)
+                    tc = d.arrival_time(ref_tc, ra1, dec1, ref_frame = ref_ifo)
                     converted_times.append(tc)
                 # check that the times converted to target match nominal
                 print(f"Testing conversion from {ref_ifo} to {target_ifo}")

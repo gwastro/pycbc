@@ -475,8 +475,8 @@ class Detector(object):
                                              declination,
                                              t_gps)
     
-    def convert_tc(self, ref_tc, ra, dec, ref_frame='geocentric'):
-        """Convert tc from reference frame to another detector.
+    def arrival_time(self, ref_tc, ra, dec, ref_frame='geocentric'):
+        """Compute the arrival time in this detector.
         
         Parameters
         ----------
@@ -487,14 +487,13 @@ class Detector(object):
         dec : float
             Declination.
         ref_frame : str (optional)
-            The detector to convert from, in which tc is sampled. Default
+            The detector to convert from, in which ref_tc is sampled. Default
             'geocentric'.
             
         Returns
         -------
         float : 
-            The coalescence time converted to the detector specified by
-            current_frame.
+            The coalescence time converted to the current detector frame.
         """
         if ref_frame == 'geocentric':
             # from geocenter

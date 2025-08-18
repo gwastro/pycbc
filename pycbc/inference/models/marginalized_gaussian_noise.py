@@ -336,7 +336,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
                 pol_phase = numpy.exp(-2.0j * params['polarization'])
@@ -347,14 +347,10 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 fp, fc = self.dets[det].antenna_pattern(
                                         ra, dec,
                                         params['polarization'], tc)
-                dt = self.dets[det].time_delay_from_earth_center(params['ra'],
-                                                                 params['dec'],
-                                                                 tc)
-            dtc = tc + dt
 
-            cplx_hd = fp * cplx_hpd[det].at_time(dtc,
+            cplx_hd = fp * cplx_hpd[det].at_time(tc,
                                                  interpolate='quadratic')
-            cplx_hd += fc * cplx_hcd[det].at_time(dtc,
+            cplx_hd += fc * cplx_hcd[det].at_time(tc,
                                                   interpolate='quadratic')
             hh = (fp * fp * hphp[det] +
                   fc * fc * hchc[det] +
@@ -472,7 +468,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec,
                                     params['polarization'], tc)
 
@@ -674,7 +670,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         for det, modes in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
 
             # loop over modes and prepare the waveform modes

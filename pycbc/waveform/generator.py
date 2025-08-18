@@ -672,13 +672,13 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         hp._epoch = hc._epoch = self._epoch
         h = {}
         if self.detector_names != ['RF']:
+            ra = self.current_params['ra']
+            dec = self.current_params['dec']
+            ref_tc = self.current_params['tc']
+            pol = self.current_params['polarization']
+            refframe = self.current_params.get('tc_ref_frame', 'geocentric')
             for detname, det in self.detectors.items():
-                refframe = self.current_params.get('tc_ref_frame', 'geocentric')
-                ra = self.current_params['ra']
-                dec = self.current_params['dec']
-                ref_tc = self.current_params['tc']
-                pol = self.current_params['polarization']
-                tc = det.convert_tc(ref_tc, ra, dec, refframe)
+                tc = det.arrival_time(ref_tc, ra, dec, refframe)
                 # apply response function
                 fp, fc = det.antenna_pattern(ra, dec, pol, tc)
                 thish = fp*hp + fc*hc
@@ -815,7 +815,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
                 ra = self.current_params['ra']
                 dec = self.current_params['dec']
                 ref_tc = self.current_params['tc']
-                tc = det.convert_tc(ref_tc, ra, dec, refframe)
+                tc = det.arrival_time(ref_tc, ra, dec, refframe)
                 # apply time shift
                 dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
                 dethc = apply_fd_time_shift(hc, tc+tshift, copy=True)
@@ -1068,7 +1068,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
                     ra = self.current_params['ra']
                     dec = self.current_params['dec']
                     ref_tc = self.current_params['tc']
-                    tc = det.convert_tc(ref_tc, ra, dec, refframe)
+                    tc = det.arrival_time(ref_tc, ra, dec, refframe)
                     # apply time shift
                     detulm = apply_fd_time_shift(ulm, tc+tshift, copy=True)
                     detvlm = apply_fd_time_shift(vlm, tc+tshift, copy=True)

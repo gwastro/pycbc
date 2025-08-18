@@ -884,7 +884,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             if det not in self.dets:
                 self.dets[det] = Detector(det)
             # calculate tc in frame
-            tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             # evaluate antenna pattern
             fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
             start_index, end_index = self.gate_indices(det)
