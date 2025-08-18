@@ -49,7 +49,6 @@ init_logging(args.verbose, default_level=1)
 wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
-init_dir = os.getcwd()
 
 logging.info("Generating %s workflow" % workflow_name)
 
@@ -110,12 +109,12 @@ else:
 # Do checks for no/single IFO case
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
-    plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
+    make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
                                       triggername, seg_dir)
     logging.error("No science segments available.")
     sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
-    plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
+    make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
                                       triggertime, triggername, seg_dir)
     msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
     msg += "If you wish to enable single IFO running add the option "
@@ -130,7 +129,7 @@ else:
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
-    plot_met = make_grb_segments_plot(
+    make_grb_segments_plot(
         wflow, sciSegs, triggertime, triggername,
         seg_dir, fail_criterion=offSrc)
     logging.info("Making segment plot and exiting.")
@@ -176,8 +175,6 @@ elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
 else:
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime + padding,
                                   int(sciSegs[ifo][0][1]) - deadtime - padding)
-
-ext_file = None
 
 # DATAFIND
 df_dir = os.path.join(curr_dir, "datafind")
