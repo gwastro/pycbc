@@ -328,14 +328,14 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
         self.draw_ifos(snr_estimate, log=False, **self.kwargs)
         self.snr_draw(snrs=snr_estimate)
-
+        
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            refframe = params.get('tc_ref_frame', 'geocentric')
-            ra = params['ra']
-            dec = params['dec']
-            ref_tc = params['tc']
             tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
@@ -465,13 +465,13 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
                 wfs.update(self.waveform_generator[det].generate(**params))
 
         lr = sh_total = hh_total = 0.
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            refframe = params.get('tc_ref_frame', 'geocentric')
-            ra = params['ra']
-            dec = params['dec']
-            ref_tc = params['tc']
             tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec,
                                     params['polarization'], tc)
@@ -667,13 +667,13 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         lr = 0.
         hds = {}
         hhs = {}
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det, modes in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            refframe = params.get('tc_ref_frame', 'geocentric')
-            ra = params['ra']
-            dec = params['dec']
-            ref_tc = params['tc']
             tc = self.dets[det].convert_tc(ref_tc, ra, dec, refframe)
             fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
 
