@@ -214,7 +214,10 @@ class EventManager(object):
         for col, coltype in zip(column, column_types):
             self.event_dtype.append((col, coltype))
 
-        self._events = numpy.zeros(array_minsize, dtype=self.event_dtype)
+        self._events = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.event_dtype
+        )
         self._events_size = 0
         self.template_params = []
         self.template_index = -1
@@ -269,16 +272,26 @@ class EventManager(object):
                 setattr(opt, arg, getattr(opt, arg)[ifo])
         return cls(opt, column, column_types, **kwds)
 
+    def cut_events_via_mask(self, keep):
+        # keep should be a boolean array of len self._events_size
+        num_keep = keep.sum()
+        self._events[:num_keep] = self._events[:self._events_size][keep]
+        self._events_size = num_keep
+
+    def cut_events_via_indices(self, indices):
+        # indices should be a list of indices to keep
+        num_keep = len(indices)
+        self._events[:num_keep] = self._events[:self._events_size][indices]
+        self._events_size = num_keep
+
     def chisq_threshold(self, value, num_bins, delta=0):
-        keep = numpy.ones(len(self._events_size), dtype=bool)
+        keep = numpy.ones(self._events_size, dtype=bool)
         for i, event in enumerate(self.events):
             xi = event['chisq'] / (event['chisq_dof'] +
                                    delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 keep[i] = 0
-        num_keep = keep.sum()
-        self._events[:num_keep] = self._events[:self._events_size][keep]
-        self._events_size = num_keep
+        self.cut_events_via_mask(keep)
 
     def newsnr_threshold(self, threshold):
         """ Remove events with newsnr smaller than given threshold
@@ -289,10 +302,7 @@ class EventManager(object):
 
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
-        condition = nsnrs >= threshold
-        num_keep = condition.sum()
-        self._events[:num_keep] = self._events[:self._events_size][condition]
-        self._events_size = num_keep
+        self.cut_events_via_mask(nsnrs >= threshold)
 
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
@@ -303,9 +313,7 @@ class EventManager(object):
         gpstime = self.events['time_index'].astype(numpy.float64)
         gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
-        num_keep = len(i)
-        self._events[:num_keep] = self._events[:self._events_size][i]
-        self._events_size = num_keep
+        self.cut_events_via_indices(i)
 
     def keep_loudest_in_interval(self, window, num_keep, statname="newsnr",
                                  log_chirp_width=None):
@@ -349,9 +357,7 @@ class EventManager(object):
                 keep.append(bloc[bloudest])
 
         keep = numpy.concatenate(keep)
-        num_keep = len(keep)
-        self._events[:num_keep] = self._events[:self._events_size][keep]
-        self._events_size = num_keep
+        self.cut_events_via_indices(keep)
 
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
@@ -383,13 +389,12 @@ class EventManager(object):
     def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
         """
-        cvec = self.template_events[column][:self.template_event_size]
-        tvec = self.template_events[tcolumn][:self.template_event_size]
-        if window_size == 0:
-            indices = numpy.arange(len(tvec))
-        else:
+        if window_size > 0:
+            cvec = self.template_events[column][:self.template_event_size]
+            tvec = self.template_events[tcolumn][:self.template_event_size]
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        self.template_events[:len(indices)] = self.template_events[indices]
+            self.template_events[:len(indices)] = self.template_events[indices]
+            self.template_event_size = len(indices)
 
     def new_template(self, **kwds):
         self.template_params.append(kwds)
@@ -400,9 +405,9 @@ class EventManager(object):
 
     def finalize_template_events(self):
         new_event_size = self.template_event_size + self._events_size
-        while new_event_size > len(self._events):
+        if new_event_size > len(self._events):
             self._events.resize(
-                len(self._events) + self.array_minsize,
+                (new_event_size//self.array_minsize + 1) * self.array_minsize,
                 refcheck=False
             )
 
@@ -446,6 +451,9 @@ class EventManager(object):
 
 
     def finalize_events(self):
+        # At the moment this method does nothing, but it is called by all
+        # front-end codes using this, and may have stuff added to it in the
+        # future. So for now, this is not being considered deprecated.
         pass
 
     def make_output_dir(self, outname):
@@ -638,7 +646,10 @@ class EventManagerMultiDetBase(EventManager):
         for col, coltype in zip(column, column_types):
             self.event_dtype.append((col, coltype))
 
-        self._events = numpy.zeros(array_minsize, dtype=self.event_dtype)
+        self._events = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.event_dtype
+        )
         self._events_size = 0
 
         self.event_id_map = {}
@@ -989,9 +1000,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         # Move template events for each ifo to the events list
         for ifo in self.ifos:
             new_event_size = len(new_template_event_mask[ifo]) + self._events_size
-            while new_event_size > len(self._events):
+            if new_event_size > len(self._events):
+                new_chunk_size = (new_event_size//self.array_minsize + 1)
                 self._events.resize(
-                    len(self._events) + self.array_minsize,
+                    new_chunk_size * self.array_minsize,
                     refcheck=False
                 )
             self._events[self._events_size:new_event_size] = (
@@ -1074,9 +1086,10 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                         self.coinc_list.append((event1, event2))
         for ifo in self.ifos:
             new_event_size = self.template_event_size_dict[ifo] + self._events_size
-            while new_event_size > len(self._events):
+            if new_event_size > len(self._events):
+                new_chunk_size = (new_event_size//self.array_minsize + 1)
                 self._events.resize(
-                    len(self._events) + self.array_minsize,
+                    new_chunk_size * self.array_minsize,
                     refcheck=False
                 )
             self._events[self._events_size:new_event_size] = (
