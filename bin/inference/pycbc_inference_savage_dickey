@@ -64,9 +64,15 @@ pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--parameter-null-value", required=True,
                     help="Value at which to evaluate the posterior and prior"
                     "when calculating the Savage-Dickey ratio.")
-parser.add_argument("--kde-samples", type=int, default=10000,
+parser.add_argument("--kde-samples", type=int, default=50000,
                     help="The number of samples to use for generating the "
-                         "prior KDE. Default 10000.")
+                         "prior KDE. Default 50000.")
+parser.add_argument("--kde-bandwidth", type=float, default=0.01,
+                    help="The bandwidth of the KDEs, which determine how "
+                    "'smooth' the KDEs are. Lower values lead to smoother "
+                    "KDEs; higher values lead to more 'jagged' KDEs but will "
+                    "potentially capture more structure. Use '--plot' to "
+                    "aid in fine-tuning this.")
 parser.add_argument("--prior-name", type=str, default=None,
                     help="The type of prior distribution to generate. "
                          "By default, the prior is read from the input "
@@ -84,6 +90,16 @@ parser.add_argument("--prior-cyclic", type=bool, default=False,
                          "specifying --prior-name. By default (i.e. if "
                          "prior-name is not specified), this is read from the "
                          "input file(s).")
+parser.add_argument("--reflect-kde-on-left", action="store_true", default=False,
+                    help="Specify whether to reflect samples on the left bound "
+                    "when generating KDEs. This is done to prevent KDE "
+                    "sampling issues at the edges of a histogram. This is not "
+                    "done by default.")
+parser.add_argument("--reflect-kde-on-right", action="store_true", default=False,
+                    help="Specify whether to reflect samples on the right bound "
+                    "when generating KDEs. This is done to prevent KDE "
+                    "sampling issues at the edges of a histogram. This is not "
+                    "done by default.")
 parser.add_argument("--plot", action='store_true', default=False,
                     help="Specify whether to plot the samples and KDEs of the "
                          "prior and posterior as a consistency check.")
@@ -124,21 +140,26 @@ for file in opts.input_file:
     else:
         prior = prior_from_config(cp)
         bounds = prior.bounds[param]
-    # generate prior KDE
     prior_samples = prior.rvs(opts.kde_samples)[param]
-    neg_prior_samples = -1 * prior_samples
-    # set bandwidth for KDE; determines "smoothness"
-    ### FIXME: This should be a user input
-    if "log" in prior.name:
-        bw = 0.01
-    else:
-        bw = 0.002
-    prior_pdf = gaussian_kde(numpy.append(prior_samples, neg_prior_samples),
-                             bw_method=bw)
+    # set bandwidth for KDEs; determines "smoothness"
+    bw = opts.kde_bandwidth
     # read in posterior samples
     pos = fp.read_samples([param])[param]
-    neg_pos = -1 * pos
-    pos_pdf = gaussian_kde(numpy.append(pos, neg_pos), bw_method=bw)
+    # reflect at bounds if specified
+    net_pos = pos
+    net_pri = prior_samples
+    if opts.reflect_kde_on_left:
+        left_pos = bounds.min - pos
+        net_pos = numpy.append(net_pos, left_pos)
+        left_pri = bounds.min - prior_samples
+        net_pri = numpy.append(net_pri, left_pri)
+    if opts.reflect_kde_on_right:
+        right_pos = 2 * bounds.max - pos
+        net_pos = numpy.append(net_pos, right_pos)
+        right_pri = 2 * bounds.max - prior_samples
+        net_pri = numpy.append(net_pri, right_pri)
+    pos_pdf = gaussian_kde(net_pos, bw_method=bw)
+    prior_pdf = gaussian_kde(net_pri, bw_method=bw)
     # normalize KDEs
     pos_norm = pos_pdf.integrate_box_1d(bounds.min, bounds.max)
     prior_norm = prior_pdf.integrate_box_1d(bounds.min, bounds.max)
