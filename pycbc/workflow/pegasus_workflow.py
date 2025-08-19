@@ -403,7 +403,8 @@ class Workflow(object):
 
     def add_explicit_dependancy(self, parent, child):
         """
-        Add an explicit dependancy between two Nodes in this workflow.
+        Add an explicit dependancy between Nodes, Workflows or SubWorkflows in
+        this workflow.
 
         Most dependencies (in PyCBC and Pegasus thinking) are added by
         declaring file linkages. However, there are some cases where you might
@@ -411,12 +412,19 @@ class Workflow(object):
 
         Parameters
         ----------
-        parent : Node instance
-            The parent Node.
-        child : Node instance
-            The child Node
+        parent : Node, Workflow or SubWorkflow instance
+        child : Node, Workflow or SubWorkflow instance
         """
-        self._adag.add_dependency(parent._dax_node, children=[child._dax_node])
+        def convert(thing):
+            if isinstance(thing, Workflow):
+                return thing._as_job
+            if isinstance(thing, Node):
+                return thing._dax_node
+            if isinstance(thing, SubWorkflow):
+                return thing
+            raise TypeError('ayee, cannot handle this dependancy!')
+
+        self._adag.add_dependency(convert(parent), children=[convert(child)])
 
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
         """
@@ -437,28 +445,7 @@ class Workflow(object):
             The sub-workflow to add as the child dependence.
             Must be a sub-workflow of this workflow.
         """
-        self._adag.add_dependency(parent_workflow._as_job,
-                                  children=[child_workflow._as_job])
-
-
-    def add_node_or_subworkflow_dependency(self, parent, child):
-        """Add a dependency between nodes and subworkflows, seamlessly handling
-        both types of parents and children.
-
-        Parameters
-        ----------
-        parent : Node or Workflow instance
-        child : Node or Workflow instance
-        """
-        def convert(thing):
-            if hasattr(thing, '_dax_node'):
-                return thing._dax_node
-            elif hasattr(thing, '_as_job'):
-                return thing._as_job
-            raise TypeError('neither _dax_node nor _as_job present, help!')
-
-        self._adag.add_dependency(convert(parent), children=[convert(child)])
-
+        self.add_explicit_dependancy(parent_workflow, child_workflow)
 
     def add_transformation(self, tranformation):
         """ Add a transformation to this workflow
