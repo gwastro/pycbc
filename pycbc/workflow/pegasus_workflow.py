@@ -440,6 +440,26 @@ class Workflow(object):
         self._adag.add_dependency(parent_workflow._as_job,
                                   children=[child_workflow._as_job])
 
+
+    def add_node_or_subworkflow_dependency(self, parent, child):
+        """Add a dependency between nodes and subworkflows, seamlessly handling
+        both types of parents and children.
+
+        Parameters
+        ----------
+        parent : Node or Workflow instance
+        child : Node or Workflow instance
+        """
+        def convert(thing):
+            if hasattr(thing, '_dax_node'):
+                return thing._dax_node
+            elif hasattr(thing, '_as_job'):
+                return thing._as_job
+            raise TypeError('neither _dax_node nor _as_job present, help!')
+
+        self._adag.add_dependency(convert(parent), children=[convert(child)])
+
+
     def add_transformation(self, tranformation):
         """ Add a transformation to this workflow
 
