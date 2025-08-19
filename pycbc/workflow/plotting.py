@@ -472,7 +472,7 @@ def make_results_web_page(workflow, results_dir, template='orange',
     workflow += node
     if explicit_dependencies is not None:
         for dep in explicit_dependencies:
-            workflow.add_node_or_subworkflow_dependency(dep, node)
+            workflow.add_explicit_dependancy(dep, node)
 
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
