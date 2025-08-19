@@ -145,18 +145,27 @@ for file in opts.input_file:
     # read in posterior samples
     pos = fp.read_samples([param])[param]
 
+    # if in log scale, rescale the distributions
+    if 'log' in prior.name:
+        pos = numpy.log10(pos)
+        prior_samples = numpy.log10(prior_samples)
+        null = numpy.log10(null)
+        bounds = Bounds(min_bound = numpy.log10(bounds.min),
+                        max_bound = numpy.log10(bounds.max),
+                        cyclic = bounds.cyclic)
+
     # reflect at bounds if specified
     net_pos = pos
     net_pri = prior_samples
     if opts.reflect_kde_on_left:
-        left_pos = bounds.min - pos
+        left_pos = bounds.min - abs(bounds.min - pos)
         net_pos = numpy.append(net_pos, left_pos)
-        left_pri = bounds.min - prior_samples
+        left_pri = bounds.min - abs(bounds.min - prior_samples)
         net_pri = numpy.append(net_pri, left_pri)
     if opts.reflect_kde_on_right:
-        right_pos = 2 * bounds.max - pos
+        right_pos = bounds.max + abs(bounds.max - pos)
         net_pos = numpy.append(net_pos, right_pos)
-        right_pri = 2 * bounds.max - prior_samples
+        right_pri = bounds.max + abs(bounds.max - prior_samples)
         net_pri = numpy.append(net_pri, right_pri)
 
     # generate KDEs
@@ -186,17 +195,16 @@ for file in opts.input_file:
             plt.plot(bins, prior_pdf(bins)/prior_norm, color='red',
                      label="Prior KDE")
         else:
-            bins = numpy.logspace(numpy.log10(bounds.min), 
-                                  numpy.log10(bounds.max), 50)
-            plt.hist(pos, bins=bins, density=True, alpha=0.4,
+            bins = numpy.linspace(bounds.min, bounds.max, 50)
+            plt.hist(net_pos, bins=bins, density=True, alpha=0.4,
                      label='Posterior Samples')
-            plt.hist(prior_samples, bins=bins, density=True, alpha=0.4,
+            plt.hist(net_pri, bins=bins, density=True, alpha=0.4,
                      label="Prior Samples")
             plt.plot(bins, pos_pdf.evaluate(bins)/pos_norm, color='green',
                      label="Posterior KDE")
             plt.plot(bins, prior_pdf.evaluate(bins)/prior_norm, color='red',
                      label="Prior KDE")
-            plt.xscale('log')
+            #plt.xscale('log')
         f = os.path.basename(file)
         plt.title(f"Posterior and Prior of {param} from {f}")
         plt.legend()
