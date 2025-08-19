@@ -48,6 +48,7 @@ the specified parameter. Only one parameter is accepted, and a null value is
 required for the given parameter.
 """
 
+import os
 import numpy
 import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, loadfile)
@@ -63,9 +64,9 @@ pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--parameter-null-value", required=True,
                     help="Value at which to evaluate the posterior and prior"
                     "when calculating the Savage-Dickey ratio.")
-parser.add_argument("--kde-samples", type=int, default=100000,
+parser.add_argument("--kde-samples", type=int, default=10000,
                     help="The number of samples to use for generating the "
-                         "prior KDE. Default 100000.")
+                         "prior KDE. Default 10000.")
 parser.add_argument("--prior-name", type=str, default=None,
                     help="The type of prior distribution to generate. "
                          "By default, the prior is read from the input "
@@ -83,6 +84,9 @@ parser.add_argument("--prior-cyclic", type=bool, default=False,
                          "specifying --prior-name. By default (i.e. if "
                          "prior-name is not specified), this is read from the "
                          "input file(s).")
+parser.add_argument("--plot", action='store_true', default=False,
+                    help="Specify whether to plot the samples and KDEs of the "
+                         "prior and posterior as a consistency check.")
 
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
@@ -96,8 +100,8 @@ if len(opts.parameters) > 1:
 param = opts.parameters[0]
 null = float(opts.parameter_null_value)
 
-print(f"Calculating with selected parameter {param} at null value "
-      f"{null}")
+print(f"Calculating Bayes factor for selected parameter {param} versus {param} "
+      f"at null value {null}")
 print("======================================================================")
 
 priors = []
@@ -123,11 +127,18 @@ for file in opts.input_file:
     # generate prior KDE
     prior_samples = prior.rvs(opts.kde_samples)[param]
     neg_prior_samples = -1 * prior_samples
-    prior_pdf = gaussian_kde(numpy.append(prior_samples, neg_prior_samples))
+    # set bandwidth for KDE; determines "smoothness"
+    ### FIXME: This should be a user input
+    if "log" in prior.name:
+        bw = 0.01
+    else:
+        bw = 0.002
+    prior_pdf = gaussian_kde(numpy.append(prior_samples, neg_prior_samples),
+                             bw_method=bw)
     # read in posterior samples
     pos = fp.read_samples([param])[param]
     neg_pos = -1 * pos
-    pos_pdf = gaussian_kde(numpy.append(pos, neg_pos))
+    pos_pdf = gaussian_kde(numpy.append(pos, neg_pos), bw_method=bw)
     # normalize KDEs
     pos_norm = pos_pdf.integrate_box_1d(bounds.min, bounds.max)
     prior_norm = prior_pdf.integrate_box_1d(bounds.min, bounds.max)
@@ -138,12 +149,34 @@ for file in opts.input_file:
     B *= B_norm
 
     # bugfixing
-    #import matplotlib.pyplot as plt
-    #vals, bins, _ = plt.hist(pos, bins=50, density=True, alpha=0.4)
-    #plt.hist(prior_samples, bins=50, density=True, alpha=0.4)
-    #plt.plot(bins, pos_pdf(bins)/pos_norm, color='orange')
-    #plt.plot(bins, prior_pdf(bins)/prior_norm, color='green')
-    #plt.savefig('test_ecc.png')
+    if opts.plot:
+        import matplotlib.pyplot as plt
+        if "log" not in prior.name:
+            vals, bins, _ = plt.hist(pos, bins=50, density=True, alpha=0.4,
+                                     label='Posterior Samples')
+            plt.hist(prior_samples, bins=50, density=True, alpha=0.4,
+                     label="Prior Samples")
+            plt.plot(bins, pos_pdf(bins)/pos_norm, color='green',
+                     label="Posterior KDE")
+            plt.plot(bins, prior_pdf(bins)/prior_norm, color='red',
+                     label="Prior KDE")
+        else:
+            bins = numpy.logspace(numpy.log10(bounds.min), 
+                                  numpy.log10(bounds.max), 50)
+            plt.hist(pos, bins=bins, density=True, alpha=0.4,
+                     label='Posterior Samples')
+            plt.hist(prior_samples, bins=bins, density=True, alpha=0.4,
+                     label="Prior Samples")
+            plt.plot(bins, pos_pdf.evaluate(bins)/pos_norm, color='green',
+                     label="Posterior KDE")
+            plt.plot(bins, prior_pdf.evaluate(bins)/prior_norm, color='red',
+                     label="Prior KDE")
+            plt.xscale('log')
+        f = os.path.basename(file)
+        plt.title(f"Posterior and Prior of {param} from {f}")
+        plt.legend()
+        name, _ = os.path.splitext(f)
+        plt.savefig(f'plot-{name}.png')
 
     ### FIXME: For now I'm just printing this; should we save this to file 
     ### somewhere?
