@@ -32,11 +32,10 @@ ratio compares two models: a null hypothesis, where the parameter of interest
 is fixed to one value, and a model where this parameter is allowed to vary. The
 SD ratio is computed by dividing the value of the variable parameter posterior
 by the value of the prior at the null point. Qualitatively, this indicates the
-probability with which the null hypothesis is true. It can be shown
-(https://doi.org/10.1016/j.cogpsych.2009.12.001) that the Bayes factor in favor
-of the null hypothesis can be approximated by the Savage-Dickey ratio. 
+probability with which the null hypothesis is true. Bayes factor in favor
+of the null hypothesis can be approximated by the Savage-Dickey ratio. We can
+invert this to estimate the Bayes factor in favor of the variable model.
 
-We can invert this to estimate the Bayes factor in favor of the variable model.
 As an GW analysis example, say we wish to evaluate the presence of a QNM
 overtone in the ringdown of a CBC signal. The null hypothesis states that the
 QNM is not present, indicated by a QNM amplitude of zero. We can therefore
@@ -57,22 +56,21 @@ from pycbc.distributions.utils import prior_from_config
 from pycbc.boundaries import Bounds
 from scipy.stats import gaussian_kde
 
-### FIXME: Override the parameters argument that comes from here; only want one
 parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
                                description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--parameter-null-value", required=True,
-                    help="Value at which to evaluate the posterior and prior"
-                    "when calculating the Savage-Dickey ratio.")
+                    help="Value at which to evaluate the posterior and prior "
+                         "when calculating the Savage-Dickey ratio.")
 parser.add_argument("--kde-samples", type=int, default=50000,
                     help="The number of samples to use for generating the "
                          "prior KDE. Default 50000.")
 parser.add_argument("--kde-bandwidth", type=float, default=0.01,
                     help="The bandwidth of the KDEs, which determine how "
-                    "'smooth' the KDEs are. Lower values lead to smoother "
-                    "KDEs; higher values lead to more 'jagged' KDEs but will "
-                    "potentially capture more structure. Use '--plot' to "
-                    "aid in fine-tuning this.")
+                         "'smooth' the KDEs are. Lower values lead to smoother "
+                         "KDEs; higher values lead to more 'jagged' KDEs but "
+                         "will potentially capture more structure. Use "
+                         "'--plot' to aid in fine-tuning this.")
 parser.add_argument("--prior-name", type=str, default=None,
                     help="The type of prior distribution to generate. "
                          "By default, the prior is read from the input "
@@ -92,14 +90,14 @@ parser.add_argument("--prior-cyclic", type=bool, default=False,
                          "input file(s).")
 parser.add_argument("--reflect-kde-on-left", action="store_true", default=False,
                     help="Specify whether to reflect samples on the left bound "
-                    "when generating KDEs. This is done to prevent KDE "
-                    "sampling issues at the edges of a histogram. This is not "
-                    "done by default.")
+                         "when generating KDEs. This is done to prevent KDE "
+                         "sampling issues at the edges of a histogram. This is "
+                         "not done by default.")
 parser.add_argument("--reflect-kde-on-right", action="store_true", default=False,
                     help="Specify whether to reflect samples on the right bound "
-                    "when generating KDEs. This is done to prevent KDE "
-                    "sampling issues at the edges of a histogram. This is not "
-                    "done by default.")
+                         "when generating KDEs. This is done to prevent KDE "
+                         "sampling issues at the edges of a histogram. This is "
+                         "not done by default.")
 parser.add_argument("--plot", action='store_true', default=False,
                     help="Specify whether to plot the samples and KDEs of the "
                          "prior and posterior as a consistency check.")
@@ -109,9 +107,10 @@ pycbc.init_logging(opts.verbose)
 
 # read in the posterior of given parameter
 ### FIXME: ideally the parameters argument only reads in one parameter
+### Or maybe we allow for multiple SDDR calcs at a time? for now throw error
 if len(opts.parameters) > 1:
     raise ValueError("Multiple parameters specified. Only one parameter is "
-                     "accepted at a time.")
+                     "accepted at a time")
 
 param = opts.parameters[0]
 null = float(opts.parameter_null_value)
@@ -125,6 +124,7 @@ posteriors = []
 for file in opts.input_file:
     fp = loadfile(file, 'r')
     cp = fp.read_config_file()
+
     # read in the prior of given parameter
     if opts.prior_name is not None:
         if opts.prior_min is None:
@@ -141,10 +141,10 @@ for file in opts.input_file:
         prior = prior_from_config(cp)
         bounds = prior.bounds[param]
     prior_samples = prior.rvs(opts.kde_samples)[param]
-    # set bandwidth for KDEs; determines "smoothness"
-    bw = opts.kde_bandwidth
+
     # read in posterior samples
     pos = fp.read_samples([param])[param]
+
     # reflect at bounds if specified
     net_pos = pos
     net_pri = prior_samples
@@ -158,8 +158,12 @@ for file in opts.input_file:
         net_pos = numpy.append(net_pos, right_pos)
         right_pri = 2 * bounds.max - prior_samples
         net_pri = numpy.append(net_pri, right_pri)
+
+    # generate KDEs
+    bw = opts.kde_bandwidth
     pos_pdf = gaussian_kde(net_pos, bw_method=bw)
     prior_pdf = gaussian_kde(net_pri, bw_method=bw)
+
     # normalize KDEs
     pos_norm = pos_pdf.integrate_box_1d(bounds.min, bounds.max)
     prior_norm = prior_pdf.integrate_box_1d(bounds.min, bounds.max)
@@ -169,7 +173,7 @@ for file in opts.input_file:
     B = prior_pdf(null) / pos_pdf(null)
     B *= B_norm
 
-    # bugfixing
+    # plotting
     if opts.plot:
         import matplotlib.pyplot as plt
         if "log" not in prior.name:
@@ -199,8 +203,6 @@ for file in opts.input_file:
         name, _ = os.path.splitext(f)
         plt.savefig(f'plot-{name}.png')
 
-    ### FIXME: For now I'm just printing this; should we save this to file 
-    ### somewhere?
     print(f"File: {file}")
     if B > 1e-3:
         print(f"Bayes factor: {B[0]:.3f}")
