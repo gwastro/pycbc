@@ -328,11 +328,15 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
         self.draw_ifos(snr_estimate, log=False, **self.kwargs)
         self.snr_draw(snrs=snr_estimate)
-
+        
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
                 pol_phase = numpy.exp(-2.0j * params['polarization'])
@@ -341,18 +345,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 fc = f.imag
             else:
                 fp, fc = self.dets[det].antenna_pattern(
-                                        params['ra'],
-                                        params['dec'],
-                                        params['polarization'],
-                                        params['tc'])
-                dt = self.dets[det].time_delay_from_earth_center(params['ra'],
-                                                                 params['dec'],
-                                                                 params['tc'])
-            dtc = params['tc'] + dt
+                                        ra, dec,
+                                        params['polarization'], tc)
 
-            cplx_hd = fp * cplx_hpd[det].at_time(dtc,
+            cplx_hd = fp * cplx_hpd[det].at_time(tc,
                                                  interpolate='quadratic')
-            cplx_hd += fc * cplx_hcd[det].at_time(dtc,
+            cplx_hd += fc * cplx_hcd[det].at_time(tc,
                                                   interpolate='quadratic')
             hh = (fp * fp * hphp[det] +
                   fc * fc * hchc[det] +
@@ -463,14 +461,16 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
                 wfs.update(self.waveform_generator[det].generate(**params))
 
         lr = sh_total = hh_total = 0.
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(
-                                    params['ra'],
-                                    params['dec'],
-                                    params['polarization'],
-                                    params['tc'])
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
+            fp, fc = self.dets[det].antenna_pattern(ra, dec,
+                                    params['polarization'], tc)
 
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(max(len(hp), len(hc)), self._kmax[det])
@@ -663,14 +663,15 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         lr = 0.
         hds = {}
         hhs = {}
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det, modes in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-
-            fp, fc = self.dets[det].antenna_pattern(params['ra'],
-                                                    params['dec'],
-                                                    self.pol,
-                                                    params['tc'])
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
+            fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
 
             # loop over modes and prepare the waveform modes
             # we will sum up zetalm = glm <ulm, d> + i glm <vlm, d>

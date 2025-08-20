@@ -474,6 +474,44 @@ class Detector(object):
                                              right_ascension,
                                              declination,
                                              t_gps)
+    
+    def arrival_time(self, ref_tc, ra, dec, ref_frame='geocentric'):
+        """Compute the arrival time in this detector.
+        
+        Parameters
+        ----------
+        ref_tc : {float, lal.LIGOTimeGPS}
+            The coalescence time to convert, defined in ref_frame
+        ra : float
+            Right ascension.
+        dec : float
+            Declination.
+        ref_frame : str (optional)
+            The detector to convert from, in which ref_tc is sampled. Default
+            'geocentric'.
+            
+        Returns
+        -------
+        float : 
+            The coalescence time converted to the current detector frame.
+        """
+        if ref_frame == 'geocentric':
+            # from geocenter
+            tc = ref_tc + \
+                self.time_delay_from_earth_center(ra, dec, ref_tc)
+        elif ref_frame == self.name:
+            # no time shift; sampling in current det
+            tc = ref_tc
+        elif ref_frame in get_available_detectors():
+            # from sampling det
+            refdet = Detector(ref_frame)
+            tc = ref_tc + \
+                self.time_delay_from_detector(refdet, ra, dec, ref_tc)
+        else:
+            raise ValueError(f'Unrecognized ref_frame argument {ref_frame}. '
+                             'Accepted arguments are: "geocentric", '
+                             f'{get_available_detectors()}')
+        return tc
 
     def project_wave(self, hp, hc, ra, dec, polarization,
                      method='lal',
