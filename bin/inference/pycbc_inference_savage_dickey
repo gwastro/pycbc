@@ -197,7 +197,6 @@ for file in opts.input_file:
                            f"({opts.input_file})")
         import matplotlib.pyplot as plt
 
-        print(prior.name)
         if "log" not in prior.name:
             # non-log distributions
             vals, bins, _ = plt.hist(pos, bins=100, density=True, alpha=0.4,
