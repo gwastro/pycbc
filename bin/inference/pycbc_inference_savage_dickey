@@ -98,16 +98,17 @@ parser.add_argument("--reflect-kde-on-right", action="store_true", default=False
                          "when generating KDEs. This is done to prevent KDE "
                          "sampling issues at the edges of a histogram. This is "
                          "not done by default.")
-parser.add_argument("--plot", action='store_true', default=False,
-                    help="Specify whether to plot the samples and KDEs of the "
-                         "prior and posterior as a consistency check.")
+parser.add_argument("--plot-name", type=str, default=None, nargs='+',
+                    help="Specify the name(s) of the output plot. If a name is "
+                         "specified, a plot will be generated showing the "
+                         "prior and posterior KDEs and samples for each file. "
+                         "By default, a plot is not generated. One name is "
+                         "required per file specified by '--input-file'.")
 
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
 # read in the posterior of given parameter
-### FIXME: ideally the parameters argument only reads in one parameter
-### Or maybe we allow for multiple SDDR calcs at a time? for now throw error
 if len(opts.parameters) > 1:
     raise ValueError("Multiple parameters specified. Only one parameter is "
                      "accepted at a time")
@@ -135,37 +136,43 @@ for file in opts.input_file:
             bounds = Bounds(min_bound = opts.prior_min,
                             max_bound = opts.prior_max,
                             cyclic = opts.prior_cyclic)
-        kws = {param: bounds}
-        prior = distributions.distribs[opts.prior_name](**kws)
+        prior_name = opts.prior_name
     else:
-        prior = prior_from_config(cp)
-        bounds = prior.bounds[param]
+        full_prior = prior_from_config(cp)
+        bounds = full_prior.bounds[param]
+        prior_name = cp.get_opt_tag('prior', 'name', param)
+
+    kws = {param: bounds}
+    prior = distributions.distribs[prior_name](**kws)
     prior_samples = prior.rvs(opts.kde_samples)[param]
 
     # read in posterior samples
-    pos = fp.read_samples([param])[param]
+    pos_samples = fp.read_samples([param])[param]
 
     # if in log scale, rescale the distributions
     if 'log' in prior.name:
-        pos = numpy.log10(pos)
-        prior_samples = numpy.log10(prior_samples)
+        pos = numpy.log10(pos_samples)
+        pri = numpy.log10(prior_samples)
         null = numpy.log10(null)
         bounds = Bounds(min_bound = numpy.log10(bounds.min),
                         max_bound = numpy.log10(bounds.max),
                         cyclic = bounds.cyclic)
+    else:
+        pos = pos_samples
+        pri = prior_samples
 
     # reflect at bounds if specified
     net_pos = pos
-    net_pri = prior_samples
+    net_pri = pri
     if opts.reflect_kde_on_left:
-        left_pos = bounds.min - abs(bounds.min - pos)
+        left_pos = 2*bounds.min - pos
         net_pos = numpy.append(net_pos, left_pos)
-        left_pri = bounds.min - abs(bounds.min - prior_samples)
+        left_pri = 2*bounds.min - pri
         net_pri = numpy.append(net_pri, left_pri)
     if opts.reflect_kde_on_right:
-        right_pos = bounds.max + abs(bounds.max - pos)
+        right_pos = 2*bounds.max - pos
         net_pos = numpy.append(net_pos, right_pos)
-        right_pri = bounds.max + abs(bounds.max - prior_samples)
+        right_pri = 2*bounds.max - pri
         net_pri = numpy.append(net_pri, right_pri)
 
     # generate KDEs
@@ -183,34 +190,54 @@ for file in opts.input_file:
     B *= B_norm
 
     # plotting
-    if opts.plot:
+    if opts.plot_name is not None:
+        if len(opts.plot_name) != len(opts.input_file):
+            raise KeyError(f"Number of plot names ({opts.plot_name}) "
+                           f"does not match number of input files "
+                           f"({opts.input_file})")
         import matplotlib.pyplot as plt
+
+        print(prior.name)
         if "log" not in prior.name:
-            vals, bins, _ = plt.hist(pos, bins=50, density=True, alpha=0.4,
-                                     label='Posterior Samples')
-            plt.hist(prior_samples, bins=50, density=True, alpha=0.4,
+            # non-log distributions
+            vals, bins, _ = plt.hist(pos, bins=100, density=True, alpha=0.4,
+                                     label="Posterior Samples")
+            plt.hist(pri, bins=bins, density=True, alpha=0.4,
                      label="Prior Samples")
             plt.plot(bins, pos_pdf(bins)/pos_norm, color='green',
                      label="Posterior KDE")
             plt.plot(bins, prior_pdf(bins)/prior_norm, color='red',
                      label="Prior KDE")
         else:
-            bins = numpy.linspace(bounds.min, bounds.max, 50)
-            plt.hist(net_pos, bins=bins, density=True, alpha=0.4,
-                     label='Posterior Samples')
-            plt.hist(net_pri, bins=bins, density=True, alpha=0.4,
+            # special handling for log distributions
+            bins = numpy.logspace(bounds.min, bounds.max, 100)
+            log_bins = numpy.log10(bins)
+            plt.hist(10**pos, bins=bins, density=True, alpha=0.4,
+                     label="Posterior Samples")
+            plt.hist(10**pri, bins=bins, density=True, alpha=0.4,
                      label="Prior Samples")
-            plt.plot(bins, pos_pdf.evaluate(bins)/pos_norm, color='green',
+            # convert log scale KDEs to linear scale
+            # p(x) = p(y) / (x ln 10), where y = log x
+            jac = 1 / bins / numpy.log(10)
+            pos_plot = pos_pdf(log_bins) * jac
+            pri_plot = prior_pdf(log_bins) * jac
+            pos_plot_norm = numpy.trapezoid(pos_plot, bins)
+            pri_plot_norm = numpy.trapezoid(pri_plot, bins)
+            plt.plot(bins, pos_plot/pos_plot_norm, color='green',
                      label="Posterior KDE")
-            plt.plot(bins, prior_pdf.evaluate(bins)/prior_norm, color='red',
+            plt.plot(bins, pri_plot/pri_plot_norm, color='red',
                      label="Prior KDE")
-            #plt.xscale('log')
+            plt.xscale('log')
+
         f = os.path.basename(file)
         plt.title(f"Posterior and Prior of {param} from {f}")
+        plt.xlabel(f"{param}")
         plt.legend()
-        name, _ = os.path.splitext(f)
-        plt.savefig(f'plot-{name}.png')
+        idx = opts.input_file.index(file)
+        plt.savefig(f'{opts.plot_name[idx]}')
+        plt.close() 
 
+    # print output
     print(f"File: {file}")
     if B > 1e-3:
         print(f"Bayes factor: {B[0]:.3f}")
