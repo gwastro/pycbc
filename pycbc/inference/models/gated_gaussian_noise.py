@@ -35,6 +35,7 @@ from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator,
                              catch_waveform_error)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
+from .tools import marginalize_likelihood
 
 
 class BaseGatedGaussian(BaseGaussianNoise):
@@ -1005,11 +1006,10 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
-            generator_class = generator.FDomainDetFrameGenerator,
             **self.static_params)
     
     def get_waveforms(self):
-        r"""Generate the waveform modes.
+        r"""Generate the waveforms.
         """
         if self._current_wfs is None:
             params = self.current_params
@@ -1027,12 +1027,22 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         return self._current_wfs
 
     def get_gated_waveforms(self):
-        """Putting in a dummy function for now since we're not actually gating
-        the waveforms beforehand. This should probably be replaced with an
-        actual implementation once we're sure this model works.
+        r"""Generate the gated waveforms.
         """
-        # FIXME: actually put something here
-        pass
+        wfs = self.get_waveforms()
+        out = {}
+        # apply the gate
+        for det, h in wfs.items():
+            ht = h.to_timeseries()
+            invpsd = self._invpsds[det]
+            gate_times = self.get_gate_times()
+            gatestartdelay, dgatedelay = gate_times[det]
+            ht = ht.gate(gatestartdelay + dgatedelay/2,
+                            window=dgatedelay/2, copy=False,
+                            invpsd=invpsd, method='paint')
+            h = ht.to_frequencyseries()
+            out[det] = h
+        return out
     
     @property
     def _extra_stats(self):
@@ -1050,10 +1060,11 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         gated_data = self.get_gated_data()
         # gating params
         gate_times = self.get_gate_times()
-        # cycle over
-        logL = 0.
-        x_net = 0.
-        y_net = 0.
+        # cycle over all detectors
+        norm_net = 0.
+        hh_net = 0.
+        hd_net = 0j
+        dd_net = 0.
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -1063,13 +1074,10 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # overwhiten the gated data in this detector
             invpsd = self._invpsds[det]
             d = data[det]
-            d_gated = gated_data[det] * invpsd
+            d_gated = gated_data[det]
             # gate params in this detector
             gatestartdelay, dgatedelay = gate_times[det]
-            # calculate the normalization term
-            start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index, end_index)
-            # gate and whiten the waveforms
+            # whiten the waveforms
             h = wfs[det]
             h_gated = h.to_timeseries()
             h_gated = h_gated.gate(gatestartdelay + dgatedelay/2,
@@ -1078,36 +1086,22 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             h_gated = h_gated.to_frequencyseries()
             h_gated *= invpsd
             # evaluate the inner products
-            dd = d[slc].inner(d_gated[slc]) # <d, d>
-            hh = h[slc].inner(h_gated[slc]) # <h, h>
-            hd = h[slc].inner(d_gated[slc]) # O(d, h)
-            dh = d[slc].inner(h_gated[slc]) # O(h, d)
-            # evaluate the constant
-            # each inner product carries a term 4*df for the full integral
-            df = invpsd.delta_f
-            C = -2*df*(dd.real + hh.real)
-            # evaluate x and y in the Bessel fn
-            # divide by factor of 2 to account for cross terms
-            x = 2*df*(hd.real + dh.real)
-            y = 2*df*(hd.imag - dh.imag)
-            x_net += x
-            y_net += y
-            # add constant and this detector's normalization to log likelihood
-            logL += C
-            logL += norm
-            print(f'df: {df}')
-            print(f'C: {C}, x: {x}, y: {y}')
-            print(f'dd: {dd}, hd: {hd}, dh: {dh}')
-            print(f'h1h1: {hh}')
-            print(f'logL (before det sum): {logL}')
-        # evaluate the Bessel fn over all detectors
-        A = numpy.sqrt(x_net*x_net + y_net*y_net)
-        logL += numpy.log(special.i0e(A)) + abs(A)
-        print(f'A: {A}, logL (after det sum): {logL}')
-        # save the maxL phase for the ref mode
-        maxl_phase = numpy.angle(x_net + 1j*y_net)
+            hh = h[slc].inner(h_gated[slc]).real # <h, h>
+            hd = h_gated[slc].inner(d[slc]) # O(h, d)
+            dd = d_gated[slc].inner(d[slc]).real # <d, d>
+            hh_net += hh
+            hd_net += hd
+            dd_net += dd
+            # get the normalization in this detector
+            norm_net += self.det_lognorm(det)
+        # get the maxL phase
+        maxl_phase = numpy.angle(hd_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
-        return logL
+        # get the marginalized log likelihood ratio
+        loglr = marginalize_likelihood(hd, hh, phase=True)
+        # get the noise likelihood
+        lognl = -2 * invpsd.delta_f * dd_net
+        return norm_net + loglr + lognl
 
     @property
     def multi_signal_support(self):
