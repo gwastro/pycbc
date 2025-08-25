@@ -25,14 +25,14 @@
 # =============================================================================
 #
 """Estimates the Bayes factor using the Savage-Dickey density ratio from a
-given posterior file.
+given posterior file. 
 
 The Savage-Dickey ratio is defined with respect to a single parameter. The
 ratio compares two models: a null hypothesis, where the parameter of interest
 is fixed to one value, and a model where this parameter is allowed to vary. The
 SD ratio is computed by dividing the value of the variable parameter posterior
 by the value of the prior at the null point. Qualitatively, this indicates the
-probability with which the null hypothesis is true. Bayes factors in favor
+probability with which the null hypothesis is true. Bayes factor in favor
 of the null hypothesis can be approximated by the Savage-Dickey ratio. We can
 invert this to estimate the Bayes factor in favor of the variable model.
 
@@ -40,7 +40,7 @@ As an GW analysis example, say we wish to evaluate the presence of a QNM
 overtone in the ringdown of a CBC signal. The null hypothesis states that the
 QNM is not present, indicated by a QNM amplitude of zero. We can therefore
 estimate the Bayes factor in favor of overtone detection by taking the ratio of
-the amplitude prior to the QNM amplitude posterior at 0.
+the  amplitude prior to the QNM amplitude posterior at 0.
 
 Inputting multiple files evaluates the SD ratio for each file with respect to
 the specified parameter. Only one parameter is accepted, and a null value is
@@ -70,11 +70,15 @@ parser.add_argument("--kde-bandwidth", type=float, default=0.01,
                          "'smooth' the KDEs are. Lower values lead to smoother "
                          "KDEs; higher values lead to more 'jagged' KDEs but "
                          "will potentially capture more structure. Use "
-                         "'--plot-name' to aid in fine-tuning this.")
+                         "'--plot' to aid in fine-tuning this.")
 parser.add_argument("--prior-name", type=str, default=None,
                     help="The type of prior distribution to generate. "
-                         "By default, the prior is read from the input "
-                         "posterior file(s).")
+                         "Accepts valid prior names from the distributions "
+                         "module (e.g. 'uniform', 'uniform_log10', etc.). "
+                         "If specifying a name, a min and max must also be "
+                         "specified using --prior-min and --prior-max "
+                         "respectively. By default, the prior is read from "
+                         "the input posterior file(s).")
 parser.add_argument("--prior-min", type=float, default=None,
                     help="The minimum value of the prior if specifying "
                          "--prior-name. By default (i.e. if prior-name is not "
@@ -138,6 +142,10 @@ for file in opts.input_file:
                             cyclic = opts.prior_cyclic)
         prior_name = opts.prior_name
     else:
+        if opts.prior_min is not None:
+            raise ValueError("Must specify --prior-name when using --prior-min")
+        if opts.prior_max is not None:
+            raise ValueError("Must specify --prior-name when using --prior-max")
         full_prior = prior_from_config(cp)
         bounds = full_prior.bounds[param]
         prior_name = cp.get_opt_tag('prior', 'name', param)
@@ -234,7 +242,7 @@ for file in opts.input_file:
         plt.legend()
         idx = opts.input_file.index(file)
         plt.savefig(f'{opts.plot_name[idx]}')
-        plt.close()
+        plt.close() 
 
     # print output
     print(f"File: {file}")
