@@ -134,15 +134,15 @@ if onSrc is None:
         seg_dir, fail_criterion=offSrc)
     logging.info("Making segment plot and exiting.")
     sys.exit()
-else:
-    plot_met = make_grb_segments_plot(
-        wflow, sciSegs, triggertime, triggername, seg_dir,
-        coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
-    segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
-                               file_url=plot_met[3])
-    segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
-    sciSegs = offSrc
-    all_files.append(segs_plot)
+
+plot_met = make_grb_segments_plot(
+    wflow, sciSegs, triggertime, triggername, seg_dir,
+    coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
+segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
+                           file_url=plot_met[3])
+segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
+sciSegs = offSrc
+all_files.append(segs_plot)
 
 if len(sciSegs) == 1:
     logging.info("Generating a single IFO search.")
