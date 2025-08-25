@@ -1085,8 +1085,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                                    invpsd=invpsd, method='paint')
             h_gated = h_gated.to_frequencyseries()
             # overwhiten waveforms and data
-            h_gated *= invpsd
-            d_gated *= invpsd
+            h_gated *= 4 * invpsd.delta_f * invpsd
+            d_gated *= 4 * invpsd.delta_f * invpsd
             # evaluate the inner products
             hh = h[slc].inner(h_gated[slc]).real # <h, h>
             hd = h[slc].inner(d_gated[slc]) # O(h, d)
@@ -1100,11 +1100,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         maxl_phase = numpy.angle(hd_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
-        hh_net *= 4 * invpsd.delta_f
-        hd_net *= 4 * invpsd.delta_f
         loglr = marginalize_likelihood(hd_net, hh_net, phase=True)
-        # get the noise likelihood
-        dd_net *= 4 * invpsd.delta_f
         print(hh_net, hd_net, dd_net)
         return norm_net + loglr - 0.5 * dd_net
 
