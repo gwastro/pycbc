@@ -1073,22 +1073,24 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             slc = slice(self._kmin[det], self._kmax[det])
             # overwhiten the gated data in this detector
             invpsd = self._invpsds[det]
-            d = data[det]
-            d_gated = gated_data[det]
+            d = data[det].copy()
+            d_gated = gated_data[det].copy()
             # gate params in this detector
             gatestartdelay, dgatedelay = gate_times[det]
-            # whiten the waveforms
-            h = wfs[det]
+            # gate the waveforms
+            h = wfs[det].copy()
             h_gated = h.to_timeseries()
             h_gated = h_gated.gate(gatestartdelay + dgatedelay/2,
                                    window=dgatedelay/2, copy=True,
                                    invpsd=invpsd, method='paint')
             h_gated = h_gated.to_frequencyseries()
+            # overwhiten waveforms and data
             h_gated *= invpsd
+            d_gated *= invpsd
             # evaluate the inner products
             hh = h[slc].inner(h_gated[slc]).real # <h, h>
-            hd = h_gated[slc].inner(d[slc]) # O(h, d)
-            dd = d_gated[slc].inner(d[slc]).real # <d, d>
+            hd = h[slc].inner(d_gated[slc]) # O(h, d)
+            dd = d[slc].inner(d_gated[slc]).real # <d, d>
             hh_net += hh
             hd_net += hd
             dd_net += dd
@@ -1098,10 +1100,13 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         maxl_phase = numpy.angle(hd_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
-        loglr = marginalize_likelihood(hd, hh, phase=True)
+        hh_net *= 4 * invpsd.delta_f
+        hd_net *= 4 * invpsd.delta_f
+        loglr = marginalize_likelihood(hd_net, hh_net, phase=True)
         # get the noise likelihood
-        lognl = -2 * invpsd.delta_f * dd_net
-        return norm_net + loglr + lognl
+        dd_net *= 4 * invpsd.delta_f
+        print(hh_net, hd_net, dd_net)
+        return norm_net + loglr - 0.5 * dd_net
 
     @property
     def multi_signal_support(self):
