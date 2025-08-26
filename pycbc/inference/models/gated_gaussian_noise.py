@@ -1095,13 +1095,18 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             hd_net += hd
             dd_net += dd
             # get the normalization in this detector
-            norm_net += self.det_lognorm(det)
+            if self.normalize:
+                start_index, end_index = self.gate_indices(det)
+            else:
+                start_index = end_index = None
+            norm_net += self.det_lognorm(det, start_index, end_index)
         # get the maxL phase
         maxl_phase = numpy.angle(hd_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
         loglr = marginalize_likelihood(hd_net, hh_net, phase=True)
         print(hh_net, hd_net, dd_net)
+        print(loglr, -0.5*dd_net, norm_net)
         return norm_net + loglr - 0.5 * dd_net
 
     @property
