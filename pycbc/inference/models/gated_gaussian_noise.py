@@ -1105,8 +1105,6 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
         loglr = marginalize_likelihood(hd_net, hh_net, phase=True)
-        print(hh_net, hd_net, dd_net)
-        print(loglr, -0.5*dd_net, norm_net)
         return norm_net + loglr - 0.5 * dd_net
 
     @property
