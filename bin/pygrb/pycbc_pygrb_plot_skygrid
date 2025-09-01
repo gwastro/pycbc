@@ -30,6 +30,7 @@ import h5py
 from matplotlib import pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import rc
+from matplotlib.ticker import MaxNLocator
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
@@ -47,8 +48,8 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 
 
 def define_rows_cols_subplot(nplots):
-    cols = int(numpy.sqrt(nplots + 1))
-    rows = int(numpy.sqrt(nplots + 1))
+    cols = int(numpy.ceil(numpy.sqrt(nplots)))
+    rows = int(numpy.ceil(nplots/cols))
     return cols, rows
 
 # =============================================================================
@@ -78,9 +79,9 @@ for outdir in outdirs:
 #Extract all informations from sky grid
 with h5py.File(f"{sky_grid}","r") as f:
     ra , dec = f['ra'][:], f['dec'][:]
-    dist = f.attrs['input_distribution'][0:25]+"../"+f.attrs['input_distribution'][-32:]
+    dist = f.attrs['input_distribution']
     input_dist = eval("pycbc.distributions."+dist)
-    samples = input_dist.rvs(100000)
+    samples = input_dist.rvs(1000000)
     input_ra, input_dec = samples['ra'], samples['dec'] 
     ifos = f.attrs["detectors"]
     detectors = [Detector(d) for d in ifos]
@@ -89,15 +90,15 @@ with h5py.File(f"{sky_grid}","r") as f:
 xlabel = "RA (deg)"
 ylabel = "Dec (deg)"
 
-uni_points = pycbc.distributions.UniformSky().rvs(100000)
+uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
 
 ant_pat = {}
 quad_ant = {}
 
-
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = numpy.remainder(uni_points['ra'] + 2*numpy.pi, 2*numpy.pi)
 uni_ra[uni_ra > numpy.pi] -= 2*numpy.pi
+uni_dec = uni_points["dec"]
 
 in_ra = numpy.remainder(input_ra+ 2*numpy.pi, 2*numpy.pi)
 in_ra[in_ra > numpy.pi] -= 2*numpy.pi
@@ -105,54 +106,77 @@ in_ra[in_ra > numpy.pi] -= 2*numpy.pi
 grb_ra = numpy.remainder(ra + 2*numpy.pi, 2*numpy.pi)
 grb_ra[grb_ra > numpy.pi] -= 2*numpy.pi
 
-input_density, ra_edge, dec_edge = numpy.histogram2d(in_ra,input_dec, bins=100, range=[[-numpy.pi, numpy.pi], [-numpy.pi/2, numpy.pi/2]])
+#Generation of the input density for the mollweide plot 
+input_density, ra_edge, dec_edge = numpy.histogram2d(
+    in_ra,input_dec, bins=600, 
+    range=[[-numpy.pi, numpy.pi], [-numpy.pi/2, numpy.pi/2]]
+)
 
-cols , rows = define_rows_cols_subplot(len(detectors)+1)
-
+cols , rows = define_rows_cols_subplot(len(detectors)+2)
 fig, ax = plt.subplots(nrows=rows, ncols=cols,subplot_kw=dict(projection="mollweide"), figsize=(20,20))
 
-ax[0,0].pcolormesh(ra_edge,dec_edge,input_density.T,cmap="Greens", shading='auto', label="Input Distribution")
-ax[0,0].plot(grb_ra, dec, 'x', c='red', label="Sky Grid")
-cb = fig.colorbar(plt.cm.ScalarMappable(colors.Normalize(vmin=input_density.min(), vmax=input_density.max()), cmap="Greens"), location="bottom", ax=ax[0,0], label="Counts")
+#Sky grid over input distribution plot
+levels = MaxNLocator(nbins=100).tick_values(input_density.min(), input_density.max())
+ax[0,0].contourf(ra_edge[:-1],dec_edge[:-1],input_density.T, levels=levels,cmap="Greens")
+ax[0,0].plot(grb_ra, dec, 'x', c='red')
+cb = fig.colorbar(
+    plt.cm.ScalarMappable(colors.Normalize(vmin=input_density.min(), vmax=input_density.max()), cmap="Greens"), 
+    location="bottom", ax=ax[0,0], label="Counts"
+)
 ax[0,0].set_xlabel("RA (deg)")
 ax[0,0].set_ylabel("DEC (deg)")
 ax[0,0].legend()
 ax[0,0].set_title("Sky Grid over input distribution")
 ax[0,0].grid(True)
 
-ax_inset = fig.add_axes([0.6,0.6,0.3,0.3])
-ax_inset.set_xlim(numpy.degrees(grb_ra.min())-5, numpy.degrees(grb_ra.max())+5)
-ax_inset.set_ylim(numpy.degrees(dec.min())-5, numpy.degrees(dec.max())+5)
-ax_inset.pcolormesh(numpy.degrees(ra_edge),numpy.degrees(dec_edge),input_density.T,cmap="Greens", shading='auto', label="Input Distribution")
-ax_inset.plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c='red', label="Sky Grid")
-ax_inset.grid(True)
+#Hide the second "plot"
+ax[0,1].axis("Off")
 
-idx_col , idx_row = 0, 1 
-#Compute the antenna pattern on which we will scatter the sky grid
+#Zoomed in plot
+ax[0,1] = plt.subplot(rows,cols,2, projection="rectilinear")
+ax[0,1].set_xlim(numpy.degrees(in_ra.min())-5, numpy.degrees(in_ra.max())+5)
+ax[0,1].set_ylim(numpy.degrees(input_dec.min())-5, numpy.degrees(input_dec.max())+5)
+ax[0,1].contourf(numpy.degrees(ra_edge[:-1]),numpy.degrees(dec_edge[:-1]),input_density.T, levels=levels, cmap="Greens")
+ax[0,1].plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c='red')
+ax[0,1].set_xlabel("RA (Deg)")
+ax[0,1].set_ylabel("DEC (Deg)")
+ax[0,1].grid(True)
+
+if len(detectors) <= 2:
+    idx_col, idx_row = 0, 1 
+else:
+    idx_col, idx_row = 2, 0
+
+#Sky grid over Antenna pattern plots
 for det in detectors:
     if idx_col >= cols:
         idx_col = 0
         idx_row += 1
-    
-    ant_pat[det] = det.antenna_pattern(uni_points['ra'], uni_points['dec'], 0, t_gps=gps_time)
+    ant_pat[det] = det.antenna_pattern(uni_points["ra"], uni_points["dec"], 0, t_gps=gps_time)
     quad_ant[det] = numpy.sqrt(ant_pat[det][0]**2 + ant_pat[det][1]**2)
     if opts.verbose:
         sys.stdout.write("\nPlotting...\n")
         fig_name = os.path.split(os.path.abspath(outfile))[1]
         sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
-    sc = ax[idx_row,idx_col].scatter((uni_ra), (uni_points["dec"]), c=quad_ant[det], cmap="viridis")
-    ax[idx_row,idx_col].scatter((grb_ra), (dec),c='red', marker='.', label="Sky grid")
+    sc = ax[idx_row,idx_col].scatter(uni_ra, uni_dec, c=quad_ant[det], marker='.', cmap="viridis")
+    ax[idx_row,idx_col].scatter((grb_ra), (dec),c='red', marker='x')
     ax[idx_row,idx_col].set_title(f"Sky grid over {det.name} antenna pattern")
-    plt.colorbar(sc, label="(F+² + Fx²)", location="bottom")
+    plt.colorbar(sc, ax=ax[idx_row,idx_col], label=r"$\sqrt{F_+^2 + F_\times^2}$", location="bottom")
     ax[idx_row,idx_col].grid(True)
     ax[idx_row,idx_col].legend()
     idx_col += 1
-    print(idx_col, idx_row)
+
+#Hiding axis on which there are no plot
+if len(detectors)+2 < rows*cols:
+    ax[-1,-1].axis("Off")
+    if len(detectors)+2 < rows*cols - 1:
+        ax[-1,-2].axis("Off")
 
 # Wrap up
-#plt.tight_layout()
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=plot_caption)
 plt.close()
+
+
 
 
