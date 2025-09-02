@@ -279,7 +279,7 @@ info_table_node, grb_info_table = _workflow.make_pygrb_info_table(
 html_nodes.append(info_table_node)
 # Plot the search grid
 plot_node, skygrid_plot = _workflow.make_pygrb_plot(
-    wflow, 'pygrb_plot_skygrid', out_dir, trig_file=offsource_file,
+    wflow, 'pygrb_plot_skygrid', out_dir,
     sky_grid_file=sky_grid_file
 )
 plotting_nodes.append(plot_node)
