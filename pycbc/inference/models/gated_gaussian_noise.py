@@ -415,9 +415,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         Parameters
         ----------
         gatestart : float
-            Geocentric start time of the gate.
+            Start time of the gate.
         gateend : float
-            Geocentric end time of the gate.
+            End time of the gate.
         ra : float
             Right ascension of the signal.
         dec : float
@@ -433,10 +433,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
-            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(
-                ra, dec, gatestart)
-            gateenddelay = gateend + thisdet.time_delay_from_earth_center(
-                ra, dec, gateend)
+            refdet = self.current_params.get('tc_ref_frame', 'geocentric')
+            gatestartdelay = thisdet.arrival_time(gatestart, ra, dec, refdet)
+            gateenddelay = thisdet.arrival_time(gateend, ra, dec, refdet)
             dgatedelay = gateenddelay - gatestartdelay
             gatetimes[det] = (gatestartdelay, dgatedelay)
         return gatetimes
