@@ -211,6 +211,7 @@ logging.info("Offsource: %s", offsource_file.storage_path)
 logging.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
 
 sky_grid_file = os.path.join(start_rundir, args.sky_grid)
+sky_grid_file = _workflow.resolve_url_to_file(sky_grid_file)
 logging.info("Using the following sky grid : %s", sky_grid_file)
 # File instance of the template bank file
 bank_file = os.path.join(start_rundir, args.bank_file)
