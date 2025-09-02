@@ -71,7 +71,7 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     from pycbc.results.color import ifo_color
 
     ifos = wkflow.ifos
-    if len(science_segs.keys()) == 0:
+    if len(sum(science_segs.values(), [])) == 0:
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
                                   int(wkflow.cp.get("workflow", "end-time")))
     else:
