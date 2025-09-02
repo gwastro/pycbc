@@ -97,9 +97,6 @@ ylabel = "DEC (deg)"
 
 uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
 
-ant_pat = {}
-quad_ant = {}
-
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = ra_to_ra_mollweide(uni_points["ra"])
 uni_dec = uni_points["dec"]

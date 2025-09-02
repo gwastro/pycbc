@@ -804,7 +804,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
-    node.add_opt('--sky-grid', sky_grid_file)
+    node.add_input_opt('--sky-grid', sky_grid_file)
     node.add_opt('--segment-dir', seg_dir)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
