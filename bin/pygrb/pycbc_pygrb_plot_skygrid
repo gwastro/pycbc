@@ -175,7 +175,3 @@ if len(detectors)+2 < rows*cols:
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=plot_caption)
 plt.close()
-
-
-
-
