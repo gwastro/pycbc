@@ -235,21 +235,25 @@ for fp in fps:
             except KeyError:
                 out.attrs[key] = val
                 current_val = format_attr(out.attrs[key])
-            ### FIXME: this error is being called when running on extracted
-            ### posteriors. Sample keys are identical between files but
-            ### are out of order. Is there a way to enforce order among files?
-            ### Does the order matter?
             if not isthesame(current_val, val):
                 raise ValueError("cannot combine all files; file attr {} is "
                                  "not the same across all files ({} vs {})"
                                  .format(key, current_val, val))
 
 # store what parameters were renamed
+# if using wildcard parameters, alphabetize the parameters
+labels_keys = list(labels.keys())
+labels_keys.sort()
+labels = {i: labels[i] for i in labels_keys}
 out.attrs['remapped_params'] = list(labels.items())
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
-    if opts.mutually_exclusive_priors and opts.overlapping_priors:
+    if len(opts.input_file) == 1:
+        # there's only one file; just return what's in the input
+        out.attrs['log_evidence'] = fps[0].log_evidence[0]
+        out.attrs['dlog_evidence'] = fps[0].log_evidence[1]
+    elif opts.mutually_exclusive_priors and opts.overlapping_priors:
         raise ValueError("Cannot simultaneously specify "
                          "--overlapping-priors and "
                          "--mutually-exclusive-priors; select one based "
