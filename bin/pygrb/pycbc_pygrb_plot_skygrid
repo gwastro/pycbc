@@ -124,7 +124,6 @@ cb = fig.colorbar(
 )
 ax[0,0].set_xlabel("RA (deg)")
 ax[0,0].set_ylabel("DEC (deg)")
-ax[0,0].legend()
 ax[0,0].set_title("Sky Grid over input distribution")
 ax[0,0].grid(True)
 
@@ -133,8 +132,8 @@ ax[0,1].axis("Off")
 
 #Zoomed in plot
 ax[0,1] = plt.subplot(rows,cols,2, projection="rectilinear")
-ax[0,1].set_xlim(numpy.degrees(in_ra.min())-5, numpy.degrees(in_ra.max())+5)
-ax[0,1].set_ylim(numpy.degrees(input_dec.min())-5, numpy.degrees(input_dec.max())+5)
+ax[0,1].set_xlim(numpy.degrees(grb_ra.min())-5, numpy.degrees(grb_ra.max())+5)
+ax[0,1].set_ylim(numpy.degrees(dec.min())-5, numpy.degrees(dec.max())+5)
 ax[0,1].contourf(numpy.degrees(ra_edge[:-1]),numpy.degrees(dec_edge[:-1]),input_density.T, levels=levels, cmap="Greens")
 ax[0,1].plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c='red')
 ax[0,1].set_xlabel("RA (Deg)")
@@ -162,7 +161,6 @@ for det in detectors:
     ax[idx_row,idx_col].set_title(f"Sky grid over {det.name} antenna pattern")
     plt.colorbar(sc, ax=ax[idx_row,idx_col], label=r"$\sqrt{F_+^2 + F_\times^2}$", location="bottom")
     ax[idx_row,idx_col].grid(True)
-    ax[idx_row,idx_col].legend()
     idx_col += 1
 
 #Hiding axis on which there are no plot
