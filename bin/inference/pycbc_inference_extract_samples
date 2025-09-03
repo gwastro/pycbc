@@ -85,9 +85,9 @@ parser.add_argument("--skip-groups", default=None, nargs="+",
                          "to write all groups if only one file is provided, "
                          "and all groups from the first file except "
                          "sampler_info if multiple files are provided.")
-parser.add_argument("--combine-via-sampling", action='store_true',
+parser.add_argument("--combine-via-sampling", action='store_true', 
                     default=False,
-                    help="Specify whether to combine the posteriors by "
+                    help="Specify whether to combine the posteriors by " 
                          "sampling. By default, extract_samples will dump all "
                          "samples from multiple inputs into one output file. "
                          "If this option is specified, the samples will "
@@ -97,7 +97,35 @@ parser.add_argument("--combine-via-sampling", action='store_true',
                          "the resulting posterior file with this option "
                          "specified will have twice as many points from input "
                          "1 than input 2. The output will have the same "
-                         "number of samples as the smallest input file.")
+                         "number of samples as the smallest input file. "
+                         "An error is thrown if this option is specified and "
+                         "any of the input files does not have a log_evidence "
+                         "attribute (e.g., the file used a sampler like emcee "
+                         "that does not report log evidence).")
+parser.add_argument("--mutually-exclusive-priors", action='store_true',
+                    default=False,
+                    help="If specifying --combine-via-sampling, specify "
+                         "whether to treat priors as mutually exclusive. By "
+                         "default, the provided input files are assumed to "
+                         "have identical priors, and their evidences will be "
+                         "averaged. If this option is specified, the priors "
+                         "are assumed to be different and non-overlapping, "
+                         "and the evidences will be added together. This "
+                         "option is mutually exclusive with "
+                         "--overlapping-priors; an error will be thrown if "
+                         "both are specified.")
+parser.add_argument("--overlapping-priors", action='store_true',
+                    default=False,
+                    help="If specifying --combine-via-sampling, specify "
+                         "whether to treat priors as overlapping. By "
+                         "default, the provided input files are assumed to "
+                         "have identical priors, and their evidences will be "
+                         "averaged. If this option is specified, the priors "
+                         "are assumed to be different and overlapping, and "
+                         "the evidences will not be combined at all. This "
+                         "option is mutually exclusive with "
+                         "--mutually-exclusive-priors; an error will be "
+                         "thrown if both are specified.")
 
 opts = parser.parse_args()
 
@@ -124,28 +152,35 @@ if len(opts.input_file) > 1:
         len_list = []
         raw_samps_list = []
         weights_list = []
-        # get samples and parameters from each file
         for file in opts.input_file:
             fp = loadfile(file, 'r')
-            logz, dlogz = fp.log_evidence
-            file_samps = fp.read_samples(list(fp['samples'].keys()))
+            # get evidence from each file if possible
+            try:
+                logz, dlogz = fp.log_evidence
+            except KeyError:
+                raise ValueError(f"Cannot combine evidences; file {file} "
+                                 "does not have a log_evidence attr")
             logz_list.append(logz)
             dlogz_list.append(dlogz)
-            len_list.append(len(file_samps))
+            # get samples from each file
+            file_samps = fp.read_samples(list(fp['samples'].keys()))
             raw_samps_list.append(file_samps)
-        # compute sampling weight from evidences
+            # get the number of samples from each file
+            len_list.append(len(file_samps))
+        # compute sampling weights from evidences
         logz_net = logsumexp(logz_list)
         len_net = sum(len_list)
         out_size = min(len_list)
         for i in range(len(opts.input_file)):
+            # weight each file's samples according to logz
             logwt = logz_list[i] - logz_net
-            weights_list.append([numpy.exp(logwt)/len_list[i] for j in
+            weights_list.append([numpy.exp(logwt)/len_list[i] for j in 
                                  range(len_list[i])])
         # randomly sample indexes from all samples
         weights = numpy.concatenate(weights_list)
-        idx = numpy.random.choice(int(len_net), size=out_size, replace=True,
+        idx = numpy.random.choice(int(len_net), size=out_size, replace=True, 
                                   p=weights)
-        samples = {param: raw_samples[param][idx] for param in
+        samples = {param: raw_samples[param][idx] for param in 
                    raw_samples.keys()}
     else:
         samples = {labels[p]: numpy.concatenate([s[p] for s in samples])
@@ -158,7 +193,7 @@ else:
 
 # create the file
 outtype = PosteriorFile.name
-out = loadfile(opts.output_file, 'w', filetype=outtype)
+out = loadfile(opts.output_file, 'w', filetype=outtype) 
 
 # write the samples
 out.write_samples(samples)
@@ -214,8 +249,24 @@ out.attrs['remapped_params'] = list(labels.items())
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
-    out.attrs['log_evidence'] = logsumexp(logz_list)
-    out.attrs['dlog_evidence'] = numpy.sqrt(sum([i**2 for i in dlogz_list]))
+    if opts.mutually_exclusive_priors and opts.overlapping_priors:
+        raise ValueError("Cannot simultaneously specify "
+                         "--overlapping-priors and "
+                         "--mutually-exclusive-priors; select one based "
+                         "on input priors.")
+    elif opts.mutually_exclusive_priors:
+        # add together the evidences; quadrature sum the residuals
+        out.attrs['log_evidence'] = logsumexp(logz_list)
+        out.attrs['dlog_evidence'] = numpy.sqrt(sum([i**2 for i in dlogz_list]))
+    elif opts.overlapping_priors:
+        # do not combine the evidences; insert numerical placeholders
+        out.attrs['log_evidence'] = numpy.float64(-numpy.inf)
+        out.attrs['dlog_evidence'] = numpy.float64(-numpy.inf)
+    else:
+        # average the evidences; quadrature sum and scale the residuals
+        n = len(opts.input_file)
+        out.attrs['log_evidence'] = logsumexp(logz_list) - numpy.log(n)
+        out.attrs['dlog_evidence'] = numpy.sqrt(sum([i**2 for i in dlogz_list])) / n
 
 # write the other groups using the first file
 fp = fps[0]
