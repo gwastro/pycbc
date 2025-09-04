@@ -1,4 +1,4 @@
-from . frame import (locations_to_cache, read_frame,
+from . frame import (locations_to_cache, read_frame, read_hdf5_frame,
                      query_and_read_frame, frame_paths, write_frame,
                      DataBuffer, StatusBuffer, iDQBuffer)
 
