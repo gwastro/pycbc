@@ -590,7 +590,13 @@ if plot_title is None:
 
 # Wrap up
 plt.tight_layout()
-pycbc.results.save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
-                                     title=plot_title, caption=plot_caption)
+pycbc.results.save_fig_with_metadata(
+    fig,
+    outfile,
+    cmd=' '.join(sys.argv),
+    title=plot_title,
+    caption=plot_caption,
+    fig_kwds={'dpi: 150'}
+)
 plt.close()
 logging.info("Plot complete.")
