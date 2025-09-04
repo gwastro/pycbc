@@ -433,8 +433,10 @@ fnd_col = cmap(0)
 fnd_col = np.array([fnd_col])
 if opts.missed_on_top:
     z_orders = ['found louder', 'found quieter', 'vetoed', 'missed']
+    marker_sizes = [15, 40, 40, 40]
 else:
     z_orders = ['missed', 'vetoed', 'found louder', 'found quieter']
+    marker_sizes = [10, 10, 30, 40]
 
 if missed_inj[x_qty].size and missed_inj[y_qty].size:
     ax.scatter(
@@ -442,7 +444,7 @@ if missed_inj[x_qty].size and missed_inj[y_qty].size:
         missed_inj[y_qty],
         c="black",
         marker="x",
-        s=10,
+        s=marker_sizes[0],
         zorder=z_orders.index('missed') / len(z_orders) + 1
     )
 if vetoed[x_qty].size:
@@ -451,7 +453,7 @@ if vetoed[x_qty].size:
         vetoed[y_qty],
         c="red",
         marker="x",
-        s=10,
+        s=marker_sizes[1],
         zorder=z_orders.index('vetoed') / len(z_orders) + 1
     )
 if found_louder[x_qty].size:
@@ -460,7 +462,7 @@ if found_louder[x_qty].size:
         found_louder[y_qty],
         c=fnd_col,
         marker="+",
-        s=30,
+        s=marker_sizes[2],
         zorder=z_orders.index('found louder') / len(z_orders) + 1
     )
 if found_quieter[x_qty].size:
@@ -476,7 +478,7 @@ if found_quieter[x_qty].size:
         c=found_quieter['fap'][FM],
         cmap=cmap,
         norm=fq_norm,
-        s=40,
+        s=marker_sizes[3],
         edgecolor="w",
         linewidths=1,
         zorder=z_orders.index('found quieter') / len(z_orders) + 1
