@@ -174,13 +174,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
-parser.add_argument("--found-missed-file",
-                    help="The hdf injection results file", required=True)
-parser.add_argument("--trig-file",
-                    help="The hdf offsource trigger file", required=True)
-parser.add_argument("--trigger-time",
-                    help="The GPS time of the external trigger", required=True)
+
 # FIXME: not all of these work
 # TODO: effective distance
 admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
@@ -191,6 +185,15 @@ admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
                              'dec', 'ra', 'coaphase', 'coa_phase',
                              'eff_site_dist', 'eff_dist',
                              'effsitedist', 'effdist']
+admitted_vars = sorted(set(admitted_vars))
+
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
+parser.add_argument("--found-missed-file",
+                    help="The hdf injection results file", required=True)
+parser.add_argument("--trig-file",
+                    help="The hdf offsource trigger file", required=True)
+parser.add_argument("--trigger-time",
+                    help="The GPS time of the external trigger", required=True)
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_vars,
                     help="Quantity to plot on the horizontal axis. " +
