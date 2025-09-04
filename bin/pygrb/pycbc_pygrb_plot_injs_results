@@ -33,6 +33,7 @@ import pycbc.results
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.detector import Detector
 
 plt.switch_backend('Agg')
 matplotlib.rc("image")
@@ -151,6 +152,18 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
                 data_dict[key] = complete_sky_error_data(injs, tag)
+            elif key == 'eff_dist':
+                eff_dists = np.empty((injs[tag + '/tc'].size, len(ifos)))
+                for i, ifo in enumerate(ifos):
+                    eff_dists[:, i] = Detector(ifo).effective_distance(
+                        injs[tag + '/distance'],
+                        injs[tag + '/ra'],
+                        injs[tag + '/dec'],
+                        injs[tag + '/polarization'],
+                        injs[tag + '/tc'],
+                        injs[tag + '/inclination'],
+                    )
+                data_dict[key] = 1 / (1 / eff_dists).sum(axis=1)
             else:
                 data_dict[key] = injs[tag+'/'+key]
         except KeyError:
