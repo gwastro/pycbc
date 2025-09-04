@@ -478,7 +478,7 @@ if found_quieter[x_qty].size:
         norm=fq_norm,
         s=40,
         edgecolor="w",
-        linewidths=2.0,
+        linewidths=1,
         zorder=z_orders.index('found quieter') / len(z_orders) + 1
     )
     cb = plt.colorbar(p, label="p-value")
