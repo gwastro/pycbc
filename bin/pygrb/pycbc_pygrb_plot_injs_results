@@ -443,7 +443,7 @@ if missed_inj[x_qty].size and missed_inj[y_qty].size:
         c="black",
         marker="x",
         s=10,
-        z_order=z_orders.index('missed')
+        zorder=z_orders.index('missed') / len(z_orders) + 1
     )
 if vetoed[x_qty].size:
     ax.scatter(
@@ -452,7 +452,7 @@ if vetoed[x_qty].size:
         c="red",
         marker="x",
         s=10,
-        z_order=z_orders.index('vetoed')
+        zorder=z_orders.index('vetoed') / len(z_orders) + 1
     )
 if found_louder[x_qty].size:
     ax.scatter(
@@ -461,7 +461,7 @@ if found_louder[x_qty].size:
         c=fnd_col,
         marker="+",
         s=30,
-        z_order=z_orders.index('found louder')
+        zorder=z_orders.index('found louder') / len(z_orders) + 1
     )
 if found_quieter[x_qty].size:
     if args.linear_colormap:
@@ -479,7 +479,7 @@ if found_quieter[x_qty].size:
         s=40,
         edgecolor="w",
         linewidths=2.0,
-        z_order=z_orders.index('found quieter')
+        zorder=z_orders.index('found quieter') / len(z_orders) + 1
     )
     cb = plt.colorbar(p, label="p-value")
 
