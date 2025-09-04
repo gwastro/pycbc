@@ -59,6 +59,7 @@ _aliases['gwtc-1'] = 'GWTC-1-confident'
 _aliases['gwtc-2'] = 'GWTC-2'
 _aliases['gwtc-2.1'] = 'GWTC-2.1-confident'
 _aliases['gwtc-3'] = 'GWTC-3-confident'
+_aliases['gwtc-4.0'] = 'GWTC-4.0'
 
 def list_catalogs():
     """Return a list of possible GW catalogs to query"""

@@ -757,6 +757,8 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
     job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
+    return job
+
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
                                  inj_files, bank_file, seg_dir,
