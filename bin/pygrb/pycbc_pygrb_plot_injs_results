@@ -464,7 +464,7 @@ if found_louder[x_qty].size:
         zorder=z_orders.index('found louder') / len(z_orders) + 1
     )
 if found_quieter[x_qty].size:
-    if args.linear_colormap:
+    if opts.linear_colormap:
         fq_norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
     else:
         fq_norm = matplotlib.colors.LogNorm(
