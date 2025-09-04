@@ -226,11 +226,17 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                     end_time=opt.gps_end_time+opt.pad_data,
                     sieve=sieve)
         elif opt.frame_files or opt.frame_cache:
-            strain = pycbc.frame.read_frame(
-                    frame_source, opt.channel_name,
-                    start_time=opt.gps_start_time-opt.pad_data,
-                    end_time=opt.gps_end_time+opt.pad_data,
-                    sieve=sieve)
+            if pycbc.frame.frame._is_gwf(frame_source[0]):
+                strain = pycbc.frame.read_frame(
+                        frame_source, opt.channel_name,
+                        start_time=opt.gps_start_time-opt.pad_data,
+                        end_time=opt.gps_end_time+opt.pad_data,
+                        sieve=sieve)
+            if pycbc.frame.frame._is_hdf5(frame_source[0]):
+                strain = pycbc.frame.read_hdf5_frame(
+                        frame_source, opt.channel_name,
+                        start_time=opt.gps_start_time-opt.pad_data,
+                        end_time=opt.gps_end_time+opt.pad_data)
         elif opt.hdf_store:
             strain = pycbc.frame.read_store(opt.hdf_store, opt.channel_name,
                                             opt.gps_start_time - opt.pad_data,
