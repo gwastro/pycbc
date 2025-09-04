@@ -445,7 +445,8 @@ if missed_inj[x_qty].size and missed_inj[y_qty].size:
         c="black",
         marker="x",
         s=marker_sizes[0],
-        zorder=z_orders.index('missed') / len(z_orders) + 1
+        zorder=z_orders.index('missed') / len(z_orders) + 1,
+        label="Missed"
     )
 if vetoed[x_qty].size:
     ax.scatter(
@@ -454,7 +455,8 @@ if vetoed[x_qty].size:
         c="red",
         marker="x",
         s=marker_sizes[1],
-        zorder=z_orders.index('vetoed') / len(z_orders) + 1
+        zorder=z_orders.index('vetoed') / len(z_orders) + 1,
+        label="Vetoed"
     )
 if found_louder[x_qty].size:
     ax.scatter(
@@ -463,7 +465,8 @@ if found_louder[x_qty].size:
         c=fnd_col,
         marker="+",
         s=marker_sizes[2],
-        zorder=z_orders.index('found louder') / len(z_orders) + 1
+        zorder=z_orders.index('found louder') / len(z_orders) + 1,
+        label="Found louder than bg"
     )
 if found_quieter[x_qty].size:
     if opts.linear_colormap:
@@ -481,11 +484,13 @@ if found_quieter[x_qty].size:
         s=marker_sizes[3],
         edgecolor="w",
         linewidths=1,
-        zorder=z_orders.index('found quieter') / len(z_orders) + 1
+        zorder=z_orders.index('found quieter') / len(z_orders) + 1,
+        label="Found within the bg"
     )
     cb = plt.colorbar(p, label="p-value")
 
 ax.grid()
+ax.legend(loc=(0, 0), ncols=4, fontsize="x-small", frameon=False)
 
 # Handle axis limits when plotting spins
 if "spin" in x_qty and missed_inj['spin1_a'].size:
