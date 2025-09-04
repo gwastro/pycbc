@@ -155,7 +155,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 data_dict[key] = injs[tag+'/'+key]
         except KeyError:
             # raise NotImplemented(key+' not allowed: returning empty entry')
-            logging.info("%s/%s not allowed yet", tag, key)
+            logging.warning("%s/%s not allowed yet", tag, key)
 
     # Include information needed to apply vetoes and reweighted SNR cut
     if tag == 'found':
@@ -205,6 +205,8 @@ parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
 parser.add_argument("--colormap", default='cividis_r',
                     help="Type of colormap to be used for the plots.")
+parser.add_argument("--linear-colormap", action='store_true',
+                    help="Use a linear instead of log colormap.")
 parser.add_argument("--far-type", choices=('inclusive', 'exclusive'),
                     default='inclusive',
                     help="Type of far to plot for the color. Choices are "
@@ -223,9 +225,9 @@ x_qty = process_var_strings(opts.x_variable)
 y_qty = process_var_strings(opts.y_variable)
 
 if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
-    err_msg = "A value for --ifo must be provided for "
-    err_msg += "site specific effective distance"
-    parser.error(err_msg)
+    parser.error(
+        "A value for --ifo must be provided for site-specific effective distance"
+    )
 
 # Store options used multiple times in local variables
 outfile = opts.output_file
@@ -386,19 +388,14 @@ if found_quieter[x_qty].size:
 # Make plots
 # ==========
 
-# Info for site-specific plots
-sitename = {'G1': 'GEO', 'H1': 'Hanford', 'L1': 'Livingston', 'V1': 'Virgo',
-            'K1': 'KAGRA', 'A1': 'India Aundha'}
-
 # Take care of axes labels
 axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'mtotal': "Total mass (solar masses)",
                     'q': "Mass ratio",
                     'distance': "Distance (Mpc)",
-                    'eff_site_dist': f"{sitename.get(opts.ifo)} effective "
-                                     "distance (Mpc)",
+                    'eff_site_dist': f"{opts.ifo} effective distance (Mpc)",
                     'eff_dist': "Inverse sum of effective distances (Mpc)",
-                    'end_time': f"Time since {grb_time} (s)",
+                    'end_time': "GPS time (s)",
                     'sky_error': "Rec. sky error (radians)",
                     'coa_phase': "Phase of complex SNR (radians)",
                     'latitude': "Latitude (degrees)",
@@ -419,56 +416,73 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2y': "Spin y-component of 2nd binary component",
                     'spin2z': "Spin z-component of 2nd binary component"}
 
-x_label = axis_labels_dict[x_qty]
-y_label = axis_labels_dict[y_qty]
-
 fig = plt.figure()
-xscale = "log" if opts.x_log else "linear"
-yscale = "log" if opts.y_log else "linear"
 ax = fig.gca()
-ax.set_xscale(xscale)
-ax.set_yscale(yscale)
-ax.set_xlabel(x_label)
-ax.set_ylabel(y_label)
+ax.set_xscale("log" if opts.x_log else "linear")
+ax.set_yscale("log" if opts.y_log else "linear")
+ax.set_xlabel(axis_labels_dict[x_qty])
+ax.set_ylabel(axis_labels_dict[y_qty])
 
 # Define p-value colour
-cmap = plt.get_cmap('cividis_r')
+cmap = plt.get_cmap(args.colormap)
 # Set color for out-of-range values
 # cmap.set_over('g')
 
 # Define the 'found' injection colour
 fnd_col = cmap(0)
 fnd_col = np.array([fnd_col])
-if not opts.missed_on_top:
-    if missed_inj[x_qty].size and missed_inj[y_qty].size:
-        ax.scatter(missed_inj[x_qty], missed_inj[y_qty],
-                   c="black", marker="x", s=10)
-    if vetoed[x_qty].size:
-        ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=10)
-    if found_louder[x_qty].size:
-        ax.scatter(found_louder[x_qty], found_louder[y_qty],
-                   c=fnd_col, marker="+", s=30)
-    if found_quieter[x_qty].size:
-        p = ax.scatter(found_quieter[x_qty][FM], found_quieter[y_qty][FM],
-                       c=found_quieter['fap'][FM],
-                       cmap=cmap, vmin=0, vmax=1, s=40,
-                       edgecolor="w", linewidths=2.0)
-        cb = plt.colorbar(p, label="p-value")
-elif opts.missed_on_top:
-    if found_louder[x_qty].size:
-        ax.scatter(found_louder[x_qty], found_louder[y_qty],
-                   c=fnd_col, marker="+", s=15)
-    if found_quieter[x_qty].size:
-        p = ax.scatter(found_quieter[x_qty][MF], found_quieter[y_qty][MF],
-                       c=found_quieter['fap'][MF],
-                       cmap=cmap, vmin=0, vmax=1, s=40,
-                       edgecolor="w", linewidths=2.0)
-        cb = plt.colorbar(p, label="p-value")
-    if vetoed[x_qty].size:
-        ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=40)
-    if missed_inj[x_qty].size and missed_inj[y_qty].size:
-        ax.scatter(missed_inj[x_qty], missed_inj[y_qty],
-                   c="black", marker="x", s=40)
+if opts.missed_on_top:
+    z_orders = ['found louder', 'found quieter', 'vetoed', 'missed']
+else:
+    z_orders = ['missed', 'vetoed', 'found louder', 'found quieter']
+
+if missed_inj[x_qty].size and missed_inj[y_qty].size:
+    ax.scatter(
+        missed_inj[x_qty],
+        missed_inj[y_qty],
+        c="black",
+        marker="x",
+        s=10,
+        z_order=z_orders.index('missed')
+    )
+if vetoed[x_qty].size:
+    ax.scatter(
+        vetoed[x_qty],
+        vetoed[y_qty],
+        c="red",
+        marker="x",
+        s=10,
+        z_order=z_orders.index('vetoed')
+    )
+if found_louder[x_qty].size:
+    ax.scatter(
+        found_louder[x_qty],
+        found_louder[y_qty],
+        c=fnd_col,
+        marker="+",
+        s=30,
+        z_order=z_orders.index('found louder')
+    )
+if found_quieter[x_qty].size:
+    if args.linear_colormap:
+        fq_norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+    else:
+        fq_norm = matplotlib.colors.LogNorm(
+            vmin=min(found_quieter['fap'][FM]), vmax=1
+        )
+    p = ax.scatter(
+        found_quieter[x_qty][FM],
+        found_quieter[y_qty][FM],
+        c=found_quieter['fap'][FM],
+        cmap=cmap,
+        norm=fq_norm,
+        s=40,
+        edgecolor="w",
+        linewidths=2.0,
+        z_order=z_orders.index('found quieter')
+    )
+    cb = plt.colorbar(p, label="p-value")
+
 ax.grid()
 
 # Handle axis limits when plotting spins
@@ -524,17 +538,19 @@ if "incl" in x_qty or "incl" in y_qty:
 # Take care of caption
 plot_caption = opts.plot_caption
 if plot_caption is None:
-    plot_caption = "A black cross indicates no trigger was found "
-    plot_caption += "coincident with the injection.\n"
-    plot_caption += "A red cross indicates a trigger was found "
-    plot_caption += "coincident with the injection but it was vetoed.\n"
-    plot_caption += "A yellow plus indicates that a trigger was found "
-    plot_caption += "coincident with the injection and it was louder "
-    plot_caption += "than all events in the offsource.\n"
-    plot_caption += "A coloured circle indicates that a trigger was "
-    plot_caption += "found coincident with the injection but it was "
-    plot_caption += "not louder than all offsource events. The colour "
-    plot_caption += "bar gives the p-value of the trigger."
+    plot_caption = (
+        "A black cross indicates no trigger was found "
+        "coincident with the injection.\n"
+        "A red cross indicates a trigger was found "
+        "coincident with the injection but it was vetoed.\n"
+        "A yellow plus indicates that a trigger was found "
+        "coincident with the injection and it was louder "
+        "than all events in the offsource.\n"
+        "A coloured circle indicates that a trigger was "
+        "found coincident with the injection but it was "
+        "not louder than all offsource events. The colour "
+        "bar gives the p-value of the trigger."
+    )
 
 # Take care of title
 plot_title = opts.plot_title
