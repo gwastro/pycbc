@@ -93,7 +93,7 @@ with h5py.File(sky_grid, "r") as f:
     gps_time = f.attrs['ref_gps_time']
 
 xlabel = "RA (deg)"
-ylabel = "Dec (deg)"
+ylabel = "DEC (deg)"
 
 uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
 
@@ -115,15 +115,15 @@ cols , rows = define_rows_cols_subplot(len(detectors)+2)
 fig, ax = plt.subplots(nrows=rows, ncols=cols,subplot_kw=dict(projection="mollweide"), figsize=(20,20))
 
 #Sky grid over input distribution plot
-levels = MaxNLocator(nbins=100).tick_values(input_density.min(), input_density.max())
+levels = MaxNLocator(nbins=100).tick_values(0, input_density.max())
 ax[0,0].contourf(ra_edge[:-1],dec_edge[:-1],input_density.T, levels=levels,cmap="Greens")
 ax[0,0].plot(grb_ra, dec, 'x', c='red')
 cb = fig.colorbar(
     plt.cm.ScalarMappable(colors.Normalize(vmin=0, vmax=input_density.max()), cmap="Greens"), 
     location="bottom", ax=ax[0,0], label="Counts"
 )
-ax[0,0].set_xlabel("RA (deg)")
-ax[0,0].set_ylabel("DEC (deg)")
+ax[0,0].set_xlabel(xlabel)
+ax[0,0].set_ylabel(ylabel)
 ax[0,0].set_title("Sky Grid over input distribution")
 ax[0,0].grid(True)
 
@@ -136,8 +136,8 @@ ax[0,1].set_xlim(numpy.degrees(grb_ra.min())-5, numpy.degrees(grb_ra.max())+5)
 ax[0,1].set_ylim(numpy.degrees(dec.min())-5, numpy.degrees(dec.max())+5)
 ax[0,1].contourf(numpy.degrees(ra_edge[:-1]),numpy.degrees(dec_edge[:-1]),input_density.T, levels=levels, cmap="Greens")
 ax[0,1].plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c='red')
-ax[0,1].set_xlabel("RA (Deg)")
-ax[0,1].set_ylabel("DEC (Deg)")
+ax[0,1].set_xlabel(xlabel)
+ax[0,1].set_ylabel(ylabel)
 ax[0,1].grid(True)
 
 if len(detectors) <= 2:
@@ -152,10 +152,7 @@ for det in detectors:
         idx_row += 1
     ant_pat = det.antenna_pattern(uni_points["ra"], uni_points["dec"], 0, t_gps=gps_time)
     quad_ant = numpy.sqrt(ant_pat[0]**2 + ant_pat[1]**2)
-    if opts.verbose:
-        logging.info("\nPlotting...\n")
-        fig_name = os.path.split(os.path.abspath(outfile))[1]
-        logging.info(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
+    logging.info('Plotting %s', os.path.basename(outfile))
     sc = ax[idx_row,idx_col].scatter(uni_ra, uni_dec, c=quad_ant, marker='.', cmap="viridis")
     ax[idx_row,idx_col].scatter((grb_ra), (dec),c='red', marker='x')
     ax[idx_row,idx_col].set_title(f"Sky grid over {det.name} antenna pattern")
