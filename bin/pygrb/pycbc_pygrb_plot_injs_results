@@ -424,7 +424,7 @@ ax.set_xlabel(axis_labels_dict[x_qty])
 ax.set_ylabel(axis_labels_dict[y_qty])
 
 # Define p-value colour
-cmap = plt.get_cmap(args.colormap)
+cmap = plt.get_cmap(opts.colormap)
 # Set color for out-of-range values
 # cmap.set_over('g')
 
