@@ -589,14 +589,20 @@ if plot_title is None:
         plot_title += " and " + title_dict[y_qty]
 
 # Wrap up
+
 plt.tight_layout()
+
+fig_kwds = {}
+if outfile.endswith('.png'):
+    fig_kwds['dpi'] = 200
+
 pycbc.results.save_fig_with_metadata(
     fig,
     outfile,
     cmd=' '.join(sys.argv),
     title=plot_title,
     caption=plot_caption,
-    fig_kwds={'dpi: 150'}
+    fig_kwds=fig_kwds
 )
 plt.close()
 logging.info("Plot complete.")
