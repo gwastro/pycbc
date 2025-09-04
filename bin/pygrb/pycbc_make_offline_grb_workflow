@@ -490,6 +490,7 @@ if post_proc_method == "PYGRB_OFFLINE":
                                                                inj_find_files,
                                                                full_bank_file,
                                                                seg_dir,
+                                                               skygrid_file[0],
                                                                veto_file=veto_file)
         logging.info('Leaving results module')
 
