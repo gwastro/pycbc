@@ -33,6 +33,7 @@ from gwdatafind import find_urls as find_frame_urls
 
 import pycbc
 from pycbc.types import TimeSeries, zeros
+from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.frame.frame')
 
@@ -98,6 +99,17 @@ def _is_gwf(file_path):
     try:
         with open(file_path, 'rb') as f:
             if f.read(4) == b'IGWD':
+                return True
+    except IOError:
+        pass
+    return False
+
+def _is_hdf5(file_path):
+    """Test if a file is a frame file by checking if its contents begins with
+    the magic string '\x89HDF'."""
+    try:
+        with open(file_path, 'rb') as f:
+            if f.read(4) == b'\x89HDF':
                 return True
     except IOError:
         pass
@@ -263,7 +275,115 @@ def read_frame(location, channels, start_time=None,
         return all_data
     else:
         return _read_channel(channels, stream, start_time, duration)
+    
+def read_hdf5_frame(location, channels, start_time=None,
+               end_time=None, duration=None):
+    """Read time series from frame data.
 
+    Using the `location`, which can either be a frame file  ".hdf"/".hdf5"/"h5" or a
+    frame cache ".hdf"/".hdf5"/"h5", read in the data for the given channel(s) and output
+    as a TimeSeries or list of TimeSeries.
+
+    Parameters
+    ----------
+    location : string
+        A source of gravitational wave frames. Either a frame filename
+        (can include pattern), a list of frame files, or frame cache file.
+    channels : string or list of strings
+        Either a string that contains the channel name or a list of channel
+        name strings.
+    start_time : {None, LIGOTimeGPS}, optional
+        The gps start time of the time series. Defaults to reading from the
+        beginning of the available frame(s).
+    end_time : {None, LIGOTimeGPS}, optional
+        The gps end time of the time series. Defaults to the end of the frame.
+        Note, this argument is incompatible with `duration`.
+    duration : {None, float}, optional
+        The amount of data to read in seconds. Note, this argument is
+        incompatible with `end`.
+
+    Returns
+    -------
+    Frame Data: TimeSeries or list of TimeSeries
+        A TimeSeries or a list of TimeSeries, corresponding to the data from
+        the frame file for a given channel or channels.
+    """
+    start_time_opts = [
+    lambda: f['meta']['GPSstart'][()],
+    lambda: f[ch].attrs['x0'],
+    lambda: f['data'].attrs['start_time']]
+
+    data_duration_opts = [
+    lambda: f['meta']['Duration'][()],
+    lambda: f[ch].attrs['dx'] * len(f['CE20:INJ']),
+    lambda: f['data'].attrs['delta_t'] * len(f['data'])]
+
+    if end_time and duration:
+        raise ValueError("end time and duration are mutually exclusive")
+
+    if type(location) is list:
+        locations = location
+    else:
+        locations = [location]
+
+    if type(channels) is list:
+        channels = channels
+    else:
+        channels = [channels]
+
+    all_data = []
+    for i, fname in enumerate(locations):
+        with HFile(fname, "r") as f:
+            ch = channels[i].split(':')[1]
+            if ch not in f:
+                raise KeyError(f"Channel '{ch}' not found in {fname}")
+
+            for st_opt in start_time_opts:
+                try:
+                    starts = st_opt()
+                    break
+                except (KeyError, AttributeError):
+                    pass
+            else:
+                raise KeyError("No valid start time key found for start time in {}".format(fname))
+            
+            for data_dur_opt in data_duration_opts:
+                try:
+                    data_duration = data_dur_opt()
+                    break
+                except (KeyError, AttributeError):
+                    pass
+            else:
+                raise KeyError("No valid start time key found for duration in {}".format(fname))            
+
+            ends = starts + data_duration
+
+            if start_time and starts > start_time:
+                raise ValueError("Cannot read data segment before {}".format(starts))
+
+            if end_time and ends < end_time:
+                raise ValueError("Cannot read data segment past {}".format(ends))
+
+            data = f[ch][:]
+
+            sample_rate = len(data) / (ends - starts)
+            if start_time:
+                start_inx = int((start_time - starts) * sample_rate)
+                epoch = start_time
+            else:
+                start_inx = 0
+                epoch = starts
+            if duration:
+                end_inx = start_inx + int(duration * sample_rate)
+            elif end_time:
+                end_inx = int((end_time - starts) * sample_rate)
+            else:
+                end_inx = len(data) - 1
+
+            all_data.append(TimeSeries(data[start_inx:end_inx], delta_t=1.0/sample_rate,
+                      epoch=epoch))
+    return all_data if len(all_data) > 1 else all_data[0]
+    
 def frame_paths(
     frame_type, start_time, end_time, server=None, url_type='file', site=None
 ):
