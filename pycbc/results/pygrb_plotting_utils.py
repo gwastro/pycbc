@@ -217,12 +217,10 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
             trigs[1] = numpy.array(trigs[1])
         mask = (trigs[0] >= xmin) & (trigs[0] <= xmax)
         norm = matplotlib.colors.LogNorm()
-        gsize = 300
+        gsize = 150
         if mask.sum() == 0:
             ## Necessary to make plot appear even in absence of points
             norm = matplotlib.colors.LogNorm(vmin=1, vmax=10)
-        elif mask.sum() < 100:
-            gsize = 100  
         ax = cax.hexbin(trigs[0][mask], trigs[1][mask], gridsize=gsize, xscale=scales[0],
                         yscale=scales[1], lw=0.04, mincnt=1,
                         norm=norm, zorder=2)
