@@ -101,7 +101,10 @@ parser.add_argument("--combine-via-sampling", action='store_true',
                          "An error is thrown if this option is specified and "
                          "any of the input files does not have a log_evidence "
                          "attribute (e.g., the file used a sampler like emcee "
-                         "that does not report log evidence).")
+                         "that does not report log evidence). This option "
+                         "assumes that the priors of all files do not "
+                         "overlap; we cannot properly sample the priors in "
+                         "this case.")
 parser.add_argument("--mutually-exclusive-priors", action='store_true',
                     default=False,
                     help="If specifying --combine-via-sampling, specify "
@@ -109,23 +112,7 @@ parser.add_argument("--mutually-exclusive-priors", action='store_true',
                          "default, the provided input files are assumed to "
                          "have identical priors, and their evidences will be "
                          "averaged. If this option is specified, the priors "
-                         "are assumed to be different and non-overlapping, "
-                         "and the evidences will be added together. This "
-                         "option is mutually exclusive with "
-                         "--overlapping-priors; an error will be thrown if "
-                         "both are specified.")
-parser.add_argument("--overlapping-priors", action='store_true',
-                    default=False,
-                    help="If specifying --combine-via-sampling, specify "
-                         "whether to treat priors as overlapping. By "
-                         "default, the provided input files are assumed to "
-                         "have identical priors, and their evidences will be "
-                         "averaged. If this option is specified, the priors "
-                         "are assumed to be different and overlapping, and "
-                         "the evidences will not be combined at all. This "
-                         "option is mutually exclusive with "
-                         "--mutually-exclusive-priors; an error will be "
-                         "thrown if both are specified.")
+                         "are assumed to be non-overlapping across files.")
 
 opts = parser.parse_args()
 
@@ -176,7 +163,7 @@ if len(opts.input_file) > 1:
             logwt = logz_list[i] - logz_net
             weights_list.append([numpy.exp(logwt)/len_list[i] for j in 
                                  range(len_list[i])])
-        # randomly sample indexes from all samples
+        # randomly sample indices from all samples
         weights = numpy.concatenate(weights_list)
         idx = numpy.random.choice(int(len_net), size=out_size, replace=True, 
                                   p=weights)
@@ -253,19 +240,10 @@ if opts.combine_via_sampling:
         # there's only one file; just return what's in the input
         out.attrs['log_evidence'] = fps[0].log_evidence[0]
         out.attrs['dlog_evidence'] = fps[0].log_evidence[1]
-    elif opts.mutually_exclusive_priors and opts.overlapping_priors:
-        raise ValueError("Cannot simultaneously specify "
-                         "--overlapping-priors and "
-                         "--mutually-exclusive-priors; select one based "
-                         "on input priors.")
     elif opts.mutually_exclusive_priors:
         # add together the evidences; quadrature sum the residuals
         out.attrs['log_evidence'] = logsumexp(logz_list)
         out.attrs['dlog_evidence'] = numpy.sqrt(sum([i**2 for i in dlogz_list]))
-    elif opts.overlapping_priors:
-        # do not combine the evidences; insert numerical placeholders
-        out.attrs['log_evidence'] = numpy.float64(-numpy.inf)
-        out.attrs['dlog_evidence'] = numpy.float64(-numpy.inf)
     else:
         # average the evidences; quadrature sum and scale the residuals
         n = len(opts.input_file)
