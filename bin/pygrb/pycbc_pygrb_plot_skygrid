@@ -26,12 +26,17 @@ import sys
 import os
 import logging
 import numpy
+import h5py
 from matplotlib import pyplot as plt
+import matplotlib.colors as colors
 from matplotlib import rc
+from matplotlib.ticker import MaxNLocator
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.detector import Detector
+import pycbc.distributions
 
 plt.switch_backend('Agg')
 rc('font', size=14)
@@ -42,18 +47,27 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
 
 
+def define_rows_cols_subplot(nplots):
+    cols = int(numpy.ceil(numpy.sqrt(nplots)))
+    rows = int(numpy.ceil(nplots/cols))
+    return cols, rows
+
+def ra_to_ra_mollweide(ra):
+    mollweide_ra = numpy.remainder(ra + 2*numpy.pi, 2*numpy.pi)
+    mollweide_ra[mollweide_ra > numpy.pi] -= 2*numpy.pi
+    return mollweide_ra
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
-parser.add_argument("-t", "--trig-file", action="store",
-                    default=None, required=True,
-                    help="The location of the trigger file")
+parser.add_argument("--sky-grid", required=True,
+                    help="The location of the sky grid file")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
 
-trig_file = os.path.abspath(opts.trig_file)
+sky_grid = os.path.abspath(opts.sky_grid)
 outfile = opts.output_file
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
@@ -67,36 +81,92 @@ for outdir in outdirs:
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
 
-# Extract IFOs
-ifos = ppu.extract_ifos(trig_file)
-
-# Load trigger data: the sky-grid points are not time-slid in the plot
-trig_data = ppu.load_data(trig_file, ifos, data_tag=None, slide_id=0)
-
-#
-# Generate sky grid plot
-#
+#Extract all informations from sky grid
+with h5py.File(sky_grid, "r") as f:
+    ra , dec = f['ra'][:], f['dec'][:]
+    dist = f.attrs['input_distribution']
+    input_dist = eval("pycbc.distributions."+dist)
+    samples = input_dist.rvs(1000000)
+    input_ra, input_dec = samples['ra'], samples['dec'] 
+    ifos = f.attrs["detectors"]
+    detectors = [Detector(d) for d in ifos]
+    gps_time = f.attrs['ref_gps_time']
 
 xlabel = "RA (deg)"
-ylabel = "Dec (deg)"
+ylabel = "DEC (deg)"
 
-if opts.verbose:
-    sys.stdout.write("\nPlotting...\n")
-    fig_name = os.path.split(os.path.abspath(outfile))[1]
-    sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
+uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
 
-fig = plt.figure()
-ax = fig.gca()
-ax.grid()
-ax.set_xlabel(xlabel)
-ax.set_ylabel(ylabel)
-# Trigger RA/Dec data is stored in radians, so convert to degrees
-ax.plot(numpy.rad2deg(trig_data['network/ra']),
-        numpy.rad2deg(trig_data['network/dec']),
-        'ko',
-        markerfacecolor='blue')
+#Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
+uni_ra = ra_to_ra_mollweide(uni_points["ra"])
+uni_dec = uni_points["dec"]
+
+in_ra = ra_to_ra_mollweide(input_ra)
+
+grb_ra = ra_to_ra_mollweide(ra)
+
+#Generation of the input density for the mollweide plot 
+input_density, ra_edge, dec_edge = numpy.histogram2d(
+    in_ra,input_dec, bins=600, 
+    range=[[-numpy.pi, numpy.pi], [-numpy.pi/2, numpy.pi/2]]
+)
+
+cols , rows = define_rows_cols_subplot(len(detectors)+2)
+fig, ax = plt.subplots(nrows=rows, ncols=cols,subplot_kw=dict(projection="mollweide"), figsize=(20,20))
+
+#Sky grid over input distribution plot
+levels = MaxNLocator(nbins=100).tick_values(0, input_density.max())
+ax[0,0].contourf(ra_edge[:-1],dec_edge[:-1],input_density.T, levels=levels,cmap="Greens")
+ax[0,0].plot(grb_ra, dec, 'x', c='red')
+cb = fig.colorbar(
+    plt.cm.ScalarMappable(colors.Normalize(vmin=0, vmax=input_density.max()), cmap="Greens"), 
+    location="bottom", ax=ax[0,0], label="Counts"
+)
+ax[0,0].set_xlabel(xlabel)
+ax[0,0].set_ylabel(ylabel)
+ax[0,0].set_title("Sky Grid over input distribution")
+ax[0,0].grid(True)
+
+#Hide the second "plot"
+ax[0,1].axis("Off")
+
+#Zoomed in plot
+ax[0,1] = plt.subplot(rows,cols,2, projection="rectilinear")
+ax[0,1].set_xlim(numpy.degrees(grb_ra.min())-5, numpy.degrees(grb_ra.max())+5)
+ax[0,1].set_ylim(numpy.degrees(dec.min())-5, numpy.degrees(dec.max())+5)
+ax[0,1].contourf(numpy.degrees(ra_edge[:-1]),numpy.degrees(dec_edge[:-1]),input_density.T, levels=levels, cmap="Greens")
+ax[0,1].plot(numpy.degrees(grb_ra), numpy.degrees(dec), 'x', c='red')
+ax[0,1].set_xlabel(xlabel)
+ax[0,1].set_ylabel(ylabel)
+ax[0,1].grid(True)
+
+if len(detectors) <= 2:
+    idx_col, idx_row = 0, 1 
+else:
+    idx_col, idx_row = 2, 0
+
+#Sky grid over Antenna pattern plots
+for det in detectors:
+    if idx_col >= cols:
+        idx_col = 0
+        idx_row += 1
+    ant_pat = det.antenna_pattern(uni_points["ra"], uni_points["dec"], 0, t_gps=gps_time)
+    quad_ant = numpy.sqrt(ant_pat[0]**2 + ant_pat[1]**2)
+    logging.info('Plotting %s', os.path.basename(outfile))
+    sc = ax[idx_row,idx_col].scatter(uni_ra, uni_dec, c=quad_ant, marker='.', cmap="viridis")
+    ax[idx_row,idx_col].scatter((grb_ra), (dec),c='red', marker='x')
+    ax[idx_row,idx_col].set_title(f"Sky grid over {det.name} antenna pattern")
+    plt.colorbar(sc, ax=ax[idx_row,idx_col], label=r"$\sqrt{F_+^2 + F_\times^2}$", location="bottom")
+    ax[idx_row,idx_col].grid(True)
+    idx_col += 1
+
+#Hiding axis on which there are no plot
+if len(detectors)+2 < rows*cols:
+    ax[-1,-1].axis("Off")
+    if len(detectors)+2 < rows*cols - 1:
+        ax[-1,-2].axis("Off")
+
 # Wrap up
-plt.tight_layout()
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=plot_caption)
 plt.close()
