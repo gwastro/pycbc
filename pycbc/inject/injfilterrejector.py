@@ -27,12 +27,15 @@ testing the "similarity" of templates and injections.
 """
 
 import numpy as np
+from igwn_segments import segment
+from igwn_segments import segmentlist
 from pycbc import DYN_RANGE_FAC
 from pycbc.filter import match
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.types import FrequencySeries, zeros
 from pycbc.types import MultiDetOptionAction
+from pycbc.types import positive_float
 
 _injfilterrejector_group_help = (
     "Options that, if injections are present in "
@@ -120,7 +123,8 @@ def insert_injfilterrejector_option_group(parser):
     injfilterrejector_group.add_argument(curr_arg, type=int, default=None,
                                          help=_injfilterer_flower_help)
     curr_arg = "--injection-filter-rejector-trigger-window"
-    injfilterrejector_group.add_argument(curr_arg, type=float, default=None,
+    injfilterrejector_group.add_argument(curr_arg, type=positive_float,
+                                         default=None,
                                          help=_injfilterer_trwindow_help)
 
 
@@ -154,7 +158,8 @@ def insert_injfilterrejector_option_group_multi_ifo(parser):
         metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
     curr_arg = "--injection-filter-rejector-trigger-window"
     injfilterrejector_group.add_argument(
-        curr_arg, type=float, default=None, help=_injfilterer_trwindow_help,
+        curr_arg, type=positive_float, default=None,
+        help=_injfilterer_trwindow_help,
         metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
 
 
@@ -260,19 +265,10 @@ class InjFilterRejector(object):
         return inj_filter_rejectors
 
     def get_inj_end_times(self):
-        """Return a list of the injection end times."""
+        """Return a list of the sorted injection end times."""
         if self._end_times is None:
-            self._end_times = []
-            for inj in self.injection_params.table:
-                if isinstance(inj, np.record):
-                    # hdf format file
-                    end_time = inj['tc']
-                else:
-                    # must be an xml file originally
-                    end_time = inj.geocent_end_time + \
-                        1E-9 * inj.geocent_end_time_ns
-                self._end_times.append(end_time)
-            self._end_times = np.array(self._end_times)
+            self._end_times = np.array(self.injection_params.end_times())
+            self._end_times.sort()
         return self._end_times
 
     # Written together with Google Gemini
@@ -282,6 +278,7 @@ class InjFilterRejector(object):
         determining if triggers are in injection times later.
         """
         window = self.inj_trigger_window
+        # This function returns sorted injection times
         inj_times = self.get_inj_end_times()
         if inj_times.size == 0:
             return np.empty((0, 2))
@@ -289,26 +286,10 @@ class InjFilterRejector(object):
         # Create individual intervals
         starts = inj_times - window
         ends = inj_times + window
-        intervals = np.c_[starts, ends]
+        intervals = segmentlist([segment(s,e) for s,e in zip(starts, ends)])
+        intervals.coalesce()
 
-        # Sort intervals by their start points
-        intervals = intervals[intervals[:, 0].argsort()]
-
-        merged_intervals = []
-        if intervals.shape[0] > 0:
-            current_merged_interval = intervals[0].copy()
-            for i in range(1, intervals.shape[0]):
-                if intervals[i, 0] <= current_merged_interval[1]:  # Overlap
-                    current_merged_interval[1] = max(
-                        current_merged_interval[1],
-                        intervals[i, 1]
-                    )
-                else:
-                    merged_intervals.append(current_merged_interval)
-                    current_merged_interval = intervals[i].copy()
-            merged_intervals.append(current_merged_interval) # Add the last one
-
-        return np.array(merged_intervals)
+        return np.array(intervals)
 
     # Written together with Google Gemini
     def find_indices_in_injection_intervals(self, trig_times):
@@ -342,11 +323,7 @@ class InjFilterRejector(object):
             # its corresponding position in 'is_matching' will become True.
             is_matching |= curr_interval_matches
 
-        # Get the actual indices where 'is_matching' is True
-        # numpy.where returns a tuple, we need the first element which is the array of indices
         return is_matching
-
-
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
         """Generate and a store a truncated representation of inj_waveform."""
