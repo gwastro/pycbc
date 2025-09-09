@@ -35,7 +35,7 @@ from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator,
                              catch_waveform_error)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
-from .tools import marginalize_likelihood
+from scipy.special import i0e
 
 
 class BaseGatedGaussian(BaseGaussianNoise):
@@ -1083,7 +1083,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                                    window=dgatedelay/2, copy=True,
                                    invpsd=invpsd, method='paint')
             h_gated = h_gated.to_frequencyseries()
-            # overwhiten waveforms and data
+            # overwhiten gated waveforms and data
             h_gated *= 4 * invpsd.delta_f * invpsd
             d_gated *= 4 * invpsd.delta_f * invpsd
             # evaluate the inner products
@@ -1103,7 +1103,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         maxl_phase = numpy.angle(hd_net)
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
-        loglr = marginalize_likelihood(hd_net, hh_net, phase=True)
+        loglr = -0.5 * hh_net
+        loglr += abs(hd_net) + numpy.log(i0e(abs(hd_net)))
         return norm_net + loglr - 0.5 * dd_net
 
     @property
