@@ -237,6 +237,8 @@ labels_keys.sort()
 labels = {i: labels[i] for i in labels_keys}
 if not opts.combine_via_sampling:
     out.attrs['remapped_params'] = list(labels.items())
+else:
+    skip_groups.append('remapped_params')
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
