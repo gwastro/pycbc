@@ -229,10 +229,14 @@ for fp in fps:
 
 # store what parameters were renamed
 # if using wildcard parameters, alphabetize the parameters
+### FIXME: skip if combining posteriors
+### When splitting a prior among multiple posteriors, the sample param is not
+### necessarily mapped to physical parameters in the same way across all files
 labels_keys = list(labels.keys())
 labels_keys.sort()
 labels = {i: labels[i] for i in labels_keys}
-out.attrs['remapped_params'] = list(labels.items())
+if not opts.combine_via_sampling:
+    out.attrs['remapped_params'] = list(labels.items())
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
