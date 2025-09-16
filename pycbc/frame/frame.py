@@ -311,12 +311,12 @@ def read_hdf5_frame(location, channels, start_time=None,
     start_time_opts = [
     lambda: f['meta']['GPSstart'][()],
     lambda: f[ch].attrs['x0'],
-    lambda: f['data'].attrs['start_time']]
+    lambda: f[ch].attrs['start_time']]
 
     data_duration_opts = [
     lambda: f['meta']['Duration'][()],
-    lambda: f[ch].attrs['dx'] * len(f['CE20:INJ']),
-    lambda: f['data'].attrs['delta_t'] * len(f['data'])]
+    lambda: f[ch].attrs['dx'] * len(f[ch]),
+    lambda: f[ch].attrs['delta_t'] * len(f[ch])]
 
     if end_time and duration:
         raise ValueError("end time and duration are mutually exclusive")
@@ -328,13 +328,15 @@ def read_hdf5_frame(location, channels, start_time=None,
 
     if type(channels) is list:
         channels = channels
+    elif len(locations) > 1:
+        channels = [channels]*len(locations)
     else:
         channels = [channels]
 
     all_data = []
     for i, fname in enumerate(locations):
         with HFile(fname, "r") as f:
-            ch = channels[i].split(':')[1]
+            ch = channels[i].split(':', 1)[1]
             if ch not in f:
                 raise KeyError(f"Channel '{ch}' not found in {fname}")
 
@@ -383,7 +385,79 @@ def read_hdf5_frame(location, channels, start_time=None,
             all_data.append(TimeSeries(data[start_inx:end_inx], delta_t=1.0/sample_rate,
                       epoch=epoch))
     return all_data if len(all_data) > 1 else all_data[0]
-    
+
+def read_frame_cache(location, channels, start_time=None,
+               end_time=None, duration=None, check_integrity=False,
+               sieve=None):
+    """Read time series from frame cache file.
+
+    Using the `location` to a frame cache ".gwf", ".hdf", ".hdf5", 
+    or ".h5" read in the data for the given channel(s) and output
+    as a TimeSeries or list of TimeSeries.
+
+    Parameters
+    ----------
+    location : string
+        A source of gravitational wave frames. Either a frame filename
+        (can include pattern), a list of frame files, or frame cache file.
+    channels : string or list of strings
+        Either a string that contains the channel name or a list of channel
+        name strings.
+    start_time : {None, LIGOTimeGPS}, optional
+        The gps start time of the time series. Defaults to reading from the
+        beginning of the available frame(s).
+    end_time : {None, LIGOTimeGPS}, optional
+        The gps end time of the time series. Defaults to the end of the frame.
+        Note, this argument is incompatible with `duration`.
+    duration : {None, float}, optional
+        The amount of data to read in seconds. Note, this argument is
+        incompatible with `end`.
+    check_integrity : {True, bool}, optional
+        Test the frame files for internal integrity.
+    sieve : string, optional
+        Selects only frames where the frame URL matches the regular
+        expression sieve
+
+    Returns
+    -------
+    Frame Data: TimeSeries or list of TimeSeries
+        A TimeSeries or a list of TimeSeries, corresponding to the data from
+        the frame cache for a given channel or channels.
+    """
+    hdf5_map = {
+        "hdf5": "hdf5",
+        "h5": "hdf5",
+        "hdf": "hdf5"
+    }
+
+    extensions = []
+    with open(location, "r") as f:
+        for line in f:
+            parts = line.strip().split()
+            if parts:
+                path = parts[-1]
+                ext = path.split(".")[-1].lower() if "." in path else ""
+                ext = hdf5_map.get(ext, ext)
+                extensions.append(ext)
+
+    unique_extensions = sorted(set(extensions))
+
+    if len(unique_extensions) == 1:
+        ext = unique_extensions[0]
+        if ext == "gwf":
+            return read_frame(location, channels, start_time, end_time, duration, check_integrity, sieve)
+        elif ext == "hdf5":
+            paths = []
+            with open(location, "r") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    paths.append(parts[-1])
+            return read_hdf5_frame(paths, channels, start_time, end_time, duration) 
+        else:
+            raise ValueError(f"Unsupported frame file extension '{ext}'")
+    else:
+        raise ValueError(f"Mixed frame file extensions in cache: {', '.join(unique_extensions)}")
+
 def frame_paths(
     frame_type, start_time, end_time, server=None, url_type='file', site=None
 ):
