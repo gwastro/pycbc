@@ -243,7 +243,7 @@ class _ModelManager(dict):
         subsequent calls to this will no re-add models.
         """
         if self.retrieve_plugins:
-            for plugin in entry_points('pycbc.inference.models'):
+            for plugin in entry_points(group='pycbc.inference.models'):
                 self.add_model(plugin.load())
             self.retrieve_plugins = False
 
