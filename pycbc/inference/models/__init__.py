@@ -21,7 +21,7 @@ assuming various noise models.
 
 
 import logging
-from pkg_resources import iter_entry_points as _iter_entry_points
+from importlib.metadata import entry_points
 from .base import BaseModel
 from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
@@ -243,8 +243,8 @@ class _ModelManager(dict):
         subsequent calls to this will no re-add models.
         """
         if self.retrieve_plugins:
-            for plugin in _iter_entry_points('pycbc.inference.models'):
-                self.add_model(plugin.resolve())
+            for plugin in entry_points('pycbc.inference.models'):
+                self.add_model(plugin.load())
             self.retrieve_plugins = False
 
     def __len__(self):
