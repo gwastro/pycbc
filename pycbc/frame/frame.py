@@ -458,6 +458,70 @@ def read_frame_cache(location, channels, start_time=None,
     else:
         raise ValueError(f"Mixed frame file extensions in cache: {', '.join(unique_extensions)}")
 
+def read_gw_data(location, channels, start_time=None,
+               end_time=None, duration=None, check_integrity=False,
+               sieve=None):
+    """Read time series from frame or frame cache file.
+
+    Using the `location` to a frame cache, ".gwf", ".hdf", ".hdf5", 
+    or ".h5" read in the data for the given channel(s) and output
+    as a TimeSeries or list of TimeSeries.
+
+    Parameters
+    ----------
+    location : string or list of strings
+        A source of gravitational wave frames. Either a frame filename
+        (can include pattern), a list of frame files, or frame cache file.
+    channels : string or list of strings
+        Either a string that contains the channel name or a list of channel
+        name strings.
+    start_time : {None, LIGOTimeGPS}, optional
+        The gps start time of the time series. Defaults to reading from the
+        beginning of the available frame(s).
+    end_time : {None, LIGOTimeGPS}, optional
+        The gps end time of the time series. Defaults to the end of the frame.
+        Note, this argument is incompatible with `duration`.
+    duration : {None, float}, optional
+        The amount of data to read in seconds. Note, this argument is
+        incompatible with `end`.
+    check_integrity : {True, bool}, optional
+        Test the frame files for internal integrity.
+    sieve : string, optional
+        Selects only frames where the frame URL matches the regular
+        expression sieve
+
+    Returns
+    -------
+    Frame Data: TimeSeries or list of TimeSeries
+        A TimeSeries or a list of TimeSeries, corresponding to the data from
+        the frame cache for a given channel or channels.
+    """
+    if type(location) is list:
+        locations = location
+    else:
+        locations = [location]
+
+    if type(channels) is list:
+        channels = channels
+    elif len(locations) > 1:
+        channels = [channels]*len(locations)
+    else:
+        channels = [channels]
+
+    for i, file_path in enumerate(locations):
+        _, file_name = os.path.split(file_path)
+        _, file_extension = os.path.splitext(file_name)
+
+        if file_extension in [".lcf", ".cache"]:
+            return read_frame_cache(file_path, channels[i], start_time, end_time, duration, check_integrity, sieve)
+        elif file_extension == ".gwf" or _is_gwf(file_path):
+            return read_frame(file_path, channels[i], start_time, end_time, duration, check_integrity, sieve)
+        elif file_extension in [".hdf", ".hdf5", ".h5"] or _is_hdf5(file_path):
+            return read_hdf5_frame(file_path, channels[i], start_time, end_time, duration)
+        else:
+            raise TypeError("Invalid location name")
+
+    
 def frame_paths(
     frame_type, start_time, end_time, server=None, url_type='file', site=None
 ):
