@@ -2,6 +2,7 @@
 """
 
 
+
 def add_custom_waveform(approximant, function, domain,
                         sequence=False, has_det_response=False,
                         force=False,):
@@ -97,34 +98,46 @@ def retrieve_waveform_plugins():
     """ Process external waveform plugins
     """
     from importlib.metadata import entry_points
+    import sys
 
+    # Check if the Python version is 3.10 or newer
+    if sys.version_info >= (3, 10):
+        # Use the modern syntax with the 'group' keyword argument
+        def get_entry_points(group_name):
+            return entry_points(group=group_name)
+    else:
+        # Use the older syntax for Python 3.9 and earlier
+        all_entry_points = entry_points()
+        def get_entry_points(group_name):
+            return all_entry_points.get(group_name, ())
+    
     # Check for fd waveforms (no detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd'):
+    for plugin in get_entry_points('pycbc.waveform.fd'):
         add_custom_waveform(plugin.name, plugin.load(), 'frequency')
 
     # Check for fd waveforms (has detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd_det'):
+    for plugin in get_entry_points('pycbc.waveform.fd_det'):
         add_custom_waveform(plugin.name, plugin.load(), 'frequency',
                             has_det_response=True)
 
     # Check for fd sequence waveforms (no detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd_sequence'):
+    for plugin in get_entry_points('pycbc.waveform.fd_sequence'):
         add_custom_waveform(plugin.name, plugin.load(), 'frequency',
                             sequence=True)
 
     # Check for fd sequence waveforms (has detector response)
-    for plugin in entry_points(group='pycbc.waveform.fd_det_sequence'):
+    for plugin in get_entry_points('pycbc.waveform.fd_det_sequence'):
         add_custom_waveform(plugin.name, plugin.load(), 'frequency',
                             sequence=True, has_det_response=True)
 
     # Check for td waveforms
-    for plugin in entry_points(group='pycbc.waveform.td'):
+    for plugin in get_entry_points('pycbc.waveform.td'):
         add_custom_waveform(plugin.name, plugin.load(), 'time')
 
     # Check for waveform length estimates
-    for plugin in entry_points(group='pycbc.waveform.length'):
+    for plugin in get_entry_points('pycbc.waveform.length'):
         add_length_estimator(plugin.name, plugin.load())
 
     # Check for waveform end frequency estimates
-    for plugin in entry_points(group='pycbc.waveform.end_freq'):
+    for plugin in get_entry_points('pycbc.waveform.end_freq'):
         add_end_frequency_estimator(plugin.name, plugin.load())

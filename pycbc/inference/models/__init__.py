@@ -22,6 +22,7 @@ assuming various noise models.
 
 import logging
 from importlib.metadata import entry_points
+import sys
 from .base import BaseModel
 from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
@@ -242,8 +243,21 @@ class _ModelManager(dict):
         After this runs, ``self.retrieve_plugins`` is set to ``False``, so that
         subsequent calls to this will no re-add models.
         """
+
+
+        # Check if the Python version is 3.10 or newer
+        if sys.version_info >= (3, 10):
+            # Use the modern syntax with the 'group' keyword argument
+            def get_entry_points(group_name):
+                return entry_points(group=group_name)
+        else:
+            # Use the older syntax for Python 3.9 and earlier
+            all_entry_points = entry_points()
+            def get_entry_points(group_name):
+                return all_entry_points.get(group_name, ())
+            
         if self.retrieve_plugins:
-            for plugin in entry_points(group='pycbc.inference.models'):
+            for plugin in get_entry_points('pycbc.inference.models'):
                 self.add_model(plugin.load())
             self.retrieve_plugins = False
 
