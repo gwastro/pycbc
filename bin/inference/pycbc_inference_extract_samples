@@ -213,6 +213,11 @@ skip_attrs = ['filetype', 'thin_start', 'thin_interval', 'thin_end',
 # that will not be the same
 if len(opts.input_file) > 1:
     skip_attrs += ['log_evidence', 'dlog_evidence']
+    
+### FIXME: if combining files with different wf transforms for the same param,
+### save the first file's remapped_params entry as a placeholder. As long as
+### all files have the same params, the specific wf transforms for each file 
+### shouldn't matter.
 for fp in fps:
     for key in map(format_attr, fp.attrs):
         if key not in skip_attrs:
@@ -223,22 +228,25 @@ for fp in fps:
                 out.attrs[key] = val
                 current_val = format_attr(out.attrs[key])
             if not isthesame(current_val, val):
-                raise ValueError("cannot combine all files; file attr {} is "
-                                 "not the same across all files ({} vs {})"
-                                 .format(key, current_val, val))
+                if key == 'remapped_params':
+                    out_params = out.attrs[key][:,1]
+                    current_params = fp.attrs[key][:,1]
+                    out_params.sort()
+                    current_params.sort()
+                    # check that each entry in both match; if not, throw error
+                    if not isthesame(out_params, current_params):
+                        raise ValueError("output parameter names are not the "
+                                         "same between input files: "
+                                         f"{out_params} vs. {current_params}")
+                else:
+                    raise ValueError("cannot combine all files; file attr {} is "
+                                     "not the same across all files ({} vs {})"
+                                     .format(key, current_val, val))
 
 # store what parameters were renamed
-# if using wildcard parameters, alphabetize the parameters
-### FIXME: skip if combining posteriors
-### When splitting a prior among multiple posteriors, the sample param is not
-### necessarily mapped to physical parameters in the same way across all files
-labels_keys = list(labels.keys())
-labels_keys.sort()
-labels = {i: labels[i] for i in labels_keys}
-if not opts.combine_via_sampling:
-    out.attrs['remapped_params'] = list(labels.items())
-else:
-    skip_groups.append('remapped_params')
+# if using wildcard parameters, alphabetize the parameters by output name
+labels = {k: v for k, v in sorted(labels.items(), key=lambda item: item[1])}
+out.attrs['remapped_params'] = list(labels.items())
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
