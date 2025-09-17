@@ -179,7 +179,7 @@ def propagation_vector_to_localization(k, use_astropy=True, frame=None):
             latitude = frame.dec.rad
     else:
         # latitude already within [-pi/2, pi/2]
-        latitude = np.float64(np.arcsin(-k[2]))
+        latitude = np.float64(np.arcsin(-k[2])[0])
         longitude = np.float64(np.arctan2(-k[1]/np.cos(latitude),
                                -k[0]/np.cos(latitude)))
         # longitude should within [0, 2*pi)
