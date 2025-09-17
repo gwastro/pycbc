@@ -98,8 +98,10 @@ def retrieve_waveform_plugins():
     """ Process external waveform plugins
     """
     from importlib.metadata import entry_points
-    import sys
 
+
+    ### REMOVE ONCE WE DROP 3.9 SUPPORT ###
+    import sys
     # Check if the Python version is 3.10 or newer
     if sys.version_info >= (3, 10):
         # Use the modern syntax with the 'group' keyword argument
