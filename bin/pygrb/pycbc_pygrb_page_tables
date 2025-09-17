@@ -159,9 +159,9 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
                      len(missed_data[inj_params[0]]))
         logging.info("Applying reweighted SNR cut at %s.", snr_threshold)
         rw_snr_cut = found_data['reweighted_snr'] < snr_threshold
-        for key in found_data:
-            cut_data[key] = found_data[key][rw_snr_cut]
-            found_data[key] = found_data[key][~rw_snr_cut]
+        for k, v in found_data.items():
+            cut_data[k] = v[rw_snr_cut]
+            found_data[k] = v[~rw_snr_cut]
     del found_data['reweighted_snr']
     del cut_data['reweighted_snr']
 
@@ -611,7 +611,7 @@ if found_missed_file is not None:
         veto_file=opts.veto_file
     )
 
-    if 'bestnr' not in found_after_vetoes.keys():
+    if 'bestnr' not in found_after_vetoes:
         found_after_vetoes['bestnr'] = np.array([])
 
     # Construct conditions for injection:
@@ -634,9 +634,10 @@ if found_missed_file is not None:
           'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',
           'Chi^2', 'Null SNR'] +\
          ['SNR '+ifo for ifo in ifos] +\
-         ['BestNR', 'Inj S1x', 'Inj S1y', 'Inj S1z',
-                    'Inj S2x', 'Inj S2y', 'Inj S2z',
-                    'Rec S1z', 'Rec S2z']
+         ['BestNR', 'p-value',
+          'Inj S1x', 'Inj S1y', 'Inj S1z',
+          'Inj S2x', 'Inj S2y', 'Inj S2z',
+          'Rec S1z', 'Rec S2z']
     # Format of table data
     format_strings = ['##.##']
     format_strings.extend(['##.##' for ifo in ifos])
@@ -647,7 +648,7 @@ if found_missed_file is not None:
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##'])
     format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.##',
+    format_strings.extend(['##.##', '##.######',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##'])
@@ -658,10 +659,10 @@ if found_missed_file is not None:
              'rec_mass2', 'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra',
              'rec_dec', 'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
-    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+    keys += ['bestnr', 'fap', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
              'spin2z', 'rec_spin1z', 'rec_spin2z']
     for key in keys:
-        if key not in found_after_vetoes.keys():
+        if key not in found_after_vetoes:
             found_after_vetoes[key] = np.array([])
     td = [found_after_vetoes[key][nonzero_fap] for key in keys]
     td = list(zip(*td))
@@ -696,21 +697,27 @@ if found_missed_file is not None:
         cut_injs = dict.fromkeys(keys, np.array([]))
     for key in keys:
         if key not in vetoed:
-            vetoed[key] = np.array([])
-    t_missed = [np.concatenate((vetoed[key], cut_injs[key])) for key in keys]
+            vetoed[key] = np.full(len(vetoed['mass1']), -1)
+        if key not in cut_injs:
+            cut_injs[key] = np.full(len(cut_injs['mass1']), -1)
+        if key not in missed_injs:
+            missed_injs[key] = np.full(len(missed_injs['mass1']), -1)
+    t_missed = [np.concatenate((missed_injs[key], vetoed[key], cut_injs[key]))
+                for key in keys]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
-    logging.info("Writing %d missed-found injections to html file.",
+    logging.info("Writing %d missed and missed-found injections to html file.",
                  len(t_missed))
     t_missed = zip(*t_missed)
     t_missed = [np.asarray(d) for d in t_missed]
     html_table = pycbc.results.html_table(t_missed, th,
                                           format_strings=format_strings,
                                           page_size=20)
-    kwds = {'title': "Missed found injections",
-            'caption': "Recovered parameters and statistic values of \
-            injections that are recovered, but with reweighted SNR \
-            below threshold or vetoed.",
+    kwds = {'title': "Missed and found but missed injections",
+            'caption': "Parameters of missed injections and \
+            recovered parameters and statistic values of \
+            injections that are recovered but then missed because \
+            their reweighted SNR is below threshold or they are vetoed.",
             'cmd': ' '.join(sys.argv), }
     pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
                                          **kwds)
