@@ -244,7 +244,7 @@ class _ModelManager(dict):
         subsequent calls to this will no re-add models.
         """
 
-
+        ### REMOVE ONCE WE DROP 3.9 SUPPORT ###
         # Check if the Python version is 3.10 or newer
         if sys.version_info >= (3, 10):
             # Use the modern syntax with the 'group' keyword argument
