@@ -48,7 +48,7 @@ from pycbc import strain
 failed_counter = 0
 
 class BaseGenerator(object):
-    """A wrapper class to call a waveform generator with a set of frozen
+    r"""A wrapper class to call a waveform generator with a set of frozen
     parameters and a set of variable parameters. The frozen parameters and
     values, along with a list of variable parameter names, are set at
     initialization. This way, repeated calls can be made to the underlying
@@ -444,7 +444,7 @@ class TDomainSupernovaeGenerator(BaseGenerator):
 
 
 class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
-    """Base generator for frquency-domain waveforms in a detector frame.
+    r"""Base generator for frquency-domain waveforms in a detector frame.
 
     Parameters
     ----------
@@ -564,7 +564,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
 
 
 class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
-    """Generates frequency-domain waveform in a specific frame.
+    r"""Generates frequency-domain waveform in a specific frame.
 
     Generates a waveform using the given radiation frame generator class,
     and applies the detector response function and appropriate time offset.
@@ -711,7 +711,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
 
 
 class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
-    """Generates frequency-domain waveform in a specific frame.
+    r"""Generates frequency-domain waveform in a specific frame.
 
     Generates both polarizations of a waveform using the given radiation frame
     generator class, and applies the time shift. Detector response functions
@@ -858,7 +858,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         return select_waveform_generator(approximant, domain)
 
 class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
-    """Generates frequency-domain waveform in a specific frame.
+    r"""Generates frequency-domain waveform in a specific frame.
 
     Generates both polarizations of a waveform using the given radiation frame
     generator class, and applies the time shift. Detector response functions
@@ -958,7 +958,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
 
 
 class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
-    """Generates frequency-domain waveform modes in a specific frame.
+    r"""Generates frequency-domain waveform modes in a specific frame.
 
     Generates both polarizations of every waveform mode using the given
     radiation frame generator class, and applies the time shift. Detector

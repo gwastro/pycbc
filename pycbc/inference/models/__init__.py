@@ -163,7 +163,7 @@ class CallModel(object):
 
 
 def read_from_config(cp, **kwargs):
-    """Initializes a model from the given config file.
+    r"""Initializes a model from the given config file.
 
     The section must have a ``name`` argument. The name argument corresponds to
     the name of the class to initialize.
