@@ -504,6 +504,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -540,6 +541,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -576,6 +578,7 @@ def get_td_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -610,6 +613,7 @@ def get_fd_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -726,6 +730,7 @@ def get_fd_det_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. An example would be a row in an xml table.
+
     {params}
 
     Returns
