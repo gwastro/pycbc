@@ -648,7 +648,7 @@ if found_missed_file is not None:
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##'])
     format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.##', '##.######',
+    format_strings.extend(['##.##', '#.######',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##'])
@@ -706,18 +706,18 @@ if found_missed_file is not None:
                 for key in keys]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
-    logging.info("Writing %d missed and missed-found injections to html file.",
+    logging.info("Writing %d missed, vetoed, and cut injections to html file.",
                  len(t_missed))
     t_missed = zip(*t_missed)
     t_missed = [np.asarray(d) for d in t_missed]
     html_table = pycbc.results.html_table(t_missed, th,
                                           format_strings=format_strings,
                                           page_size=20)
-    kwds = {'title': "Missed and found but missed injections",
+    kwds = {'title': "Missed, vetoed, and cut injections",
             'caption': "Parameters of missed injections and \
             recovered parameters and statistic values of \
-            injections that are recovered but then missed because \
-            their reweighted SNR is below threshold or they are vetoed.",
+            injections that are recovered but then vetoed or cut because \
+            their reweighted SNR is below threshold.",
             'cmd': ' '.join(sys.argv), }
     pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
                                          **kwds)
