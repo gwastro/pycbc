@@ -22,7 +22,6 @@ assuming various noise models.
 
 import logging
 from importlib.metadata import entry_points
-import sys
 
 from .base import BaseModel
 from .base_data import BaseDataModel
@@ -40,9 +39,6 @@ from .single_template import SingleTemplate
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .hierarchical import (HierarchicalModel, MultiSignalModel,
                            JointPrimaryMarginalizedModel)
-
-### REMOVE ONCE WE DROP 3.9 SUPPORT ###
-from pycbc.waveform.plugin import get_entry_points
 
 # Used to manage a model instance across multiple cores or MPI
 _global_instance = None
@@ -248,7 +244,7 @@ class _ModelManager(dict):
         """
 
         if self.retrieve_plugins:
-            for plugin in get_entry_points(group='pycbc.inference.models'):
+            for plugin in entry_points(group='pycbc.inference.models'):
                 self.add_model(plugin.load())
             self.retrieve_plugins = False
 
