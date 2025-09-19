@@ -41,7 +41,7 @@ jobs:
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
-    - name: Run test suite with targeted cancellation
+    - name: Run test suite
       run-on: ${{ matrix.os }}
       strategy:
         fail-fast: true
