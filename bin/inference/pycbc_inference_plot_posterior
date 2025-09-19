@@ -48,7 +48,7 @@ from pycbc.results.scatter_histograms import create_multidim_plot
 use('agg')
 
 # add options to command line
-parser = io.ResultsArgumentParser()
+parser = io.ResultsArgumentParser(defaultparams='all')
 pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--output-file", type=str, required=True,
@@ -60,13 +60,18 @@ parser.add_argument("--prior-nsamples", type=int, default=10000,
                     help="The number of samples to use for plotting the "
                          "prior. Default is 10000.")
 parser.add_argument("--colors-multi-run", nargs="+", type=str,
-                    help="For multiple runs, provide colours to be used for successively. Default setting is to use the successive colours specified in matplotlib color cycle.")
+                    help="For multiple runs, provide colours to be used for "
+                         "successively. Default setting is to use the "
+                         "successive colours specified in matplotlib color "
+                         "cycle.")
 parser.add_argument("--fill-hist", action="store_true", default=False,
                     help="Fill the 1D marginalized histograms")
 parser.add_argument("--hist-color", 
-                    help="Provide color for histogram outline. Default is black")
+                    help="Provide color for histogram outline. Default is "
+                         "black")
 parser.add_argument("--hist-fill-color", default='gray',
-                    help="Provide the fill_color for filled histograms. Default is gray")
+                    help="Provide the fill_color for filled histograms. "
+                    "Default is gray")
 # add options for what plots to create
 option_utils.add_plot_posterior_option_group(parser)
 # scatter configuration
