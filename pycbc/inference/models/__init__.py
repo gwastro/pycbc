@@ -21,7 +21,8 @@ assuming various noise models.
 
 
 import logging
-from pkg_resources import iter_entry_points as _iter_entry_points
+from importlib.metadata import entry_points
+
 from .base import BaseModel
 from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
@@ -38,7 +39,6 @@ from .single_template import SingleTemplate
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .hierarchical import (HierarchicalModel, MultiSignalModel,
                            JointPrimaryMarginalizedModel)
-
 
 # Used to manage a model instance across multiple cores or MPI
 _global_instance = None
@@ -242,9 +242,10 @@ class _ModelManager(dict):
         After this runs, ``self.retrieve_plugins`` is set to ``False``, so that
         subsequent calls to this will no re-add models.
         """
+
         if self.retrieve_plugins:
-            for plugin in _iter_entry_points('pycbc.inference.models'):
-                self.add_model(plugin.resolve())
+            for plugin in entry_points(group='pycbc.inference.models'):
+                self.add_model(plugin.load())
             self.retrieve_plugins = False
 
     def __len__(self):
