@@ -223,7 +223,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         for ifo in data:
             # store data and frequencies
             d0 = self.data[ifo]
-            self.f[ifo] = numpy.array(d0.sample_frequencies)
+            self.f[ifo] = numpy.asarray(d0.sample_frequencies)
             self.df[ifo] = d0.delta_f
             self.end_time[ifo] = float(d0.end_time)
 
