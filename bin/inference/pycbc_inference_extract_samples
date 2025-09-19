@@ -209,15 +209,13 @@ for fp in fps:
 skip_attrs = ['filetype', 'thin_start', 'thin_interval', 'thin_end',
               'thinned_by', 'cmd', 'resume_points', 'effective_nsamples',
               'run_start_time', 'run_end_time']
-# also skip evidence if multiple files are being combined w/out sampling, since
-# that will not be the same
+# also skip evidence if multiple files are being combined; this will be handled
+# via sampling if specified
 if len(opts.input_file) > 1:
     skip_attrs += ['log_evidence', 'dlog_evidence']
     
-### FIXME: if combining files with different wf transforms for the same param,
-### save the first file's remapped_params entry as a placeholder. As long as
-### all files have the same params, the specific wf transforms for each file 
-### shouldn't matter.
+# make sure attrs are the same between files...
+cat_params = False
 for fp in fps:
     for key in map(format_attr, fp.attrs):
         if key not in skip_attrs:
@@ -229,24 +227,21 @@ for fp in fps:
                 current_val = format_attr(out.attrs[key])
             if not isthesame(current_val, val):
                 if key == 'remapped_params':
-                    out_params = out.attrs[key][:,1]
-                    current_params = fp.attrs[key][:,1]
-                    out_params.sort()
-                    current_params.sort()
-                    # check that each entry in both match; if not, throw error
-                    if not isthesame(out_params, current_params):
-                        raise ValueError("output parameter names are not the "
-                                         "same between input files: "
-                                         f"{out_params} vs. {current_params}")
+                    # ...unless it's remapped_params; just combine unique items
+                    # brute-force if they don't match exactly
+                    cat_params = True
+                    val = numpy.concatenate((val, current_val))
+                    val_set = set(tuple(entry) for entry in val)
+                    val = [list(entry) for entry in val_set]
+                    out.attrs[key] = val
                 else:
                     raise ValueError("cannot combine all files; file attr {} is "
                                      "not the same across all files ({} vs {})"
                                      .format(key, current_val, val))
 
-# store what parameters were renamed
-# if using wildcard parameters, alphabetize the parameters by output name
-labels = {k: v for k, v in sorted(labels.items(), key=lambda item: item[1])}
-out.attrs['remapped_params'] = list(labels.items())
+# store what parameters were renamed (if not already concatenated above)
+if not cat_params:
+    out.attrs['remapped_params'] = list(labels.items())
 
 # write combined evidence and dlog evidence if combining via sampling
 if opts.combine_via_sampling:
