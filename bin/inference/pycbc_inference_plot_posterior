@@ -46,7 +46,7 @@ from pycbc.workflow import WorkflowConfigParser
 use("agg")
 
 # add options to command line
-parser = io.ResultsArgumentParser()
+parser = io.ResultsArgumentParser(defaultparams='all')
 pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--output-file", type=str, required=True, help="Output plot path.")
@@ -66,7 +66,8 @@ parser.add_argument(
     "--colors-multi-run",
     nargs="+",
     type=str,
-    help="For multiple runs, provide colours to be used for successively. Default setting is to use the successive colours specified in matplotlib color cycle.",
+    help="For multiple runs, provide colours to be used for successively. Default setting is "
+	 "to use the successive colours specified in matplotlib color cycle.",
 )
 parser.add_argument(
     "--fill-hist",
