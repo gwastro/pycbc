@@ -92,8 +92,8 @@ parser.add_argument("--combine-via-sampling", action='store_true',
                          "samples from multiple inputs into one output file. "
                          "If this option is specified, the samples will "
                          "be randomly sampled with weighting based on the "
-                         "evidence in each input. For example, if the log "
-                         "evidence of one input is twice that of the other, "
+                         "evidence in each input. For example, if the "
+                         "evidence of input 1 is twice that of input 2, "
                          "the resulting posterior file with this option "
                          "specified will have twice as many points from input "
                          "1 than input 2. The output will have the same "
@@ -101,10 +101,10 @@ parser.add_argument("--combine-via-sampling", action='store_true',
                          "An error is thrown if this option is specified and "
                          "any of the input files does not have a log_evidence "
                          "attribute (e.g., the file used a sampler like emcee "
-                         "that does not report log evidence). This option "
+                         "that does not report evidence). This option "
                          "assumes that the priors of all files do not "
-                         "overlap; we cannot properly sample the priors in "
-                         "this case.")
+                         "overlap; we cannot properly combine posteriors if "
+                         "the priors do overlap.")
 parser.add_argument("--mutually-exclusive-priors", action='store_true',
                     default=False,
                     help="If specifying --combine-via-sampling, specify "
@@ -112,7 +112,8 @@ parser.add_argument("--mutually-exclusive-priors", action='store_true',
                          "default, the provided input files are assumed to "
                          "have identical priors, and their evidences will be "
                          "averaged. If this option is specified, the priors "
-                         "are assumed to be non-overlapping across files.")
+                         "are assumed to be non-overlapping across files, and "
+                         "their evidences will be summed together.")
 
 opts = parser.parse_args()
 
