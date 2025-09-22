@@ -441,7 +441,7 @@ Some notes on these options:
 Command line options: lalapps_cbc_sbank
 -----------------------------------------------
 
-The program lalapps_cbc_sbank is part of lalsuite and documentation and command line options are described in the documentation at http://software.ligo.org/docs/lalsuite/lalapps/lalapps__cbc__sbank_8py_source.html
+The program lalapps_cbc_sbank is part of lalsuite and documentation and command line options are described in the documentation at https://lscsoft.docs.ligo.org/lalsuite/lalapps/lalapps__cbc__sbank_8py_source.html
 
 Some notes on the command line options:
 
