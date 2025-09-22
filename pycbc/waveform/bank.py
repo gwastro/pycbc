@@ -204,7 +204,7 @@ def tuple_to_hash(tuple_to_be_hashed):
     """
     h = hashlib.blake2b(np.array(tuple_to_be_hashed).tobytes('C'),
                         digest_size=8)
-    return np.fromstring(h.digest(), dtype=int)[0]
+    return np.frombuffer(h.digest(), dtype=int)[0]
 
 
 class TemplateBank(object):

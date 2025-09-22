@@ -493,9 +493,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Initialize job node with its tags
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
-    # TODO: why is inj_set repeated twice in output files?
-    # if inj_set is not None:
-    #     extra_tags.append(inj_set)
     if ifo:
         extra_tags.append(ifo)
     node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
@@ -759,6 +756,8 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
+
+    return job
 
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,

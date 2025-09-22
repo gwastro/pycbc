@@ -45,10 +45,11 @@ install_requires = setup_requires + [
     'tqdm',
     'setuptools',
     'gwdatafind',
-    'pegasus-wms.api >= 5.0.8',
+    'pegasus-wms.api == 5.0.9',
+    'pegasus-wms.common == 5.0.9',
     'python-ligo-lw >= 1.7.0',
     'igwn-segments',
-    'lalsuite!=7.2',
+    'lalsuite==7.25.1',
     'lscsoft-glue>=1.59.3',
     'pykerr',
 ]
@@ -95,7 +96,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.8.3'
+        vinfo.version = '2.8.4'
         vinfo.release = True
 
     version_script = f"""# coding: utf-8
