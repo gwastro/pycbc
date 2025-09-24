@@ -8,7 +8,7 @@ computing the match between them and creating a .dat file with the results.
 import argparse
 import numpy as np
 
-from ligo.lw import utils, lsctables
+from igwn_ligolw import utils, lsctables
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.io.ligolw import LIGOLWContentHandler

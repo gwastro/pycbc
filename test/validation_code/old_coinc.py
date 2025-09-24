@@ -119,7 +119,7 @@ def background_bin_from_string(background_bins, data):
                 locs = sub_locs
 
         # make sure we don't reuse anything from an earlier bin
-        locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
+        locs = numpy.delete(locs, numpy.where(numpy.isin(locs, used))[0])
         used = numpy.concatenate([used, locs])
         bins[name] = locs
 

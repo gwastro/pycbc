@@ -161,7 +161,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
         The generated frequency series.
     """
     import lal.series
-    from ligo.lw import utils as ligolw_utils
+    from igwn_ligolw import utils as ligolw_utils
 
     with open(filename, 'rb') as fp:
         ct_handler = lal.series.PSDContentHandler

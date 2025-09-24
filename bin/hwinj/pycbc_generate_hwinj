@@ -22,10 +22,9 @@ import numpy
 import os
 import sys
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import table
-from ligo.lw import utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils
 
 import pycbc
 import pycbc.version
@@ -296,14 +295,15 @@ if opts.dquad_mon2 is not None:
 # You'd think that would it to redefine the table columns, but wait, it gets
 # worse!
 class SimInspiralNew(lsctables.SimInspiral):
-    __slots__ = tuple(map(table.Column.ColumnName,
+    __slots__ = tuple(map(ligolw.Column.ColumnName,
                           lsctables.SimInspiralTable.validcolumns))
 lsctables.SimInspiral = SimInspiralNew
 lsctables.SimInspiralTable.RowType = SimInspiralNew
 
 # create sim_inspiral table
-sim_table = lsctables.New(lsctables.SimInspiralTable,
-                          columns=lsctables.SimInspiralTable.validcolumns)
+sim_table = lsctables.SimInspiralTable.new(
+    columns=lsctables.SimInspiralTable.validcolumns
+)
 outdoc.childNodes[0].appendChild(sim_table)
 
 sim = _empty_row(lsctables.SimInspiral)
@@ -344,8 +344,9 @@ sim.waveform = waveform_string
 name, phase_order = legacy_approximant_name(sim.waveform)
 
 # create sngl_inspiral table
-sngl_table = lsctables.New(lsctables.SnglInspiralTable,
-                           columns=lsctables.SnglInspiralTable.validcolumns)
+sngl_table = lsctables.SnglInspiralTable.new(
+    columns=lsctables.SnglInspiralTable.validcolumns
+)
 outdoc.childNodes[0].appendChild(sngl_table)
 
 # create sngl_inspiral row for injection

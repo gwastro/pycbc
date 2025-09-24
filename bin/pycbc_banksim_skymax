@@ -23,8 +23,8 @@ from argparse import ArgumentParser
 from math import ceil, log
 from tqdm import tqdm
 
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw import lsctables
 
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.pnutils import nearest_larger_binary_number

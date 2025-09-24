@@ -233,59 +233,74 @@ class SingleDetAutoChisq(object):
 
         dof: int, approx number of statistical degrees of freedom
         """
-        if self.do and (len(indices) > 0):
-            htilde = make_frequency_series(template)
-
-            # Check if we need to recompute the autocorrelation
-            key = (id(template), id(psd))
-            if key != self._autocor_id:
-                logging.info("Calculating autocorrelation")
-
-                if not self.reverse_template:
-                    Pt, _, P_norm = matched_filter_core(htilde,
-                              htilde, psd=psd,
-                              low_frequency_cutoff=low_frequency_cutoff,
-                              high_frequency_cutoff=high_frequency_cutoff)
-                    Pt = Pt * (1./ Pt[0])
-                    self._autocor = Array(Pt, copy=True)
-                else:
-                    Pt, _, P_norm = matched_filter_core(htilde.conj(),
-                              htilde, psd=psd,
-                              low_frequency_cutoff=low_frequency_cutoff,
-                              high_frequency_cutoff=high_frequency_cutoff)
-
-                    # T-reversed template has same norm as forward template
-                    # so we can normalize using that
-                    # FIXME: Here sigmasq has to be cast to a float or the
-                    #        code is really slow ... why??
-                    norm_fac = P_norm / float(((template.sigmasq(psd))**0.5))
-                    Pt *= norm_fac
-                    self._autocor = Array(Pt, copy=True)
-                self._autocor_id = key
-
-            logging.info("...Calculating autochisquare")
-            sn = sn*norm
-            if self.reverse_template:
-                assert(stilde is not None)
-                asn, _, ahnrm = matched_filter_core(htilde.conj(), stilde,
-                                 low_frequency_cutoff=low_frequency_cutoff,
-                                 high_frequency_cutoff=high_frequency_cutoff,
-                                 h_norm=template.sigmasq(psd))
-                correlation_snr = asn * ahnrm
-            else:
-                correlation_snr = sn
-
-            achi_list = np.array([])
-            index_list = np.array(indices)
-            dof, achi_list = autochisq_from_precomputed(sn, correlation_snr,
-                             self._autocor, index_list, stride=self.stride,
-                             num_points=self.num_points,
-                             oneside=self.one_sided, twophase=self.two_phase,
-                             maxvalued=self.take_maximum_value)
-            self.dof = dof
-            return achi_list, dof
-        else:
+        if not (self.do and len(indices) > 0):
             return None, None
+
+        htilde = make_frequency_series(template)
+
+        # Check if we need to recompute the autocorrelation
+        key = (id(template), id(psd))
+        if key != self._autocor_id:
+            logging.debug("Calculating autocorrelation")
+
+            if not self.reverse_template:
+                Pt, _, P_norm = matched_filter_core(
+                    htilde,
+                    htilde,
+                    psd=psd,
+                    low_frequency_cutoff=low_frequency_cutoff,
+                    high_frequency_cutoff=high_frequency_cutoff
+                )
+                Pt = Pt * (1./ Pt[0])
+                self._autocor = Array(Pt, copy=True)
+            else:
+                Pt, _, P_norm = matched_filter_core(
+                    htilde.conj(),
+                    htilde,
+                    psd=psd,
+                    low_frequency_cutoff=low_frequency_cutoff,
+                    high_frequency_cutoff=high_frequency_cutoff
+                )
+
+                # T-reversed template has same norm as forward template
+                # so we can normalize using that
+                # FIXME: Here sigmasq has to be cast to a float or the
+                #        code is really slow ... why??
+                norm_fac = P_norm / float(((template.sigmasq(psd))**0.5))
+                Pt *= norm_fac
+                self._autocor = Array(Pt, copy=True)
+            self._autocor_id = key
+
+        logging.debug("...Calculating autochisquare")
+        sn = sn * norm
+        if self.reverse_template:
+            assert(stilde is not None)
+            asn, _, ahnrm = matched_filter_core(
+                htilde.conj(),
+                stilde,
+                low_frequency_cutoff=low_frequency_cutoff,
+                high_frequency_cutoff=high_frequency_cutoff,
+                h_norm=template.sigmasq(psd)
+            )
+            correlation_snr = asn * ahnrm
+        else:
+            correlation_snr = sn
+
+        achi_list = np.array([])
+        index_list = np.array(indices)
+        dof, achi_list = autochisq_from_precomputed(
+            sn, correlation_snr,
+            self._autocor,
+            index_list,
+            stride=self.stride,
+            num_points=self.num_points,
+            oneside=self.one_sided,
+            twophase=self.two_phase,
+            maxvalued=self.take_maximum_value
+        )
+        self.dof = dof
+        return achi_list, dof
+
 
 class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
     """Stub for precessing auto chisq if anyone ever wants to code it up.

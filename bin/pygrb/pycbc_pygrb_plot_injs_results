@@ -160,8 +160,11 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
     # Include information needed to apply vetoes and reweighted SNR cut
     if tag == 'found':
         for ifo in ifos:
-            data_dict[ifo+'/end_time'] = injs[ifo+'/end_time']
-        data_dict['reweighted_snr'] = injs['network/reweighted_snr']
+            key = ifo+'/end_time'
+            data_dict[key] = injs[key] if key in injs else np.array([])
+        key = 'network/reweighted_snr'
+        data_dict['reweighted_snr'] = \
+            injs[key] if key in injs else np.array([])
 
     logging.info("%d %s injections analysed.", len(data_dict[keys[0]]), tag)
 
@@ -271,7 +274,7 @@ trig_data = ppu.extract_trig_properties(
 
 # Max BestNR values in each trial: these are stored in a dictionary keyed
 # by slide_id, as arrays indexed by trial number
-background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+background = {k: np.zeros(len(v)) for k, v in trial_dict.items()}
 for slide_id in slide_dict:
     trig_times = trig_data[keys[0]][slide_id][:]
     for j, trial in enumerate(trial_dict[slide_id]):
@@ -295,6 +298,7 @@ logging.info("Background bestNR calculated.")
 # Load injection data without applying the reweighted SNR cut, nor vetoes
 inj_data = ppu.load_data(opts.found_missed_file, ifos, data_tag='injs',
                          slide_id=0)
+
 # Extract the necessary data from the missed injections for the plot
 missed_inj = complete_inj_data(inj_data, [x_qty, y_qty], 'missed', ifos=ifos)
 
@@ -305,7 +309,8 @@ found_inj = complete_inj_data(inj_data, [x_qty, y_qty], 'found', ifos=ifos)
 if opts.newsnr_threshold:
     rw_snr_cut = found_inj['reweighted_snr'] < opts.newsnr_threshold
     for key in [x_qty, y_qty]:
-        missed_inj[key] = np.concatenate((missed_inj[key], found_inj[key][rw_snr_cut]))
+        missed_inj[key] = np.concatenate((missed_inj[key],
+                                          found_inj[key][rw_snr_cut]))
         found_inj[key] = found_inj[key][~rw_snr_cut]
     for ifo in ifos:
         found_inj[ifo+'/end_time'] = found_inj[ifo+'/end_time'][~rw_snr_cut]
@@ -350,7 +355,8 @@ if len(list(found_after_vetoes['reweighted_snr'])) > 0:
 
     # TODO: ifar still missing
     """
-    # Extract inclusive/exclusive IFAR for injections found quieter than background
+    # Extract inclusive/exclusive IFAR for injections found quieter than
+    # background
     ifar_string = 'found_after_vetoes/ifar' if opts.far_type == 'inclusive' \
         else 'found_after_vetoes/ifar_exc'
     found_quieter['ifar'] = f[ifar_string][quieter_mask]
@@ -389,7 +395,8 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'mtotal': "Total mass (solar masses)",
                     'q': "Mass ratio",
                     'distance': "Distance (Mpc)",
-                    'eff_site_dist': f"{sitename.get(opts.ifo)} effective distance (Mpc)",
+                    'eff_site_dist': f"{sitename.get(opts.ifo)} effective "
+                                     "distance (Mpc)",
                     'eff_dist': "Inverse sum of effective distances (Mpc)",
                     'end_time': f"Time since {grb_time} (s)",
                     'sky_error': "Rec. sky error (radians)",
@@ -467,12 +474,16 @@ ax.grid()
 # Handle axis limits when plotting spins
 if "spin" in x_qty and missed_inj['spin1_a'].size:
     max_missed_inj = missed_inj['spin1_a'].max()
-    ax.set_xlim([0, np.ceil(10 * max(max_missed_inj,
-                                     found_inj[x_qty].max())) / 10])
+    ax.set_xlim([0, np.ceil(10 * max_missed_inj) / 10])
+    if found_inj[x_qty].size:
+        ax.set_xlim([0, np.ceil(10 * max(max_missed_inj,
+                                         found_inj[x_qty].max())) / 10])
 if "spin" in y_qty and missed_inj['spin2_a'].size:
     max_missed_inj = missed_inj['spin2_a'].max()
-    ax.set_ylim([0, np.ceil(10 * max(max_missed_inj,
-                                     found_inj[y_qty].max())) / 10])
+    ax.set_ylim([0, np.ceil(10 * max_missed_inj) / 10])
+    if found_inj[y_qty].size:
+        ax.set_ylim([0, np.ceil(10 * max(max_missed_inj,
+                                         found_inj[y_qty].max())) / 10])
 
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:

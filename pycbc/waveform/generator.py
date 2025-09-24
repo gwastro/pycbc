@@ -563,7 +563,6 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         pass
 
 
-
 class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform in a specific frame.
 
@@ -639,10 +638,13 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         generator class; instead, they are used to apply the detector response
         function and/or shift the waveform in time. The parameters are:
 
-          * tc: The GPS time of coalescence (should be geocentric time).
+          * tc: The GPS time of coalescence.
           * ra: Right ascension.
           * dec: declination
           * polarization: polarization.
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
@@ -670,17 +672,17 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         hp._epoch = hc._epoch = self._epoch
         h = {}
         if self.detector_names != ['RF']:
+            ra = self.current_params['ra']
+            dec = self.current_params['dec']
+            ref_tc = self.current_params['tc']
+            pol = self.current_params['polarization']
+            refframe = self.current_params.get('tc_ref_frame', 'geocentric')
             for detname, det in self.detectors.items():
-                # apply detector response function
-                fp, fc = det.antenna_pattern(self.current_params['ra'],
-                            self.current_params['dec'],
-                            self.current_params['polarization'],
-                            self.current_params['tc'])
+                tc = det.arrival_time(ref_tc, ra, dec, refframe)
+                # apply response function
+                fp, fc = det.antenna_pattern(ra, dec, pol, tc)
                 thish = fp*hp + fc*hc
-                # apply the time shift
-                tc = self.current_params['tc'] + \
-                    det.time_delay_from_earth_center(self.current_params['ra'],
-                         self.current_params['dec'], self.current_params['tc'])
+                # apply time shift
                 h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
                 if self.recalib:
                     # recalibrate with given calibration model
@@ -770,9 +772,12 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         generator class; instead, they are used to apply the detector response
         function and/or shift the waveform in time. The parameters are:
 
-          * tc: The GPS time of coalescence (should be geocentric time).
+          * tc: The GPS time of coalescence.
           * ra: Right ascension.
           * dec: declination
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
@@ -806,10 +811,12 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         h = {}
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
-                # apply the time shift
-                tc = self.current_params['tc'] + \
-                    det.time_delay_from_earth_center(self.current_params['ra'],
-                         self.current_params['dec'], self.current_params['tc'])
+                refframe = self.current_params.get('tc_ref_frame', 'geocentric')
+                ra = self.current_params['ra']
+                dec = self.current_params['dec']
+                ref_tc = self.current_params['tc']
+                tc = det.arrival_time(ref_tc, ra, dec, refframe)
+                # apply time shift
                 dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
                 dethc = apply_fd_time_shift(hc, tc+tshift, copy=True)
                 if self.recalib:
@@ -1016,6 +1023,9 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
           * tc: The GPS time of coalescence (should be geocentric time).
           * ra: Right ascension.
           * dec: declination
+          * tc_ref_frame (optional): reference frame in which tc is defined.
+            Must be one of: 'geocentric', for geocentric time, or one of the
+            detector names. Default 'geocentric.'
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
@@ -1054,12 +1064,12 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
             ulm._epoch = vlm._epoch = self._epoch
             if self.detector_names != ['RF']:
                 for detname, det in self.detectors.items():
-                    # apply the time shift
-                    tc = self.current_params['tc'] + \
-                        det.time_delay_from_earth_center(
-                            self.current_params['ra'],
-                            self.current_params['dec'],
-                            self.current_params['tc'])
+                    refframe = self.current_params.get('tc_ref_frame', 'geocentric')
+                    ra = self.current_params['ra']
+                    dec = self.current_params['dec']
+                    ref_tc = self.current_params['tc']
+                    tc = det.arrival_time(ref_tc, ra, dec, refframe)
+                    # apply time shift
                     detulm = apply_fd_time_shift(ulm, tc+tshift, copy=True)
                     detvlm = apply_fd_time_shift(vlm, tc+tshift, copy=True)
                     if self.recalib:

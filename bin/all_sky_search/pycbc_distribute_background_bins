@@ -43,7 +43,7 @@ logging.info('%s coinc triggers' % len(d))
 for name, outname in zip(names, args.output_files):
     # select the coincs from only this bin and save to a single combined file
     locs = locs_dict[name]
-    e = d.select(numpy.in1d(d.template_id, locs))
+    e = d.select(numpy.isin(d.template_id, locs))
     logging.info('%s coincs in mass bin: %s' % (len(e), name))
     e.save(outname)
     f = pycbc.io.HFile(outname)

@@ -50,27 +50,40 @@ from pycbc.vetoes import sgchisq
 from pycbc.tmpltbank.sky_grid import SkyGrid
 
 
-def slide_limiter(args):
+def slide_limiter(n_ifos, slide_shift, segment_length):
     '''
     This function computes the number of shortslides used by the coherent
-    matched filter statistic to obtain as most background triggers as 
+    matched filter statistic to obtain as many background triggers as
     possible.
 
     It bounds the number of slides to avoid counting triggers more than once.
     If the data is not time slid, there is a single slide for the zero-lag.
+
+    Parameters
+    ----------
+    n_ifos: int
+        The number of detectors used in the analysis
+    slide_shift: float
+        The shift of each timeslide in seconds
+    segment_length: float
+        The duration of segments in the analysis in seconds
+
+    Returns
+    -------
+    num_slides: int
+        The number of independent timeslides
     '''
-    low, upp = 1, args.segment_length[args.instruments[0]]
-    if args.do_shortslides:
-        n_ifos = len(args.instruments)
-        stride_dur = args.segment_length[args.instruments[0]]/2
-        num_slides = np.int32(1 +
-            np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
-        assert  np.logical_and(num_slides>=low,num_slides<=upp),\
-                "the combination (slideshift, segment_dur)"\
-                f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
-                f" goes over the allowed upper bound {upp}"
-    else:
-        num_slides = 1
+    low, upp = 1, segment_length
+    if n_ifos == 1:
+        return 1
+    stride_dur = segment_length/2
+    num_slides = 1 + int(stride_dur /
+                         (slide_shift*(n_ifos-1)))
+    assert (num_slides >= low) and (num_slides <= upp), \
+           "the combination (slideshift, segment_dur)"\
+           f" = ({slide_shift:.2f},{stride_dur*2:.2f})"\
+           f" goes over the allowed upper bound {upp}"
+
     return num_slides
 
 
@@ -157,7 +170,7 @@ parser.add_argument("--autochi-two-phase", action="store_true",
                          "If not given, only the phase matching the trigger "
                          "will be used.")
 parser.add_argument("--autochi-onesided", action='store',
-                    choices=['left','right'],
+                    choices=['left', 'right'],
                     help="Decide whether to calculate auto-chisq using"
                          "points on both sides of the trigger or only on one"
                          "side. If not given points on both sides will be"
@@ -174,8 +187,8 @@ parser.add_argument("--autochi-reverse-template", action="store_true",
 parser.add_argument("--autochi-max-valued", action="store_true",
                     default=False,
                     help="If given, store only the maximum value of the auto-"
-                         "chisq over all points tested. A disadvantage of this "
-                         "is that the mean value will not be known "
+                         "chisq over all points tested. A disadvantage of "
+                         "this is that the mean value will not be known "
                          "analytically.")
 parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
                     type=int,
@@ -237,13 +250,22 @@ parser.add_argument(
     "value will be discarded.",
 )
 parser.add_argument(
+    "--nifo-sngl-snr-threshold",
+    action="store",
+    type=int,
+    default=2,
+    help="How many detectors must pass the --sngl-snr-threshold cut in order "
+    "to generate a trigger; the cut is only applied when more than 1 detector "
+    "is used in the analysis (default 2)."
+)
+parser.add_argument(
     "--sngl-snr-threshold",
     action="store",
     type=float,
     default=4.0,
     metavar='THRESHOLD',
     help="Single detector SNR threshold for trigger generation required in "
-    "at least two detectors (default: 4).",
+    "at least --nifo-sngl-snr-threshold detectors (default: 4).",
 )
 parser.add_argument(
     "--chisq-index",
@@ -326,10 +348,25 @@ inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 init_logging(args.verbose)
-# Setting the number of Shortslides
-num_slides = slide_limiter(args)
+# Setting the number of shortslides
+nifo = len(args.instruments)
+num_slides = 1
+if args.do_shortslides:
+    num_slides = slide_limiter(
+        nifo,
+        args.slide_shift,
+        args.segment_length[args.instruments[0]]
+    )
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
+# Check that the number of IFOs requested to have single SNR above threshold
+# is compatible with the number of detectors in the analysis
+if nifo > 1 and nifo < args.nifo_sngl_snr_threshold:
+    parser.error("--nifo-sngl-snr-threshold "
+                 f"({args.nifo_sngl_snr_threshold}) cannot exceed the "
+                 "number of detectors in the analysis "
+                 f"({nifo}) because this would "
+                 "never yield any trigger.")
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
@@ -363,7 +400,6 @@ with ctx:
     fft.from_cli(args)
     # Set some convenience variables: number of IFOs, lower frequency,
     # GRB time, sky positions to search (either a grid or single sky point)
-    nifo = len(args.instruments[:])
     flow = args.low_frequency_cutoff
     t_gps = args.trigger_time
     sky_positions = SkyGrid.from_cli(parser, args)
@@ -449,9 +485,9 @@ with ctx:
     # All MatchedFilterControl instances are initialized in the same way.
     # This allows to track where the single detector SNR timeseries are
     # greater than args.sngl_snr_threshold. Later, coh.get_coinc_indexes
-    # will enforce the requirement that at least two single detector SNR
-    # are above args.sngl_snr_threshold, rescuing, where necessary, SNR
-    # timeseries points for detectors below that threshold.
+    # will enforce the requirement that at least args.nifo_sngl_snr_threshold
+    # single detector SNRs are above args.sngl_snr_threshold, rescuing, where
+    # necessary, SNR timeseries points for detectors below that threshold.
     # NOTE: Do not cluster here for a coherent search (use_cluster=False).
     #       Clustering happens at the end of the template loop.
     matched_filter = {
@@ -526,7 +562,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'auto_chisq': None,
-        'auto_chisq_dof': int,
+        'auto_chisq_dof': None,
         'slide_id': None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
@@ -552,7 +588,7 @@ with ctx:
         'reweighted_snr': None,
         'slide_id': None,
     }
-    network_names = sorted(network_out_vals.keys())
+    network_names = network_out_vals.keys()
     event_mgr = EventManagerCoherent(
         args,
         args.instruments,
@@ -605,7 +641,7 @@ with ctx:
                 if not inj_filter_rejector[ifo].template_segment_checker(
                     bank, t_num, stilde[ifo]
                 ):
-                    logging.info(
+                    logging.debug(
                         "Skipping segment %d/%d with template %d/%d as no "
                         "detectable injection is present",
                         s_num + 1,
@@ -629,7 +665,11 @@ with ctx:
             if not analyse_segment:
                 continue
             logging.info(
-                "Analyzing segment %d/%d", s_num + 1, len(segments[ifo])
+                "Analyzing template %d/%d, segment %d/%d",
+                t_num + 1,
+                n_bank,
+                s_num + 1,
+                len(segments[ifo])
             )
             # The following dicts with IFOs as keys are created to store
             # copies of the matched filtering results computed below.
@@ -644,8 +684,12 @@ with ctx:
             idx = dict.fromkeys(args.instruments)
             # - The list of normalized SNR values at the trigger locations
             snr = dict.fromkeys(args.instruments)
+            # - Cache for power chi^2 and corresponding DoF for each time sample.
+            #   Typically only a tiny fraction will be populated.
+            power_chisq_arrays = dict.fromkeys(args.instruments)
+            power_chisq_dof_arrays = dict.fromkeys(args.instruments)
             for ifo in args.instruments:
-                logging.info(
+                logging.debug(
                     "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo
                 )
                 # The following lines unpack and store copies of the matched
@@ -665,10 +709,18 @@ with ctx:
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 # change to integer indexes because we will have to do
-                # arithmetic with time_delay_idx, which can be positive 
+                # arithmetic with time_delay_idx, which can be positive
                 # or negative
                 idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
+                # Initialize the cache for power chi^2
+                power_chisq_arrays[ifo] = np.full(
+                    len(snr_dict[ifo]), np.nan, dtype=np.float32
+                )
+                power_chisq_dof_arrays[ifo] = np.zeros(
+                    len(snr_dict[ifo]), dtype=np.int32
+                )
+                del snr_ts, norm, corr, ind, snrv
 
             # Move onto next segment if there are no triggers.
             n_trigs = [len(snr[ifo]) for ifo in args.instruments]
@@ -677,10 +729,10 @@ with ctx:
 
             # Loop over (short) time-slides, starting with the zero-lag
             for slide in range(num_slides):
-                logging.info("Analyzing slide %d/%d", slide, num_slides)
+                logging.debug("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
                 for position_index in range(len(sky_positions)):
-                    logging.info(
+                    logging.debug(
                         "Analyzing sky position %d/%d",
                         position_index + 1,
                         len(sky_positions),
@@ -691,7 +743,8 @@ with ctx:
                     # Indices are kept only if they do not get time shifted
                     # out of the time we are looking at, i.e., require
                     # idx[ifo] - time_delay_idx[slide][position_index][ifo]
-                    # to be in (0, len(snr_dict[ifo]))
+                    # (which applies the necessary time shift by operating on
+                    # indices) to be between 0 and len(snr_dict[ifo]).
                     idx_dict = {
                         ifo: idx[ifo][
                             np.logical_and(
@@ -704,27 +757,27 @@ with ctx:
                         ]
                         for ifo in args.instruments
                     }
-                    # Find triggers that are coincident (in geocent time) in
-                    # multiple IFOs. If a single IFO analysis then just use the
-                    # indices from that IFO, i.e., IFO 0; otherwise, this
-                    # method finds coincidences and applies the single IFO cut,
-                    # namely, triggers must have at least 2 IFO SNRs above
-                    # args.sngl_snr_threshold.
-                    if nifo > 1:
-                        coinc_idx = coh.get_coinc_indexes(
-                            idx_dict, time_delay_idx[slide][position_index]
-                        )
-                    else:
-                        coinc_idx = (
-                            idx_dict[args.instruments[0]]
-                            - time_delay_idx[slide][position_index][
-                                args.instruments[0]
-                            ]
-                        )
-                    logging.info(
+                    # Find indexes (related to geocenter time) of triggers that
+                    # are coincident (in geocenter time) in multiple IFOs.
+                    # This is done by calling the method that finds coincidences
+                    # and applies the single IFO SNR cut asking for triggers to
+                    # have SNR >= args.sngl_snr_threshold in at least
+                    # args.nifo_sngl_snr_threshold IFOs; recall that idx_dict
+                    # tracks (at the geocent) triggers above threshold in
+                    # individual detectors. If only one IFO is available, then
+                    # the method returns trigger indices for that IFO. Given
+                    # that we are looping over timeslides and sky positions,
+                    # the appropriate dictionary of time delays wrt the
+                    # geocenter must be passed to operate at the geocenter.
+                    coinc_idx = coh.get_coinc_indexes(
+                        idx_dict, time_delay_idx[slide][position_index],
+                        args.nifo_sngl_snr_threshold
+                    )
+                    logging.debug(
                         "Found %d coincident triggers", len(coinc_idx)
                     )
-                    # Time delay is applied to indices to have them at the IFOs
+                    # Time delay is applied to indices at the geocenter to have
+                    # them at the IFOs (hence the + which undoes the delay).
                     coinc_idx_det_frame = {
                         ifo: (
                             coinc_idx
@@ -733,9 +786,16 @@ with ctx:
                         % len(snr_dict[ifo])
                         for ifo in args.instruments
                     }
-                    # Calculate the coincident and coherent SNR.
-                    # First check there is enough data to compute the SNRs.
-                    if len(coinc_idx) != 0 and nifo > 1:
+                    # Calculate the quadrature sum of individual detector SNRs,
+                    # regardless of how many IFOs are available.
+                    # This accounts for a coherent SNR component and an
+                    # incoherent one.  It is referred to as coincident SNR
+                    # throughout the code, even in the single IFO case.
+                    # The calculation is performed only if triggers were
+                    # gathered so far. Once again, the appropriate dictionary
+                    # of time delays wrt the geocenter must be passed to
+                    # operate at the geocenter.
+                    if len(coinc_idx) != 0:
                         # Find coinc SNR at trigger times and apply coinc SNR
                         # threshold (which depopulates coinc_idx accordingly)
                         (
@@ -748,32 +808,24 @@ with ctx:
                             args.coinc_threshold,
                             time_delay_idx[slide][position_index],
                         )
-                        logging.info(
+                        logging.debug(
                             "%d triggers above coincident SNR threshold",
                             len(coinc_idx),
                         )
                         if len(coinc_idx) != 0:
-                            logging.info(
+                            logging.debug(
                                 "With max coincident SNR = %.2f",
                                 max(rho_coinc),
                             )
-                    # If there is only one IFO, just take its triggers
-                    # and their SNRs
-                    elif len(coinc_idx) != 0 and nifo == 1:
-                        coinc_triggers = {
-                            args.instruments[0]: snr[args.instruments[0]][
-                                coinc_idx_det_frame[args.instruments[0]]
-                            ]
-                        }
                     else:
                         coinc_triggers = {}
-                        logging.info("No coincident triggers were found")
+                        logging.debug("No coincident triggers were found")
                     # If there are triggers above coinc threshold and more
-                    # than 2 IFOs, then calculate the coherent statistics for
+                    # than 1 IFO, then calculate the coherent statistics for
                     # them and apply the cut on coherent SNR (with threshold
                     # equal to the coinc SNR one)
-                    if len(coinc_idx) != 0 and nifo > 2:
-                        logging.info("Calculating their coherent statistics")
+                    if len(coinc_idx) != 0 and nifo > 1:
+                        logging.debug("Calculating their coherent statistics")
                         # Plus and cross antenna pattern dictionaries
                         fp = {
                             ifo: antenna_pattern[ifo][position_index][0]
@@ -873,12 +925,12 @@ with ctx:
                                 project,
                                 rho_coinc,
                             )
-                        logging.info(
+                        logging.debug(
                             "%d triggers above coherent SNR threshold",
                             len(rho_coh),
                         )
                         if len(coinc_idx) != 0:
-                            logging.info(
+                            logging.debug(
                                 "With max coherent SNR = %.2f", max(rho_coh)
                             )
                             # Calculate the null SNR and apply the null SNR cut
@@ -898,11 +950,11 @@ with ctx:
                                 snrv=coinc_triggers,
                                 index=coinc_idx,
                             )
-                            logging.info(
+                            logging.debug(
                                 "%d triggers above null threshold", len(null)
                             )
                             if len(coinc_idx) != 0:
-                                logging.info(
+                                logging.debug(
                                     "With max null SNR = %.2f", max(null)
                                 )
                     # Now calculate the individual detector chi2 values
@@ -912,7 +964,9 @@ with ctx:
                     # (surviving) triggers in the detector frame.
                     if len(coinc_idx) != 0:
                         # Updated coinc_idx_det_frame to account for the
-                        # effect of the cuts applied to far
+                        # effect of the cuts applied so far (operate on the
+                        # time related indices with a +time_delay_idx to
+                        # transform geocenter time to IFO time).
                         coinc_idx_det_frame = {
                             ifo: (
                                 coinc_idx
@@ -933,21 +987,34 @@ with ctx:
                         chisq = {}
                         chisq_dof = {}
                         for ifo in args.instruments:
-                            chisq[ifo], chisq_dof[ifo] = power_chisq.values(
-                                corr_dict[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
-                                stilde[ifo].psd,
-                                coinc_idx_det_frame[ifo]
-                                + stilde[ifo].analyze.start,
-                                template,
+                            # Figure out which new indices we need to calculate
+                            # the chi^2 for
+                            needed_idx = coinc_idx_det_frame[ifo]
+                            unavailable_mask = np.isnan(
+                                power_chisq_arrays[ifo][needed_idx]
                             )
+                            if unavailable_mask.any():
+                                new_needed_idx = needed_idx[unavailable_mask]
+                                new_chisq, new_chisq_dof = power_chisq.values(
+                                    corr_dict[ifo],
+                                    snr_dict[ifo][new_needed_idx] / norm_dict[ifo],
+                                    norm_dict[ifo],
+                                    stilde[ifo].psd,
+                                    new_needed_idx + stilde[ifo].analyze.start,
+                                    template,
+                                )
+                                power_chisq_arrays[ifo][new_needed_idx] = new_chisq
+                                power_chisq_dof_arrays[ifo][new_needed_idx] = new_chisq_dof
+                                del new_chisq, new_chisq_dof, new_needed_idx
+                            chisq[ifo] = power_chisq_arrays[ifo][needed_idx]
+                            chisq_dof[ifo] = power_chisq_dof_arrays[ifo][needed_idx]
+                            del needed_idx, unavailable_mask
                         # Calculate network chisq value
                         network_chisq_dict = coh.network_chisq(
                             chisq, chisq_dof, coherent_ifo_trigs
                         )
                         # Calculate chisq reweighted SNR
-                        if nifo > 2:
+                        if nifo > 1:
                             reweighted_snr = ranking.newsnr(
                                 rho_coh,
                                 network_chisq_dict,
@@ -963,16 +1030,9 @@ with ctx:
                                 null_grad=args.null_grad,
                                 null_step=args.null_step,
                             )
-                        elif nifo == 2:
-                            reweighted_snr = ranking.newsnr(
-                                rho_coinc,
-                                network_chisq_dict,
-                                q=args.chisq_index,
-                                n=args.chisq_nhigh,
-                            )
                         else:
                             rho_sngl = abs(
-                                snr[args.instruments[0]][
+                                snr_dict[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
@@ -995,8 +1055,8 @@ with ctx:
                                 template,
                                 stilde[ifo].psd,
                                 stilde[ifo],
-                                coherent_ifo_trigs[ifo] / norm_dict[ifo],
-                                norm_dict[ifo],
+                                coherent_ifo_trigs[ifo],
+                                1,  # coherent_ifo_trigs already normalized
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
@@ -1004,11 +1064,11 @@ with ctx:
                                 ifo_out_vals['auto_chisq'],
                                 ifo_out_vals['auto_chisq_dof'],
                             ) = autochisq.values(
-                                snr_dict[ifo] / norm_dict[ifo],
+                                snr_dict[ifo],
                                 coinc_idx_det_frame[ifo],
                                 template,
                                 stilde[ifo].psd,
-                                norm_dict[ifo],
+                                1,  # snr_dict already normalized
                                 stilde=stilde[ifo],
                                 low_frequency_cutoff=flow,
                             )
@@ -1030,14 +1090,12 @@ with ctx:
                                 ifo_names,
                                 [ifo_out_vals[n] for n in ifo_names],
                             )
-                        if nifo > 2:
+                        if nifo > 1:
                             network_out_vals['coherent_snr'] = rho_coh
                             network_out_vals['null_snr'] = null
-                        elif nifo == 2:
-                            network_out_vals['coherent_snr'] = rho_coinc
                         else:
                             network_out_vals['coherent_snr'] = abs(
-                                snr[args.instruments[0]][
+                                snr_dict[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
@@ -1069,7 +1127,7 @@ with ctx:
                 cluster_window = int(template.chirp_length * sample_rate)
             # Cluster template events by slide
             for slide in range(num_slides):
-                logging.info("Clustering slide %d", slide)
+                logging.debug("Clustering slide %d", slide)
                 event_mgr.cluster_template_network_events(
                     'time_index', 'reweighted_snr', cluster_window, slide=slide
                 )

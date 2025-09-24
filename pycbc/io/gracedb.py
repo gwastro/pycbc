@@ -10,9 +10,9 @@ import copy
 from multiprocessing.dummy import threading
 
 import lal
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc import version as pycbc_version
@@ -116,7 +116,7 @@ class CandidateForGraceDB(object):
                                        detectors=snr_ifos).process_id
 
         # Set up coinc_definer table
-        coinc_def_table = lsctables.New(lsctables.CoincDefTable)
+        coinc_def_table = lsctables.CoincDefTable.new()
         coinc_def_id = lsctables.CoincDefID(0)
         coinc_def_row = lsctables.CoincDef()
         coinc_def_row.search = "inspiral"
@@ -128,7 +128,7 @@ class CandidateForGraceDB(object):
 
         # Set up coinc inspiral and coinc event tables
         coinc_id = lsctables.CoincID(0)
-        coinc_event_table = lsctables.New(lsctables.CoincTable)
+        coinc_event_table = lsctables.CoincTable.new()
         coinc_event_row = lsctables.Coinc()
         coinc_event_row.coinc_def_id = coinc_def_id
         coinc_event_row.nevents = len(snr_ifos)
@@ -144,8 +144,8 @@ class CandidateForGraceDB(object):
         outdoc.childNodes[0].appendChild(coinc_event_table)
 
         # Set up sngls
-        sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
-        coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
+        sngl_inspiral_table = lsctables.SnglInspiralTable.new()
+        coinc_event_map_table = lsctables.CoincMapTable.new()
 
         # Marker variable recording template info from a valid sngl trigger
         sngl_populated = None
@@ -201,7 +201,7 @@ class CandidateForGraceDB(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         # Set up the coinc inspiral table
-        coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
+        coinc_inspiral_table = lsctables.CoincInspiralTable.new()
         coinc_inspiral_row = lsctables.CoincInspiral()
         # This seems to be used as FAP, which should not be in gracedb
         coinc_inspiral_row.false_alarm_rate = 0.
@@ -363,7 +363,7 @@ class CandidateForGraceDB(object):
         labels: list
             Optional list of labels to tag the new event with.
         """
-        import pylab as pl
+        from matplotlib import pyplot as plt
 
         if fname.endswith('.xml.gz'):
             self.basename = fname.replace('.xml.gz', '')
@@ -523,12 +523,12 @@ class CandidateForGraceDB(object):
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             colors = [source_color(label) for label in labels]
-            fig, ax = pl.subplots()
+            fig, ax = plt.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
                    textprops={'fontsize': 15})
             ax.axis('equal')
             fig.savefig(self.prob_plotf)
-            pl.close()
+            plt.close()
             if gid is not None:
                 try:
                     self.gracedb.write_log(

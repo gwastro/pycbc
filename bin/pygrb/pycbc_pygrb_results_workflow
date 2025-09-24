@@ -131,6 +131,12 @@ parser.add_argument(
     " OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]",
 )
 parser.add_argument(
+    "--sky-grid",
+    required=True,
+    action="store",
+    help="The location of the sky grid file"
+)
+parser.add_argument(
     "-i",
     "--inj-files",
     action="store",
@@ -204,6 +210,9 @@ logging.info("Onsource: %s", onsource_file.storage_path)
 logging.info("Offsource: %s", offsource_file.storage_path)
 logging.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
 
+sky_grid_file = os.path.join(start_rundir, args.sky_grid)
+sky_grid_file = _workflow.resolve_url_to_file(sky_grid_file)
+logging.info("Using the following sky grid : %s", sky_grid_file)
 # File instance of the template bank file
 bank_file = os.path.join(start_rundir, args.bank_file)
 bank_file = _workflow.resolve_url_to_file(bank_file)
@@ -232,6 +241,7 @@ wflow.ifos = ifos
 
 plotting_nodes = []
 html_nodes = []
+mfu_nodes = []
 
 # Convert the segments files to a FileList
 seg_files = _workflow.build_segment_filelist(args.segment_dir)
@@ -270,7 +280,8 @@ info_table_node, grb_info_table = _workflow.make_pygrb_info_table(
 html_nodes.append(info_table_node)
 # Plot the search grid
 plot_node, skygrid_plot = _workflow.make_pygrb_plot(
-    wflow, 'pygrb_plot_skygrid', out_dir, trig_file=offsource_file
+    wflow, 'pygrb_plot_skygrid', out_dir,
+    sky_grid_file=sky_grid_file
 )
 plotting_nodes.append(plot_node)
 # Retrieve the segments plot (produced in the preprocessing stage)
@@ -531,7 +542,7 @@ for inj_set in inj_sets:
         logging.info(msg)
     else:
         logging.info('Entering minifollowups module for injections')
-        _workflow.setup_pygrb_minifollowups(
+        mfu_node = _workflow.setup_pygrb_minifollowups(
             wflow,
             qf_h5,
             offsource_file,
@@ -541,6 +552,7 @@ for inj_set in inj_sets:
             veto_file=veto_file,
             tags=inj_file.tags + ['loudest_quiet_found_injs'],
         )
+        mfu_nodes.append(mfu_node)
         logging.info('Leaving minifollowups')
 
 #
@@ -584,7 +596,7 @@ if not wflow.cp.has_section('workflow-minifollowups'):
     logging.info(msg)
 else:
     logging.info('Entering minifollowups module for offsource')
-    _workflow.setup_pygrb_minifollowups(
+    mfu_node = _workflow.setup_pygrb_minifollowups(
         wflow,
         lofft_h5,
         offsource_file,
@@ -594,6 +606,7 @@ else:
         veto_file=veto_file,
         tags=['loudest_offsource_events'],
     )
+    mfu_nodes.append(mfu_node)
     logging.info('Leaving minifollowups')
 
 
@@ -764,7 +777,6 @@ for snr_type in ['reweighted', 'coherent']:
 openbox_layout = [(lont_table,)] + list(layout.grouper(timeseries_plots, 2))
 layout.two_column_layout(out_dir, openbox_layout)
 
-
 # Loudest on-source trigger follow up
 out_dir = rdir['open_box/loudest_event_followup']
 if not wflow.cp.has_section('workflow-minifollowups'):
@@ -773,7 +785,7 @@ if not wflow.cp.has_section('workflow-minifollowups'):
     logging.info(msg)
 else:
     logging.info("Entering minifollowups module for loudest onsource")
-    _workflow.setup_pygrb_minifollowups(
+    mfu_node = _workflow.setup_pygrb_minifollowups(
         wflow,
         lont_h5,
         onsource_file,
@@ -783,6 +795,7 @@ else:
         veto_file=veto_file,
         tags=['loudest_onsource_event'],
     )
+    mfu_nodes.append(mfu_node)
     logging.info("Leaving onsource minifollowups")
 
 # Exclusion distances and efficiency plots based on the on-source
@@ -830,7 +843,7 @@ _workflow.make_results_web_page(
     wflow,
     os.path.join(os.getcwd(), rdir.base),
     template='red',
-    explicit_dependencies=plotting_nodes + html_nodes,
+    explicit_dependencies=plotting_nodes + html_nodes + mfu_nodes,
 )
 
 # Close the log and flush to the html file

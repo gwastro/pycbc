@@ -4,7 +4,7 @@ segment.
 import logging
 import numpy
 from igwn_segments import segment, segmentlist
-from ligo.lw import table, lsctables, utils as ligolw_utils
+from igwn_ligolw import ligolw, lsctables, utils as ligolw_utils
 
 logger = logging.getLogger('pycbc.events.veto')
 
@@ -112,9 +112,9 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
-    segment_table  = table.Table.get_table(indoc, 'segment')
+    segment_table  = ligolw.Table.get_table(indoc, 'segment')
 
-    seg_def_table = table.Table.get_table(indoc, 'segment_definer')
+    seg_def_table = ligolw.Table.get_table(indoc, 'segment_definer')
     def_ifos = seg_def_table.getColumnByName('ifos')
     def_names = seg_def_table.getColumnByName('name')
     def_ids = seg_def_table.getColumnByName('segment_def_id')

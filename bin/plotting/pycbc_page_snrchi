@@ -5,7 +5,7 @@ import argparse
 import matplotlib
 import sys
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 import pycbc.results
 from pycbc.io import (
@@ -91,14 +91,14 @@ def snr_from_chisq(chisq, newsnr, q=6.):
     snr[ind] = float(newsnr) / ( 0.5 * (1. + chisq[ind] ** (q/2.)) ) ** (-1./q)
     return snr
 
-fig = pylab.figure(1)
+fig = plt.figure(1)
 
 r = numpy.logspace(numpy.log(chisq.min()), numpy.log(chisq.max()), 300)
 
 for i, cval in enumerate(args.newsnr_contours):
     logging.info("Plotting newsnr %s contour", cval)
     snrv = snr_from_chisq(r, cval)
-    pylab.plot(snrv, r, color='black', lw=0.5)
+    plt.plot(snrv, r, color='black', lw=0.5)
     if i == 0:
         label = "$\\hat{\\rho} = %s$" % cval
     else:
@@ -107,22 +107,22 @@ for i, cval in enumerate(args.newsnr_contours):
         label_pos_idx = numpy.where(snrv > snr.max() * 0.8)[0][0]
     except IndexError:
         label_pos_idx = 0
-    pylab.text(snrv[label_pos_idx], r[label_pos_idx], label, fontsize=6,
+    plt.text(snrv[label_pos_idx], r[label_pos_idx], label, fontsize=6,
                horizontalalignment='center', verticalalignment='center',
                bbox=dict(facecolor='white', lw=0, pad=0, alpha=0.9))
 
-pylab.hexbin(snr, chisq, gridsize=300, xscale='log', yscale='log', lw=0.04,
+plt.hexbin(snr, chisq, gridsize=300, xscale='log', yscale='log', lw=0.04,
              mincnt=1, norm=matplotlib.colors.LogNorm())
 
-ax = pylab.gca()
-pylab.grid()   
+ax = plt.gca()
+plt.grid()   
 ax.set_xscale('log')
-cb = pylab.colorbar() 
-pylab.xlim(snr.min(), snr.max() * 1.1)
-pylab.ylim(chisq.min(), chisq.max() * 1.1)
+cb = plt.colorbar() 
+plt.xlim(snr.min(), snr.max() * 1.1)
+plt.ylim(chisq.min(), chisq.max() * 1.1)
 cb.set_label('Trigger Density')
-pylab.xlabel('Signal-to-Noise Ratio')
-pylab.ylabel('Reduced $\\chi^2$')
+plt.xlabel('Signal-to-Noise Ratio')
+plt.ylabel('Reduced $\\chi^2$')
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
      title="%s :SNR vs Reduced %s &chi;<sup>2</sup>" % (ifo, args.chisq_choice),
      caption="Distribution of SNR and %s &chi;&sup2; for single detector triggers: "

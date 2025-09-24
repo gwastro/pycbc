@@ -11,8 +11,8 @@ import time
 from scipy import stats, special
 from argparse import ArgumentParser
 
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler

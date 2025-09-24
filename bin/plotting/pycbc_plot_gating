@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import pylab as pl
+from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 import mpld3
 import mpld3.plugins
@@ -48,7 +48,7 @@ for fn in args.input_file:
         have_gates = have_gates or (len(gate_data[key]) > 0)
 
 mpld3.plugins.DEFAULT_PLUGINS = []
-fig = pl.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(10, 5))
 ax = fig.gca()
 ax.set_yticks([])
 

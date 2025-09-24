@@ -7,8 +7,7 @@ import logging
 import matplotlib
 import sys
 matplotlib.use('Agg')
-from matplotlib.pyplot import cm
-import pylab
+from matplotlib import pyplot as plt
 
 import pycbc.pnutils
 import pycbc.results
@@ -230,7 +229,7 @@ if args.hdf_out:
     plotdict['xvals'] = x_values
 
 # Switches for plotting inclusive/exclusive significance
-color = iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
+color = iter(plt.cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
 if not args.exclusive_sig:
     fvalues = [found['sig'], found['sig_exc']]
     do_labels = [True, False]
@@ -240,7 +239,7 @@ else:
     do_labels = [True]
     alphas = [.6]
 
-fig = pylab.figure()
+fig = plt.figure()
 # Cycle over parameter bins plotting each in turn
 for j in range(len(args.bins)-1):
     c = next(color)
@@ -328,14 +327,14 @@ for j in range(len(args.bins)-1):
             reach, ehigh, elow = vols, vol_errors, vol_errors
         elif args.dist_type == 'vt':
             ylabel = "Volume $\\times$ Time (yr Mpc$^3$)"
-            pylab.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
 
         label = labels[args.bin_type] % (left, right) if do_label else None
-        pylab.plot(x_values, reach, label=label, c=c)
-        pylab.plot(x_values, reach, alpha=alpha, c='black')
-        pylab.fill_between(x_values, reach - elow, reach + ehigh,
+        plt.plot(x_values, reach, label=label, c=c)
+        plt.plot(x_values, reach, alpha=alpha, c='black')
+        plt.fill_between(x_values, reach - elow, reach + ehigh,
                            facecolor=c, edgecolor=c, alpha=alpha)
         if label and args.hdf_out:
             plotdict['data/%s' % label] = reach
@@ -347,7 +346,7 @@ if args.hdf_out:
     for key in plotdict.keys():
         outfile.create_dataset(key, data=plotdict[key])
 
-ax = pylab.gca()
+ax = plt.gca()
 
 if args.log_dist:
     ax.set_yscale('log')
@@ -359,15 +358,15 @@ if args.sig_type == 'fap':
     ax.invert_xaxis()
 
 if args.min_dist is not None:
-    pylab.ylim(ymin=args.min_dist)
+    plt.ylim(ymin=args.min_dist)
 if args.max_dist is not None:
-    pylab.ylim(ymax=args.max_dist)
+    plt.ylim(ymax=args.max_dist)
 
-pylab.ylabel(ylabel)
-pylab.xlabel(xlabel)
+plt.ylabel(ylabel)
+plt.xlabel(xlabel)
 
-pylab.grid()
-pylab.legend(loc='lower left')
+plt.grid()
+plt.legend(loc='lower left')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="Sensitive %s vs %s: binned by %s using %s method"

@@ -30,9 +30,10 @@ import numpy as np
 logger = logging.getLogger('pycbc.events.coherent')
 
 
-def get_coinc_indexes(idx_dict, time_delay_idx):
-    """Return the indexes corresponding to coincident triggers, requiring
-    they are seen in at least two detectors in the network
+def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
+    """Return the indexes corresponding to coincident triggers. If only one
+    detector is available in the network, the list of its unique indexes is
+    simply returned.
 
     Parameters
     ----------
@@ -41,7 +42,10 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
         detector
     time_delay_idx: dict
         Dictionary giving time delay index (time_delay*sample_rate) for
-        each ifo
+        each detector
+    min_nifos: int
+        The minimum number of detectors needed to be above threshold
+        for a coincidence to be produced
 
     Returns
     -------
@@ -51,22 +55,28 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
     """
     coinc_list = np.array([], dtype=int)
     for ifo in idx_dict.keys():
-        # Create list of indexes above threshold in single detector in geocent
-        # time. Can then search for triggers that appear in multiple detectors
-        # later.
+        # Create list of indexes above single detector threshold, in geocent
+        # time (-time_delay_idx[ifo] applies the time delay for the specific
+        # detector). This can be searched later for triggers appearing in
+        # multiple detectors.
         if len(idx_dict[ifo]) != 0:
             coinc_list = np.hstack(
                 [coinc_list, idx_dict[ifo] - time_delay_idx[ifo]]
             )
     # Search through coinc_idx for repeated indexes. These must have been loud
-    # in at least 2 detectors.
+    # in at least min_nifos detectors if the analysis uses more than 1
+    # detector.
     counts = np.unique(coinc_list, return_counts=True)
-    coinc_idx = counts[0][counts[1] > 1]
+    if len(idx_dict) == 1:
+        return counts[0]
+    coinc_idx = counts[0][counts[1] > min_nifos - 1]
     return coinc_idx
 
 
 def get_coinc_triggers(snrs, idx, t_delay_idx):
-    """Returns the coincident triggers from the longer SNR timeseries
+    """Returns a dictionary, indexed by IFO, that collects the individual
+    IFO SNRs of coincident triggers by using the indices of such triggers
+    within the complete SNR timeseries of each IFO.
 
     Parameters
     ----------
@@ -291,7 +301,9 @@ def null_snr(
     null SNR > null_min where coherent SNR < null_step
     and null SNR > (null_grad * rho_coh + null_min) elsewhere. See
     Eq. 3.1 of Harry & Fairhurst (2011) [arXiv:1012.4939] or
-    Eqs. 11 and 12 of Williamson et al. (2014) [arXiv:1410.6042]..
+    Eqs. 11 and 12 of Williamson et al. (2014) [arXiv:1410.6042].
+    Note that in Eq. 12 rho_coh should instead be rho_coh-null_step as
+    reported in Eq. 4.73 of https://orca.cardiff.ac.uk/id/eprint/128124/.
 
     Parameters
     ----------
@@ -358,7 +370,9 @@ def reweight_snr_by_null(
         network_snr, null, coherent, null_min=5.25, null_grad=0.2,
         null_step=20.0):
     """Re-weight the detection statistic as a function of the null SNR.
-    See Eq. 16 of Williamson et al. (2014) [arXiv:1410.6042].
+    See Eq. 16 of Williamson et al. (2014) [arXiv:1410.6042] and note
+    that the 4.25 appearing there is actually linked to the 5.25 of
+    Eq. 12, hence the -1 carried out in this function.
 
     Parameters
     ----------

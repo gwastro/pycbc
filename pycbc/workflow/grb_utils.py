@@ -36,7 +36,7 @@ from gwdatafind.utils import filename_metadata
 
 from pycbc import makedir
 from pycbc.workflow.core import \
-    File, FileList, resolve_url_to_file,\
+    File, FileList, resolve_url_to_file, \
     Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
@@ -335,8 +335,12 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     exe_class = _select_grb_pp_class(wf, "trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
-    node, trig_files = job_instance.create_node(wf.ifo_string, seg_dir, segment,
-                                                insp_files, pp_dir, bank_file)
+    node, trig_files = job_instance.create_node(wf.ifo_string,
+                                                seg_dir,
+                                                segment,
+                                                insp_files,
+                                                pp_dir,
+                                                bank_file)
     wf.add_node(node)
 
     # Trig clustering for each trig file
@@ -481,7 +485,8 @@ def build_segment_filelist(seg_dir):
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None,
                     onsource_file=None, bank_file=None,
-                    seg_files=None, veto_file=None, tags=None, **kwargs):
+                    seg_files=None, sky_grid_file=None,
+                     veto_file=None, tags=None, **kwargs):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -489,9 +494,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Initialize job node with its tags
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
-    # TODO: why is inj_set repeated twice in output files?
-    # if inj_set is not None:
-    #     extra_tags.append(inj_set)
     if ifo:
         extra_tags.append(ifo)
     node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
@@ -502,6 +504,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Pass the veto and segment files and options
     if seg_files:
         node.add_input_list_opt('--seg-files', seg_files)
+    if sky_grid_file:
+        node.add_input_opt('--sky-grid', sky_grid_file)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
     # Option to show the onsource trial if this is a plot of all data
@@ -756,10 +760,13 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
     job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
+    return job
+
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
                                  inj_files, bank_file, seg_dir,
-                                 veto_file=None,tags=None,
+                                 sky_grid_file, veto_file=None, 
+                                 tags=None, 
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -797,6 +804,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
+    node.add_input_opt('--sky-grid', sky_grid_file)
     node.add_opt('--segment-dir', seg_dir)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)

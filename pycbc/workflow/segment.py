@@ -198,6 +198,9 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                 offsrc = seg
     else:
         offsrc = offsrclist[0]
+    # Force int boundaries in case we get floats as input,
+    # which can create problems downstream
+    offsrc = segments.segment(int(offsrc[0]), int(offsrc[1]))
 
     if abs(offsrc) < minduration + 2 * padding:
         fail = segments.segment([triggertime - minduration / 2. - padding,
@@ -218,7 +221,6 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     logger.info("%ds of padding applied at beginning and end of segment.",
                 padding)
-
 
     # Construct on-source
     onstart = triggertime - onbefore

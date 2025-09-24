@@ -20,7 +20,7 @@ import numpy
 import sys
 import logging
 import matplotlib as mpl; mpl.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 from scipy.stats import norm, poisson
 
@@ -70,8 +70,8 @@ opts = parser.parse_args()
 init_logging(opts.verbose)
 
 if opts.use_tex:
-    pylab.rc('text', usetex=True)
-    pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.rc('text', usetex=True)
+    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 trigf = [HFile(f, 'r') for f in opts.trigger_files]
 
@@ -95,7 +95,7 @@ if h_inc_back_num is None:
 
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
-    fig = pylab.figure()
+    fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.set_xlim(0, 1)
@@ -161,10 +161,10 @@ for f in trigf:
 expected_cumnum = conversions.sec_to_year(fg_time) / expected_ifar
 
 # make figure
-fig = pylab.figure(1)
+fig = plt.figure(1)
 
 # plot the expected background
-pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=1,
+plt.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=1,
              color='black', label='Expected Background')
 
 # plot the counting error
@@ -204,17 +204,17 @@ for sigma in [1, 2, 3, 4]:
         upper[sigma].append(nup + 1.5)
 
 plotifar = expected_ifar[::-1]
-pylab.fill_between(plotifar, lower[4], lower[3], facecolor='k', alpha=0.15,
+plt.fill_between(plotifar, lower[4], lower[3], facecolor='k', alpha=0.15,
                    label=r'$<4\sigma$')
-pylab.fill_between(plotifar, lower[3], lower[2], facecolor='k', alpha=0.3,
+plt.fill_between(plotifar, lower[3], lower[2], facecolor='k', alpha=0.3,
                    label=r'$<3\sigma$')
-pylab.fill_between(plotifar, lower[2], lower[1], facecolor='k', alpha=0.45,
+plt.fill_between(plotifar, lower[2], lower[1], facecolor='k', alpha=0.45,
                    label=r'$<2\sigma$')
-pylab.fill_between(plotifar, lower[1], upper[1], facecolor='k', alpha=0.6,
+plt.fill_between(plotifar, lower[1], upper[1], facecolor='k', alpha=0.6,
                    label=r'$<1\sigma$')
-pylab.fill_between(plotifar, upper[1], upper[2], facecolor='k', alpha=0.45)
-pylab.fill_between(plotifar, upper[2], upper[3], facecolor='k', alpha=0.3)
-pylab.fill_between(plotifar, upper[3], upper[4], facecolor='k', alpha=0.15)
+plt.fill_between(plotifar, upper[1], upper[2], facecolor='k', alpha=0.45)
+plt.fill_between(plotifar, upper[2], upper[3], facecolor='k', alpha=0.3)
+plt.fill_between(plotifar, upper[3], upper[4], facecolor='k', alpha=0.15)
 
 # plot the foreground triggers
 if opts.open_box:
@@ -223,32 +223,32 @@ if opts.open_box:
         fore_ifar[over_trunc] = numpy.ones(over_trunc.sum()) * \
                                                         opts.truncate_threshold
         for i in fore_cumnum[over_trunc]:
-            pylab.arrow(opts.truncate_threshold, i, opts.truncate_threshold, 0,
+            plt.arrow(opts.truncate_threshold, i, opts.truncate_threshold, 0,
                         head_width=0.1 * i, head_length=0.4 * \
                         opts.truncate_threshold, ec='b', fc='b')
-    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
+    plt.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
                  marker='^', ms=6, label='Foreground')
     max_ifar = max(fore_ifar)
 
     if h_inc_back_num > 0:
         max_ifar = max(max_ifar, max(h_rm_ifar))
-        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
+        plt.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
                      marker='v', label='Hierarchically Removed Foreground')
 
 # format plot
 if opts.open_box:
     # scale the plot around the foreground
-    pylab.ylim(0.7, 0.05 * len(fore_cumnum))
-    pylab.xlim(30 * min(fore_ifar), 3 * max_ifar)
+    plt.ylim(0.7, 0.05 * len(fore_cumnum))
+    plt.xlim(30 * min(fore_ifar), 3 * max_ifar)
 else:
-    pylab.ylim(0.7, max(expected_cumnum))
-pylab.grid()
-pylab.legend(loc='upper right', fontsize=13)
-pylab.ylabel('Cumulative Number', size='large')
+    plt.ylim(0.7, max(expected_cumnum))
+plt.grid()
+plt.legend(loc='upper right', fontsize=13)
+plt.ylabel('Cumulative Number', size='large')
 ifar_label = 'Inverse False Alarm Rate (yr)'
 if opts.use_exclusive_ifar:
     ifar_label = 'Exclusive ' + ifar_label
-pylab.xlabel(ifar_label, size='large')
+plt.xlabel(ifar_label, size='large')
 
 # save
 caption = 'This is a cumulative histogram of triggers. The blue triangles ' \

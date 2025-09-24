@@ -27,7 +27,7 @@ import numpy
 import sys
 import matplotlib
 matplotlib.use('agg')
-import pylab
+from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from pycbc.io.hdf import HFile
 
@@ -54,7 +54,7 @@ parser.add_argument('--reduction-method', choices=['min','max','mean','median'],
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
-fig=pylab.figure()
+fig=plt.figure()
 ax=fig.gca()
 
 logging.info('Reading %s', opts.psd_file)
@@ -132,7 +132,7 @@ ax.set_xticklabels( ticklabels )
 ax.set_xlabel('Days since GPS %d' % start.min(), fontsize=18 )
 ax.set_ylabel('Frequency (Hz)', fontsize=18 )
 fig.set_size_inches(18.5, 10.5)
-pylab.tight_layout()
+plt.tight_layout()
 
 title = ('Evolution of the noise spectral density over time in %s' % ifo)
 caption = ('Variation of the amplitude spectral density over time. The original'

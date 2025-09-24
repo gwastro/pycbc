@@ -4,7 +4,7 @@ import argparse
 import sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.types
@@ -29,8 +29,8 @@ init_logging(args.verbose)
 
 f = HFile(args.single_template_file, 'r')
 y = f['chisq_boundaries'][:]
-fig = pylab.figure()
-ax = pylab.gca()
+fig = plt.figure()
+ax = plt.gca()
 
 snr = pycbc.types.load_timeseries(args.single_template_file, group='snr')
 chisq = pycbc.types.load_timeseries(args.single_template_file, group='chisq')
@@ -54,16 +54,16 @@ for i in range(len(f['chisq_bins'].keys())):
     l = y[i:i+2]
     ax.pcolorfast(x, numpy.array([i, i+1]), ts.reshape(1, len(ts)))
 
-pylab.ylabel('Frequency (Hz)')
+plt.ylabel('Frequency (Hz)')
 
 xlabel = 'Time (s)'
 if args.central_time:
     xlabel += ' - %.2f' % args.central_time
     if args.window:
-        pylab.xlim(xmin=-args.window, xmax=args.window)
+        plt.xlim(xmin=-args.window, xmax=args.window)
 
-pylab.xlabel(xlabel)
-c = pylab.colorbar(ax.get_children()[2], ax=ax)
+plt.xlabel(xlabel)
+c = plt.colorbar(ax.get_children()[2], ax=ax)
 
 if args.plot_type == 'chisq':
     c.set_label("$\\rho_l^2 - \\rho^2/p$")

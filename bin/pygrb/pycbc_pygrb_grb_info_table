@@ -35,6 +35,7 @@ import lal
 from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version
 import pycbc.results
+import pycbc.distributions
 from pycbc.detector import Detector, ppdets
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor
 from pycbc.types import angle_as_radians
@@ -54,18 +55,20 @@ add_common_pycbc_options(parser)
 parser.add_argument("--trigger-time", type=int,
                     required=True,
                     help="GPS time of the GRB.")
+parser.add_argument("--input-dist", type=str,
+                    help="Input Distribution of the GRB. Use distribution "
+                    "functions in pycbc.distributions.sky_location code.")
 parser.add_argument("--ra", type=angle_as_radians,
-                    required=True,
                     help="Right ascension of the GRB. Use the rad or deg "
                     "suffix to specify units, otherwise radians are assumed.")
 parser.add_argument("--dec", type=angle_as_radians,
-                    required=True,
                     help="Declination of the GRB. Use the rad or deg suffix "
                     "to specify units, otherwise radians are assumed.")
 parser.add_argument("--sky-error", type=angle_as_radians,
                     default=0,
                     help="Sky-localisation error of the GRB. Use the rad or "
-                    "deg suffix to specify units, otherwise radians are assumed.")
+                    "deg suffix to specify units, otherwise radians are "
+                    "assumed.")
 parser.add_argument("--ifos", action="store", nargs='+',
                     default=None, required=True,
                     help="List containing the active IFOs.")
@@ -87,14 +90,29 @@ utc_time = datetime(*lal.GPSToUTC(opts.trigger_time)[0:6]).strftime("%Y-%m-%d %H
 data[0].append(utc_time)
 headers.append('UTC Time')
 
-data[0].append(f'{math.degrees(opts.ra):.3f}')
+if opts.input_dist is not None:
+    if opts.ra is not None or opts.dec is not None:
+        parser.error(
+            "You can't use input-dist argument and (ra,dec) at the same, please choose one"
+        ) 
+    input_dist = eval('pycbc.distributions.' + opts.input_dist)
+    ra, dec = input_dist.get_max_prob_point()
+    sky_error = None
+
+else:
+    ra = opts.ra
+    dec = opts.dec
+    sky_error = opts.sky_error
+    
+data[0].append(f'{math.degrees(ra):.3f}')
 headers.append('R.A. (deg)')
 
-data[0].append(f'{math.degrees(opts.dec):.3f}')
+data[0].append(f'{math.degrees(dec):.3f}')
 headers.append('Dec (deg)')
 
-data[0].append(f'{math.degrees(opts.sky_error):.3f}')
-headers.append('Sky Error (deg)')
+if sky_error is not None:
+    data[0].append(f'{math.degrees(sky_error):.3f}')
+    headers.append('Sky Error (deg)')
 
 data[0].append(ppdets(opts.ifos, ''))
 headers.append('IFOs')
@@ -102,7 +120,7 @@ headers.append('IFOs')
 for ifo in opts.ifos:
     antenna = Detector(ifo)
     factor = get_antenna_dist_factor(
-        antenna, opts.ra, opts.dec, float(opts.trigger_time)
+        antenna, ra, dec, float(opts.trigger_time)
     )
     data[0].append(f'{factor:.3f}')
     headers.append(ifo + ' Antenna Factor')

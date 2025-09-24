@@ -23,7 +23,6 @@
 import argparse
 import os
 import logging
-from collections import defaultdict
 
 import numpy
 
@@ -52,59 +51,7 @@ TQDM_KW = {
 }
 
 
-# -- utilties -----------------------------------
-
-def _init_combined_file(h5file, attributes, datasets, **compression_kw):
-    h5file.attrs.update(attributes)
-    # create datasets
-    for dset, (shape, dtype) in datasets.items():
-        if "template_id" in dset:
-            continue
-        h5file.create_dataset(dset, shape=shape, dtype=dtype,
-                              **compression_kw)
-
-
-def _merge_dataset(source, target, position, is_event_id=False, ifo_event_id_pos=None):
-    """Merge one dataset into another at a given position.
-
-    Parameters
-    ----------
-    source : `h5py.Dataset`
-        the source dataset
-
-    target : `h5py.Dataset`
-        the target dataset
-
-    position: `int`
-        the index of `target` at which to insert ``source`
-
-    is_event_id : `bool`, optional
-        if `True` the values of ``source`` will be incremented by ``position``;
-        this should be used to increment the ``*/event_id`` columns by the
-        internal count of events
-
-    ifo_event_id_pos : `int`, `None`, optional
-        if not `None`, the values of ``source`` will be incremented by
-        the given value; this should be used to increment the
-        ``network/X1_event_id`` column values by the current count of
-        ``X1/event_id`` events
-
-    Returns
-    -------
-    size : `int`
-        the size of the dataset that was just merged
-    """
-    data = source[()]
-    size = data.shape[0]
-    # increment network/X1_event_id by count of X1/event_id
-    if ifo_event_id_pos:
-        data += ifo_event_id_pos
-    # increment X1/event_id by number of events recorded so far
-    elif is_event_id:
-        data += position
-    target[position:position+size] = data
-    return size
-
+# -- utilities -----------------------------------
 
 def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     """Merge several HDF5 files into a single file
@@ -183,61 +130,81 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     sngl_event_id_names = [
         x for x in dataset_names if x.endswith("/event_id")
     ]
-    network_event_id_names = {
-        "network/{}".format(x.replace('/', '_')): x for
+    network_event_id_names = [
+        "network/{}".format(x.replace('/', '_')) for
         x in sngl_event_id_names if not x.startswith("network")
-    }
+    ]
+    all_event_id_names = sngl_event_id_names + network_event_id_names
 
     # handle search datasets as a special case
-    # (they will the same in all files)
+    # (they will be the same in all files)
     search_datasets = set(filter(lambda x: "/search/" in x, dataset_names))
-
-    # record where we are in the global dataset
-    position = defaultdict(int)
+    gating_datasets = set(filter(lambda x: "/gating/" in x, dataset_names))
+    once_only_datasets = search_datasets.union(gating_datasets)
 
     with HFile(outputfile, 'w') as h5out:
-        _init_combined_file(h5out, attributes, datasets, **compression_kw)
+        h5out.attrs.update(attributes)
 
         # copy dataset contents
+        for dset in dataset_names:
+            # Template ID becomes unhelpful in the merged file.
+            # This will be handled separately.
+            if "template_id" in dset or dset in all_event_id_names:
+                continue
+
+            logging.info("Merging %s dataset", dset)
+            data = []
+            for filename in tqdm.tqdm(inputfiles, desc="Merging trigger files",
+                                      disable=not verbose, total=nfiles,
+                                      unit="files", **TQDM_KW):
+                with HFile(filename, 'r') as h5in:
+                    if len(h5in['network']['event_id']) == 0:
+                        continue
+                    data += [h5in[dset][:]]
+                    # read the search datasets and gating_datasets only once
+                    if dset in once_only_datasets:
+                        break
+
+            h5out.create_dataset(dset, data=numpy.concatenate(data),
+                                 **compression_kw)
+            del data
+        # END OF DATASET LOOP
+
+        # Handling event_id datasets seprately
+        dset = all_event_id_names[0]
+        n_events = 0
+        logging.info("Merging %s dataset", dset)
+        data = []
         for filename in tqdm.tqdm(inputfiles, desc="Merging trigger files",
                                   disable=not verbose, total=nfiles,
                                   unit="files", **TQDM_KW):
             with HFile(filename, 'r') as h5in:
                 if len(h5in['network']['event_id']) == 0:
                     continue
-                for dset in dataset_names:
-                    # get event_id handling options
-                    if dset in network_event_id_names:
-                        ifo_event_id_pos = position[network_event_id_names[dset]]
-                    else:
-                        ifo_event_id_pos = None
 
-                    # Template ID becomes unhelpful in the merged file.
-                    # This will be handled separately.
-                    if "template_id" in dset:
-                        continue
+                # shift the event ids by the number of events gathered so far
+                n_events_h5in = len(h5in[dset][:])
+                data += [h5in[dset][:] + [n_events]*n_events_h5in]
+                n_events += n_events_h5in
+        data = numpy.concatenate(data)
+        for dset in all_event_id_names:
+            logging.info("Storing %s dataset", dset)
+            h5out.create_dataset(dset, data=data, **compression_kw)
+        del data
 
-                    # merge dataset
-                    position[dset] += _merge_dataset(
-                        h5in[dset], h5out[dset], position[dset],
-                        is_event_id=dset in sngl_event_id_names,
-                        ifo_event_id_pos=ifo_event_id_pos,
-                    )
-
-            # only read the search datasets once
-            while search_datasets:
-                dataset_names.remove(search_datasets.pop())
-
+        # Handling template_id separately
+        logging.info("Preparing template IDs")
         template_ids = template_hash_to_id(
             trigger_file=h5out, bank_path=args.bank_file
         )
+        logging.info("Storing template IDs")
         h5out.create_dataset("network/template_id",
                              data=template_ids,
                              compression="gzip",
                              compression_opts=9)
+    # END OF WITH H5OUT
 
     logging.info("Merged triggers written to %s", outputfile)
-    return outputfile
 
 
 def bin_events(inputfile, bins, outdir, filetag,
@@ -302,7 +269,7 @@ def bin_events(inputfile, bins, outdir, filetag,
                             h5in.copy(h5in[old.name], h5out, old.name)
                             bar.update()
                 for ifo in ifos:
-                    idx = numpy.in1d(h5in[ifo]["event_id"][()], ifo_index[ifo])
+                    idx = numpy.isin(h5in[ifo]["event_id"][()], ifo_index[ifo])
                     for old in h5in[ifo].values():
                         if isinstance(old, h5py.Dataset):
                             h5out.create_dataset(
@@ -331,7 +298,7 @@ def read_segment_files(segdir):
             with open(os.path.join(segdir, filename), "r") as f:
                 segs[name], = fromsegwizard(f)
         except ValueError as exc:
-            exc.args = ("more than one segment, an error has occured",)
+            exc.args = ("more than one segment, an error has occurred",)
             raise
     return segs
 
@@ -386,6 +353,7 @@ parser.add_argument(
 parser.add_argument(
     "-e",
     "--seed",
+    type=int,
     default=None,
     help="Seed for the NumPy random number generator, default: %(default)s",
 )
@@ -486,7 +454,7 @@ logging.info(
 # there should always be two segments in the offsource bins,
 # one before and one after the onsource.
 # Nevertheless, simply rely on there being at least one stretch of offsource.
-offsource_ntrials = [int(numpy.trunc(abs(b)/trialtime)) for b in bins["OFFSOURCE"]]
+offsource_ntrials = [int(abs(b) / trialtime) for b in bins["OFFSOURCE"]]
 
 # Seed random number generator
 numpy.random.seed(args.seed)

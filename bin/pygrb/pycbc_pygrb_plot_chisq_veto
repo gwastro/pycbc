@@ -161,7 +161,7 @@ if opts.plot_caption is None:
         opts.plot_caption += ("Gray shaded region: area cut by the " +
                               "reweighted SNR threshold. " +
                               "Black line: reweighted SNR threshold. Yellow " +
-                              "lines: contours of constant rewighted SNR.")
+                              "lines: contours of constant reweighted SNR.")
 
 logging.info("Imported and ready to go.")
 
@@ -189,8 +189,8 @@ trial_dict, total_trials = ppu.construct_trials(
 )
 
 # Load trigger and injections data: ensure that newtwork power chi-square plots
-# show all the data to see the impact of the reweighted SNR cut, otherwise remove
-# points with reweighted SNR below threshold
+# show all the data to see the impact of the reweighted SNR cut, otherwise
+# remove points with reweighted SNR below threshold
 rw_snr_threshold = None if veto_type == 'network' else opts.newsnr_threshold
 trig_data = ppu.load_data(trig_file, ifos, data_tag='trigs',
                           rw_snr_threshold=rw_snr_threshold,
@@ -208,7 +208,7 @@ else:
 if veto_type == 'power':
     y_key = opts.ifo + '/chisq'
 elif veto_type in ['bank', 'auto']:
-    y_key = opts.ifo + '/' + veto_type +'_chisq'
+    y_key = opts.ifo + '/' + veto_type + '_chisq'
 else:
     y_key = 'network/my_network_chisq'
 

@@ -47,9 +47,9 @@ import igwn_segments as segments
 import lal
 import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
-from ligo.lw import lsctables, ligolw
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import segments as ligolw_segments
+from igwn_ligolw import lsctables, ligolw
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw.utils import segments as ligolw_segments
 
 from pycbc import makedir
 from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
@@ -691,10 +691,16 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             output_dir = args.output_dir or None
 
+        if args.cache_file is not None:
+            # Resolve any cache files locations
+            cache_file = resolve_url(args.cache_file)
+        else:
+            cache_file = None
+
         super(Workflow, self).__init__(
             name=name if name is not None else args.workflow_name,
             directory=output_dir,
-            cache_file=args.cache_file,
+            cache_file=cache_file,
             dax_file_name=dax_file,
         )
 

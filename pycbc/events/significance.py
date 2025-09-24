@@ -197,8 +197,18 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
     Wrapper to find the correct n_louder calculation method using standard
     inputs
     """
+    # Deal with edge case: we don't expect nan statistic values but if they
+    # exist they will ruin the n_louder count, as they are considered larger
+    # than floats in an argsort.
+    nanmask = np.isnan(back_stat)
+    if any(nanmask):
+        logging.warning(
+            "Setting %d NaN background statistic values to inf",
+            nanmask.sum(),
+        )
+    back_stat_nonan = np.where(nanmask, -np.inf, back_stat)
     return _significance_meth_dict[method](
-        back_stat,
+        back_stat_nonan,
         fore_stat,
         dec_facs,
         **kwargs)

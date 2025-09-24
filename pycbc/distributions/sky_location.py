@@ -17,6 +17,7 @@
 right ascension and declination.
 """
 
+import copy
 import logging
 import warnings
 import numpy
@@ -44,6 +45,116 @@ class UniformSky(angular.UniformSolidAngle):
     _polardistcls = angular.CosAngle
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
+
+    def to_uniform_patch(self, coverage):
+        if coverage < 1:
+            logging.warning(
+                'Attempt to convert UniformSky to a '
+                'uniform patch assumes 100% coverage'
+            )
+        return self
+
+
+class UniformDiskSky:
+    """A distribution that represents a uniform disk on the sky. The declination
+    varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
+
+    Parameters
+    ----------
+    mean_ra: float or str
+        RA of the center of the distribution. Use the rad or deg suffix to
+        specify units, otherwise radians are assumed.
+    mean_dec: float or str
+        Declination of the center of the distribution. Use the rad or deg
+        suffix to specify units, otherwise radians are assumed.
+    radius: float or str
+        Radius of the disk. Use the rad or deg suffix to specify units,
+        otherwise radians are assumed.
+    """
+    name = 'uniform_disk_sky'
+    _params = ['ra', 'dec']
+
+    def __init__(self, **params):
+        mean_ra = angle_as_radians(params['mean_ra'])
+        mean_dec = angle_as_radians(params['mean_dec'])
+        radius = angle_as_radians(params['radius'])
+        if mean_ra < 0 or mean_ra > 2 * numpy.pi:
+            raise ValueError(
+                f'The mean RA must be between 0 and 2π, {mean_ra} rad given'
+            )
+        if mean_dec < -numpy.pi / 2 or mean_dec > numpy.pi / 2:
+            raise ValueError(
+                'The mean declination must be between '
+                f'-π/2 and π/2, {mean_dec} rad given'
+            )
+        if radius < 0 or radius > 2 * numpy.pi:
+            raise ValueError(
+                'Radius must be non-negative and smaller than 2π'
+            )
+        # Prepare a rotation that puts the North Pole at the mean position
+        self.rotation = Rotation.from_euler(
+            'yz', [numpy.pi / 2 - mean_dec, mean_ra]
+        )
+        self.mean_ra, self.mean_dec, self.radius = mean_ra, mean_dec, radius
+
+    @property
+    def params(self):
+        return self._params
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        tag = variable_args
+        variable_args = variable_args.split(VARARGS_DELIM)
+        if set(variable_args) != set(cls._params):
+            raise ValueError(
+                "Not all parameters used by this distribution "
+                "included in tag portion of section name"
+            )
+        mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
+        mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
+        radius = cp.get_opt_tag(section, 'radius', tag)
+        return cls(
+            mean_ra=mean_ra,
+            mean_dec=mean_dec,
+            radius=radius,
+        )
+
+    def get_max_prob_point(self):
+        return (self.mean_ra, self.mean_dec)
+
+    def rvs(self, size):
+        # Draw samples from a distribution centered on the North pole
+        np_ra = numpy.random.uniform(low=0, high=(2 * numpy.pi), size=size)
+        np_dec = angular.SinAngle(
+            polar_bounds=(0,self.radius)).rvs(
+            size=size).astype(numpy.float64)
+
+        # Convert the samples to intermediate cartesian representation
+        np_cart = numpy.empty(shape=(size, 3))
+        np_cart[:, 0] = numpy.cos(np_ra) * numpy.sin(np_dec)
+        np_cart[:, 1] = numpy.sin(np_ra) * numpy.sin(np_dec)
+        np_cart[:, 2] = numpy.cos(np_dec)
+
+        # Rotate the samples according to our pre-built rotation
+        rot_cart = self.rotation.apply(np_cart)
+
+        # Convert the samples back to spherical coordinates.
+        # Some unpleasant conditional operations are needed
+        # to get the correct angle convention.
+        rot_radec = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
+        rot_radec['ra'] = numpy.arctan2(rot_cart[:, 1], rot_cart[:, 0])
+        neg_mask = rot_radec['ra'] < 0
+        rot_radec['ra'][neg_mask] += 2 * numpy.pi
+        rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
+        return rot_radec
+
+    def to_uniform_patch(self, coverage):
+        if coverage < 1:
+            logging.warning(
+                'Attempt to convert UniformDiskSky to a '
+                'uniform patch assumes 100% coverage'
+            )
+        return self
 
 
 class FisherSky:
@@ -73,14 +184,13 @@ class FisherSky:
         RA of the center of the distribution. Use the rad or deg suffix to
         specify units, otherwise radians are assumed.
     mean_dec: float or str
-        Declination of the center of the distribution. Use the rad or deg 
+        Declination of the center of the distribution. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
     sigma: float or str
         Spread of the distribution. For the precise interpretation, see Eq 8
         of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
-        about 20 deg for the approximation to be valid. Use the rad or deg 
+        about 20 deg for the approximation to be valid. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
-
     """
 
     name = 'fisher_sky'
@@ -115,6 +225,8 @@ class FisherSky:
         self.rotation = Rotation.from_euler(
             'yz', [numpy.pi / 2 - mean_dec, mean_ra]
         )
+        # storing center position for `to_uniform_patch()`
+        self.mean_ra, self.mean_dec = mean_ra, mean_dec
 
     @property
     def params(self):
@@ -137,6 +249,9 @@ class FisherSky:
             mean_dec=mean_dec,
             sigma=sigma,
         )
+
+    def get_max_prob_point(self):
+        return (self.mean_ra, self.mean_dec)
 
     def rvs(self, size):
         # Draw samples from a distribution centered on the North pole
@@ -161,6 +276,10 @@ class FisherSky:
         rot_radec['ra'][neg_mask] += 2 * numpy.pi
         rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
         return rot_radec
+
+    def to_uniform_patch(self, coverage):
+        radius = numpy.sqrt(self.rayleigh_scale**2 * (-2*numpy.log(1-coverage)))
+        return UniformDiskSky(mean_ra=self.mean_ra, mean_dec=self.mean_dec, radius=radius)
 
 
 class HealpixSky:
@@ -226,6 +345,13 @@ class HealpixSky:
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
         return cls(healpix_file=healpix_file)
 
+    def get_max_prob_point(self):
+        coords = self.healpix_map.pix2ang(
+                numpy.where(self.pix_probs==self.pix_probs.max())[0],
+                lonlat=True
+        )
+        return (numpy.deg2rad(coords[0][0]), numpy.deg2rad(coords[1][0]))
+
     def pixel_corners(self, indices):
         """Return the Cartesian vectors corresponding to the corners of one or
         more HEALPix pixels. Dimension 0 is the pixel index, 1 is the Cartesian
@@ -242,6 +368,25 @@ class HealpixSky:
         phi[phi < 0] += 2 * numpy.pi
         phi[phi >= 2 * numpy.pi] -= 2 * numpy.pi
         return phi
+
+    def to_uniform_patch(self, coverage):
+        """Return a new HealpixSky object that represents a patch of uniform probability,
+        defined as the region that encloses a given probability in the original map.
+        """
+        uniform_patch = copy.deepcopy(self)
+        non_zero_ind = numpy.flatnonzero(uniform_patch.pix_probs)
+        dtype = numpy.dtype([('index', numpy.ndarray), ('prob', numpy.float64)])
+        prob = uniform_patch.pix_probs[non_zero_ind]
+        ind_prob = numpy.array(list(zip(non_zero_ind, prob)), dtype=dtype)
+        ind_prob_sorted = numpy.sort(ind_prob, order='prob')
+        prob = numpy.sort(prob)
+        ind_prob_rev_sorted = ind_prob_sorted[::-1]
+        list_ind = [(ind_prob_rev_sorted[i][0]) for i in range(len(ind_prob_sorted))]
+        cum_sum_prob = numpy.cumsum(prob[::-1])
+        covered_sky = cum_sum_prob[cum_sum_prob<coverage]
+        uniform_patch.pix_probs[list_ind[:len(covered_sky)]] = 1/len(covered_sky)
+        uniform_patch.pix_probs[uniform_patch.pix_probs!= 1/len(covered_sky)] = 0
+        return uniform_patch
 
     def rvs(self, size):
         # First of all, draw a random sample of pixel indices following the
@@ -336,4 +481,4 @@ class HealpixSky:
         return radec
 
 
-__all__ = ['UniformSky', 'FisherSky', 'HealpixSky']
+__all__ = ['UniformSky', 'UniformDiskSky', 'FisherSky', 'HealpixSky']

@@ -400,7 +400,7 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
             from pycbc.io.ligolw import make_psd_xmldoc
-            from ligo.lw import utils
+            from igwn_ligolw import utils
 
             if self.kind != 'real':
                 raise ValueError('XML only supports real frequency series')

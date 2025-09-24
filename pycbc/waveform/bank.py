@@ -31,7 +31,7 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from ligo.lw import lsctables, utils as ligolw_utils
+from igwn_ligolw import lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
@@ -204,7 +204,7 @@ def tuple_to_hash(tuple_to_be_hashed):
     """
     h = hashlib.blake2b(np.array(tuple_to_be_hashed).tobytes('C'),
                         digest_size=8)
-    return np.fromstring(h.digest(), dtype=int)[0]
+    return np.frombuffer(h.digest(), dtype=int)[0]
 
 
 class TemplateBank(object):
@@ -782,7 +782,7 @@ class FilterBank(TemplateBank):
                 htilde = self.get_decompressed_waveform(
                     tempout,
                     index,
-                    f_lower=f_low,
+                    f_lower=low_frequency_cutoff,
                     approximant=approximant,
                     df=None
                 )

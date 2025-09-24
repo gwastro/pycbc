@@ -12,9 +12,9 @@ from itertools import chain
 from io import BytesIO
 from lal import LIGOTimeGPS
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 
 from pycbc.io.ligolw import (
     return_search_summary,
@@ -1119,7 +1119,7 @@ class ForegroundTriggers(object):
         )
         proc_id = proc_table.process_id
 
-        search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
+        search_summ_table = lsctables.SearchSummaryTable.new()
         coinc_h5file = self.coinc_file.h5file
         try:
             start_time = coinc_h5file['segments']['coinc']['start'][:].min()
@@ -1141,12 +1141,12 @@ class ForegroundTriggers(object):
         search_summ_table.append(search_summary)
         outdoc.childNodes[0].appendChild(search_summ_table)
 
-        sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
-        coinc_def_table = lsctables.New(lsctables.CoincDefTable)
-        coinc_event_table = lsctables.New(lsctables.CoincTable)
-        coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
-        coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
-        time_slide_table = lsctables.New(lsctables.TimeSlideTable)
+        sngl_inspiral_table = lsctables.SnglInspiralTable.new()
+        coinc_def_table = lsctables.CoincDefTable.new()
+        coinc_event_table = lsctables.CoincTable.new()
+        coinc_inspiral_table = lsctables.CoincInspiralTable.new()
+        coinc_event_map_table = lsctables.CoincMapTable.new()
+        time_slide_table = lsctables.TimeSlideTable.new()
 
         # Set up time_slide table
         time_slide_id = lsctables.TimeSlideID(0)
@@ -1509,40 +1509,58 @@ chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
-    f = hdfile
+    """
+    Retrieves the reduced chi-squared values based on the specified choice.
+
+    Parameters
+    ----------
+    hdfile: HDF file object, or dictionary, or ReadByTemplate object 
+            or SingleDetTriggers object
+        The object to retrieve the chi-squared values from.
+    chisq_choice: str 
+        The choice of chi-squared values to retrieve.
+
+    Returns
+    -------
+    chisq: numpy.ndarray
+        The reduced chi-squared values based on the specified choice.
+    """
+    # Get the reduced chi-squared values
     if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
                              'max_bank_cont_trad']:
-        trad_chisq = f['chisq'][:]
+        trad_chisq = hdfile['chisq'][:]
         # We now need to handle the case where chisq is not actually calculated
         # 0 is used as a sentinel value
-        trad_chisq_dof = f['chisq_dof'][:]
-        trad_chisq /= (trad_chisq_dof * 2 - 2)
+        trad_chisq_dof = hdfile['chisq_dof'][:]
+        red_trad_chisq = trad_chisq / (trad_chisq_dof * 2 - 2)
     if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
                              'max_bank_cont_trad']:
-        cont_chisq = f['cont_chisq'][:]
-        cont_chisq_dof = f['cont_chisq_dof'][:]
-        cont_chisq /= cont_chisq_dof
+        cont_chisq = hdfile['cont_chisq'][:]
+        cont_chisq_dof = hdfile['cont_chisq_dof'][:]
+        red_cont_chisq = cont_chisq / cont_chisq_dof
     if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
                              'max_bank_cont_trad']:
-        bank_chisq = f['bank_chisq'][:]
-        bank_chisq_dof = f['bank_chisq_dof'][:]
-        bank_chisq /= bank_chisq_dof
+        bank_chisq = hdfile['bank_chisq'][:]
+        bank_chisq_dof = hdfile['bank_chisq_dof'][:]
+        red_bank_chisq = bank_chisq / bank_chisq_dof
+
+    # return the corresponding reduced chi-squared values depending on the choice
     if chisq_choice == 'sg':
-        chisq = f['sg_chisq'][:]
+        chisq = hdfile['sg_chisq'][:]
     elif chisq_choice == 'traditional':
-        chisq = trad_chisq
+        chisq = red_trad_chisq
     elif chisq_choice == 'cont':
-        chisq = cont_chisq
+        chisq = red_cont_chisq
     elif chisq_choice == 'bank':
-        chisq = bank_chisq
+        chisq = red_bank_chisq
     elif chisq_choice == 'max_cont_trad':
-        chisq = np.maximum(trad_chisq, cont_chisq)
+        chisq = np.maximum(red_trad_chisq, red_cont_chisq)
     elif chisq_choice == 'max_bank_cont':
-        chisq = np.maximum(bank_chisq, cont_chisq)
+        chisq = np.maximum(red_bank_chisq, red_cont_chisq)
     elif chisq_choice == 'max_bank_trad':
-        chisq = np.maximum(bank_chisq, trad_chisq)
+        chisq = np.maximum(red_bank_chisq, red_trad_chisq)
     elif chisq_choice == 'max_bank_cont_trad':
-        chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
+        chisq = np.maximum(np.maximum(red_bank_chisq, red_cont_chisq), red_trad_chisq)
     else:
         err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)

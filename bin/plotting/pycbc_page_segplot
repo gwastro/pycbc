@@ -19,7 +19,7 @@
 import argparse
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
+import numpy, pycbc.events, mpld3, mpld3.plugins
 import sys
 from itertools import cycle
 
@@ -187,9 +187,9 @@ interactive_legend = mpld3.plugins.InteractiveLegendPlugin(line_collections,
 mpld3.plugins.connect(fig, interactive_legend)
 
 # format the plot
-pylab.ylim(0, len(ifos) * (h + 0.2))
-pylab.xlim(smin, smax)
-pylab.xlabel('GPS Time (s)')
+plt.ylim(0, len(ifos) * (h + 0.2))
+plt.xlim(smin, smax)
+plt.xlabel('GPS Time (s)')
 
 # add whitespace for the legend
 fig.subplots_adjust(left=0.0, right=0.6, top=0.9, bottom=0.1)
