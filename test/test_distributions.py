@@ -22,7 +22,6 @@ import itertools
 import numpy
 import os
 import unittest
-from astropy.utils.data import download_file
 from pycbc import distributions
 from pycbc.inference import entropy
 from utils import parse_args_cpu_only
@@ -61,16 +60,10 @@ class TestDistributions(unittest.TestCase):
         config_path = "/".join([os.path.dirname(os.path.realpath(__file__)),
                                 "../examples/distributions/example.ini"])
 
-        # download the sample FITS skymap for the healpix_sky example
-        healpix_file = download_file(
-            'https://dcc.ligo.org/public/0169/P2000230/005/GW190814_skymap.fits.gz',
-            cache=True
-        )
-
         # get a set of simulated command line options for
         # configuration file reading
         class Arguments(object):
-            config_overrides = ['prior-ra3+dec3:healpix_file:' + healpix_file]
+            config_overrides = []
             config_delete = []
             config_files = [config_path]
         self.opts = Arguments()
@@ -277,7 +270,7 @@ class TestDistributions(unittest.TestCase):
             'uniform_sky',
             'uniform_disk_sky',
             'fisher_sky',
-            'healpix_sky'
+            #'healpix_sky'  # introduces a hard dependency on mhealpy
         ]
         for dist in self.dists:
             if dist.name not in sky_loc_distributions:
