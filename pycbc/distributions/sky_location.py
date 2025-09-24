@@ -55,7 +55,50 @@ class UniformSky(angular.UniformSolidAngle):
         return self
 
 
-class UniformDiskSky:
+class SkyLocDistribution:
+    """Generic joint distribution for sky locations. This base class only
+    implements the common machinery for handling different parameter names.
+    Subclass it for actual implementations.
+    """
+    _default_polar_angle = 'dec'
+    _default_azimuthal_angle = 'ra'
+
+    def __init__(self, polar_angle=None, azimuthal_angle=None, **kwargs):
+        self.polar_angle = polar_angle or self._default_polar_angle
+        self.azimuthal_angle = azimuthal_angle or self._default_azimuthal_angle
+
+    @property
+    def params(self):
+        return [self.azimuthal_angle, self.polar_angle]
+
+    @classmethod
+    def get_angle_names(cls, cp, section, tag):
+        """Get the names of the angular variables (or use default ones) and
+        check that the tag matches them.
+        """
+        try:
+            polar_angle = cp.get_opt_tag(section, 'polar-angle', tag)
+        except Error:
+            polar_angle = cls._default_polar_angle
+        try:
+            azimuthal_angle = cp.get_opt_tag(section, 'azimuthal-angle', tag)
+        except Error:
+            azimuthal_angle = cls._default_azimuthal_angle
+        variable_args = tag.split(VARARGS_DELIM)
+        if azimuthal_angle not in variable_args:
+            raise Error(
+                f'Azimuthal angle {azimuthal_angle} is not one of the '
+                f'variable args {variable_args}'
+            )
+        if polar_angle not in variable_args:
+            raise Error(
+                f'Polar angle {polar_angle} is not one of the variable '
+                f'args {variable_args}'
+            )
+        return azimuthal_angle, polar_angle
+
+
+class UniformDiskSky(SkyLocDistribution):
     """A distribution that represents a uniform disk on the sky. The declination
     varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
 
@@ -72,9 +115,9 @@ class UniformDiskSky:
         otherwise radians are assumed.
     """
     name = 'uniform_disk_sky'
-    _params = ['ra', 'dec']
 
     def __init__(self, **params):
+        super().__init__(**params)
         mean_ra = angle_as_radians(params['mean_ra'])
         mean_dec = angle_as_radians(params['mean_dec'])
         radius = angle_as_radians(params['radius'])
@@ -97,23 +140,15 @@ class UniformDiskSky:
         )
         self.mean_ra, self.mean_dec, self.radius = mean_ra, mean_dec, radius
 
-    @property
-    def params(self):
-        return self._params
-
     @classmethod
-    def from_config(cls, cp, section, variable_args):
-        tag = variable_args
-        variable_args = variable_args.split(VARARGS_DELIM)
-        if set(variable_args) != set(cls._params):
-            raise ValueError(
-                "Not all parameters used by this distribution "
-                "included in tag portion of section name"
-            )
+    def from_config(cls, cp, section, tag):
+        azimuthal_angle, polar_angle = cls.get_angle_names(cp, section, tag)
         mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
         mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
         radius = cp.get_opt_tag(section, 'radius', tag)
         return cls(
+            azimuthal_angle=azimuthal_angle,
+            polar_angle=polar_angle,
             mean_ra=mean_ra,
             mean_dec=mean_dec,
             radius=radius,
@@ -141,11 +176,16 @@ class UniformDiskSky:
         # Convert the samples back to spherical coordinates.
         # Some unpleasant conditional operations are needed
         # to get the correct angle convention.
-        rot_radec = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
-        rot_radec['ra'] = numpy.arctan2(rot_cart[:, 1], rot_cart[:, 0])
-        neg_mask = rot_radec['ra'] < 0
-        rot_radec['ra'][neg_mask] += 2 * numpy.pi
-        rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
+        rot_radec = FieldArray(
+            size,
+            dtype=[(self.azimuthal_angle, '<f8'), (self.polar_angle, '<f8')]
+        )
+        rot_radec[self.azimuthal_angle] = numpy.arctan2(
+            rot_cart[:, 1], rot_cart[:, 0]
+        )
+        neg_mask = rot_radec[self.azimuthal_angle] < 0
+        rot_radec[self.azimuthal_angle][neg_mask] += 2 * numpy.pi
+        rot_radec[self.polar_angle] = numpy.arcsin(rot_cart[:, 2])
         return rot_radec
 
     def to_uniform_patch(self, coverage):
@@ -157,7 +197,7 @@ class UniformDiskSky:
         return self
 
 
-class FisherSky:
+class FisherSky(SkyLocDistribution):
     """A distribution that returns a random angle drawn from an approximate
     `Von_Mises-Fisher distribution`_. Assumes that the Fisher concentration
     parameter is large, so that we can draw the samples from a simple
@@ -194,9 +234,9 @@ class FisherSky:
     """
 
     name = 'fisher_sky'
-    _params = ['ra', 'dec']
 
     def __init__(self, **params):
+        super().__init__(**params)
         mean_ra = angle_as_radians(params['mean_ra'])
         mean_dec = angle_as_radians(params['mean_dec'])
         sigma = angle_as_radians(params['sigma'])
@@ -228,23 +268,15 @@ class FisherSky:
         # storing center position for `to_uniform_patch()`
         self.mean_ra, self.mean_dec = mean_ra, mean_dec
 
-    @property
-    def params(self):
-        return self._params
-
     @classmethod
-    def from_config(cls, cp, section, variable_args):
-        tag = variable_args
-        variable_args = variable_args.split(VARARGS_DELIM)
-        if set(variable_args) != set(cls._params):
-            raise ValueError(
-                "Not all parameters used by this distribution "
-                "included in tag portion of section name"
-            )
+    def from_config(cls, cp, section, tag):
+        azimuthal_angle, polar_angle = cls.get_angle_names(cp, section, tag)
         mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
         mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
         sigma = cp.get_opt_tag(section, 'sigma', tag)
         return cls(
+            azimuthal_angle=azimuthal_angle,
+            polar_angle=polar_angle,
             mean_ra=mean_ra,
             mean_dec=mean_dec,
             sigma=sigma,
@@ -270,11 +302,16 @@ class FisherSky:
         # Convert the samples back to spherical coordinates.
         # Some unpleasant conditional operations are needed
         # to get the correct angle convention.
-        rot_radec = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
-        rot_radec['ra'] = numpy.arctan2(rot_cart[:, 1], rot_cart[:, 0])
-        neg_mask = rot_radec['ra'] < 0
-        rot_radec['ra'][neg_mask] += 2 * numpy.pi
-        rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
+        rot_radec = FieldArray(
+            size,
+            dtype=[(self.azimuthal_angle, '<f8'), (self.polar_angle, '<f8')]
+        )
+        rot_radec[self.azimuthal_angle] = numpy.arctan2(
+            rot_cart[:, 1], rot_cart[:, 0]
+        )
+        neg_mask = rot_radec[self.azimuthal_angle] < 0
+        rot_radec[self.azimuthal_angle][neg_mask] += 2 * numpy.pi
+        rot_radec[self.polar_angle] = numpy.arcsin(rot_cart[:, 2])
         return rot_radec
 
     def to_uniform_patch(self, coverage):
@@ -282,7 +319,7 @@ class FisherSky:
         return UniformDiskSky(mean_ra=self.mean_ra, mean_dec=self.mean_dec, radius=radius)
 
 
-class HealpixSky:
+class HealpixSky(SkyLocDistribution):
     """Sky-location distribution given by a HEALPix map from an external file.
 
     The declination (delta) varies from π/2 to -π/2 and the right ascension
@@ -296,9 +333,9 @@ class HealpixSky:
     """
 
     name = 'healpix_sky'
-    _params = ['ra', 'dec']
 
     def __init__(self, **params):
+        super().__init__(**params)
         # Read the map file.
         file_name = params['healpix_file']
         mhealpy = import_optional('mhealpy')
@@ -329,21 +366,15 @@ class HealpixSky:
             )
         self.pix_probs /= sum_pix_probs
 
-    @property
-    def params(self):
-        return self._params
-
     @classmethod
-    def from_config(cls, cp, section, variable_args):
-        tag = variable_args
-        variable_args = variable_args.split(VARARGS_DELIM)
-        if set(variable_args) != set(cls._params):
-            raise ValueError(
-                "Not all parameters used by this distribution "
-                "included in tag portion of section name"
-            )
+    def from_config(cls, cp, section, tag):
+        azimuthal_angle, polar_angle = cls.get_angle_names(cp, section, tag)
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
-        return cls(healpix_file=healpix_file)
+        return cls(
+            azimuthal_angle=azimuthal_angle,
+            polar_angle=polar_angle,
+            healpix_file=healpix_file
+        )
 
     def get_max_prob_point(self):
         coords = self.healpix_map.pix2ang(
@@ -475,9 +506,12 @@ class HealpixSky:
             straddler_mask = straddler_mask[rej_mask]
 
         # Convert back to the radec convention
-        radec = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
-        radec['ra'] = final_phis
-        radec['dec'] = numpy.pi / 2 - final_thetas
+        radec = FieldArray(
+            size,
+            dtype=[(self.azimuthal_angle, '<f8'), (self.polar_angle, '<f8')]
+        )
+        radec[self.azimuthal_angle] = final_phis
+        radec[self.polar_angle] = numpy.pi / 2 - final_thetas
         return radec
 
 
