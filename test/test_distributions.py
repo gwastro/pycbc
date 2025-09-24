@@ -22,11 +22,13 @@ import itertools
 import numpy
 import os
 import unittest
+from astropy.utils.data import download_file
 from pycbc import distributions
 from pycbc.inference import entropy
 from utils import parse_args_cpu_only
 from utils import simple_exit
 from pycbc.workflow import WorkflowConfigParser
+
 
 # distributions to exclude from one-dimensional distribution unit tests
 # some of these distributons have their own specific unit test
@@ -59,10 +61,16 @@ class TestDistributions(unittest.TestCase):
         config_path = "/".join([os.path.dirname(os.path.realpath(__file__)),
                                 "../examples/distributions/example.ini"])
 
+        # download the sample FITS skymap for the healpix_sky example
+        healpix_file = download_file(
+            'https://dcc.ligo.org/public/0169/P2000230/005/GW190814_skymap.fits.gz',
+            cache=True
+        )
+
         # get a set of simulated command line options for
         # configuration file reading
         class Arguments(object):
-            config_overrides = []
+            config_overrides = ['prior-ra3+dec3:healpix_file:' + healpix_file]
             config_delete = []
             config_files = [config_path]
         self.opts = Arguments()
@@ -77,7 +85,7 @@ class TestDistributions(unittest.TestCase):
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)
 
-        # check that all distriubtions will be tested
+        # check that all distributions will be tested
         for dname in distributions.distribs:
             dclass = distributions.distribs[dname]
             if (not numpy.any([isinstance(dist, dclass)
@@ -89,7 +97,7 @@ class TestDistributions(unittest.TestCase):
         """ Check the Kullback-Leibler divergence between draws of random
         samples form the distribution and the probability density function
         of the distribution. This implementation only works for
-        one dimensional distriubtions.
+        one-dimensional distributions.
         """
 
         # set threshold for KL divergence
@@ -105,32 +113,33 @@ class TestDistributions(unittest.TestCase):
         for dist in self.dists:
             if dist.name in EXCLUDE_DIST_NAMES:
                 continue
+            # generate some random draws
+            samples = dist.rvs(n_samples)
             for param in dist.params:
-
                 # get min and max
                 hist_min = dist.bounds[param][0]
                 hist_max = dist.bounds[param][1]
-
-                # generate some random draws
-                samples = dist.rvs(n_samples)[param]
 
                 # get the PDF
                 x = numpy.arange(hist_min, hist_max, step)
                 pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
 
                 # compute the KL divergence and check if below threshold
-                kl_val = entropy.kl(samples, pdf, bins=pdf.size, pdf2=True,
-                                    hist_min=hist_min, hist_max=hist_max)
-                if not (kl_val < threshold):
-                    raise ValueError(
-                              "Class {} KL divergence is {} which is "
-                              "greater than the threshold "
-                              "of {}".format(dist.name, kl_val, threshold))
+                kl_val = entropy.kl(
+                    samples[param],
+                    pdf,
+                    bins=pdf.size,
+                    pdf2=True,
+                    hist_min=hist_min,
+                    hist_max=hist_max
+                )
+                with self.subTest(dist=dist.name, param=param):
+                    self.assertLess(kl_val, threshold)
 
     def test_pdf_logpdf(self):
         """ Checks that the probability density function (PDF) is within some
         tolerance of the natural logarithm of the PDF. This implementation is
-        for one dimensional distributions.
+        for one-dimensional distributions.
         """
 
         # assign tolerance for element-wise ratio of logarithm of PDF
@@ -144,7 +153,6 @@ class TestDistributions(unittest.TestCase):
             if dist.name in EXCLUDE_DIST_NAMES:
                 continue
             for param in dist.params:
-
                 # get min and max
                 hist_min = dist.bounds[param][0]
                 hist_max = dist.bounds[param][1]
@@ -159,10 +167,10 @@ class TestDistributions(unittest.TestCase):
 
                 # see if each element in ratio of these two logarithm of PDF
                 # values are within the specified tolerance
-                if not numpy.all(abs(1.0 - logpdf / pdf_log) < tolerance):
-                    raise ValueError("The PDF and logarithm of the PDF "
-                                     "functions for distribution {} "
-                                     "do not agree".format(dist.name))
+                with self.subTest(dist=dist.name, param=param):
+                    numpy.testing.assert_allclose(
+                        logpdf, pdf_log, rtol=tolerance
+                    )
 
     def test_solid_angle(self):
         """ The uniform solid angle and uniform sky position distributions
@@ -207,21 +215,23 @@ class TestDistributions(unittest.TestCase):
             else:
                 continue
 
-            # check PDF equilvalent
-            pdf_1 = numpy.array([dist.pdf(**{dist.polar_angle : p,
-                                             dist.azimuthal_angle : a})
-                                 for p, a in cart_sin])
-            pdf_2 = numpy.array([polar_dist.pdf(**{"theta" : p})
-                                 * ang_dist.pdf(**{"theta" : a})
-                                 for p, a in cart_sin])
-
             # Catch and silence warnings here
-            with numpy.errstate(invalid="ignore", divide='ignore'):
-                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                                  < tolerance)):
-                    raise ValueError("The {} distribution PDF does not match "
-                                     "its component "
-                                     "distributions.".format(dist.name))
+            with numpy.errstate(invalid="ignore", divide='ignore'), self.subTest(dist=dist.name):
+                # check PDF equivalent
+                pdf_1 = numpy.array([dist.pdf(**{dist.polar_angle : p,
+                                                 dist.azimuthal_angle : a})
+                                     for p, a in cart_sin])
+                pdf_2 = numpy.array([polar_dist.pdf(**{"theta" : p})
+                                     * ang_dist.pdf(**{"theta" : a})
+                                     for p, a in cart_sin])
+
+                msg = (
+                    f"The {dist.name} distribution PDF does not match its "
+                    "component distributions."
+                )
+                numpy.testing.assert_allclose(
+                    pdf_1, pdf_2, rtol=tolerance, err_msg=msg
+                )
 
                 # check logarithm of PDF equivalent
                 pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
@@ -230,11 +240,13 @@ class TestDistributions(unittest.TestCase):
                 pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
                                      + ang_dist.logpdf(**{"theta" : a})
                                      for p, a in cart_sin])
-                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                           < tolerance)):
-                    raise ValueError("The {} distribution PDF does not match "
-                                     "its component "
-                                     "distriubtions.".format(dist.name))
+                msg = (
+                    f"The {dist.name} distribution log-PDF does not match its "
+                    "component distributions."
+                )
+                numpy.testing.assert_allclose(
+                    pdf_1, pdf_2, rtol=tolerance, err_msg=msg
+                )
 
             # check random draws from polar angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.polar_angle]
@@ -242,11 +254,11 @@ class TestDistributions(unittest.TestCase):
             kl_val = entropy.kl(ang_1, ang_2, bins=polar_vals.size,
                                 hist_min=polar_vals.min(),
                                 hist_max=polar_vals.max())
-            if not (kl_val < threshold):
-                raise ValueError(
-                          "Class {} KL divergence is {} which is "
-                          "greater than the threshold for polar angle"
-                          "of {}".format(dist.name, kl_val, threshold))
+            msg = (
+                "Class {} KL divergence is {} which is greater than the "
+                "threshold for polar angle of {}"
+            ).format(dist.name, kl_val, threshold)
+            self.assertLess(kl_val, threshold, msg=msg)
 
             # check random draws from azimuthal angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.azimuthal_angle]
@@ -254,11 +266,39 @@ class TestDistributions(unittest.TestCase):
             kl_val = entropy.kl(ang_1, ang_2, bins=azimuthal.size,
                                 hist_min=azimuthal.min(),
                                 hist_max=azimuthal.max())
-            if not (kl_val < threshold):
-                raise ValueError(
-                          "Class {} KL divergence is {} which is "
-                          "greater than the threshold for azimuthal angle"
-                          "of {}".format(dist.name, kl_val, threshold))
+            msg = (
+                "Class {} KL divergence is {} which is greater than the "
+                "threshold for azimuthal angle of {}"
+            ).format(dist.name, kl_val, threshold)
+            self.assertLess(kl_val, threshold, msg=msg)
+
+    def test_sky_loc_distributions(self, n_samples=1000):
+        sky_loc_distributions = [
+            'uniform_sky',
+            'uniform_disk_sky',
+            'fisher_sky',
+            'healpix_sky'
+        ]
+        for dist in self.dists:
+            if dist.name not in sky_loc_distributions:
+                continue
+            with self.subTest(dist=dist.name):
+                samples = dist.rvs(n_samples)
+                # FIXME Pretty basic sanity checks only
+                self.assertEqual(samples.size, n_samples)
+                numpy.testing.assert_array_less(
+                    0, samples[dist.azimuthal_angle]
+                )
+                numpy.testing.assert_array_less(
+                    samples[dist.azimuthal_angle], 2 * numpy.pi
+                )
+                numpy.testing.assert_array_less(
+                    -numpy.pi / 2, samples[dist.polar_angle]
+                )
+                numpy.testing.assert_array_less(
+                    samples[dist.polar_angle], numpy.pi / 2
+                )
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDistributions))
