@@ -63,7 +63,7 @@ class SkyLocDistribution:
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-    def __init__(self, polar_angle=None, azimuthal_angle=None):
+    def __init__(self, polar_angle=None, azimuthal_angle=None, **kwargs):
         self.polar_angle = polar_angle or self._default_polar_angle
         self.azimuthal_angle = azimuthal_angle or self._default_azimuthal_angle
 
