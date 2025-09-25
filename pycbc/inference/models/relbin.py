@@ -668,11 +668,23 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
 
         # get fiducial params from config
-        fid_params = {
-            p.replace("_ref", ""): float(cp.get("model", p))
-            for p in cp.options("model")
-            if p.endswith("_ref")
-        }
+        fid_params = {}
+        for p in cp.options("model"):
+            if p.endswith("_ref"):
+                val = cp.get("model", p)
+                if val == '':
+                    # means had "param =", indicating a boolean that should be
+                    # True
+                    val = True
+                else:
+                    # try casting to float
+                    try:
+                        val = float(val)
+                    # will get a value error if val is a string; just keep
+                    # as a string in that case
+                    except ValueError:
+                        pass
+                fid_params[p.replace("_ref", "")] = val
 
         # add optional params with default values if not specified
         opt_params = {
