@@ -32,6 +32,7 @@ from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
 from .marginalized_gaussian_noise import MarginalizedPolarization
 from .marginalized_gaussian_noise import MarginalizedHMPolPhase
 from .marginalized_gaussian_noise import MarginalizedTime
+from .brute_marg import BruteTotalMassMarginalize
 from .brute_marg import BruteParallelGaussianMarginalize
 from .brute_marg import BruteLISASkyModesMarginalize
 from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol)
@@ -198,6 +199,7 @@ _models = {_cls.name: _cls for _cls in (
     MarginalizedPolarization,
     MarginalizedHMPolPhase,
     MarginalizedTime,
+    BruteTotalMassMarginalize,
     BruteParallelGaussianMarginalize,
     BruteLISASkyModesMarginalize,
     GatedGaussianNoise,
