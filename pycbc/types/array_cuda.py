@@ -356,6 +356,3 @@ def _copy_base_array(array):
 
 def _to_device(array):
     return pycuda.gpuarray.to_gpu(array)
-    
-   
-   
