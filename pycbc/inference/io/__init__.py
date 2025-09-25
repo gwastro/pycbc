@@ -765,7 +765,12 @@ def injections_from_cli(opts):
     # loop over all input files getting the injection files
     for input_file in input_files:
         fp = loadfile(input_file, 'r')
-        these_injs = fp.read_injections()
+        cp = fp.read_config_file()
+        if cp.has_option('model', 'primary_model'):
+            primary_model_label = cp.get('model', 'primary_model')
+            these_injs = fp.read_injections(group='/%s' % primary_model_label)
+        else:
+            these_injs = fp.read_injections()
         # apply mapping if it was provided
         if param_map:
             mapvals = {sp: these_injs[ip] for ip, sp in param_map}
