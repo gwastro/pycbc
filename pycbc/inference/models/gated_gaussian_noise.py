@@ -1089,9 +1089,11 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             # evaluate the inner products
             hh = h[slc].inner(h_gated[slc]).real # <h, h>
             hd = h[slc].inner(d_gated[slc]) # O(h, d)
+            dh = d[slc].inner(h_gated[slc]) # O(d, h)
             dd = d[slc].inner(d_gated[slc]).real # <d, d>
             hh_net += hh
             hd_net += hd
+            dh_net += dh
             dd_net += dd
             # get the normalization in this detector
             if self.normalize:
@@ -1104,7 +1106,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
         loglr = -0.5 * hh_net
-        loglr += abs(hd_net) + numpy.log(i0e(abs(hd_net)))
+        cross_term = (hd_net.real + dh_net.real)**2
+        cross_term += (hd_net.imag - dh_net.imag)**2
+        loglr += abs(cross_term) + numpy.log(i0e(abs(cross_term)))
         return norm_net + loglr - 0.5 * dd_net
 
     @property
