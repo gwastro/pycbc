@@ -158,7 +158,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @abstractmethod
     def write_samples(self, samples, **kwargs):
-        """This should write all of the provided samples.
+        r"""This should write all of the provided samples.
 
         This function should be used to write both samples and model stats.
 
@@ -200,7 +200,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return array_class.parse_parameters(parameters, possible_fields)
 
     def read_samples(self, parameters, array_class=None, **kwargs):
-        """Reads samples for the given parameter(s).
+        r"""Reads samples for the given parameter(s).
 
         The ``parameters`` can be the name of any dataset in ``samples_group``,
         a virtual field or method of ``FieldArray`` (as long as the file
@@ -258,7 +258,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
-        """Provides a parser that can be used to parse sampler-specific command
+        r"""Provides a parser that can be used to parse sampler-specific command
         line options for loading samples.
 
         This is optional. Inheriting classes may override this if they want to
@@ -291,7 +291,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @staticmethod
     def _get_optional_args(args, opts, err_on_missing=False, **kwargs):
-        """Convenience function to retrieve arguments from an argparse
+        r"""Convenience function to retrieve arguments from an argparse
         namespace.
 
         Parameters
@@ -328,7 +328,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         return parsed
 
     def samples_from_cli(self, opts, parameters=None, **kwargs):
-        """Reads samples from the given command-line options.
+        r"""Reads samples from the given command-line options.
 
         Parameters
         ----------
@@ -806,7 +806,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
 
     @classmethod
     def write_kwargs_to_attrs(cls, attrs, **kwargs):
-        """Writes the given keywords to the given ``attrs``.
+        r"""Writes the given keywords to the given ``attrs``.
 
         If any keyword argument points to a dict, the keyword will point to a
         list of the dict's keys. Each key is then written to the attrs with its

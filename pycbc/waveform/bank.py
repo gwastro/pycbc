@@ -208,7 +208,7 @@ def tuple_to_hash(tuple_to_be_hashed):
 
 
 class TemplateBank(object):
-    """Class to provide some basic helper functions and information
+    r"""Class to provide some basic helper functions and information
     about elements of a template bank.
 
     Parameters
