@@ -42,7 +42,7 @@ def _formatdocstrlist(docstr, paramlist, skip_params=None):
     if skip_params is None:
         skip_params = []
     pl = '\n'.join([_p.docstr(prefix="    ", include_label=False)
-                    for _p in paramlist if _p not in skip_params]).lstrip(' ')
+                    for _p in paramlist if _p not in skip_params])
     return docstr.format(params=pl)
 
 

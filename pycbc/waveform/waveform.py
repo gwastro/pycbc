@@ -565,10 +565,10 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 get_fd_det_waveform_sequence.__doc__ = get_fd_det_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform.
@@ -603,7 +603,7 @@ def get_td_waveform(template=None, **kwargs):
 
 get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
     params=parameters.td_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
@@ -653,7 +653,7 @@ def get_fd_waveform(template=None, **kwargs):
 
 get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def get_fd_waveform_from_td(**params):
     """ Return time domain version of fourier domain approximant.
@@ -753,7 +753,7 @@ def get_fd_det_waveform(template=None, **kwargs):
 
 get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     """ The base function to calculate time domain version of fourier
@@ -886,7 +886,7 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=None, **params):
 get_td_det_waveform_from_fd_det.__doc__ = \
     get_td_det_waveform_from_fd_det.__doc__.format(
         params=parameters.td_waveform_params.docstr(prefix="    ",
-            include_label=False).lstrip(' '))
+            include_label=False))
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
