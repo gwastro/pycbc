@@ -369,7 +369,7 @@ def get_obj_attrs(obj):
     """
     pr = {}
     if obj is not None:
-        if isinstance(obj, numpy.core.records.record):
+        if isinstance(obj, numpy.record):
             for name in obj.dtype.names:
                 pr[name] = getattr(obj, name)
         elif hasattr(obj, '__dict__') and obj.__dict__:

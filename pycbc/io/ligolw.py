@@ -264,13 +264,13 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem.appendChild(ligolw.Param.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
-        data = numpy.row_stack((
+        data = numpy.vstack((
             numpy.arange(len(series.data.data)) * delta,
             series.data.data.real,
             series.data.data.imag
         ))
     else:
-        data = numpy.row_stack((
+        data = numpy.vstack((
             numpy.arange(len(series.data.data)) * delta,
             series.data.data
         ))
