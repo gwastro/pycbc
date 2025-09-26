@@ -117,7 +117,7 @@ class UniformDiskSky(SkyLocDistribution):
     name = 'uniform_disk_sky'
 
     def __init__(self, **params):
-        super(UniformDiskSky, self).__init__(**params)
+        super().__init__(**params)
         mean_ra = angle_as_radians(params['mean_ra'])
         mean_dec = angle_as_radians(params['mean_dec'])
         radius = angle_as_radians(params['radius'])
@@ -236,7 +236,7 @@ class FisherSky(SkyLocDistribution):
     name = 'fisher_sky'
 
     def __init__(self, **params):
-        super(FisherSky, self).__init__(**params)
+        super().__init__(**params)
         mean_ra = angle_as_radians(params['mean_ra'])
         mean_dec = angle_as_radians(params['mean_dec'])
         sigma = angle_as_radians(params['sigma'])
@@ -335,7 +335,7 @@ class HealpixSky(SkyLocDistribution):
     name = 'healpix_sky'
 
     def __init__(self, **params):
-        super(HealpixSky, self).__init__(**params)
+        super().__init__(**params)
         # Read the map file.
         file_name = params['healpix_file']
         mhealpy = import_optional('mhealpy')
