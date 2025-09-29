@@ -1063,6 +1063,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         norm_net = 0.
         hh_net = 0.
         hd_net = 0j
+        dh_net = 0j
         dd_net = 0.
         for det in self.det_names:
             if det not in self.dets:
