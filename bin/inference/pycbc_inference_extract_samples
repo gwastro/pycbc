@@ -228,19 +228,17 @@ for fp in fps:
                 current_val = format_attr(out.attrs[key])
             if not isthesame(current_val, val):
                 if key == 'remapped_params':
-                    # ...unless it's remapped_params; just combine unique items
-                    # brute-force if they don't match exactly
-                    cat_params = True
-                    val = numpy.concatenate((val, current_val))
-                    val_set = set(tuple(entry) for entry in val)
-                    val = [list(entry) for entry in val_set]
-                    out.attrs[key] = val
+                    # ...unless it's remapped_params; just save first file's
+                    # entries if they don't match between files
+                    warnings.warn("WARNING: remapped_params metadata does not "
+                                 "match between files; saving metadata from "
+                                 "first file")
                 else:
                     raise ValueError("cannot combine all files; file attr {} is "
                                      "not the same across all files ({} vs {})"
                                      .format(key, current_val, val))
 
-# store what parameters were renamed (if not already concatenated above)
+# store what parameters were renamed (if not already saved above)
 if not cat_params:
     out.attrs['remapped_params'] = list(labels.items())
 
