@@ -135,8 +135,8 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                                  f_lower=start_frequency,
                                  amplitude_order=amplitude_order)
         if hasattr(wf_params, 'taper'):
-            hp = taper_timeseries(hp, wf_params.taper)
-            hc = taper_timeseries(hc, wf_params.taper)
+            hp = hp.taper_timeseries(location=wf_params.taper)
+            hc = hc.taper_timeseries(location=wf_params.taper)
 
     if not sky_max_template:
         hvec = generate_detector_strain(wf_params, hp, hc)

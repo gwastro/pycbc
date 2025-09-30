@@ -36,7 +36,7 @@ from . import supernovae
 from . import waveform_modes
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fseries_time_shift, taper_timeseries, \
+from pycbc.waveform.utils import apply_fseries_time_shift, \
                                  ceilpow2, apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc.pool import use_mpi
@@ -276,12 +276,21 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         """Applies a taper if it is in current params.
         """
         hp, hc = res
-        try:
-            hp = taper_timeseries(hp, tapermethod=self.current_params['taper'])
-            hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
-        except KeyError:
-            pass
-        return hp, hc
+
+        if self.current_params.get('taper_method') == 'constant':
+            if self.current_params['taper_window'] is None:
+                raise ValueError("If taper_method is 'constant', taper_window must be set")
+            else:
+                gate_params_hp = [(hp.start_time, self.current_params['taper_window']/2, self.current_params['taper_window'])]
+                gate_params_hc = [(hc.start_time, self.current_params['taper_window']/2, self.current_params['taper_window'])]
+        else:
+            gate_params_hp = None
+            gate_params_hc = None
+
+        hp_tapered = hp.taper_timeseries(location=self.current_params['taper'], tapermethod=self.current_params.get('taper_method'), gate_params=gate_params_hp)
+        hc_tapered = hc.taper_timeseries(location=self.current_params['taper'], tapermethod=self.current_params.get('taper_method'), gate_params=gate_params_hc)
+
+        return hp_tapered, hc_tapered
 
 
 class TDomainCBCModesGenerator(BaseCBCGenerator):
@@ -306,8 +315,8 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
             tapermethod = self.current_params['taper']
             for mode in res:
                 ulm, vlm = res[mode]
-                ulm = taper_timeseries(ulm, tapermethod=tapermethod)
-                vlm = taper_timeseries(vlm, tapermethod=tapermethod)
+                ulm = ulm.taper_timeseries(location=tapermethod)
+                vlm = vlm.taper_timeseries(location=tapermethod)
                 res[mode] = (ulm, vlm)
         return res
 
