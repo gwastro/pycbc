@@ -1,8 +1,8 @@
-# Copyright (C) 2015 Joshua Willis
+# Copyright (C) 2014 Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
+# Free Software Foundation; either version 2 of the License, or (at your
 # option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but
@@ -15,144 +15,305 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-This module defines optimization flags and determines hardware features that some
-other modules and packages may use in addition to some optimized utilities.
+This module provides a simple interface for loading a shared library via ctypes,
+allowing it to be specified in an OS-independent way and searched for preferentially
+according to the paths that pkg-config specifies.
 """
-import os, sys
+
+import importlib
 import logging
-from collections import OrderedDict
+import inspect
+import os
+import fnmatch
+import ctypes
+import sys
+import subprocess
+from ctypes.util import find_library
+from collections import deque
+from subprocess import getoutput
 
-logger = logging.getLogger('pycbc.opt')
+logger = logging.getLogger('pycbc.libutils')
 
-# Work around different Python versions to get runtime
-# info on hardware cache sizes
-_USE_SUBPROCESS = False
-HAVE_GETCONF = False
-if os.environ.get("LEVEL2_CACHE_SIZE", None) or os.environ.get("NO_GETCONF", None):
-    HAVE_GETCONF = False
-elif sys.platform == 'darwin':
-    # Mac has getconf, but we can do nothing useful with it
-    HAVE_GETCONF = False
-else:
-    import subprocess
-    _USE_SUBPROCESS = True
-    HAVE_GETCONF = True
+# Be careful setting the mode for opening libraries! Some libraries (e.g.
+# libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
+# MKL is also present) require that os.RTLD_DEEPBIND is used. If seeing
+# segfaults around this code, play about this this!
+DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
 
-if os.environ.get("LEVEL2_CACHE_SIZE", None):
-    LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
-    logger.info("opt: using LEVEL2_CACHE_SIZE %d from environment",
-                LEVEL2_CACHE_SIZE)
-elif HAVE_GETCONF:
-    if _USE_SUBPROCESS:
-        def getconf(confvar):
-            return int(subprocess.check_output(['getconf', confvar]))
+
+def pkg_config(pkg_libraries):
+    """Use pkg-config to query for the location of libraries, library directories,
+       and header directories
+
+       Arguments:
+           pkg_libries(list): A list of packages as strings
+
+       Returns:
+           libraries(list), library_dirs(list), include_dirs(list)
+    """
+    libraries=[]
+    library_dirs=[]
+    include_dirs=[]
+
+    # Check that we have the packages
+    for pkg in pkg_libraries:
+        if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
+            pass
+        else:
+            print("Could not find library {0}".format(pkg))
+            sys.exit(1)
+
+    # Get the pck-config flags
+    if len(pkg_libraries)>0 :
+        # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
+        # On system-wide LAL installs, this is needed for swig to find lalswig.i
+        for token in getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
+            if token.startswith("-l"):
+                libraries.append(token[2:])
+            elif token.startswith("-L"):
+                library_dirs.append(token[2:])
+            elif token.startswith("-I"):
+                include_dirs.append(token[2:])
+
+    return libraries, library_dirs, include_dirs
+
+def pkg_config_header_strings(pkg_libraries):
+    """ Returns a list of header strings that could be passed to a compiler
+    """
+    _, _, header_dirs = pkg_config(pkg_libraries)
+
+    header_strings = []
+
+    for header_dir in header_dirs:
+        header_strings.append("-I" + header_dir)
+
+    return header_strings
+
+def pkg_config_check_exists(package):
+    return (os.system('pkg-config --exists {0} 2>/dev/null'.format(package)) == 0)
+
+def pkg_config_libdirs(packages):
+    """
+    Returns a list of all library paths that pkg-config says should be included when
+    linking against the list of packages given as 'packages'. An empty return list means
+    that the package may be found in the standard system locations, irrespective of
+    pkg-config.
+    """
+
+    # don't try calling pkg-config if NO_PKGCONFIG is set in environment
+    if os.environ.get("NO_PKGCONFIG", None):
+        return []
+
+    # if calling pkg-config failes, don't continue and don't try again.
+    with open(os.devnull, "w") as FNULL:
+        try:
+            subprocess.check_call(["pkg-config", "--version"], stdout=FNULL)
+        except:
+            print(
+                "PyCBC.libutils: pkg-config call failed, "
+                "setting NO_PKGCONFIG=1",
+                file=sys.stderr,
+            )
+            os.environ['NO_PKGCONFIG'] = "1"
+            return []
+
+    # First, check that we can call pkg-config on each package in the list
+    for pkg in packages:
+        if not pkg_config_check_exists(pkg):
+            raise ValueError("Package {0} cannot be found on the pkg-config search path".format(pkg))
+
+    libdirs = []
+    for token in getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
+        if token.startswith("-L"):
+            libdirs.append(token[2:])
+    return libdirs
+
+def get_libpath_from_dirlist(libname, dirs):
+    """
+    This function tries to find the architecture-independent library given by libname in the first
+    available directory in the list dirs. 'Architecture-independent' means omitting any prefix such
+    as 'lib' or suffix such as 'so' or 'dylib' or version number.  Within the first directory in which
+    a matching pattern can be found, the lexicographically first such file is returned, as a string
+    giving the full path name.  The only supported OSes at the moment are posix and mac, and this
+    function does not attempt to determine which is being run.  So if for some reason your directory
+    has both '.so' and '.dylib' libraries, who knows what will happen.  If the library cannot be found,
+    None is returned.
+    """
+    dirqueue = deque(dirs)
+    while (len(dirqueue) > 0):
+        nextdir = dirqueue.popleft()
+        possible = []
+        # Our directory might be no good, so try/except
+        try:
+            for libfile in os.listdir(nextdir):
+                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or \
+                        fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*') or \
+                        fnmatch.fnmatch(libfile,'lib'+libname+'.*.dylib*') or \
+                        fnmatch.fnmatch(libfile,libname+'.dll') or \
+                        fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll'):
+                    possible.append(libfile)
+        except OSError:
+            pass
+        # There might be more than one library found, we want the highest-numbered
+        if (len(possible) > 0):
+            possible.sort()
+            return os.path.join(nextdir,possible[-1])
+    # If we get here, we didn't find it...
+    return None
+
+def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
+    """
+    This function takes a library name, specified in architecture-independent fashion (i.e.
+    omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and
+    a list of packages that may provide that library, and according first to LD_LIBRARY_PATH,
+    then the results of pkg-config, and falling back to the system search path, will try to
+    return a CDLL ctypes object.  If 'mode' is given it will be used when loading the library.
+    """
+    libdirs = []
+    # First try to get from LD_LIBRARY_PATH
+    if "LD_LIBRARY_PATH" in os.environ:
+        libdirs += os.environ["LD_LIBRARY_PATH"].split(":")
+    # Next try to append via pkg_config
+    try:
+        libdirs += pkg_config_libdirs(packages)
+    except ValueError:
+        pass
+    # We might be using conda/pip/virtualenv or some combination. This can
+    # leave lib files in a directory that LD_LIBRARY_PATH or pkg_config
+    # can miss.
+    libdirs.append(os.path.join(sys.prefix, "lib"))
+
+    # Note that the function below can accept an empty list for libdirs, in
+    # which case it will return None
+    fullpath = get_libpath_from_dirlist(libname, libdirs)
+
+    if fullpath is None:
+        # This won't actually return a full-path, but it should be something
+        # that can be found by CDLL
+        fullpath = find_library(libname)
+
+    if fullpath is None:
+        # We got nothin'
+        return None
     else:
-        def getconf(confvar):
-            retlist = commands.getstatusoutput('getconf ' + confvar)
-            return int(retlist[1])
+        if mode is None:
+            return ctypes.CDLL(fullpath)
+        else:
+            return ctypes.CDLL(fullpath, mode=mode)
 
-    LEVEL1_DCACHE_SIZE = getconf('LEVEL1_DCACHE_SIZE')
-    LEVEL1_DCACHE_ASSOC = getconf('LEVEL1_DCACHE_ASSOC')
-    LEVEL1_DCACHE_LINESIZE = getconf('LEVEL1_DCACHE_LINESIZE')
-    LEVEL2_CACHE_SIZE = getconf('LEVEL2_CACHE_SIZE')
-    LEVEL2_CACHE_ASSOC = getconf('LEVEL2_CACHE_ASSOC')
-    LEVEL2_CACHE_LINESIZE = getconf('LEVEL2_CACHE_LINESIZE')
-    LEVEL3_CACHE_SIZE = getconf('LEVEL3_CACHE_SIZE')
-    LEVEL3_CACHE_ASSOC = getconf('LEVEL3_CACHE_ASSOC')
-    LEVEL3_CACHE_LINESIZE = getconf('LEVEL3_CACHE_LINESIZE')
-
-
-def insert_optimization_option_group(parser):
-    """
-    Adds the options used to specify optimization-specific options.
+def import_optional(library_name):
+    """ Try to import library but and return stub if not found
 
     Parameters
     ----------
-    parser : object
-        OptionParser instance
+    library_name: str
+        The name of the python library to import
+
+    Returns
+    -------
+    library: library or stub
+        Either returns the library if importing is sucessful or it returns
+        a stub which raises an import error and message when accessed.
     """
-    optimization_group = parser.add_argument_group("Options for selecting "
-                                   "optimization-specific settings")
+    try:
+        return importlib.import_module(library_name)
+    except ImportError:
+        # module wasn't found so let's return a stub instead to inform
+        # the user what has happened when they try to use related functions
+        class no_module(object):
+            def __init__(self, library):
+                self.library = library
 
-    optimization_group.add_argument("--cpu-affinity", help="""
-                    A set of CPUs on which to run, specified in a format suitable
-                    to pass to taskset.""")
-    optimization_group.add_argument("--cpu-affinity-from-env", help="""
-                    The name of an enivornment variable containing a set
-                    of CPUs on which to run,  specified in a format suitable
-                    to pass to taskset.""")
+            def __getattribute__(self, attr):
+                if attr == 'library':
+                    return super().__getattribute__(attr)
+
+                lib = self.library
+
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                fun = calframe[1][3]
+                msg =""" The function {} tried to access
+                         '{}' of library '{}', however,
+                        '{}' is not currently installed. To enable this
+                        functionality install '{}' (e.g. through pip
+                        / conda / system packages / source).
+                      """.format(fun, attr, lib, lib, lib)
+                raise ImportError(inspect.cleandoc(msg))
+        return no_module(library_name)
 
 
-def verify_optimization_options(opt, parser):
-    """Parses the CLI options, verifies that they are consistent and
-    reasonable, and acts on them if they are
+def get_lscpu_caches():
+    """ Fetch the caches via subprocess and lscpu """
 
-    Parameters
-    ----------
-    opt : object
-        Result of parsing the CLI with OptionParser, or any object with the
-        required attributes
-    parser : object
-        OptionParser instance.
-    """
+    # Run the command and capture stdout
+    result = subprocess.run(
+        ["lscpu", "--caches"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True
+    )
+    cache_dict = {}
+    
+    for line in result.stdout.splitlines():
+        parts = line.split()
+        # Ensure 4 columns
+        assert len(parts)>=4, "lscpu --caches must atleast return the first four columns"  
+        # Assign values
+        key = parts[0]
+        net_cache_sizes = parts[2]
+        cache_assoc = parts[3]
+        cache_dict[key] = [net_cache_sizes, cache_assoc]
 
-    # Pin to specified CPUs if requested
-    requested_cpus = None
+    # Ensure the correct columns have been retrieved
+    assert cache_dict['NAME']==['ALL-SIZE', 'WAYS'], "Ensure the correct columns are retrieved"
+    # Convert str to bytes and int
+    caches_dict_bytes = {}
 
-    if opt.cpu_affinity_from_env is not None:
-        if opt.cpu_affinity is not None:
-            logger.error(
-                "Both --cpu_affinity_from_env and --cpu_affinity specified"
-            )
-            sys.exit(1)
+    for key, val in cache_dict.items():
+        if key!='NAME':
+            cache_bytes = get_in_bytes(val[0])
+            ways = int(val[1])
+            caches_dict_bytes.update({key : [cache_bytes, ways]})
+        else:
+            caches_dict_bytes.update({key : val})
 
-        requested_cpus = os.environ.get(opt.cpu_affinity_from_env)
+    return convert_to_getconf_conven(caches_dict_bytes)
 
-        if requested_cpus is None:
-            logger.error(
-                "CPU affinity requested from environment variable %s "
-                "but this variable is not defined",
-                opt.cpu_affinity_from_env
-            )
-            sys.exit(1)
+def get_in_bytes(size_str):
+    """ Convert the value of cache supplied as a string
+    to int (bytes) """
 
-        if requested_cpus == '':
-            logger.error(
-                "CPU affinity requested from environment variable %s "
-                "but this variable is empty",
-                opt.cpu_affinity_from_env
-            )
-            sys.exit(1)
+    num_str = size_str[:-1]
+    # Conver KiB to Bytes
+    if size_str[-1] == 'K':
+        val = int(num_str)*1024
+    # Convert MiB to Bytes
+    elif size_str[-1] == 'M':
+        val = int(num_str)*1024*1024
+    
+    return val
 
-    if requested_cpus is None:
-        requested_cpus = opt.cpu_affinity
 
-    if requested_cpus is not None:
-        command = 'taskset -pc %s %d' % (requested_cpus, os.getpid())
-        retcode = os.system(command)
+def convert_to_getconf_conven(cache_dict):
+    """ So that different methods in opt can be treated as overloads """
+    gcache_dict = {}
 
-        if retcode != 0:
-            logger.error(
-                'taskset command <%s> failed with return code %d',
-                command, retcode
-            )
-            sys.exit(1)
+    for key, val in cache_dict.items():
+        if key=='L1d':
+            gcache_dict.update({'LEVEL1_DCACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL1_DCACHE_ASSOC' : val[1]})
+        elif key=='L1i':
+            gcache_dict.update({'LEVEL1_ICACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL1_ICACHE_ASSOC' : val[1]})
+        elif key=='L2':
+            gcache_dict.update({'LEVEL2_CACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL2_CACHE_ASSOC' : val[1]})
+        elif key=='L3':
+            gcache_dict.update({'LEVEL3_CACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL3_CACHE_ASSOC' : val[1]})
+        else:
+            gcache_dict.update({key : val})
 
-        logger.info("Pinned to CPUs %s ", requested_cpus)
-
-class LimitedSizeDict(OrderedDict):
-    """ Fixed sized dict for FIFO caching"""
-
-    def __init__(self, *args, **kwds):
-        self.size_limit = kwds.pop("size_limit", None)
-        OrderedDict.__init__(self, *args, **kwds)
-        self._check_size_limit()
-
-    def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
-        self._check_size_limit()
-
-    def _check_size_limit(self):
-        if self.size_limit is not None:
-            while len(self) > self.size_limit:
-                self.popitem(last=False)
+    return gcache_dict

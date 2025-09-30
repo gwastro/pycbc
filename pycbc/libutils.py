@@ -241,3 +241,80 @@ def import_optional(library_name):
                       """.format(fun, attr, lib, lib, lib)
                 raise ImportError(inspect.cleandoc(msg))
         return no_module(library_name)
+
+
+
+def get_lscpu_caches():
+    """ Fetch the caches via lscpu """
+
+    # Run the command and capture stdout
+    result = subprocess.run(
+        ["lscpu", "--caches"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True
+    )
+    cache_dict = {}
+    
+    for line in result.stdout.splitlines():
+        parts = line.split()
+        # Ensure 4 columns
+        assert len(parts)>=4, "lscpu --caches must atleast return the first four columns"  
+        # Assign values
+        key = parts[0]
+        net_cache_sizes = parts[2]
+        cache_assoc = parts[3]
+        cache_dict[key] = [net_cache_sizes, cache_assoc]
+
+    # Ensure the correct columns have been retrieved
+    assert cache_dict['NAME']==['ALL-SIZE', 'WAYS'], "Ensure the correct columns are retrieved"
+    # Convert str to bytes and int
+    caches_dict_bytes = {}
+
+    for key, val in cache_dict.items():
+        if key!='NAME':
+            cache_bytes = get_in_bytes(val[0])
+            ways = int(val[1])
+            caches_dict_bytes.update({key : [cache_bytes, ways]})
+        else:
+            caches_dict_bytes.update({key : val})
+
+    return convert_to_getconf_conven(caches_dict_bytes)
+
+def get_in_bytes(size_str):
+    """ Get the value of cache supplied as a string
+    in int bytes """
+
+    num_str = size_str[:-1]
+    # Conver KiB to Bytes
+    if size_str[-1] == 'K':
+        val = int(num_str)*1024
+    # Convert MiB to Bytes
+    elif size_str[-1] == 'M':
+        val = int(num_str)*1024*1024
+    
+    return val
+
+
+def convert_to_getconf_conven(cache_dict):
+
+    gcache_dict = {}
+
+    for key, val in cache_dict.items():
+        if key=='L1d':
+            gcache_dict.update({'LEVEL1_DCACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL1_DCACHE_ASSOC' : val[1]})
+        elif key=='L1i':
+            gcache_dict.update({'LEVEL1_ICACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL1_ICACHE_ASSOC' : val[1]})
+        elif key=='L2':
+            gcache_dict.update({'LEVEL2_CACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL2_CACHE_ASSOC' : val[1]})
+        elif key=='L3':
+            gcache_dict.update({'LEVEL3_CACHE_SIZE' : val[0]})
+            gcache_dict.update({'LEVEL3_CACHE_ASSOC' : val[1]})
+        else:
+            gcache_dict.update({key : val})
+
+    return gcache_dict
