@@ -40,7 +40,7 @@ from pycbc.filter import sigmasq
 from pycbc.types import TimeSeries
 from pycbc.types.optparse import convert_to_process_params_dict
 from pycbc.io.ligolw import create_process_table
-from pycbc.waveform import get_td_waveform, td_approximants, taper_timeseries
+from pycbc.waveform import get_td_waveform, td_approximants
 
 def _empty_row(obj):
     """Create an empty sim_inspiral or sngl_inspiral row where the columns have
