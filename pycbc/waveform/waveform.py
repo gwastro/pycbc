@@ -1317,9 +1317,9 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = wfutils.taper_timeseries(hp, input_params['taper'],
+            hp = hp.taper_timeseries(location=input_params['taper'],
                                           return_lal=False)
-            hc = wfutils.taper_timeseries(hc, input_params['taper'],
+            hc = hc.taper_timeseries(location=input_params['taper'],
                                           return_lal=False)
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t

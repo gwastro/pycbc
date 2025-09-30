@@ -293,8 +293,7 @@ with ctx:
         if len(td_template) > (7 * tlen // 8):
             new_start_idx = len(td_template) - (7 * tlen // 8)
             td_template = td_template[new_start_idx:]
-            taper_func = pycbc.waveform.utils.taper_timeseries
-            td_template = taper_func(td_template, tapermethod='TAPER_START')
+            td_template = td_template.taper_timeseries(tapermethod='TAPER_START')
         if hasattr(inj, 'waveform'):
             approximant = inj.waveform
         else:

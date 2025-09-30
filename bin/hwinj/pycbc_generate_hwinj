@@ -427,7 +427,7 @@ for ifo in opts.instruments:
 
     # taper waveform
     logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=sim.taper)
+    strain = strain.taper_timeseries(location=sim.taper)
 
     # FFT strain
     logging.info('FFT strain for %s', ifo)
