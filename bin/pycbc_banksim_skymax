@@ -30,7 +30,6 @@ from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
-from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, complex_same_precision_as
 from pycbc.filter import sigmasq
