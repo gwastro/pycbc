@@ -39,7 +39,7 @@ parser.add_argument('--output-file', required=True,
     help='Output file name for template bank.')
 parser.add_argument('--input-file',
     help='Bank to use as an initial set of starting samples.')
-parser.add_argumetn('--keep-entire-input-file', help="All of the templates in the input file will be kept in the output file, even if they do not pass normal mismatch criteria.", action='store_true')
+parser.add_argument('--keep-entire-input-file', help="All of the templates in the input file will be kept in the output file, even if they do not pass normal mismatch criteria.", action='store_true')
 parser.add_argument('--input-config',
     help='Draw parameters from the given configure file.')
 parser.add_argument('--params',
