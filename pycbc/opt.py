@@ -104,7 +104,7 @@ else:
         LEVEL2_CACHE_LINESIZE = getconf('LEVEL2_CACHE_LINESIZE')
         # See darwin line above
         LEVEL1_DCACHE_LINESIZE = getconf('LEVEL1_DCACHE_LINESIZE')
-        LEVEL3_CACHE_LINESIZE = getconf('LEVEL3_CACHE_LINESIZE')
+        LEVEL3_CACHE_LINESIZE = getval('LEVEL3_CACHE_LINESIZE')
     else:
         # Get cache linesize from sysctl
         # On Apple M chips, different Lev cache linesizes can be different!
@@ -113,12 +113,13 @@ else:
         # So get only sys reported lev2 size here instead
         LEVEL2_CACHE_LINESIZE=int(subprocess.check_output(['sysctl', '-n', 'hw.cachelinesize']))
 
-    print("Cache sizes")
-    print(LEVEL1_DCACHE_SIZE,LEVEL2_CACHE_SIZE, LEVEL3_CACHE_SIZE)
-    print("Cache assoc")
-    print(LEVEL1_DCACHE_ASSOC, LEVEL2_CACHE_ASSOC, LEVEL3_CACHE_ASSOC)
-    print("Cache linesizes")
-    print(LEVEL1_DCACHE_LINESIZE, LEVEL2_CACHE_LINESIZE, LEVEL3_CACHE_LINESIZE)
+    # Left here for testing. 
+    #print("Cache sizes")
+    #print(LEVEL1_DCACHE_SIZE,LEVEL2_CACHE_SIZE, LEVEL3_CACHE_SIZE)
+    #print("Cache assoc")
+    #print(LEVEL1_DCACHE_ASSOC, LEVEL2_CACHE_ASSOC, LEVEL3_CACHE_ASSOC)
+    #print("Cache linesizes")
+    #print(LEVEL1_DCACHE_LINESIZE, LEVEL2_CACHE_LINESIZE, LEVEL3_CACHE_LINESIZE)
 
 
 def insert_optimization_option_group(parser):
