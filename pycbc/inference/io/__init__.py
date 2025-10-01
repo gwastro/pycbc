@@ -412,7 +412,7 @@ class PrintFileParams(argparse.Action):
 
 
 class ResultsArgumentParser(argparse.ArgumentParser):
-    """Wraps argument parser, and preloads arguments needed for loading samples
+    r"""Wraps argument parser, and preloads arguments needed for loading samples
     from a file.
 
     This parser class should be used by any program that wishes to use the
@@ -640,7 +640,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
 
 
 def results_from_cli(opts, load_samples=True, **kwargs):
-    """Loads an inference result file along with any labels associated with it
+    r"""Loads an inference result file along with any labels associated with it
     from the command line options.
 
     Parameters

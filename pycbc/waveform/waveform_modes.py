@@ -42,7 +42,7 @@ def _formatdocstrlist(docstr, paramlist, skip_params=None):
     if skip_params is None:
         skip_params = []
     pl = '\n'.join([_p.docstr(prefix="    ", include_label=False)
-                    for _p in paramlist if _p not in skip_params]).lstrip(' ')
+                    for _p in paramlist if _p not in skip_params])
     return docstr.format(params=pl)
 
 
@@ -399,6 +399,7 @@ def get_fd_waveform_modes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments.
+
     {params}
 
     Returns
@@ -443,6 +444,7 @@ def get_td_waveform_modes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments.
+
     {params}
 
     Returns

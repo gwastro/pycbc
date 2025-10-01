@@ -28,7 +28,7 @@ logger = logging.getLogger('pycbc.distributions.angular')
 
 
 class UniformAngle(uniform.Uniform):
-    """A uniform distribution in which the dependent variable is between
+    r"""A uniform distribution in which the dependent variable is between
     `[0,2pi)`.
 
     The domain of the distribution may optionally be made cyclic using the
@@ -92,7 +92,7 @@ class UniformAngle(uniform.Uniform):
         return self._domain
 
     def apply_boundary_conditions(self, **kwargs):
-        """Maps values to be in [0, 2pi) (the domain) first, before applying
+        r"""Maps values to be in [0, 2pi) (the domain) first, before applying
         any additional boundary conditions.
 
         Parameters
@@ -267,7 +267,7 @@ class CosAngle(SinAngle):
 
 
 class UniformSolidAngle(bounded.BoundedDist):
-    """A distribution that is uniform in the solid angle of a sphere. The names
+    r"""A distribution that is uniform in the solid angle of a sphere. The names
     of the two angluar parameters can be specified on initalization.
 
     Parameters
@@ -344,7 +344,7 @@ class UniformSolidAngle(bounded.BoundedDist):
             return self._azimuthaldist._cdfinv_param(param, value)
 
     def apply_boundary_conditions(self, **kwargs):
-        """Maps the given values to be within the domain of the azimuthal and
+        r"""Maps the given values to be within the domain of the azimuthal and
         polar angles, before applying any other boundary conditions.
 
         Parameters

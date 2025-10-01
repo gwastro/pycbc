@@ -6,7 +6,7 @@ healpy
 
 # Needed for GraceDB uploads and skymap generation
 ligo-gracedb>=2.10.0
-ligo.skymap!=1.1.0
+ligo.skymap>=2.1.1
 
 # auxiliary samplers
 epsie>=1.0

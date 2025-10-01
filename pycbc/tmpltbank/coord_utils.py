@@ -581,7 +581,7 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     return dist, aXis, bXis
 
 def calc_point_dist(vsA, entryA):
-    """
+    r"""
     This function is used to determine the distance between two points.
 
     Parameters
@@ -603,7 +603,7 @@ def calc_point_dist(vsA, entryA):
     return val 
 
 def test_point_dist(point_1_chis, point_2_chis, distance_threshold):
-    """
+    r"""
     This function tests if the difference between two points in the chi
     parameter space is less than a distance threshold. Returns True if it is
     and False if it is not.   
@@ -621,7 +621,7 @@ def test_point_dist(point_1_chis, point_2_chis, distance_threshold):
 
 
 def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
-    """
+    r"""
     Function to determine if two points, with differing upper frequency cutoffs
     have a mismatch < MMdistA for *both* upper frequency cutoffs.
 

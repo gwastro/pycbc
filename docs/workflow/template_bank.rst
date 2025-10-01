@@ -130,7 +130,7 @@ Lalapps_tmpltbank is the legacy C-code that has been used to generate template b
 
 lalapps_tmpltbank is supported in pycbc's workflow module via a wrapper script lalapps_tmpltbank_ahope, this allows us to specify all the frame files and the output file name directly.
 
-The help message for lalapps_tmpltbank is available at http://software.ligo.org/docs/lalsuite/lalapps/tmpltbank_8c.html
+The help message for lalapps_tmpltbank is available at https://lscsoft.docs.ligo.org/lalsuite/lalapps/tmpltbank_8c.html
 
 Of these options the workflow module and/or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 

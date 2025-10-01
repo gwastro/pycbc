@@ -369,7 +369,7 @@ class CommonMCMCMetadataIO(object):
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
-        """Create a parser to parse sampler-specific arguments for loading
+        r"""Create a parser to parse sampler-specific arguments for loading
         samples.
 
         Parameters

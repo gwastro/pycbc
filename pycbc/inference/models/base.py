@@ -529,7 +529,7 @@ class BaseModel(metaclass=ABCMeta):
 
     @property
     def logjacobian(self):
-        """The log jacobian of the sampling transforms at the current postion.
+        r"""The log jacobian of the sampling transforms at the current postion.
 
         If no sampling transforms were provided, will just return 0.
 
@@ -615,7 +615,7 @@ class BaseModel(metaclass=ABCMeta):
         return p0
 
     def _transform_params(self, **params):
-        """Applies sampling transforms and boundary conditions to parameters.
+        r"""Applies sampling transforms and boundary conditions to parameters.
 
         Parameters
         ----------
@@ -777,7 +777,7 @@ class BaseModel(metaclass=ABCMeta):
 
     @classmethod
     def from_config(cls, cp, **kwargs):
-        """Initializes an instance of this class from the given config file.
+        r"""Initializes an instance of this class from the given config file.
 
         Parameters
         ----------
