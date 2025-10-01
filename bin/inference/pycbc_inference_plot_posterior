@@ -48,7 +48,7 @@ from pycbc.results.scatter_histograms import create_multidim_plot
 use('agg')
 
 # add options to command line
-parser = io.ResultsArgumentParser(defaultparams='all')
+parser = io.ResultsArgumentParser(defaultparams='samples')
 pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--output-file", type=str, required=True,
