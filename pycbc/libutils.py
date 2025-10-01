@@ -256,6 +256,22 @@ def get_lscpu_caches():
         check=True
     )
 
+    l1d_cline_size = subprocess.run(
+        ["cat", "/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True
+    ).stdout
+
+    l2_cline_size = subprocess.run(
+        ["cat", "/sys/devices/system/cpu/cpu0/cache/index2/coherency_line_size"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True
+    ).stdout
+
     l3_cline_size = subprocess.run(
         ["cat", "/sys/devices/system/cpu/cpu0/cache/index3/coherency_line_size"],
         stdout=subprocess.PIPE,
@@ -263,6 +279,8 @@ def get_lscpu_caches():
         text=True,
         check=True
     ).stdout
+
+
     #print(l3_cline_size)
     cache_dict = {}
     
@@ -290,6 +308,8 @@ def get_lscpu_caches():
             caches_dict_bytes.update({key : val})
 
     gcaches_dict = convert_to_getconf_conven(caches_dict_bytes)
+    gcaches_dict.update({"LEVEL1_DCACHE_LINESIZE" : int(l1d_cline_size)})
+    gcaches_dict.update({"LEVEL2_CACHE_LINESIZE" : int(l2_cline_size)})
     gcaches_dict.update({"LEVEL3_CACHE_LINESIZE" : int(l3_cline_size)})
 
     return gcaches_dict

@@ -98,12 +98,11 @@ else:
         LEVEL1_DCACHE_ASSOC = getval('LEVEL1_DCACHE_ASSOC')
         LEVEL2_CACHE_ASSOC = getval('LEVEL2_CACHE_ASSOC')
         LEVEL3_CACHE_ASSOC = getval('LEVEL3_CACHE_ASSOC')
-    
-        # Use getconf for cache line sizes
-        # lscpu also returns this, todo for later
-        LEVEL2_CACHE_LINESIZE = getconf('LEVEL2_CACHE_LINESIZE')
-        # See darwin line above
-        LEVEL1_DCACHE_LINESIZE = getconf('LEVEL1_DCACHE_LINESIZE')
+
+        # Can use getconf for cache line sizes
+        # but it fails to fetch it for L3
+        LEVEL1_DCACHE_LINESIZE = getval('LEVEL1_DCACHE_LINESIZE')
+        LEVEL2_CACHE_LINESIZE = getval('LEVEL2_CACHE_LINESIZE')
         LEVEL3_CACHE_LINESIZE = getval('LEVEL3_CACHE_LINESIZE')
     else:
         # Get cache linesize from sysctl
