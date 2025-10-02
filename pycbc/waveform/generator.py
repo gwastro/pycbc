@@ -277,19 +277,9 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         """
         hp, hc = res
 
-        if self.current_params.get('taper_method') == 'constant':
-            if self.current_params['taper_window'] is None:
-                raise ValueError("If taper_method is 'constant', taper_window must be set")
-            else:
-                gate_params_hp = [(hp.start_time, self.current_params['taper_window']/2, self.current_params['taper_window'])]
-                gate_params_hc = [(hc.start_time, self.current_params['taper_window']/2, self.current_params['taper_window'])]
-        else:
-            gate_params_hp = None
-            gate_params_hc = None
-
-        hp_tapered = hp.taper_timeseries(location=self.current_params['taper'], tapermethod=self.current_params.get('taper_method'), gate_params=gate_params_hp)
-        hc_tapered = hc.taper_timeseries(location=self.current_params['taper'], tapermethod=self.current_params.get('taper_method'), gate_params=gate_params_hc)
-
+        hp_tapered = hp.taper_timeseries(location=self.current_params['taper'], tapermethod=self.current_params.get('taper_method'), taper_window=self.current_params.get('taper_window'))
+        hc_tapered = hc.taper_timeseries(location=self.current_params['taper'], tapermethod=self.current_params.get('taper_method'), taper_window=self.current_params.get('taper_window'))
+ 
         return hp_tapered, hc_tapered
 
 
@@ -315,8 +305,8 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
             tapermethod = self.current_params['taper']
             for mode in res:
                 ulm, vlm = res[mode]
-                ulm = ulm.taper_timeseries(location=tapermethod)
-                vlm = vlm.taper_timeseries(location=tapermethod)
+                ulm = ulm.taper_timeseries(location=tapermethod, tapermethod=self.current_params.get('taper_method'), taper_window=self.current_params.get('taper_window'))
+                vlm = vlm.taper_timeseries(location=tapermethod, tapermethod=self.current_params.get('taper_method'), taper_window=self.current_params.get('taper_window'))
                 res[mode] = (ulm, vlm)
         return res
 
