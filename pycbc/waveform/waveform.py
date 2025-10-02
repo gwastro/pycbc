@@ -1317,10 +1317,12 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = hp.taper_timeseries(location=input_params['taper'],
-                                          return_lal=False)
-            hc = hc.taper_timeseries(location=input_params['taper'],
-                                          return_lal=False)
+            hp = hp.taper_timeseries(location=input_params['taper'], 
+            tapermethod=input_params.get('taper_method'), 
+            taper_window=input_params.get('taper_window'), return_lal=False)
+            hc = hc.taper_timeseries(location=input_params['taper'], 
+            tapermethod=input_params.get('taper_method'), 
+            taper_window=input_params.get('taper_window'), return_lal=False)
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t
         # for IMR templates the zero of time is at max amplitude (merger)
