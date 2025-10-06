@@ -23,7 +23,7 @@ logger = logging.getLogger('pycbc.distributions.joint')
 
 
 class JointDistribution(object):
-    """
+    r"""
     Callable class that calculates the joint distribution built from a set of
     distributions.
 

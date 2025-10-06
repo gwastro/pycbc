@@ -43,7 +43,7 @@ igwn-ligolw<2.1.0
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
-dynesty
+dynesty<3.0
 
 # For building documentation
 # FIXME Unpin this!

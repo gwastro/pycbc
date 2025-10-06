@@ -54,7 +54,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
 
 def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
                                    spin1z=0., spin2z=0., full_ethinca=True):
-    """
+    r"""
     Calculate the Gamma components needed to use the ethinca metric.
     At present this outputs the standard TaylorF2 metric over the end time
     and chirp times \tau_0 and \tau_3.

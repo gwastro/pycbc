@@ -262,13 +262,12 @@ setup(
         'pycbc.neutron_stars': find_files('pycbc/neutron_stars')
     },
     ext_modules = ext,
-    python_requires='>=3.9',
+    python_requires='>=3.11',
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',

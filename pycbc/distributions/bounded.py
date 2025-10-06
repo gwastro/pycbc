@@ -200,7 +200,7 @@ def bounded_from_config(cls, cp, section, variable_args,
 
 
 class BoundedDist(object):
-    """
+    r"""
     A generic class for storing common properties of distributions in which
     each parameter has a minimum and maximum value.
 
@@ -247,7 +247,7 @@ class BoundedDist(object):
                 ', '.join(self._params)))
 
     def apply_boundary_conditions(self, **kwargs):
-        """Applies any boundary conditions to the given values (e.g., applying
+        r"""Applies any boundary conditions to the given values (e.g., applying
         cyclic conditions, and/or reflecting values off of boundaries). This
         is done by running `apply_conditions` of each bounds in self on the
         corresponding value. See `boundaries.Bounds.apply_conditions` for
