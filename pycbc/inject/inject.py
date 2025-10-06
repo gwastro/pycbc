@@ -338,7 +338,7 @@ class _XMLInjectionSet(object):
 
 
 class _HDFInjectionSet(metaclass=ABCMeta):
-    """Manages sets of injections: reads injections from hdf files
+    r"""Manages sets of injections: reads injections from hdf files
     and injects them into time series.
 
     Parameters
@@ -444,7 +444,7 @@ class _HDFInjectionSet(metaclass=ABCMeta):
     @classmethod
     def write(cls, filename, samples, write_params=None, static_args=None,
               **metadata):
-        """Writes the injection samples to the given hdf file.
+        r"""Writes the injection samples to the given hdf file.
 
         Parameters
         ----------
@@ -1076,7 +1076,7 @@ def hdf_injtype_from_approximant(approximant):
 
 
 class InjectionSet(object):
-    """Manages sets of injections and injects them into time series.
+    r"""Manages sets of injections and injects them into time series.
 
     Injections are read from either LIGOLW XML files or HDF files.
 
@@ -1112,7 +1112,7 @@ class InjectionSet(object):
     @staticmethod
     def write(filename, samples, write_params=None, static_args=None,
               injtype=None, **metadata):
-        """Writes the injection samples to the given hdf file.
+        r"""Writes the injection samples to the given hdf file.
 
         Parameters
         ----------

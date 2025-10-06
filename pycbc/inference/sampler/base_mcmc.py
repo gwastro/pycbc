@@ -153,7 +153,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 
 
 class BaseMCMC(object, metaclass=ABCMeta):
-    """Abstract base class that provides methods common to MCMCs.
+    r"""Abstract base class that provides methods common to MCMCs.
 
     This is not a sampler class itself. Sampler classes can inherit from this
     along with ``BaseSampler``.

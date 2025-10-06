@@ -13,7 +13,7 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-22.04]
-        python-version: ['3.11', '3.12']
+        python-version: ['3.11', '3.12', '3.13']
         test-type: [unittest, search, docs]
     steps:
     - uses: actions/checkout@v4
