@@ -176,31 +176,67 @@ class TimeSeries(Array):
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
 
-    def time_slice(self, start, end, mode='floor'):
+    def time_slice(self, start, end,
+                   mode='floor',
+                   exact_indices_threshold=1e-3):
         """Return the slice of the time series that contains the time range
         in GPS seconds.
+
+        Note on indices.
+
+        Parameters
+        ----------
+        start: float
+            The start time
+        end: float
+            The end time
+        mode: str, 'floor'
+            The rounding mode to be used when times are requested between samples.
+            The options are 'floor' which preferences choosing rounded down
+            index and 'nearest' which preferences whichever index is closest.
+        exact_indices_threshold: float, 1e-3
+            If the start or end time are intended to be at exact indices then
+            we need to identify this by testing if they are within an absolute
+            error introduced by numerical error accumulation.
         """
+        # (0) check if times are contained in the time series
         if start < self.start_time:
             raise ValueError('Time series does not contain a time as early as %s' % start)
-
         if end > self.end_time:
             raise ValueError('Time series does not contain a time as late as %s' % end)
 
+        # (1) Determine the start and end index corresponding to the requested
+        # times. This is calculated to subsample precision as start / end time
+        # are not restricted to the sample values.
         start_idx = float(start - self.start_time) * self.sample_rate
         end_idx = float(end - self.start_time) * self.sample_rate
 
-        if _numpy.isclose(start_idx, round(start_idx), rtol=0, atol=1E-3):
-            start_idx = round(start_idx)
+        # When dealing with time series of different size or transforming
+        # between different sample rates, floating point precision calculations
+        # can result in start / end times that should be at exact index locations
+        # to be some epsilon different in floating point value.
+        # (2) identify if we intended the start / end to be at an exact sample
+        # based on identifying only a trivial difference.
+        if exact_indices_threshold:
+            if _numpy.isclose(start_idx, round(start_idx),
+                              rtol=0, atol=exact_indices_threshold):
+                start_idx = round(start_idx)
 
-        if _numpy.isclose(end_idx, round(end_idx), rtol=0, atol=1E-3):
-            end_idx = round(end_idx)
+            if _numpy.isclose(end_idx, round(end_idx),
+                              rtol=0, atol=exact_indices_threshold):
+                end_idx = round(end_idx)
 
+        # (3) Choose how index selection is done if the start or end time
+        # is actually between samples of the time series.
+        # We choose the index that is rounded down
         if mode == 'floor':
             start_idx = int(start_idx)
             end_idx = int(end_idx)
+        # We choose the index that is nearest to the
+        # time requested.
         elif mode == 'nearest':
-            start_idx = int(round(start_idx))
-            end_idx = int(round(end_idx))
+            start_idx = round(start_idx)
+            end_idx = round(end_idx)
         else:
             raise ValueError("Invalid mode: {}".format(mode))
 
