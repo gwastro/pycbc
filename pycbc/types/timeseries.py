@@ -582,7 +582,7 @@ class TimeSeries(Array):
             not change the series!
         tapermethod : string
             Should be one of ('lal', 'constant'). 'lal' uses the LAL tapering
-            functions, 'constant' uses a constant window tapering.
+            functions, 'constant' uses a constant window tapering. Default is 'lal'.
         taper_window : float
             If tapermethod is 'constant', this is the length in seconds of
             the tapering window.
@@ -609,14 +609,14 @@ class TimeSeries(Array):
 
         if location is None:
             raise ValueError("Must specify a tapering method (function was called"
-                            "with tapermethod=None)")
+                            "with location=None)")
         if location not in taper_map.keys():
-            raise ValueError("Unknown tapering method %s, valid methods are %s" % \
-                            (tapermethod, ", ".join(taper_map.keys())))
+            raise ValueError("Unknown location %s, valid locations are %s" % \
+                            (location, ", ".join(taper_map.keys())))
         if tsdata.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not "
                         + str(tsdata.dtype))
-        if tapermethod == 'lal' or tapermethod == None:
+        if tapermethod == 'lal':
             taper_func = taper_func_map[tsdata.dtype]
             # make a LAL TimeSeries to pass to the LALSim function
             ts_lal = tsdata.astype(tsdata.dtype).lal()
@@ -631,23 +631,16 @@ class TimeSeries(Array):
             # constant window tapering
             if taper_window is None:
                 raise ValueError("If taper_method is 'constant', taper_window must be set")
-            elif location=='start' or location=='TAPER_START':
+            
+            gate_params = []
+            if location in ('TAPER_START', 'start' 'TAPER_STARTEND'):
                 first_nonzero = _numpy.nonzero(tsdata)[0][0]
                 nonzero_starttime = tsdata.start_time + first_nonzero * tsdata.delta_t
-                gate_params = [(nonzero_starttime, 0, taper_window)]
-            elif location=='end' or location=='TAPER_END':
+                gate_params.append((nonzero_starttime, 0, taper_window))
+            if location in ('TAPER_END', 'end', 'TAPER_STARTEND'):
                 last_nonzero = _numpy.nonzero(tsdata)[0][-1]
                 nonzero_endtime = tsdata.end_time - last_nonzero * tsdata.delta_t
-                gate_params = [(nonzero_endtime - taper_window, 0, taper_window)]
-            elif location=='startend' or location=='TAPER_STARTEND':
-                first_nonzero = _numpy.nonzero(tsdata)[0][0]
-                nonzero_starttime = tsdata.start_time + first_nonzero * tsdata.delta_t
-                last_nonzero = _numpy.nonzero(tsdata)[0][-1]
-                nonzero_endtime = tsdata.start_time - last_nonzero * tsdata.delta_t
-                gate_params = [(nonzero_starttime, 0, taper_window),
-                               (nonzero_endtime - taper_window, 0, taper_window)]
-            elif location=='TAPER_NONE':
-                gate_params = []
+                gate_params.append((nonzero_endtime - taper_window, 0, taper_window))
             from pycbc.strain import gate_data
             return gate_data(tsdata, gate_params)
         else:
