@@ -8,7 +8,8 @@ pycbc_make_inference_workflow \
     --workflow-name gw \
     --config-overrides \
     inference:config-overrides:data:"frame-files:'H1:${H1} L1:${L1} V1:${V1}'" \
-    results_page:output-path:${PWD}/html
+    results_page:output-path:${PWD}/html \
+    --submit-now
 
 # The above adds an option to the workflow.ini to set a config override for the inference jobs
 # the inference job then sets where it gets the frame files to our chosen location
