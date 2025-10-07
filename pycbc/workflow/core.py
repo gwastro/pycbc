@@ -873,7 +873,6 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(filename=filename,
                                    output_map_path=output_map_path,
                                    submit_now=self.args.submit_now,
-                                   plan_now=self.args.plan_now,
                                    root=root)
 
     def save_config(self, fname, output_dir, cp=None):
@@ -2332,11 +2331,6 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     wfgrp.add_argument("--cache-file", default=None,
                        help="Path to input file containing list of files to "
                             "be reused (the 'input_map' file)")
-    wfgrp.add_argument("--plan-now", default=False, action='store_true',
-                       help="If given, workflow will immediately be planned "
-                            "on completion of workflow generation but not "
-                            "submitted to the condor pool. A start script "
-                            "will be created to submit to condor.")
     wfgrp.add_argument("--submit-now", default=False, action='store_true',
                        help="If given, workflow will immediately be submitted "
                             "on completion of workflow generation")
