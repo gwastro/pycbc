@@ -57,13 +57,8 @@ do
   pegasus-dax-validator $workflow
 done
 
-echo -e "\\n>> [`date`] Planning test workflow"
-pycbc_submit_dax \
-  --force-no-accounting-group \
-  --dax ${WORKFLOW_NAME}.dax \
-  --no-create-proxy \
-  --no-submit \
-  --no-grid
+echo -e "\\n>> [`date`] Submitting test workflow"
+bash start
 
 popd
 popd
