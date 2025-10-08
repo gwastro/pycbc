@@ -26,10 +26,10 @@ These are the unit-tests for the pycbc.fft subpackage, testing only unthreaded
 backends for the various schemes.
 """
 
+import unittest
 import pycbc.fft
 from pycbc.scheme import CPUScheme
 import unittest
-from sys import exit as _exit
 from utils import parse_args_cpu_only, simple_exit
 from fft_base import _BaseTestFFTClass
 
@@ -42,11 +42,15 @@ if 'fftw' in pycbc.fft.get_backend_names():
     try:
         pycbc.fft.fftw.set_threads_backend('openmp')
     except:
-        print("Unable to import openmp threads backend to FFTW; skipping openmp thread tests")
-        _exit(0)
+        raise unittest.SkipTest(
+            "Unable to import openmp threads backend to FFTW; "
+            "skipping openmp thread tests"
+        )
 else:
-    print("FFTW does not seem to be an available CPU backend; skipping openmp thread tests")
-    _exit(0)
+    raise unittest.SkipTest(
+        "FFTW does not seem to be an available CPU backend; "
+        "skipping openmp thread tests"
+    )
 
 # Now set the number of threads to something nontrivial
 
