@@ -25,6 +25,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    
+    - name: Install FFTW
+      run: brew install fftw
 
     - name: Cache conda packages
       uses: actions/cache@v4
@@ -51,8 +54,7 @@ jobs:
         conda install \
             pip \
             setuptools \
-            tox \
-            fftw
+            tox
 
     - name: Run basic pycbc test suite
       run: |
