@@ -52,8 +52,7 @@ jobs:
             pip \
             setuptools \
             tox \
-            fftw \
-            mkl
+            fftw
 
     - name: Run basic pycbc test suite
       run: |
