@@ -51,7 +51,9 @@ jobs:
         conda install \
             pip \
             setuptools \
-            tox
+            tox \
+            fftw \
+            mkl
 
     - name: Run basic pycbc test suite
       run: |
