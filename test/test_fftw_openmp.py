@@ -29,7 +29,6 @@ backends for the various schemes.
 import unittest
 import pycbc.fft
 from pycbc.scheme import CPUScheme
-import unittest
 from utils import parse_args_cpu_only, simple_exit
 from fft_base import _BaseTestFFTClass
 
