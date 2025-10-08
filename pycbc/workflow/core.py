@@ -863,9 +863,9 @@ class Workflow(pegasus_workflow.Workflow):
             self.cp.write(fp)
 
         # save the sites file
-        #FIXME change to check also for submit_now if we drop pycbc_submit_dax
-        # this would prevent sub-workflows from making extra unused sites.yml
-        if not self.in_workflow:
+        # checking for submit_now prevents sub-workflows from making
+        # extra unused sites.yml
+        if not self.in_workflow and submit_now:
             catalog_path = os.path.join(self.out_dir, 'sites.yml')
             make_catalog(self.cp, self.out_dir).write(catalog_path)
 

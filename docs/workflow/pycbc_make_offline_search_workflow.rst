@@ -489,30 +489,26 @@ set the output web page location.
 Planning and Submitting the Workflow
 ====================================
 
-Pegasus is used to plan and submit the workflow. To involve Pegasus to plan a
-PyCBC workflow, you use the command ``pycbc_submit_dax`` which takes the
-command line arguments
+Pegasus is used to plan and submit the workflow. To involve Pegasus to submit a
+PyCBC workflow, you can use the argument ``--submit-now``. The workflow is planned
+by default, and is submitted later using the 
+.. code-block::
+  ./start
 
-.. command-output:: pycbc_submit_dax --help
+executable which is made in the ``--output-dir`` directory you defined earlier.
 
-Note that  you are running on a resource that mandates accounting, then you
+Note that if you are running on a resource that mandates accounting, then you
 will also need to add a valid tag with the ``--accounting-tag`` command line
 argument. Please see
 `the LDG accounting page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user>`_. to
-determine the correct tags. These can be applied by adding the following line
-to your submit invocation.
+determine the correct tags. Once you know what accounting-group tag to use, add it 
+to your config files. ``request_disk`` and ``request_memory`` may also be required.
 
-For example, to plan and submit the workflow in the example above, change to the directory that you specified with the ``--output``
-command line option to ``pycbc_make_offline_search_workflow`` and plan and submit
-the workflow::
+.. code-block::
 
-    cd output
-    pycbc_submit_dax --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
-
-.. note::
-
-    The above example uses the accounting tag ``ligo.dev.o1.cbc.explore.test``
-    which should not be used in practice.
+    [pegasus_profile]
+    condor|accounting_group = accounting.tag
+    condor|request_disk = 1024
 
 You can monitor the status of the workflow with Pegasus Dashboard, or the
 other Pegasus tools described below.
@@ -627,20 +623,19 @@ Setting up a workflow for data reuse
 ------------------------------------
 
 The first step is to generate a new workflow that performs the analysis that
-you would like to do. This workflow should be generated in a new directory so that it does not overwrite data from your previous workflows.
-Data reuse happens at the ``pycbc_submit_dax`` step, so
-first run ``pycbc_make_offline_search_workflow`` to build a new workflow,
-following the instructions in the section :ref:`coincworkflowgenerate` of this
-page.
+you would like to do. This workflow should be generated in a new directory so
+that it does not overwrite data from your previous workflows.
 
-**Stop** before you plan and submit the workflow with ``pycbc_submit_dax``.
-You will pass an additional file to ``pycbc_submit_dax`` using the
+**Stop** before you generate the workflow.
+You will pass an additional file to the generator using the
 ``--cache-file`` option with a list of files that Pegasus can re-use from a
 previous run.  The Pegasus Workflow Planner will reduce the workflow
 using this cache file. Reduction works by deleting jobs from the workflow
 whose output files have been found in some location in this cache file.
 
-The key to data reuse is building the cache file passed to ``pycbc_submit_dax``. This file maps a file created in the workflow to a URL and a site where that URL can be found. The syntax of the cache file is plain ASCII with each line in the file giving the location of a file in the format::
+The key to data reuse is building the cache file. This file maps a file created
+in the workflow to a URL and a site where that URL can be found. The syntax of the cache
+file is plain ASCII with each line in the file giving the location of a file in the format::
 
     LOGICAL_FILE_NAME PHYSICAL_FILE_URL pool="SITE"
 
@@ -657,7 +652,7 @@ the most useful. Pegasus will take care of adding transfer jobs for
 
 The string ``SITE`` is a hint that tells Pegasus on which site the
 ``PHYSICAL_FILE_URL`` can be found. The ``SITE`` string should be one of the
-names used by ``pycbc_submit_dax`` to identify the cluster where jobs are run.
+names used to identify the cluster where jobs are run.
 In practice there are only two execution sites used by PyCBC workflows:
 
 1. ``local`` which is the regular Condor pool on the local cluster where the workflow is being run from. This is typically used when re-using data that exists on the filesystem of the local cluster.
@@ -694,17 +689,24 @@ file, but for the two inspiral files it contains the subdirectory that the
 workflow uses to organize the files by GPS time. In the case of this file Pegasus will delete from the workflow the jobs that create the files ``H1-VETOTIME_CAT3-1169107218-1066800.xml``, ``L1-VETOTIME_CAT3-1169107218-1066800.xml``, ``116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf``, and ``116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf`` when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since ``site="local"`` for these files, Pegasus expects that the files all exist on the host where the workflow is run from.
 
 Once a cache file has been constructed, to enable data re-use, you follow the
-standard instructions for planning and submitting the workflow in the section
+standard instructions for generating the workflow in the section
 :ref:`coincworkflowplan`, but add the ``--cache-file`` argument that points to
 the cache file that you have created. For example::
 
-    pycbc_submit_dax --cache-file /path/to/prior_data.map --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
+    pycbc_make_offline_search_workflow --workflow-name s6d_chunk3 --output-dir output \
+      --config-files ... \
+      --config-overrides "results_page:output-path:${HOME}/public_html/s6/s6d-big-dog-weeks" \
+      --cache-file /path/to/prior_data.map
 
 will use the URLs from the file ``/path/to/prior_data.map`` to implement
 data re-use and subsequent workflow reduction. If more than once cache file is
-provided, pass the paths as a comma separated list to ``pycbc_submit_dax``::
+provided, pass the paths as a comma separated list::
 
-    pycbc_submit_dax --cache-file /path/to/prior_data.map,/path/to/other.map --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
+
+    pycbc_make_offline_search_workflow --workflow-name s6d_chunk3 --output-dir output \
+      --config-files ... \
+      --config-overrides "results_page:output-path:${HOME}/public_html/s6/s6d-big-dog-weeks" \
+      --cache-file /path/to/prior_data.map,/path/to/other.map
 
 Which file URLs should be included in the reuse cache? There is no single
 correct way of deciding this, as it depends on exactly what you are trying to do. The sections
@@ -775,7 +777,7 @@ will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files a
     sed 's+/home/dbrown+gsiftp://sugwg-condor.phy.syr.edu/home/dbrown+g' inspiral_files.map.tmp > inspiral_files.map
     rm inspiral_files.map.tmp
 
-6. Finally, copy the file ``inspiral_files.map`` to your new workflow directory and then run ``pycbc_submit_dax`` as usual, giving the path to ``inspiral_files.map`` as the ``--cache-file`` argument.
+6. Finally, copy the file ``inspiral_files.map`` to your new workflow directory and then run ``pycbc_make_offline_search_workflow`` as usual, giving the path to ``inspiral_files.map`` as the ``--cache-file`` argument.
 
 ---------------------------------------------------
 Re-running a workflow using a new veto definer file
@@ -822,7 +824,7 @@ This can be acomplished with the following command::
 
 If category 1 vetoes have changed, you must also remove files matching ``PSD``, ``OPTIMAL``, and ``MERGE`` to remove the PSD estimation jobs, the jobs that compute the optimal SNR of injections, and the merged single-detector inspiral trigger files which may also change if the category 1 vetoes change.
 
-6. Copy the file ``reuse_cache.map`` to your new workflow directory and then run ``pycbc_submit_dax`` as usual, giving the path to ``reuse_cache.map`` as the ``--cache-file`` argument.
+6. Copy the file ``reuse_cache.map`` to your new workflow directory and then run ``pycbc_make_offline_search_workflow`` as usual, giving the path to ``reuse_cache.map`` as the ``--cache-file`` argument.
 
 ----------------------------
 Re-running a failed workflow
@@ -852,7 +854,7 @@ Once in the ``main_ID0000001`` directory, run the command::
 
 changing ``/path/to`` to a location where you want to save the cache.
 
-Now you can than use the ``partial_workflow.map`` cache file as the ``--cache-file`` argument to ``pycbc_submit_dax``.
+Now you can than use the ``partial_workflow.map`` cache file as the ``--cache-file`` argument to ``pycbc_make_offline_search_workflow``.
 
 -----------------------------------------------
 Using partial products from a previous workflow
@@ -973,76 +975,4 @@ follwing lines to your ``executables.ini`` file::
 --------------------
 Running the workflow
 --------------------
-
-Once you have planned the workflow as above, you must also modify the submission of the
-workflow if it is to run successfully on the OSG.  Add the following additional
-arguments to ``pycbc_submit_dax``::
-
-    --no-create-proxy \
-    --execution-sites osg \
-    --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
-    --local-staging-server gsiftp://`hostname -f` \
-    --remote-staging-server gsiftp://`hostname -f` \
-
-``hostname -f`` will give the correct value if there is a gsiftp server running on the
-submit machine.  If not, change this as needed. The ``remote-staging-server`` is the
-intermediary computer than can pass files between the submitting computer and the computers
-doing the work.  ``hostname -f`` returns the full name of the computer. This full name has
-to be one that is accessible to both the submit machine and the workers. The ``--no-create-proxy``
-may be omitted if you have LIGO.org credentials and will be retrieving data from authenticated
-locations in CVMFS.
-
-You will also need to specify where the code should get the data needed to generate reduced
-order model waveforms. To do this add the following additional arguments to ``pycbc_submit_dax``::
-
-    --append-site-profile 'local:env|LAL_DATA_PATH:/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' \
-    --append-site-profile 'osg:env|LAL_DATA_PATH:/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' \
-
-Here, ``current`` is a symbolic link to the latest version of the data and can be replaced with a
-specific release (e.g. ``e02dab8c``) if required.
-
-It is also through arguments to ``pycbc_submit_dax`` that the workflow is made aware of which
-Singularity image to use when running ``pycbc_inspiral``. This is done by including the following
-argument to ``pycbc_submit_dax``::
-
-    --append-site-profile "osg:condor|+SingularityImage:\"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:latest\"" \
-
-The precise line above will cause ``pycbc_inspiral`` to run using the code in the latest version of PyCBC
-as found on the ``master`` branch. You may well prefer a specific version (for example, for a production
-run) and each release will also have a corresponding Singularity image published to CVMFS.  For example,
-to use the ``1.14.3`` release of PyCBC, use instead the line::
-
-    --append-site-profile "osg:condor|+SingularityImage:\"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v1.14.3\"" \
-
-You may also direct the workflow to use a Singularity image of your own, if that has been published to CVMFS.
-
-When running on the OSG under Singularity, by default much of the environment of the host node where the
-job runs will be inherited inside the container.  In many cases this is desired, as some of the file-transfer
-tools that Pegasus requires can come from that environment. In other cases, however, that environment may
-interfere with what is in the container, and from release 1.14.3 onwards, the container itself includes
-any necessary file transfer tools. If you want to be sure that it is the tools installed inside the container
-that are used, then you must direct the workflow to have a clean environment inside the container, with nothing
-in it that you have not specified using lines of the form ``--append-site-profile 'osg:env|VARNAME:VALUE``
-(there will also be present in the environment a few other variables that are needed for proper running of
-Pegasus and HTCondor). To specify that you need your OSG jobs to run in a clean environment, also include
-the following lines when invoking ``pycbc_submit_dax``::
-
-    --append-site-profile "osg:condor|+InitializeModulesEnv:False" \
-    --append-site-profile "osg:condor|+SingularityCleanEnv:True" \
-    --append-site-profile "osg:condor|getenv:False" \
-
-In particular, it is recommended that LVK users run with the lines above.
-
-So far, we have described the arguments that  will allow ``pycbc_inspiral`` to run on any OSG machine to which
-you have access. If, in addition, you would like to run on an XSEDE resource on which you have an allocation,
-then add the argument::
-
-    --append-site-profile 'osg:condor|+DESIRED_XSEDE_Sites:"Comet"' \
-
-where you replace the desired site (in this example the Comet cluster) with wherever you have an allocation. If
-you want to run **only** on that XSEDE cluster, then also add::
-
-    --append-site-profile 'osg:condor|+DESIRED_SITES:"Comet"' \
-
-Shared file systems cannot be used with the OSG, so make sure that the ``--enable-shared-filesystem`` argument is
-not provided to ``pycbc_submit_dax`` when running on the OSG.
+FIXME: Add instructions here
