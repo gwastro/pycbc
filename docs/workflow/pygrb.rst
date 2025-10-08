@@ -169,6 +169,21 @@ for the ``trig_combiner`` executable jobs, we may do this via::
 
 This can be generalised to any executable or tagged jobs.
 
+---------------
+Accounting Tags
+---------------
+
+If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, add it 
+to your config files. ``request_disk`` and ``request_memory`` may also be required.
+
+.. code-block::
+
+    [pegasus_profile]
+    condor|accounting_group = accounting.tag
+    condor|request_disk = 1024
+
 .. _howtorunpygrb:
 
 ==========
@@ -300,24 +315,13 @@ create the workflow from within the run directory using::
     workflow:end-time:$(( GRB_TIME + 4096 )) \
     workflow:html-dir:${HTML_DIR}
 
-.. _pygrbplan:
+You can submit to the job pool immediately by adding the option
+.. code-block::
+    --submit-now
 
-====================================
-Planning and Submitting the Workflow
-====================================
-
-Change directory into the directory where the dax was generated::
-
-    cd GRB${GRB_NAME}
-
-From the directory where the dax was created, run the submission script::
-
-    pycbc_submit_dax --dax pygrb_offline.dax --accounting-group <your.accounting.group.tag>
-
-.. note::
-
-    If running on the ARCCA cluster, please provide a suitable directory via
-    the option --local-dir, ie. /var/tmp/${USER}
+or after generating, change to the working directory and run
+.. code-block::
+    ./start
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400>`_)
@@ -407,15 +411,4 @@ prior_data.map.::
 
     You can include files in the prior data listing that wouldn't be generated
     anyway by your new run. These are simply ignored.
-
----------------------------
-Plan the workflow
----------------------------
-
-From the directory where the dax was created, run the planning script::
-
-    pycbc_submit_dax --dax pygrb.dax --accounting-group <your.accounting.group.tag> --cache-file /path/to/prior_data.map
-
-Follow the remaining :ref:`pygrbplan` instructions to submit your reduced
-workflow.
 
