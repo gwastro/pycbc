@@ -27,6 +27,7 @@ backends for the various schemes.
 """
 
 import unittest
+import sys
 import pycbc.fft
 from pycbc.scheme import CPUScheme
 from utils import parse_args_cpu_only, simple_exit
@@ -50,6 +51,12 @@ else:
         "FFTW does not seem to be an available CPU backend; "
         "skipping openmp thread tests"
     )
+
+if sys.platform == 'darwin':
+    raise unittest.SkipTest(
+        "macOS has known issues with openmp, skip this"
+    )
+
 
 # Now set the number of threads to something nontrivial
 
