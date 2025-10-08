@@ -865,7 +865,7 @@ class Workflow(pegasus_workflow.Workflow):
         # save the sites file
         # checking for submit_now prevents sub-workflows from making
         # extra unused sites.yml
-        if not self.in_workflow and submit_now:
+        if not self.in_workflow and self.args.submit_now:
             catalog_path = os.path.join(self.out_dir, 'sites.yml')
             make_catalog(self.cp, self.out_dir).write(catalog_path)
 
