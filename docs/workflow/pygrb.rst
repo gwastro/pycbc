@@ -317,10 +317,12 @@ create the workflow from within the run directory using::
 
 You can submit to the job pool immediately by adding the option
 .. code-block::
+
     --submit-now
 
 or after generating, change to the working directory and run
 .. code-block::
+    
     ./start
 
 -------------------------------------------------------------------------------------------------------------------------------------------

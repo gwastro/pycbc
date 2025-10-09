@@ -493,7 +493,8 @@ Pegasus is used to plan and submit the workflow. To involve Pegasus to submit a
 PyCBC workflow, you can use the argument ``--submit-now``. The workflow is planned
 by default, and is submitted later using the 
 .. code-block::
-  ./start
+
+    ./start
 
 executable which is made in the ``--output-dir`` directory you defined earlier.
 
