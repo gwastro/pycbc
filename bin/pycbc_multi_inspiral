@@ -700,6 +700,22 @@ with ctx:
                 ].matched_filter_and_cluster(
                     s_num, template.sigmasq(stilde[ifo].psd), window=0
                 )
+                # change to integer indexes because we will have to do
+                # arithmetic with time_delay_idx, which can be positive
+                # or negative
+                ind = ind.astype(np.int32)
+                if inj_filter_rejector[ifo].enabled:
+                    trig_times = (
+                        (ind + stilde[ifo].cumulative_index) /
+                        snr_ts.sample_rate +
+                        args.gps_start_time[ifo]
+                    )
+                    inj_idxs = inj_filter_rejector[ifo].find_indices_in_injection_intervals(
+                        trig_times
+                    )
+                    ind = ind[inj_idxs]
+                    snrv = snrv[inj_idxs]
+
                 snr_dict[ifo] = (
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
@@ -708,10 +724,7 @@ with ctx:
                 ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
-                # change to integer indexes because we will have to do
-                # arithmetic with time_delay_idx, which can be positive
-                # or negative
-                idx[ifo] = ind.astype(np.int32)
+                idx[ifo] = ind
                 snr[ifo] = snrv * norm
                 # Initialize the cache for power chi^2
                 power_chisq_arrays[ifo] = np.full(
