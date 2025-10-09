@@ -36,7 +36,7 @@ from . import supernovae
 from . import waveform_modes
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fseries_time_shift, taper_timeseries, \
+from pycbc.waveform.utils import apply_fseries_time_shift, \
                                  ceilpow2, apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc.pool import use_mpi
@@ -276,12 +276,15 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         """Applies a taper if it is in current params.
         """
         hp, hc = res
-        try:
-            hp = taper_timeseries(hp, tapermethod=self.current_params['taper'])
-            hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
-        except KeyError:
-            pass
-        return hp, hc
+
+        hp_tapered = hp.taper_timeseries(location=self.current_params['taper'], 
+                                         tapermethod=self.current_params.get('taper_method', 'lal'), 
+                                         taper_window=self.current_params.get('taper_window'))
+        hc_tapered = hc.taper_timeseries(location=self.current_params['taper'], 
+                                         tapermethod=self.current_params.get('taper_method', 'lal'), 
+                                         taper_window=self.current_params.get('taper_window'))
+ 
+        return hp_tapered, hc_tapered
 
 
 class TDomainCBCModesGenerator(BaseCBCGenerator):
@@ -303,11 +306,15 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
         """Applies a taper if it is in current params.
         """
         if 'taper' in self.current_params:
-            tapermethod = self.current_params['taper']
+            location = self.current_params['taper']
             for mode in res:
                 ulm, vlm = res[mode]
-                ulm = taper_timeseries(ulm, tapermethod=tapermethod)
-                vlm = taper_timeseries(vlm, tapermethod=tapermethod)
+                ulm = ulm.taper_timeseries(location=location, 
+                                           tapermethod=self.current_params.get('taper_method', 'lal'), 
+                                           taper_window=self.current_params.get('taper_window'))
+                vlm = vlm.taper_timeseries(location=location, 
+                                           tapermethod=self.current_params.get('taper_method', 'lal'), 
+                                           taper_window=self.current_params.get('taper_window'))
                 res[mode] = (ulm, vlm)
         return res
 

@@ -40,7 +40,7 @@ from pycbc.filter import sigmasq
 from pycbc.types import TimeSeries
 from pycbc.types.optparse import convert_to_process_params_dict
 from pycbc.io.ligolw import create_process_table
-from pycbc.waveform import get_td_waveform, td_approximants, taper_timeseries
+from pycbc.waveform import get_td_waveform, td_approximants
 
 def _empty_row(obj):
     """Create an empty sim_inspiral or sngl_inspiral row where the columns have
@@ -427,7 +427,7 @@ for ifo in opts.instruments:
 
     # taper waveform
     logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=sim.taper)
+    strain = strain.taper_timeseries(location=sim.taper)
 
     # FFT strain
     logging.info('FFT strain for %s', ifo)
