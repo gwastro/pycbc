@@ -274,8 +274,8 @@ class InjFilterRejector(object):
     # Written together with Google Gemini
     def precompute_injection_intervals(self):
         """
-        Precompute and merges windows around the injections to speed up
-        determining if triggers are in injection times later.
+        Precompute and merge windows around the injections to speed up later
+        determination of whether triggers are within the injection times.
         """
         window = self.inj_trigger_window
         # This function returns sorted injection times
