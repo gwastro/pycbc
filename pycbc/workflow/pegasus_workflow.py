@@ -647,12 +647,11 @@ class Workflow(object):
                 with open('additional_planner_args.dat', 'w') as f:
                     stage_site_str = self.staging_site_str
                     exec_sites = self.exec_sites_str
-                    # For now we don't include --config as this can be added to
-                    # in submit_dax. We should add an option to add additional
+                    # We should add an option to add additional
                     # pegasus properties (through the config files?) here.
-                    #prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
-                    #                         'pegasus-properties.conf')
-                    #f.write('--conf {} '.format(prop_file))
+                    prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                                            'pegasus-properties.conf')
+                    f.write('--conf {} '.format(prop_file))
                     if self.cache_file is not None:
                         f.write('--cache {} '.format(self.cache_file))
 
