@@ -380,14 +380,6 @@ One of the features of  Pegasus is to reuse the data products of prior runs.
 This can be used to expand an analysis or recover a run with mistaken settings
 without duplicating work.
 
------------------------------------------
-Generate the full workflow you want to do
------------------------------------------
-
-First generate the full workflow for the run you would like to do as normal,
-following the instructions of this page from :ref:`howtorunpygrb`, but stop
-before planning the workflow in :ref:`pygrbplan`.
-
 -----------------------------------------------------
 Select the files you want to reuse from the prior run
 -----------------------------------------------------
@@ -411,4 +403,7 @@ prior_data.map.::
 
     You can include files in the prior data listing that wouldn't be generated
     anyway by your new run. These are simply ignored.
+
+Add prior_data.map to your workflow generation, by adding the option
+``--cache-file prior_data.map`` to ``pycbc_make_offline_grb_workflow``
 
