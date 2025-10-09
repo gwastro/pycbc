@@ -671,7 +671,7 @@ class Workflow(object):
         """ Plan and submit the workflow now.
         """
         # New functionality, this might still need some work. Here's things
-        # that this might want to do, that submit_dax does:
+        # that this might want to do, that submit_dax did:
         # * Checks proxy (ignore this, user should already have this done)
         # * Pulls properties file in (DONE)
         # * Send necessary options to the planner (DONE)
