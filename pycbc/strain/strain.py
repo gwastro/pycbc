@@ -817,12 +817,12 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     default=True, action="store_false",
                     dest="generate_injections",
                     help="If this options are given, the injections in "
-                           "injection-file or sgburst-injection-file are not "
-                           "added into the data. This can be used for "
-                           "debugging (ie. in minifollowups), or if using "
-                           "injections from frame files where you need to "
-                           "know injection parameters to allow the "
-                           "injection optimization settings.")
+                          "injection-file or sgburst-injection-file are not "
+                          "added into the data. This can be used for "
+                          "debugging (ie. in minifollowups), or if using "
+                          "injections from frame files where you need to "
+                          "know injection parameters to allow the "
+                          "injection optimization settings.")
 
     data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
                     nargs="+", action=MultiDetOptionAction,
