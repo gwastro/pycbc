@@ -27,9 +27,9 @@ import logging
 import numpy
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+from matplotlib import pyplot as plt
 
-from ligo.lw import lsctables, utils as ligolw_utils
+from igwn_ligolw import lsctables, utils as ligolw_utils
 
 import pycbc
 import pycbc.version
@@ -277,10 +277,10 @@ points_fittingfactor = numpy.array(points_fittingfactor)
 logging.info("Distances calculated.")
 
 if opts.histogram_output_file:
-    pylab.hist(points_fittingfactor, 100)
-    pylab.xlabel("Fitting factor")
-    pylab.ylabel("# of signals")
-    pylab.savefig(opts.histogram_output_file)
+    plt.hist(points_fittingfactor, 100)
+    plt.xlabel("Fitting factor")
+    plt.ylabel("# of signals")
+    plt.savefig(opts.histogram_output_file)
 
 if opts.print_distances:
     print()

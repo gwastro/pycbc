@@ -152,14 +152,9 @@ class TestParams(unittest.TestCase):
         used in the calculation.
         """
         from pycbc.waveform import get_fd_det_waveform
-        from pycbc.coordinates.space import (ssb_to_lisa, lisa_to_ssb,
-                                             ssb_to_geo, lisa_to_geo)
 
-        from pycbc.types.frequencyseries import FrequencySeries
-        from pycbc.detector import (Detector, load_detector_config,
-                                    add_detector_on_earth,
-                                    _ground_detectors)
-        from pycbc.waveform import get_td_waveform, get_fd_waveform
+        from pycbc.detector import Detector, add_detector_on_earth
+        from pycbc.waveform import get_td_waveform
         import importlib
 
         def is_module_installed(module_name):
@@ -260,7 +255,7 @@ class TestParams(unittest.TestCase):
                     0, 2*numpy.pi, endpoint=False, num=nx):
                 params['tc'], params['eclipticlongitude'], \
                 params['eclipticlatitude'], params['polarization'] = \
-                    lisa_to_ssb(t_lisa, 0, numpy.pi/4,
+                    space.lisa_to_ssb(t_lisa, 0, numpy.pi/4,
                                 polarization_lisa, params['t_offset'])
 
                 nparams = {'mass1':params['mass1'], 'mass2':params['mass2'],
@@ -283,9 +278,12 @@ class TestParams(unittest.TestCase):
                                 'LISA_Z':lisa_Z_fd}
 
                 t_geo, ra, dec, polarization_geo = \
-                    ssb_to_geo(params['tc'], params['eclipticlongitude'], 
-                            params['eclipticlatitude'],
-                            params['polarization'])
+                    space.ssb_to_geo(
+                        params['tc'],
+                        params['eclipticlongitude'], 
+                        params['eclipticlatitude'],
+                        params['polarization']
+                    )
 
                 params_3g = params.copy()
                 params_3g['tc'] = t_geo

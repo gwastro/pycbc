@@ -20,25 +20,17 @@ inference samples files.
 """
 
 import argparse
-import h5py
 import logging
 import os
-import pycbc
-import pycbc.workflow.minifollowups as mini
 import socket
 import sys
 import shlex
 import numpy
 
-from ligo import segments
-
 from pycbc import results, init_logging, add_common_pycbc_options
 from pycbc.results import layout
-from pycbc.types import MultiDetOptionAction
-from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import configuration
 from pycbc.workflow import core
-from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc.workflow import versioning
 import pycbc.workflow.inference_followups as inffu

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright (C) 2012-2016 Alex Nitz, Tito Dal Canton, Leo Singer
 #               2022 Shichao Wu
 #
@@ -101,9 +100,9 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
     length : int
         Length of the frequency series in samples.
     delta_f : float
-        Frequency resolution of the frequency series.
+        Frequency resolution of the frequency series, in hertz.
     low_freq_cutoff : float
-        Frequencies below this value are set to zero.
+        Frequencies below this value (in hertz) are set to zero.
     **kwargs :
         All other keyword arguments are passed to the PSD model.
 
@@ -115,8 +114,9 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
 
     # check if valid PSD model
     if psd_name not in get_psd_model_list():
-        raise ValueError(psd_name + ' not found among analytical '
-                         'PSD functions.')
+        raise ValueError(
+            psd_name + ' not found among analytical PSD functions.'
+        )
 
     # make sure length has the right type for CreateREAL8FrequencySeries
     if not isinstance(length, numbers.Integral) or length <= 0:
@@ -156,9 +156,9 @@ def flat_unity(length, delta_f, low_freq_cutoff):
     length : int
         Length of output Frequencyseries.
     delta_f : float
-        Frequency step for output FrequencySeries.
+        Frequency step for output FrequencySeries, in hertz.
     low_freq_cutoff : int
-        Low-frequency cutoff for output FrequencySeries.
+        Low-frequency cutoff for output FrequencySeries, in hertz.
 
     Returns
     -------

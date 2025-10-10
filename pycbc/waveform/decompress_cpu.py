@@ -33,10 +33,9 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
 
     rprec = real_same_precision_as(output)
     cprec = complex_same_precision_as(output)
-    sample_frequencies = numpy.array(sample_frequencies, copy=False,
-                                     dtype=rprec)
-    amp = numpy.array(amp, copy=False, dtype=rprec)
-    phase = numpy.array(phase, copy=False, dtype=rprec)
+    sample_frequencies = numpy.asarray(sample_frequencies, dtype=rprec)
+    amp = numpy.asarray(amp, dtype=rprec)
+    phase = numpy.asarray(phase, dtype=rprec)
     sflen = len(sample_frequencies)
     h = numpy.array(output.data, copy=False, dtype=cprec)
     hlen = len(output)

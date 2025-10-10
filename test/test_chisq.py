@@ -26,8 +26,7 @@ These are the unittests for the pycbc.waveform module
 """
 import unittest
 import numpy
-from pycbc.types import *
-from pycbc.scheme import *
+from pycbc.types import Array, float32, complex64, zeros
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("correlate")

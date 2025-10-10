@@ -22,8 +22,8 @@ import argparse
 import logging
 import numpy
 
-from ligo.lw import table
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import utils as ligolw_utils
 
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import layout
@@ -209,7 +209,7 @@ if args.non_coinc_time_only:
 
     segs_doc = ligolw_utils.load_filename(args.inspiral_segments,
                                           contenthandler=h)
-    seg_def_table = table.Table.get_table(segs_doc, 'segment_definer')
+    seg_def_table = ligolw.Table.get_table(segs_doc, 'segment_definer')
     def_ifos = seg_def_table.getColumnByName('ifos')
     def_ifos = [str(ifo) for ifo in def_ifos]
     ifo_list = list(set(def_ifos))
@@ -238,13 +238,10 @@ if args.maximum_duration is not None:
 logging.info('Finding loudest clustered events')
 rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 
-extra_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
-
 trigs.mask_to_n_loudest_clustered_events(
     rank_method,
     n_loudest=num_events,
     cluster_window=args.cluster_window,
-    statistic_kwargs=extra_kwargs,
 )
 
 times = trigs.end_time

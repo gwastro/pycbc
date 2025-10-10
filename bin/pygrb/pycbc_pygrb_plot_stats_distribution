@@ -101,7 +101,8 @@ all_off_trigs = ppu.load_data(trig_file, ifos, data_tag='trigs',
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
-keys = ['network/end_time_gc', 'network/coherent_snr', 'network/reweighted_snr']
+keys = \
+    ['network/end_time_gc', 'network/coherent_snr', 'network/reweighted_snr']
 trig_data = ppu.extract_trig_properties(
     trial_dict,
     all_off_trigs,
@@ -219,7 +220,8 @@ ax.fill_between(x + dx/2, lower, upper, alpha=0.3, facecolor='y', step='mid')
 ax.set_xlim((0.9 * min_stat, 1.1 * max_stat))
 ax.set_ylim((0.6/N, ymax))
 plot_title = "Cumulative distribution of background triggers"
-plot_caption = f"Background cumulative distribution of the {x_label_dict[stat]}"
+plot_caption = \
+    f"Background cumulative distribution of the {x_label_dict[stat]}"
 fig_path = opts.output_file
 save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                        title=plot_title, caption=plot_caption)

@@ -22,15 +22,14 @@ import copy
 import logging
 import argparse
 import numpy
-import itertools
 import time
 from pycbc.pool import BroadcastPool as Pool
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
-from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
-from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from pycbc.filter import MatchedFilterControl, qtransform
+from pycbc.types import zeros, float32, complex64
 import pycbc.opt
 import pycbc.inject
 
@@ -181,8 +180,12 @@ parser.add_argument("--finalize-events-template-rate", default=None,
                          "512, but a good number may depend on other settings "
                          "and your specific use-case.")
 parser.add_argument("--gpu-callback-method", default='none')
-parser.add_argument("--use-compressed-waveforms", action="store_true", default=False,
-                    help='Use compressed waveforms from the bank file.')
+parser.add_argument(
+    "--use-compressed-waveforms",
+    action="store_true",
+    default=False,
+    help='Use compressed waveforms from the bank file (if available).'
+)
 parser.add_argument("--waveform-decompression-method", action='store', default=None,
                     help='Method to be used decompress waveforms from the bank file.')
 parser.add_argument("--checkpoint-interval", type=int,

@@ -23,7 +23,6 @@ Merge hdf injection files
 import logging
 import argparse
 import numpy as np
-import h5py
 
 import pycbc
 import pycbc.inject

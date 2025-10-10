@@ -16,7 +16,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import argparse
 import logging
 import sys
 
@@ -29,7 +28,6 @@ import pycbc
 from pycbc import results
 from pycbc.inference import io
 
-from pycbc.inference import option_utils
 from pycbc.inference.sampler import samplers
 
 # command line usage

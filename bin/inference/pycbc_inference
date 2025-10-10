@@ -22,17 +22,14 @@ import os
 import sys
 import argparse
 import logging
-import shutil
 
 import numpy
 
 import pycbc
-from pycbc import (distributions, transforms, fft,
-                   opt, scheme, pool)
-from pycbc.waveform import generator
+from pycbc import fft, opt, scheme, pool
 
 from pycbc import inference
-from pycbc.inference import (models, burn_in, option_utils)
+from pycbc.inference import models
 from pycbc.inference.io import loadfile
 from pycbc.workflow import configuration
 

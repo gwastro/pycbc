@@ -1,6 +1,6 @@
 #!/bin/env python
 """Dummy script to pass through stat files and test reranking"""
-import numpy, argparse, logging, pycbc
+import argparse, logging, pycbc
 from pycbc.io import HFile
 
 parser = argparse.ArgumentParser()

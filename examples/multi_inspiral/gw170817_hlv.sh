@@ -1,25 +1,11 @@
-#!/bin/bash -e
+#!/bin/bash
+
+set -e
 
 CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspiral
 BANK_FILE=gw170817_single_template.hdf
-BANK_VETO_FILE=bank_veto_bank.xml
-H1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/H-H1_GWOSC_4KHZ_R1-1187006835-4096.gwf
-H1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
-L1_FRAME=https://dcc.ligo.org/public/0144/T1700406/003/L-L1_CLEANED_HOFT_C02_T1700406_v3-1187008667-4096.gwf
-L1_CHANNEL=DCH-CLEAN_STRAIN_C02_T1700406_v3
-V1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/V-V1_GWOSC_4KHZ_R1-1187006835-4096.gwf
-V1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
-
-for IFO in H1 L1 V1; do
-    echo -e "\\n\\n>> [`date`] Getting ${IFO} frame"
-    FRAME=${IFO}_FRAME
-    wget -nv -nc ${!FRAME}
-done
-
 echo -e "\\n\\n>> [`date`] Getting template bank"
 wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
-echo -e "\\n\\n>> [`date`] Bank veto bank"
-wget -nv -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 
 EVENT=1187008882
 PAD=8
@@ -36,13 +22,18 @@ pycbc_multi_inspiral \
     --verbose \
     --projection left+right \
     --instruments H1 L1 V1 \
+    --channel-name \
+        H1:GWOSC-16KHZ_R1_STRAIN \
+        L1:GWOSC-16KHZ_R1_STRAIN \
+        V1:GWOSC-16KHZ_R1_STRAIN \
+    --frame-type H1:GWOSC L1:GWOSC V1:GWOSC \
     --trigger-time ${EVENT} \
     --gps-start-time ${GPS_START} \
     --gps-end-time ${GPS_END} \
     --trig-start-time ${TRIG_START} \
     --trig-end-time ${TRIG_END} \
-    --ra 3.44527994344 \
-    --dec -0.408407044967 \
+    --ra '3.44527994344 rad' \
+    --dec '-0.408407044967 rad' \
     --bank-file ${BANK_FILE} \
     --approximant IMRPhenomD \
     --order -1 \
@@ -52,11 +43,11 @@ pycbc_multi_inspiral \
     --pad-data 8 \
     --strain-high-pass 25 \
     --sample-rate 4096 \
-    --channel-name H1:${H1_CHANNEL} L1:${L1_CHANNEL} V1:${V1_CHANNEL} \
-    --frame-files \
-        H1:`basename ${H1_FRAME}` \
-        L1:`basename ${L1_FRAME}` \
-        V1:`basename ${V1_FRAME}` \
+    --autogating-threshold 100 \
+    --autogating-cluster 0.5 \
+    --autogating-width 0.25 \
+    --autogating-taper 0.25 \
+    --autogating-pad 0 \
     --cluster-method window \
     --cluster-window 0.1 \
     --segment-length 256 \

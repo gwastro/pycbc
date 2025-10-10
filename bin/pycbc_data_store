@@ -3,7 +3,6 @@
 """
 import logging
 import argparse
-import numpy
 
 import pycbc
 import pycbc.strain

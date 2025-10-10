@@ -25,7 +25,7 @@ bank files, and the number of injections in each must correspond one-to-one.
 import argparse
 import numpy as np
 
-from ligo.lw import utils, table
+from igwn_ligolw import utils, ligolw
 
 import pycbc
 from pycbc import pnutils
@@ -63,9 +63,9 @@ options = parser.parse_args()
 
 pycbc.init_logging(options.verbose)
 
-dtypem = np.dtype([('match', np.float64), ('bank', np.unicode_, 256),
-                      ('bank_i', np.int32), ('sim', np.unicode_, 256),
-                      ('sim_i', np.int32), ('sigmasq', np.float64)])
+dtypem = np.dtype([('match', np.float64), ('bank', np.str_, 256),
+                   ('bank_i', np.int32), ('sim', np.str_, 256),
+                   ('sim_i', np.int32), ('sigmasq', np.float64)])
 
 # Collect the results
 res = None
@@ -111,7 +111,7 @@ for idx, row in enumerate(res):
     if row['sim'] not in itables:
         indoc = utils.load_filename(row['sim'], False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral") 
+        itables[row['sim']] = ligolw.Table.get_table(indoc, "sim_inspiral") 
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]

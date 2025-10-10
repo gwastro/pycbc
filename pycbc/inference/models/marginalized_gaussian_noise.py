@@ -24,11 +24,10 @@ import numpy
 from scipy import special
 
 from pycbc.waveform import generator
-from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
                              create_waveform_generator,
-                             GaussianNoise)
+                             GaussianNoise, catch_waveform_error)
 from .tools import marginalize_likelihood, DistMarg
 
 
@@ -129,7 +128,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         return ['loglr', 'maxl_phase'] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
-    def _nowaveform_loglr(self):
+    def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated.
         """
         setattr(self._current_stats, 'loglikelihood', -numpy.inf)
@@ -140,6 +139,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
         .. math::
@@ -153,21 +153,12 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
             The value of the log likelihood ratio evaluated at the given point.
         """
         params = self.current_params
-        try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
-
-        except NoWaveformError:
-            return self._nowaveform_loglr()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_loglr()
-            else:
-                raise e
+        if self.all_ifodata_same_rate_length:
+            wfs = self.waveform_generator.generate(**params)
+        else:
+            wfs = {}
+            for det in self.data:
+                wfs.update(self.waveform_generator[det].generate(**params))
         hh = 0.
         hd = 0j
         for det, h in wfs.items():
@@ -213,7 +204,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
         # the flag used in `_loglr`
         self.return_sh_hh = False
-        self.sample_rate = float(sample_rate)
+        self.sample_rate = float(sample_rate) if sample_rate is not None else None
         self.kwargs = kwargs
         variable_params, kwargs = self.setup_marginalization(
                                variable_params,
@@ -254,11 +245,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             logging.info("Using %s sample rate for marginalization",
                          sample_rate)
 
-    def _nowaveform_loglr(self):
+    def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated.
         """
         return -numpy.inf
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
         or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
@@ -279,21 +271,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         from pycbc.filter import matched_filter_core
 
         params = self.current_params
-        try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
-        except NoWaveformError:
-            return self._nowaveform_loglr()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_loglr()
-            else:
-                raise e
-
+        if self.all_ifodata_same_rate_length:
+            wfs = self.waveform_generator.generate(**params)
+        else:
+            wfs = {}
+            for det in self.data:
+                wfs.update(self.waveform_generator[det].generate(**params))
         sh_total = hh_total = 0.
         snr_estimate = {}
         cplx_hpd = {}
@@ -315,9 +298,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 tlen = int(round(self.sample_rate *
                            self.whitened_data[det].duration))
                 flen = tlen // 2 + 1
-                hp.resize(flen)
-                hc.resize(flen)
-                self._whitened_data[det].resize(flen)
+            else:
+                flen = len(self._whitened_data[det])
+            
+            hp.resize(flen)
+            hc.resize(flen)
+            self._whitened_data[det].resize(flen)
 
             cplx_hpd[det], _, _ = matched_filter_core(
                                  hp,
@@ -342,27 +328,29 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
         self.draw_ifos(snr_estimate, log=False, **self.kwargs)
         self.snr_draw(snrs=snr_estimate)
-
+        
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
+                pol_phase = numpy.exp(-2.0j * params['polarization'])
+                f = (fp + 1.0j * fc) * pol_phase
+                fp = f.real
+                fc = f.imag
             else:
                 fp, fc = self.dets[det].antenna_pattern(
-                                        params['ra'],
-                                        params['dec'],
-                                        params['polarization'],
-                                        params['tc'])
-                dt = self.dets[det].time_delay_from_earth_center(params['ra'],
-                                                                 params['dec'],
-                                                                 params['tc'])
-            dtc = params['tc'] + dt
+                                        ra, dec,
+                                        params['polarization'], tc)
 
-            cplx_hd = fp * cplx_hpd[det].at_time(dtc,
+            cplx_hd = fp * cplx_hpd[det].at_time(tc,
                                                  interpolate='quadratic')
-            cplx_hd += fc * cplx_hcd[det].at_time(dtc,
+            cplx_hd += fc * cplx_hcd[det].at_time(tc,
                                                   interpolate='quadratic')
             hh = (fp * fp * hphp[det] +
                   fc * fc * hchc[det] +
@@ -436,7 +424,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         return ['loglr', 'maxl_polarization', 'maxl_loglr'] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
-    def _nowaveform_loglr(self):
+    def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated.
         """
         setattr(self._current_stats, 'loglr', -numpy.inf)
@@ -447,6 +435,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
@@ -464,30 +453,24 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         params = self.current_params
-        try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
-        except NoWaveformError:
-            return self._nowaveform_loglr()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_loglr()
-            else:
-                raise e
+        if self.all_ifodata_same_rate_length:
+            wfs = self.waveform_generator.generate(**params)
+        else:
+            wfs = {}
+            for det in self.data:
+                wfs.update(self.waveform_generator[det].generate(**params))
 
         lr = sh_total = hh_total = 0.
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(
-                                    params['ra'],
-                                    params['dec'],
-                                    params['polarization'],
-                                    params['tc'])
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
+            fp, fc = self.dets[det].antenna_pattern(ra, dec,
+                                    params['polarization'], tc)
 
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(max(len(hp), len(hc)), self._kmax[det])
@@ -528,7 +511,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
         # store the maxl polarization
         setattr(self._current_stats,
                 'maxl_polarization',
-                params['polarization'])
+                params['polarization'][idx])
         setattr(self._current_stats, 'maxl_loglr', maxl)
 
         # just store the maxl optimal snrsq
@@ -643,7 +626,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         """
         return ['maxl_polarization', 'maxl_phase', ]
 
-    def _nowaveform_loglr(self):
+    def _nowaveform_handler(self):
         """Convenience function to set loglr values if no waveform generated.
         """
         # maxl phase doesn't exist, so set it to nan
@@ -651,6 +634,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         setattr(self._current_stats, 'maxl_phase', numpy.nan)
         return -numpy.inf
 
+    @catch_waveform_error
     def _loglr(self, return_unmarginalized=False):
         r"""Computes the log likelihood ratio,
 
@@ -668,15 +652,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         params = self.current_params
-        try:
-            wfs = self.waveform_generator.generate(**params)
-        except NoWaveformError:
-            return self._nowaveform_loglr()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_loglr()
-            else:
-                raise e
+        wfs = self.waveform_generator.generate(**params)
 
         # ---------------------------------------------------------------------
         # Some optimizations not yet taken:
@@ -687,14 +663,15 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         lr = 0.
         hds = {}
         hhs = {}
+        refframe = params.get('tc_ref_frame', 'geocentric')
+        ra = params['ra']
+        dec = params['dec']
+        ref_tc = params['tc']
         for det, modes in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-
-            fp, fc = self.dets[det].antenna_pattern(params['ra'],
-                                                    params['dec'],
-                                                    self.pol,
-                                                    params['tc'])
+            tc = self.dets[det].arrival_time(ref_tc, ra, dec, refframe)
+            fp, fc = self.dets[det].antenna_pattern(ra, dec, self.pol, tc)
 
             # loop over modes and prepare the waveform modes
             # we will sum up zetalm = glm <ulm, d> + i glm <vlm, d>

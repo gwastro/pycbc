@@ -28,13 +28,11 @@
 import argparse
 import matplotlib
 matplotlib.use("agg")
-from matplotlib import rc
 import matplotlib.pyplot as plt
 import numpy
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.inference import io
-import pycbc.version
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)

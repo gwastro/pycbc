@@ -19,7 +19,7 @@
 
 import logging
 
-from ligo.segments import segmentlist
+from igwn_segments import segmentlist
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable
 from pycbc.workflow.core import SegFile

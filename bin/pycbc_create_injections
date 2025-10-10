@@ -113,7 +113,6 @@ import sys
 import argparse
 import logging
 import numpy
-import h5py
 from numpy.random import uniform
 
 import pycbc
@@ -121,8 +120,6 @@ from pycbc.inject import InjectionSet
 from pycbc import distributions
 from pycbc import transforms
 from pycbc.distributions import JointDistribution
-from pycbc.io import record
-from pycbc.waveform import parameters
 from pycbc.workflow import configuration
 from pycbc.workflow import WorkflowConfigParser
 

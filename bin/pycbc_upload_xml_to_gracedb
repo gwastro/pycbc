@@ -30,9 +30,9 @@ matplotlib.use('agg')
 from ligo.gracedb.rest import GraceDb
 import lal
 import lal.series
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.segments import segment, segmentlist
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_segments import segment, segmentlist
 
 import pycbc
 from pycbc.io.gracedb import gracedb_tag_with_version
@@ -144,11 +144,11 @@ xmldoc.childNodes[-1].removeChild(coinc_inspiral_table)
 xmldoc.childNodes[-1].removeChild(coinc_table)
 
 for event in coinc_table:
-    coinc_event_table_curr = lsctables.New(lsctables.CoincTable)
+    coinc_event_table_curr = lsctables.CoincTable.new()
     coinc_event_table_curr.append(event)
-    coinc_inspiral_table_curr = lsctables.New(lsctables.CoincInspiralTable)
-    coinc_event_map_table_curr = lsctables.New(lsctables.CoincMapTable)
-    sngl_inspiral_table_curr = lsctables.New(lsctables.SnglInspiralTable)
+    coinc_inspiral_table_curr = lsctables.CoincInspiralTable.new()
+    coinc_event_map_table_curr = lsctables.CoincMapTable.new()
+    sngl_inspiral_table_curr = lsctables.SnglInspiralTable.new()
 
     coinc_event_id = event.coinc_event_id
     for coinc_insp in coinc_inspiral_table:

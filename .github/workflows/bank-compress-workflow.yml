@@ -1,0 +1,64 @@
+name: compress waveforms into a bank using pegasus + condor
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: install condor
+      run: |
+        wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
+        echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install minihtcondor
+        sudo systemctl start condor
+        sudo systemctl enable condor
+    - name: install pegasus
+      run: |
+        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
+        echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu noble main" | sudo tee -a /etc/apt/sources.list
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install pegasus=5.1.1-1+ubuntu24
+    - run: sudo apt-get -o Acquire::Retries=3 install *fftw3* intel-mkl*
+    - name: Install pycbc
+      run: |
+        python -m pip install --upgrade pip setuptools
+        pip install GitPython # This shouldn't really be needed!
+        pip install -r requirements.txt
+        pip install .
+    - name: installing sbank
+      run: |
+        pip install sbank
+    - name: generating template bank
+      run: bash -e examples/search/bank.sh
+    - name: running workflow
+      run: |
+        cp examples/tmpltbank/compress_workflow/*.ini ./
+        bash -e examples/tmpltbank/compress_workflow/gen.sh
+        cd output
+        bash -e ../examples/search/submit.sh
+        python ../examples/search/check_job.py
+        find submitdir/work/ -type f -name '*.tar.gz' -delete
+    - name: store log files
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: logs
+        path: output/submitdir/work
+    - name: store result page
+      uses: actions/upload-artifact@v4
+      with:
+        name: results
+        path: html

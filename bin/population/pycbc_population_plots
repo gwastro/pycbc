@@ -25,12 +25,11 @@ __email__ = "vaibhav.tiwari@ligo.org"
 __version__ = "0.0"
 __date__ = "31.10.2017"
 
-import logging
 import argparse
 from numpy import logaddexp, log, newaxis, expm1
 import numpy as np
 from matplotlib import cm
-import pylab
+from matplotlib import pyplot as plt
 
 import scipy.stats as ss
 
@@ -81,7 +80,7 @@ with HFile(opts.rate_file, 'w') as out:
 
 # Make prior/posterior plot -- estimate p_astro
 p_astro = []
-pylab.figure()
+plt.figure()
 color=iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
 mods = zip(opts.posterior_samples, opts.population_models, opts.plot_labels)
 
@@ -97,9 +96,9 @@ for fpost, model, lbl in mods:
 
     log_R = np.log(Rfpr)
     xs = np.linspace(min(log_R), max(log_R), 200)
-    pylab.plot(np.exp(xs), ss.skewnorm.pdf(xs, prior_alpha, prior_mu,
+    plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, prior_alpha, prior_mu,
             prior_sigma), '--', label=lbl + ' Prior', color=c)
-    pylab.plot(np.exp(xs), ss.skewnorm.pdf(xs, post_alpha, post_m,
+    plt.plot(np.exp(xs), ss.skewnorm.pdf(xs, post_alpha, post_m,
                post_sigma), label=lbl + ' Posterior', color=c)
 
     Lfpo, Lbpo = fpo[model + '/Lf'][:], fpo[model + '/Lb'][:]
@@ -114,21 +113,21 @@ for fpost, model, lbl in mods:
     fpo.close()
 f.close()
 
-pylab.xscale('log')
-pylab.xlabel(r'$R$ ($\mathrm{Gpc}^{-3} \, \mathrm{yr}^{-1}$)')
-pylab.ylabel(r'$RP(R)$')
-pylab.legend(loc='best')
-pylab.savefig(opts.rates_figure)
+plt.xscale('log')
+plt.xlabel(r'$R$ ($\mathrm{Gpc}^{-3} \, \mathrm{yr}^{-1}$)')
+plt.ylabel(r'$RP(R)$')
+plt.legend(loc='best')
+plt.savefig(opts.rates_figure)
 
-pylab.figure()
+plt.figure()
 color=iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
 for pas, lbl in zip(p_astro, opts.plot_labels):
     c = next(color)
-    pylab.plot(log_fg_ratios, 1 - pas, '.', label = lbl, color = c)
+    plt.plot(log_fg_ratios, 1 - pas, '.', label = lbl, color = c)
 
-pylab.xlabel(r'$\log p(x\mid f)/p(x\mid b)$')
-pylab.ylabel(r'$1-p_\mathrm{astro}$')
-pylab.legend(loc='best')
-pylab.yscale('log')
-pylab.savefig(opts.pastro_figure)
+plt.xlabel(r'$\log p(x\mid f)/p(x\mid b)$')
+plt.ylabel(r'$1-p_\mathrm{astro}$')
+plt.legend(loc='best')
+plt.yscale('log')
+plt.savefig(opts.pastro_figure)
 print(p_astro)

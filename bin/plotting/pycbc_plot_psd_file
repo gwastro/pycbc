@@ -5,7 +5,7 @@ import matplotlib
 matplotlib.use('Agg')
 import numpy
 import argparse
-import pylab
+from matplotlib import pyplot as plt
 import sys
 
 import pycbc
@@ -50,7 +50,7 @@ pycbc.init_logging(args.verbose)
 # set the matplotlib style
 pycbc.results.set_style_from_cli(args)
 
-fig = pylab.figure(0)
+fig = plt.figure(0)
 ax = fig.gca()
 ax.grid(which='both', ls='solid', alpha=0.2, lw=0.3)
 ax.set_ylabel('Amplitude Spectral Density (Strain / $\\sqrt{\\rm Hz}$)')

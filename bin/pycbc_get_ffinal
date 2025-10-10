@@ -7,17 +7,16 @@ the duration of time domain waveforms.
 __prog__ = 'pycbc_get_ffinal'
 __author__ = 'Collin Capano <collin.capano@ligo.org>'
 
-import os, sys
+import sys
 import numpy
 import argparse
 
 import pycbc
 from pycbc import waveform
 
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import table
-from ligo.lw.utils import process
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+
 
 appx_options = waveform.td_approximants() + waveform.fd_approximants()
 
@@ -128,8 +127,8 @@ if infile is not None:
         compress='auto',
         verbose=opts.verbose
     )
-    this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
-    sngl_insp_table = table.Table.get_table(xmldoc, 'sngl_inspiral')
+    this_process = xmldoc.register_process(__prog__, opts.__dict__)
+    sngl_insp_table = ligolw.Table.get_table(xmldoc, 'sngl_inspiral')
 else:
     # FIXME: try to get this from the waveform_opts group
     tmplt_args = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',

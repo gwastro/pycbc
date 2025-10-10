@@ -3,7 +3,6 @@
 """
 import numpy
 import logging
-import os.path
 import argparse
 import sys
 import matplotlib
@@ -12,7 +11,6 @@ import matplotlib.pyplot as plot
 
 import pycbc.results.followup, pycbc.pnutils, pycbc.results
 import pycbc.pnutils
-from pycbc import init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
 from pycbc.io.hdf import HFile
 
@@ -66,7 +64,7 @@ parser.add_argument('--missed-on-top', action='store_true',
                          "high FAR on top of low FAR")
 args = parser.parse_args()
 
-init_logging(args.verbose)
+pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
 f = HFile(args.injection_file, 'r')

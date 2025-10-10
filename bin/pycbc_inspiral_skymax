@@ -24,8 +24,8 @@ import numpy
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc import DYN_RANGE_FAC
-from pycbc.filter import MatchedFilterSkyMaxControl, make_frequency_series, MatchedFilterSkyMaxControlNoPhase
-from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from pycbc.filter import MatchedFilterSkyMaxControl, MatchedFilterSkyMaxControlNoPhase
+from pycbc.types import zeros, float32, complex64
 import pycbc.fft.fftw
 import pycbc.opt
 

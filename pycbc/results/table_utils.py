@@ -86,23 +86,37 @@ def html_table(columns, names, page_size=None, format_strings=None):
 
     column_descriptions = []
     for column, name in zip(columns, names):
-        if column.dtype.kind == 'S' or column.dtype.kind == 'U':
-            ctype = 'string'
-        else:
+        if column.dtype.kind in 'iuf':
+            # signed and unsigned integers and floats
             ctype = 'number'
+        else:
+            # this comprises strings, bools, complex, void, etc
+            # but we will convert all those to str in a moment
+            ctype = 'string'
         column_descriptions.append((ctype, name))
 
     data = []
-    for item in zip(*columns):
-        data.append(list(item))
+    for row in zip(*columns):
+        row2 = []
+        # the explicit conversions here are to make sure the JS code
+        # sees proper numbers and not something like 'np.float64(12)'
+        for item, column in zip(row, columns):
+            if column.dtype.kind == 'f':
+                row2.append(float(item))
+            elif column.dtype.kind in 'iu':
+                row2.append(int(item))
+            else:
+                row2.append(str(item))
+        data.append(row2)
 
-    return google_table_template.render(div_id=div_id,
-                                page_enable=page,
-                                column_descriptions = column_descriptions,
-                                page_size=page_size,
-                                data=data,
-                                format_strings=format_strings,
-                               )
+    return google_table_template.render(
+        div_id=div_id,
+        page_enable=page,
+        column_descriptions=column_descriptions,
+        page_size=page_size,
+        data=data,
+        format_strings=format_strings,
+    )
 
 static_table_template = mako.template.Template("""
     <table class="table">

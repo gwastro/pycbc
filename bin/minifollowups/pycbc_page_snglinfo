@@ -17,7 +17,6 @@
 
 """ Make tables describing a sngl event"""
 import sys
-import h5py
 import numpy
 import datetime
 import argparse

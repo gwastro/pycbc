@@ -22,7 +22,6 @@ with their template.
 """
 import argparse
 import logging
-import numpy
 
 import pycbc
 from pycbc.waveform import bank

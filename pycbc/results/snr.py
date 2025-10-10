@@ -26,7 +26,7 @@
 """
 Module to generate SNR figures
 """
-import pylab as pl
+from matplotlib import pyplot as plt
 from pycbc.results import ifo_color
 
 
@@ -52,22 +52,22 @@ def generate_snr_plot(snrdict, output_filename, triggers, ref_time):
     -------
         None
     """
-    pl.figure()
+    plt.figure()
     ref_time = int(ref_time)
     for ifo in sorted(snrdict):
         curr_snrs = snrdict[ifo]
 
-        pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
-                c=ifo_color(ifo), label=ifo)
+        plt.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
+                 c=ifo_color(ifo), label=ifo)
         if ifo in triggers:
-            pl.plot(triggers[ifo][0] - ref_time,
-                    triggers[ifo][1], marker='x', c=ifo_color(ifo))
+            plt.plot(triggers[ifo][0] - ref_time,
+                     triggers[ifo][1], marker='x', c=ifo_color(ifo))
 
-    pl.legend()
-    pl.xlabel(f'GPS time from {ref_time:d} (s)')
-    pl.ylabel('SNR')
-    pl.savefig(output_filename)
-    pl.close()
+    plt.legend()
+    plt.xlabel(f'GPS time from {ref_time:d} (s)')
+    plt.ylabel('SNR')
+    plt.savefig(output_filename)
+    plt.close()
 
 
 __all__ = ["generate_snr_plot"]

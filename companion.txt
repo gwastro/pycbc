@@ -6,11 +6,7 @@ healpy
 
 # Needed for GraceDB uploads and skymap generation
 ligo-gracedb>=2.10.0
-#ligo.skymap!=1.1.0
-# Temporarily use fork that doesn't force numpy<2.0 incompatibilities
-# Remove when PR merged, or numpy > 2.0 is a hard requirement
-# https://github.com/lpsinger/ligo.skymap/pull/28
-git+https://github.com/ahnitz/ligo.skymap@lreq
+ligo.skymap>=2.1.1
 
 # auxiliary samplers
 epsie>=1.0

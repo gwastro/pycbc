@@ -143,7 +143,7 @@ def background_bin_from_string(background_bins, data):
                 locs = sub_locs
 
         # make sure we don't reuse anything from an earlier bin
-        locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
+        locs = numpy.delete(locs, numpy.where(numpy.isin(locs, used))[0])
         used = numpy.concatenate([used, locs])
         bins[name] = locs
 
@@ -973,12 +973,16 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # Allow None inputs
         stat_files = args.statistic_files or []
+        stat_features = args.statistic_features or []
         stat_keywords = args.statistic_keywords or []
 
         # flatten the list of lists of filenames to a single list (may be empty)
         stat_files = sum(stat_files, [])
 
-        kwargs = pycbcstat.parse_statistic_keywords_opt(stat_keywords)
+        kwargs = pycbcstat.parse_statistic_feature_options(
+            stat_features,
+            stat_keywords,
+        )
 
         return cls(num_templates, analysis_chunk,
                    args.ranking_statistic,
@@ -1321,7 +1325,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if num_zerolag > 0:
             idx = cidx[zerolag_idx][0]
             zerolag_cstat = cstat[cidx][zerolag_idx]
-            ifar, ifar_sat = self.ifar(zerolag_cstat)
+            ifar, ifar_sat = self.ifar(zerolag_cstat[0])
             zerolag_results = {
                 'foreground/ifar': ifar,
                 'foreground/ifar_saturated': ifar_sat,

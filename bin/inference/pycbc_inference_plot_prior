@@ -28,7 +28,7 @@ use('agg')
 from matplotlib import pyplot as plt
 
 import pycbc
-from pycbc import (distributions, results, waveform)
+from pycbc import (results, waveform)
 from pycbc.inference.option_utils import ParseParametersArg
 from pycbc.distributions.utils import prior_from_config
 from pycbc.workflow import WorkflowConfigParser

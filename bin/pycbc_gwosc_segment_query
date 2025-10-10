@@ -7,7 +7,7 @@ import argparse
 import shutil
 from urllib.request import urlopen
 
-import ligo.segments
+import igwn_segments
 
 import pycbc
 from pycbc.workflow import SegFile
@@ -31,9 +31,9 @@ def query_gwosc(ifo, segment_name, gps_start_time, duration):
 
     Returns
     ---------
-    segment_list :  ligo.segments.segmentlist
+    segment_list :  igwn_segments.segmentlist
         The interval returned by GWOSC
-    segment_summary :  ligo.segments.segmentlist
+    segment_summary :  igwn_segments.segmentlist
         The segments returned by GWOSC
     """
 
@@ -44,11 +44,11 @@ def query_gwosc(ifo, segment_name, gps_start_time, duration):
     logging.info(response.info())
     json_segment_data = json.loads(response.read())
 
-    summary_segment = ligo.segments.segmentlist([ligo.segments.segment(
+    summary_segment = igwn_segments.segmentlist([igwn_segments.segment(
                                                 json_segment_data['start'],
                                                 json_segment_data['end'])])
 
-    segments = ligo.segments.segmentlist([ligo.segments.segment(
+    segments = igwn_segments.segmentlist([igwn_segments.segment(
                                          x[0],x[1]) for x in json_segment_data['segments']])
 
     return summary_segment, segments

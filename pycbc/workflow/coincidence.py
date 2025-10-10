@@ -30,7 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 import os
 import logging
 
-from ligo import segments
+import igwn_segments as segments
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
 

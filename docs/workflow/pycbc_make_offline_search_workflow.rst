@@ -306,8 +306,16 @@ Specify the name of the channel you want to run the inspiral analysis over for H
 
   [coinc]
   coinc-threshold = 0.000
+  ranking-statistic = exp_fit
+  sngl-ranking = newsnr_sgveto_psdvar
+  statistic-features = sensitive_volume normalize_fit_rate phasetd
+  statistic-keywords = alpha_below_thresh:6 sngl_ranking_min_expected_psdvar:0.7
 
 Here we are doing exact match coincidence. So we take the light travel time between detectors and look for triggers which are coincident within this time window. The threshold defines if you want to extend the window.
+
+How triggers are ranked is defined by the ranking-statistic, sngl-ranking, statistic-features and statistic-keywords options used in the `coinc` and `sngls` sections.
+
+For a full description of the ranking statistic and associated options, and their values, see https://pycbc.org/pycbc/latest/html/search/ranking_statistic.html
 
 ::
 

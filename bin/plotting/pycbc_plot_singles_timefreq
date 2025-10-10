@@ -27,7 +27,7 @@ import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import pylab as pl
+from matplotlib import pyplot as plt
 import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
@@ -77,7 +77,7 @@ if opts.center_time is None:
 else:
     center_time = opts.center_time
 
-fig = pl.figure(figsize=(11,5.5))
+fig = plt.figure(figsize=(11,5.5))
 fig.subplots_adjust(left=0.06, right=0.95, bottom=0.09, top=0.95)
 ax = fig.gca()
 
@@ -102,8 +102,10 @@ trig_f = HFile(opts.trig_file, 'r')
 trigs = trig_f[opts.detector]
 
 def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):
-    return np.logical_and(end_time > opts.gps_start_time,
-                          end_time < opts.gps_end_time + tmp_dur)
+    return np.logical_and(
+        end_time > opts.gps_start_time,
+        end_time < opts.gps_end_time + tmp_dur.astype('float64')
+    )
 
 indices, data_tuple = trig_f.select(
     rough_filter,

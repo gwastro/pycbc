@@ -25,6 +25,8 @@ class LiveSingle(object):
                  fixed_ifar=None,
                  maximum_ifar=None,
                  statistic=None,
+                 stat_features=None,
+                 stat_keywords=None,
                  sngl_ranking=None,
                  stat_files=None,
                  statistic_refresh_rate=None,
@@ -54,6 +56,10 @@ class LiveSingle(object):
             threshold criteria
         statistic: str
             The name of the statistic to rank events.
+        stat_features: list of str
+            The names of features to use for the statistic
+        stat_keywords: list of key:value strings
+            argument for statistic keywords
         sngl_ranking: str
             The single detector ranking to use with the background statistic
         stat_files: list of strs
@@ -80,11 +86,15 @@ class LiveSingle(object):
         self.statistic_refresh_rate = statistic_refresh_rate
 
         stat_class = stat.get_statistic(statistic)
+        stat_extras = stat.parse_statistic_feature_options(
+            stat_features,
+            stat_keywords,
+        )
         self.stat_calculator = stat_class(
             sngl_ranking,
             stat_files,
             ifos=[ifo],
-            **kwargs
+            **stat_extras
         )
 
         self.thresholds = {
@@ -223,7 +233,6 @@ class LiveSingle(object):
         # (may be empty)
         stat_files = sum(stat_files, [])
 
-        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
         return cls(
            ifo, ranking_threshold=args.single_ranking_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
@@ -234,9 +243,10 @@ class LiveSingle(object):
            sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo],
            statistic=args.ranking_statistic,
            sngl_ranking=args.sngl_ranking,
+           stat_features=args.statistic_features,
+           stat_keywords=args.statistic_keywords,
            stat_files=stat_files,
            statistic_refresh_rate=args.statistic_refresh_rate,
-           **kwargs
            )
 
     def check(self, trigs, data_reader):
@@ -320,7 +330,7 @@ class LiveSingle(object):
             with HFile(self.fit_file, 'r') as fit_file:
                 bin_edges = fit_file['bins_edges'][:]
                 live_time = fit_file[self.ifo].attrs['live_time']
-                thresh = fit_file.attrs['fit_threshold']
+                thresh = fit_file[self.ifo].attrs['fit_threshold']
                 dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
                 rates = dist_grp['counts'][:] / live_time
                 coeffs = dist_grp['fit_coeff'][:]

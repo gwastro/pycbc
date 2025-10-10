@@ -563,6 +563,31 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
+    def get_gate_indices(self, time, window):
+        """Calculates the indices at which a gate should be applied.
+
+        Parameters
+        ----------
+        time: float
+            Central time of the gate in seconds
+        window: float
+            Half-length in seconds to remove data around gate time.
+
+        Returns
+        -------
+        lindex: int
+            The left index of the gate
+        rindex: int
+            The right index of the gate
+        """
+        st = float(self.start_time)
+        dt = float(self.delta_t)
+        lindex = int((time - window - st) / dt)
+        rindex = int((time + window - st) / dt)
+        lindex = lindex if lindex >= 0 else 0
+        rindex = rindex if rindex <= len(self) else len(self)
+        return lindex, rindex
+
     def gate(self, time, window=0.25, method='taper', copy=True,
              taper_width=0.25, invpsd=None):
         """ Gate out portion of time series
@@ -603,10 +628,7 @@ class TimeSeries(Array):
                 # These are some bare minimum settings, normally you
                 # should probably provide a psd
                 invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
-            lindex = int((time - window - self.start_time) / self.delta_t)
-            rindex = int((time + window - self.start_time) / self.delta_t)
-            lindex = lindex if lindex >= 0 else 0
-            rindex = rindex if rindex <= len(self) else len(self)
+            lindex, rindex = self.get_gate_indices(time, window)
             rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:

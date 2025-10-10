@@ -19,7 +19,6 @@ import logging
 from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
-import copy
 import numpy as np
 from scipy import stats as scistats
 

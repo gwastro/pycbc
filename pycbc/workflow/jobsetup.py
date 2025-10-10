@@ -29,8 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import math, os
-import lal
-from ligo import segments
+import igwn_segments as segments
 from pycbc.workflow.core import Executable, File, FileList, Node
 
 def int_gps_time_to_str(t):
@@ -169,7 +168,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         to this list, and it does not need to be empty when supplied.
     curr_exe_job : Job
         An instanced of the Job class that has a get_valid times method.
-    science_segs : ligo.segments.segmentlist
+    science_segs : igwn_segments.segmentlist
         The list of times that the jobs should cover
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
@@ -277,6 +276,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     curr_out_files = FileList([])
     ipn_sky_points = None
     bank_veto = None
+    skygrid_file = None
     input_files = FileList(datafind_outs)
     for f in datafind_outs:
         if 'IPN_SKY_POINTS' in f.description:
@@ -287,6 +287,9 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         elif 'INPUT_BANK_VETO_BANK' in f.description:
             bank_veto = f
             input_files.remove(f)
+        elif 'make_sky_grid' in f.description:
+            skygrid_file = f
+            input_files.remove(f)
 
     split_bank_counter = 0
 
@@ -296,7 +299,8 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             tag.append(split_bank.tag_str)
             node = curr_exe_job.create_node(data_seg, job_valid_seg,
                     parent=split_bank, dfParents=input_files,
-                    bankVetoBank=bank_veto, ipn_file=ipn_sky_points,
+                    bankVetoBank=bank_veto,
+                    skygrid_file=skygrid_file, ipn_file=ipn_sky_points,
                     slide=slide_dict, tags=tag)
             workflow.add_node(node)
             split_bank_counter += 1
@@ -310,7 +314,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                 node = curr_exe_job.create_node(data_seg, job_valid_seg,
                         parent=split_bank, inj_file=inj_file, tags=tag,
                         dfParents=input_files, bankVetoBank=bank_veto,
-                        ipn_file=ipn_sky_points)
+                        skygrid_file=skygrid_file, ipn_file=ipn_sky_points)
                 workflow.add_node(node)
                 split_bank_counter += 1
                 curr_out_files.extend(node.output_files)
@@ -342,7 +346,7 @@ def identify_needed_data(curr_exe_job):
     dataLength : float
         The amount of data (in seconds) that each instance of the job must read
         in.
-    valid_chunk : ligo.segments.segment
+    valid_chunk : igwn_segments.segment
         The times within dataLength for which that jobs output **can** be
         valid (ie. for inspiral this is (72, dataLength-72) as, for a standard
         setup the inspiral job cannot look for triggers in the first 72 or
@@ -670,7 +674,8 @@ class PyCBCMultiInspiralExecutable(Executable):
         self.num_threads = 1
 
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
-                    dfParents=None, bankVetoBank=None, ipn_file=None,
+                    dfParents=None, bankVetoBank=None,
+                    skygrid_file=None, ipn_file=None,
                     slide=None, tags=None):
         if tags is None:
             tags = []
@@ -682,8 +687,8 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and \
-                (node.get_opt('--do-short-slides') is not None or \
-                 node.get_opt('--short-slide-offset') is not None):
+                (self.get_opt('--do-short-slides') is not None or \
+                 self.get_opt('--short-slide-offset') is not None):
             raise ValueError("Cannot run with time slides in a single IFO "
                              "configuration! Please edit your configuration "
                              "file accordingly.")
@@ -717,6 +722,9 @@ class PyCBCMultiInspiralExecutable(Executable):
                 frame_arg += f" {frame_file.ifo}:{frame_file.name}"
                 node.add_input(frame_file)
             node.add_arg(frame_arg)
+
+        if skygrid_file is not None:
+            node.add_input_opt('--sky-grid', skygrid_file)
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
@@ -818,7 +826,7 @@ class PyCBCTmpltbankExecutable(Executable):
 
         Parameters
         -----------
-        valid_seg : ligo.segments.segment
+        valid_seg : igwn_segments.segment
             The segment over which to declare the node valid. Usually this
             would be the duration of the analysis.
 
@@ -1018,8 +1026,9 @@ class PycbcSplitBankExecutable(Executable):
 
         # Get the output (taken from inspiral.py)
         out_files = FileList([])
+        n_dp = math.ceil(math.log10(self.num_banks))
         for i in range( 0, self.num_banks):
-            curr_tag = 'bank%d' %(i)
+            curr_tag = (f'bank%0{n_dp}d') % (i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag] + tags

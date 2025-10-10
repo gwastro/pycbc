@@ -33,8 +33,8 @@ import os, copy
 import logging
 import urllib.parse
 
-from ligo import segments
-from ligo.lw import utils, table
+import igwn_segments as segments
+from igwn_ligolw import utils, ligolw
 from gwdatafind import find_urls as find_frame_urls
 
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
@@ -68,7 +68,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     ----------
     workflow: pycbc.workflow.core.Workflow
         The workflow class that stores the jobs that will be run.
-    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -94,7 +94,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         SegFile containing the analysable time after checks in the datafind
         module are applied to the input segment list. For production runs this
         is expected to be equal to the input segment list.
-    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse. If
         the updateSegmentTimes kwarg is given this will be updated to reflect
         any instances of missing data.
@@ -380,7 +380,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -468,7 +468,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -585,7 +585,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -635,7 +635,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -791,7 +791,7 @@ def get_science_segs_from_datafind_outs(datafindcaches):
 
     Returns
     --------
-    newScienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
+    newScienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances
         The times covered by the frames found in datafindOuts.
     """
     newScienceSegs = {}
@@ -819,7 +819,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
 
     Returns
     --------
-    missingFrameSegs : Dict. of ifo keyed ligo.segments.segmentlist instances
+    missingFrameSegs : Dict. of ifo keyed igwn_segments.segmentlist instances
         The times corresponding to missing frames found in datafindOuts.
     missingFrames: Dict. of ifo keyed lal.Cache instances
         The list of missing frames
@@ -867,7 +867,7 @@ def get_segment_summary_times(scienceFile, segmentName):
 
     Returns
     ---------
-    summSegList : ligo.segments.segmentlist
+    summSegList : igwn_segments.segmentlist
         The times that are covered in the segment summary table.
     """
     # Parse the segmentName
@@ -888,7 +888,7 @@ def get_segment_summary_times(scienceFile, segmentName):
     )
 
     # Get the segment_def_id for the segmentName
-    segmentDefTable = table.Table.get_table(xmldoc, "segment_definer")
+    segmentDefTable = ligolw.Table.get_table(xmldoc, "segment_definer")
     for entry in segmentDefTable:
         if (entry.ifos == ifo) and (entry.name == channel):
             if len(segmentName) == 2 or (entry.version==version):
@@ -899,7 +899,7 @@ def get_segment_summary_times(scienceFile, segmentName):
                          %(segmentName))
 
     # Get the segmentlist corresponding to this segmentName in segment_summary
-    segmentSummTable = table.Table.get_table(xmldoc, "segment_summary")
+    segmentSummTable = ligolw.Table.get_table(xmldoc, "segment_summary")
     summSegList = segments.segmentlist([])
     for entry in segmentSummTable:
         if entry.segment_def_id == segDefID:

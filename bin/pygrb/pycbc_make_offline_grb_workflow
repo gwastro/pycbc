@@ -27,9 +27,10 @@ import logging
 import matplotlib
 matplotlib.use('agg')
 
-from ligo.segments import segment, segmentlistdict
+from igwn_segments import segment, segmentlistdict
 
 from pycbc import init_logging, add_common_pycbc_options
+from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
 from pycbc.workflow.core import configparser_value_to_file
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
@@ -48,7 +49,6 @@ init_logging(args.verbose, default_level=1)
 wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
-init_dir = os.getcwd()
 
 logging.info("Generating %s workflow" % workflow_name)
 
@@ -109,18 +109,18 @@ else:
 # Do checks for no/single IFO case
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
-    plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
+    make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
                                       triggername, seg_dir)
-    logging.warning("No science segments available.")
+    logging.error("No science segments available.")
     sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
-    plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
+    make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
                                       triggertime, triggername, seg_dir)
     msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
-    logging.warning(msg)
+    logging.error(msg)
     sys.exit()
 else:
     onSrc, offSrc, bufferSeg = _workflow.generate_triggered_segment(wflow,
@@ -129,20 +129,20 @@ else:
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
-    plot_met = make_grb_segments_plot(
+    make_grb_segments_plot(
         wflow, sciSegs, triggertime, triggername,
         seg_dir, fail_criterion=offSrc)
     logging.info("Making segment plot and exiting.")
     sys.exit()
-else:
-    plot_met = make_grb_segments_plot(
-        wflow, sciSegs, triggertime, triggername, seg_dir,
-        coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
-    segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
-                               file_url=plot_met[3])
-    segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
-    sciSegs = offSrc
-    all_files.append(segs_plot)
+
+plot_met = make_grb_segments_plot(
+    wflow, sciSegs, triggertime, triggername, seg_dir,
+    coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
+segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
+                           file_url=plot_met[3])
+segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
+sciSegs = offSrc
+all_files.append(segs_plot)
 
 if len(sciSegs) == 1:
     logging.info("Generating a single IFO search.")
@@ -176,8 +176,6 @@ else:
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime + padding,
                                   int(sciSegs[ifo][0][1]) - deadtime - padding)
 
-ext_file = None
-
 # DATAFIND
 df_dir = os.path.join(curr_dir, "datafind")
 datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
@@ -194,7 +192,14 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
 
 ifos = sorted(sciSegs.keys())
 wflow.ifos = ifos
-datafind_veto_files = _workflow.FileList([])
+
+# input_files will contain:
+# 1) the output files produced by the datafind
+# 2) the veto file determined by looking up the segments being used
+# 3) the sky grid file (if one is produced)
+# 4) the bank-veto file
+# 5) the IPN search points file (if one is produced)
+input_files = _workflow.FileList([])
 
 # Convenience variable to operate on sciSegs within this executable
 ifo = ifos[0]
@@ -236,17 +241,40 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
         gated_frames.convert_to_lal_cache().tofile(
                             open(gated_cache.storage_path, "w"))
         datafind_files.append(gated_cache)
-datafind_veto_files.extend(datafind_files)
+input_files.extend(datafind_files)
 
 # Retrieve vetoes
 veto_file = None
 if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
     veto_file = _workflow.get_segments_file(wflow,
-                                            'vetoes', 
+                                            'vetoes',
                                             'segments-vetoes',
                                             seg_dir,
                                             tags=['veto'])
-    datafind_veto_files.append(veto_file)
+    input_files.append(veto_file)
+# Check that the onsource is free from vetoes
+for ifo in ifos:
+    avail_segs = select_segments_by_definer(veto_file.storage_path, ifo=ifo)
+    avail_segs.coalesce()
+    # If no relevant vetoes are available, avail_segs becomes an empty list
+    if len(avail_segs) > 0:
+        vetoed_segs = offSrc[ifo] - avail_segs
+        if onSrc[ifo].intersects(vetoed_segs):
+            intersection = onSrc[ifo] & vetoed_segs
+            logging.error(
+                "The onsource %s contains the time %s that is vetoed in %s.",
+                onSrc[ifo][0][:],
+                intersection,
+                ifo
+            )
+            sys.exit()
+
+# Generate sky grid if needed
+skygrid_file = None
+if wflow.cp.has_option("workflow", "sky-error") or wflow.cp.has_option("workflow", "input-dist"):
+    logging.info("Generating sky-grid file.")
+    skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=['SEARCH'])
+    input_files.extend(skygrid_file)
 
 # Config file consistency check for IPN GRBs
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
@@ -271,7 +299,7 @@ if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
                                                 'bank-veto-bank-file')
     bank_veto_file.description += '_BANK_VETO_BANK'
     bank_veto_file = _workflow.FileList([bank_veto_file])
-    datafind_veto_files.extend(bank_veto_file)
+    input_files.extend(bank_veto_file)
 
 if IPN:
     file_attrs = {
@@ -284,9 +312,9 @@ if IPN:
                                                  'workflow-inspiral',
                                                  'ipn-search-points',
                                                  file_attrs=file_attrs)
-    datafind_veto_files.append(search_pts_file)
+    input_files.append(search_pts_file)
 
-all_files.extend(datafind_veto_files)
+all_files.extend(input_files)
 
 # TEMPLATE BANK AND SPLIT BANK
 bank_files = _workflow.setup_tmpltbank_workflow(wflow, sciSegs,
@@ -321,7 +349,7 @@ if wflow.cp.has_section("workflow-injections"):
     inj_method = wflow.cp.get("workflow-injections",
                               "injections-method")
     if inj_method == "IN_WORKFLOW" and \
-        wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
+            wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
         tc_path = os.path.join(base_dir, "tc_prior.ini")
         _workflow.generate_tc_prior(wflow, tc_path, bufferSeg)
 
@@ -386,7 +414,7 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(
-            wflow, sciSegs, datafind_veto_files, inj_splitbank_files,
+            wflow, sciSegs, input_files, inj_splitbank_files,
             inj_dir, injs, tags=[mf_tag + "_injections"])
     for inj_insp_file in inj_insp_files:
         split_str = [s for s in inj_insp_file.name.split("_")
@@ -425,7 +453,7 @@ if wflow.cp.has_section("workflow-injections"):
 insp_dir = os.path.join(curr_dir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(
         wflow, sciSegs,
-        datafind_veto_files, splitbank_files, insp_dir,
+        input_files, splitbank_files, insp_dir,
         tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
 # TODO: Remove .lcf caches here?
@@ -462,6 +490,7 @@ if post_proc_method == "PYGRB_OFFLINE":
                                                                inj_find_files,
                                                                full_bank_file,
                                                                seg_dir,
+                                                               skygrid_file[0],
                                                                veto_file=veto_file)
         logging.info('Leaving results module')
 

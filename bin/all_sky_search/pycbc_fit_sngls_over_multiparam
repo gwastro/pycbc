@@ -13,7 +13,7 @@
 # Public License for more details.
 
 
-import sys, argparse, logging, numpy
+import argparse, logging, numpy
 from scipy.stats import norm
 
 import pycbc
@@ -59,6 +59,7 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
     -------------------
     weights: ndarray
         Weighting factor to apply to the templates specified by template_idx
+        If None, then numpy.average will revert to numpy.mean
 
     Returns
     -------
@@ -68,7 +69,6 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
         Third float: the smoothed total count in template value
 
     """
-    if weights is None: weights = numpy.ones_like(template_idx)
     nabove_t_smoothed = numpy.average(nabove[template_idx], weights=weights)
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
     invalphan_mean = numpy.average(invalphan[template_idx], weights=weights)
@@ -89,7 +89,6 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             invalphan,
                             ntotal,
                             idx_within_area)
-
 
 # This is the default number of triggers required for n_closest smoothing
 _default_total_trigs = 500
@@ -119,7 +118,7 @@ def smooth_distance_weighted(nabove, invalphan, ntotal, dists):
     Smooth templates weighted according to dists in a unit-width normal
     distribution, truncated at three sigma
     """
-    idx_within_area = numpy.flatnonzero(dists < 3.)
+    idx_within_area = dists < 3.
     weights = norm.pdf(dists[idx_within_area])
     return smooth_templates(nabove, invalphan, ntotal,
                             idx_within_area, weights=weights)
@@ -171,6 +170,7 @@ def report_percentage(i, length):
     pc_last = int(numpy.floor((i - 1) / length * 100))
     if not pc % 10 and pc_last % 10:
         logging.info(f"Template {i} out of {length} ({pc:.0f}%)")
+
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -255,7 +255,7 @@ init_logging(args.verbose)
 analysis_time = 0
 attr_dict = {}
 
-# These end up as n_files * n_templates arrays
+# These end up as n_files * num_templates arrays
 tid = numpy.array([], dtype=int)
 nabove = numpy.array([], dtype=int)
 ntotal = numpy.array([], dtype=int)
@@ -323,7 +323,7 @@ invalphan = invalpha * nabove
 analysis_time /= len(args.template_fit_file)
 
 if len(args.template_fit_file) > 1:
-    # From the n_templates * n_files arrays, average within each template.
+    # From the num_templates * n_files arrays, average within each template.
     # To do this, we average the n_files occurrences which have the same tid
 
     # The linearity of the average means that we can do this in two steps
@@ -404,10 +404,14 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
-nabove_smoothed = []
-alpha_smoothed = []
-ntotal_smoothed = []
-rang = numpy.arange(0, len(nabove))
+rang = numpy.arange(0, num_templates)
+
+# Preallocate memory for smoothing results
+# smoothed_vals is an array containing smoothed template fit values :
+# smoothed_vals[:,0] is the number of triggers above the fit threshold
+# smoothed_vals[:,1] is the fit coefficient 'alpha'
+# smoothed_vals[:,2] is the total number of triggers in the template
+smoothed_vals = numpy.zeros((num_templates, 3))
 
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
@@ -430,10 +434,10 @@ if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
     num = right - left
 
     logging.info("Smoothing ...")
-    nabove_smoothed = (nasum[right] - nasum[left]) / num
+    smoothed_vals[:,0] = (nasum[right] - nasum[left]) / num
     invmean = (invsum[right] - invsum[left]) / num
-    alpha_smoothed = nabove_smoothed / invmean
-    ntotal_smoothed = (ntsum[right] - ntsum[left]) / num
+    smoothed_vals[:,1] = smoothed_vals[:, 0] / invmean
+    smoothed_vals[:,2] = (ntsum[right] - ntsum[left]) / num
 
 elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     c = _smooth_cut[args.smoothing_method]
@@ -453,51 +457,55 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
             parvals[sort_dim] - cut_lengths[sort_dim])
     rights = numpy.searchsorted(parvals[sort_dim],
             parvals[sort_dim] + cut_lengths[sort_dim])
-    n_removed = len(parvals[0]) - rights + lefts
+    n_removed = num_templates - rights + lefts
     logging.info("Cutting between %d and %d templates for each smoothing",
                  n_removed.min(), n_removed.max())
+
     # Sort the values to be smoothed by parameter value
     logging.info("Smoothing ...")
-    slices = [slice(l,r) for l, r in zip(lefts, rights)]
+    nabove_sort =  nabove[par_sort]
+    invalphan_sort = invalphan[par_sort]
+    ntotal_sort = ntotal[par_sort]
+    slices = [slice(l, r) for l, r in zip(lefts, rights)]
     for i in rang:
-        report_percentage(i, rang.max())
+        report_percentage(i, num_templates)
         slc = slices[i]
         d = dist(i, slc, parvals, args.smoothing_width)
 
-        smoothed_tuple = smooth(nabove[par_sort][slc],
-                                invalphan[par_sort][slc],
-                                ntotal[par_sort][slc],
-                                d,
-                                args.smoothing_method,
-                                **kwarg_dict)
-        nabove_smoothed.append(smoothed_tuple[0])
-        alpha_smoothed.append(smoothed_tuple[1])
-        ntotal_smoothed.append(smoothed_tuple[2])
+        smoothed_vals[i,:] = smooth(
+            nabove_sort[slc],
+            invalphan_sort[slc],
+            ntotal_sort[slc],
+            d,
+            args.smoothing_method,
+            **kwarg_dict
+        )
 
     # Undo the sorts
     unsort = numpy.argsort(par_sort)
     parvals = [p[unsort] for p in parvals]
-    nabove_smoothed = numpy.array(nabove_smoothed)[unsort]
-    alpha_smoothed = numpy.array(alpha_smoothed)[unsort]
-    ntotal_smoothed = numpy.array(ntotal_smoothed)[unsort]
+    smoothed_vals = smoothed_vals[unsort, :]
 
 else:
     logging.info("Smoothing ...")
     for i in rang:
-        report_percentage(i, rang.max())
+        report_percentage(i, num_templates)
         d = dist(i, rang, parvals, args.smoothing_width)
-        smoothed_tuple = smooth(nabove, invalphan, ntotal, d,
-                                args.smoothing_method, **kwarg_dict)
-        nabove_smoothed.append(smoothed_tuple[0])
-        alpha_smoothed.append(smoothed_tuple[1])
-        ntotal_smoothed.append(smoothed_tuple[2])
+        smoothed_vals[i, :] = smooth(
+            nabove,
+            invalphan,
+            ntotal,
+            d,
+            args.smoothing_method,
+            **kwarg_dict
+        )
 
 logging.info("Writing output")
 outfile = HFile(args.output, 'w')
 outfile['template_id'] = tid
-outfile['count_above_thresh'] = nabove_smoothed
-outfile['fit_coeff'] = alpha_smoothed
-outfile['count_in_template'] = ntotal_smoothed
+outfile['count_above_thresh'] = smoothed_vals[:, 0]
+outfile['fit_coeff'] = smoothed_vals[:, 1]
+outfile['count_in_template'] = smoothed_vals[:, 2]
 if median_sigma is not None:
     outfile['median_sigma'] = median_sigma
 

@@ -13,7 +13,6 @@
 # Public License for more details.
 
 
-import sys
 import argparse, logging
 
 import numpy as np

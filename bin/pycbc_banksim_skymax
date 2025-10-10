@@ -17,24 +17,23 @@
 """Calculate the fitting factors of simulated signals with a template bank."""
 
 
-import sys
 import logging
-from numpy import complex64, float32, sqrt, argmax, real, array
+from numpy import complex64, sqrt, argmax, real, array
 from argparse import ArgumentParser
 from math import ceil, log
 from tqdm import tqdm
 
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw import lsctables
 
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
-from pycbc.filter import match, sigmasq, resample_to_delta_t
+from pycbc.types import FrequencySeries, TimeSeries, zeros, complex_same_precision_as
+from pycbc.filter import sigmasq
 from pycbc.filter import overlap_cplx, matched_filter
 from pycbc.filter import compute_max_snr_over_sky_loc_stat
 from pycbc.filter import compute_max_snr_over_sky_loc_stat_no_phase

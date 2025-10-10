@@ -102,6 +102,66 @@ def sec_to_year(sec):
     return sec / lal.YRJUL_SI
 
 
+def hypertriangle(*params, bounds=(0, 1)):
+    """
+    Apply a hypertriangle map to a series of input parameter values.
+    This will output a series of parameter values in ascending order
+    that can be used to impose a distinguishibility constraint on the
+    posterior. Adapted from Buscicchio et al (PhysRevD.100.084041).
+
+    This transformation assumes that the input parameters were sampled
+    from the same uniform prior distribution defined by bounds.
+
+    Parameters
+    ----------
+    params : float(s) or array(s)
+        The input parameter values. Parameters are assumed to be
+        sampled from the same uniform prior distribution. Each
+        argument is treated as one parameter; input arrays will
+        be treated as multiple values for that one parameter.
+
+    bounds : tuple (optional)
+        The lower and upper bounds of the input parameter priors.
+        Default (0, 1) for a unit hypercube.
+
+    Returns
+    -------
+    array
+        The mapped parameters. Output values are in ascending order.
+    """
+    # check inputs all have the same shape
+    ref_shape = numpy.shape(params[0])
+    assert numpy.all([numpy.shape(params[i]) == ref_shape for i in range(len(params))]), \
+        "All inputs must have the same number of elements"
+    
+    # map to numpy array
+    params, input_is_array = ensurearray(params)
+
+    # check all values lie within bounds
+    assert numpy.all(params >= bounds[0]) and numpy.all(params <= bounds[1]), \
+        "Input parameters lie outside of given bounds"
+
+    # rescale the parameters to the unit hypercube
+    scaled_params = (params - bounds[0])/(bounds[1] - bounds[0])
+    
+    # hypertriangulate
+    try:
+        K, num_pts = scaled_params.shape
+    except ValueError:
+        K = numpy.size(scaled_params)
+        num_pts = 1
+    idx = numpy.repeat(numpy.arange(K), repeats=num_pts)
+    scaled_params.resize(K, num_pts)
+    idx.resize(K, num_pts)
+    fac = numpy.power(1 - scaled_params, 1/(K - idx))
+    out_scaled_params = 1 - numpy.cumprod(fac, axis=0)
+
+    # rescale to prior bounds
+    out_params = (out_scaled_params * (bounds[1] - bounds[0])) + bounds[0]
+    if num_pts == 1:
+        out_params = [out_params[i][0] for i in range(K)]
+    return out_params
+
 #
 # =============================================================================
 #
@@ -622,6 +682,8 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, \
         input_is_array = \
         ensurearray(mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar)
+    assert numpy.all(spin1_a >= 0) and numpy.all(spin2_a >= 0), \
+        "Spin magnitude MUST be null or positive"
     # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
     if swap_companions:
         mass1, mass2, spin1_a, spin2_a, spin1_polar, spin2_polar = \
@@ -1847,5 +1909,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
            'lambda2_from_delta_lambda_tilde_lambda_tilde',
-           'delta_lambda_tilde'
+           'delta_lambda_tilde', 'hypertriangle'
           ]

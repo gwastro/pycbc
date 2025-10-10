@@ -42,7 +42,7 @@ def _formatdocstrlist(docstr, paramlist, skip_params=None):
     if skip_params is None:
         skip_params = []
     pl = '\n'.join([_p.docstr(prefix="    ", include_label=False)
-                    for _p in paramlist if _p not in skip_params]).lstrip(' ')
+                    for _p in paramlist if _p not in skip_params])
     return docstr.format(params=pl)
 
 
@@ -232,6 +232,89 @@ def get_nrhybsur_modes(**params):
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 get_nrhybsur_modes.__doc__ = _formatdocstr(get_nrhybsur_modes.__doc__)
 
+def get_lalsimulation_approximant(approximant):
+    import lalsimulation as ls
+    return {
+        'EOBNRv2': ls.EOBNRv2,
+        'EOBNRv2HM': ls.EOBNRv2HM,
+        'IMRPhenomTPHM': ls.IMRPhenomTPHM,
+        'NRSur7dq2': ls.NRSur7dq2,
+        'NRSur7dq4': ls.NRSur7dq4,
+        'NRHybSur3dq8': ls.NRHybSur3dq8,
+        'pSEOBNRv4HM_PA': ls.pSEOBNRv4HM_PA,
+        'SEOBNRv4HM_PA': ls.SEOBNRv4HM_PA,
+        'SEOBNRv4P': ls.SEOBNRv4P,
+        'SEOBNRv4PHM': ls.SEOBNRv4PHM,
+        'SpinTaylorT1': ls.SpinTaylorT1,
+        'SpinTaylorT4': ls.SpinTaylorT4,
+        'SpinTaylorT5': ls.SpinTaylorT5,
+        'TaylorT1': ls.TaylorT1,
+        'TaylorT2': ls.TaylorT2,
+        'TaylorT3': ls.TaylorT3,
+        'TaylorT4': ls.TaylorT4,
+        }[approximant]
+
+def get_lalsimulation_modes(**params):
+    """Generates approximant waveform mode-by-mode.
+
+    All waveform parameters should be provided as keyword arguments.
+    Recognized parameters are listed below. Unrecognized arguments are ignored.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    approximant : str
+        The approximant to generate. Must be available in ``lalsimulation``.
+    {delta_t}
+    {mass1}
+    {mass2}
+    {spin1x}
+    {spin1y}
+    {spin1z}
+    {spin2x}
+    {spin2y}
+    {spin2z}
+    {f_lower}
+    {f_ref}
+    {distance}
+    {mode_array}
+    {ell_max}
+    {approximant}
+
+    Returns
+    -------
+    dict :
+        Dictionary of ``(l, m)`` -> ``(h_+, -h_x)`` ``TimeSeries``.
+    """
+    ell_max = 5
+    if 'ell_max' in params:
+        ell_max = params['ell_max']
+    laldict = _check_lal_pars(params)
+    ret = lalsimulation.SimInspiralChooseTDModes(
+        params['coa_phase'],
+        params['delta_t'],
+        params['mass1']*lal.MSUN_SI,
+        params['mass2']*lal.MSUN_SI,
+        params['spin1x'],
+        params['spin1y'],
+        params['spin1z'],
+        params['spin2x'],
+        params['spin2y'],
+        params['spin2z'],
+        params['f_lower'], params['f_ref'],
+        params['distance']*1e6*lal.PC_SI, laldict,
+        ell_max,
+        get_lalsimulation_approximant(params['approximant'])
+    )
+    hlms = {}
+    while ret:
+        hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
+                         epoch=ret.mode.epoch)
+        hlms[(ret.l, ret.m)] = (hlm.real(), hlm.imag())
+        ret = ret.next
+    return hlms
 
 def get_imrphenomxh_modes(**params):
     """Generates ``IMRPhenomXHM`` waveforms mode-by-mode. """
@@ -269,8 +352,23 @@ def get_imrphenomxh_modes(**params):
     return hlms
 
 
-_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
+_mode_waveform_td = {'EOBNRv2': get_lalsimulation_modes,
+                     'EOBNRv2HM': get_lalsimulation_modes,
+                     'IMRPhenomTPHM': get_lalsimulation_modes,
+                     'NRSur7dq2': get_lalsimulation_modes,
+                     'NRSur7dq4': get_nrsur_modes,
                      'NRHybSur3dq8': get_nrhybsur_modes,
+                     'pSEOBNRv4HM_PA': get_lalsimulation_modes,
+                     'SEOBNRv4HM_PA': get_lalsimulation_modes,
+                     'SEOBNRv4P': get_lalsimulation_modes,
+                     'SEOBNRv4PHM': get_lalsimulation_modes,
+                     'SpinTaylorT1': get_lalsimulation_modes,
+                     'SpinTaylorT4': get_lalsimulation_modes,
+                     'SpinTaylorT5': get_lalsimulation_modes,
+                     'TaylorT1': get_lalsimulation_modes,
+                     'TaylorT2': get_lalsimulation_modes,
+                     'TaylorT3': get_lalsimulation_modes,
+                     'TaylorT4': get_lalsimulation_modes,
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
                      }
@@ -301,6 +399,7 @@ def get_fd_waveform_modes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments.
+
     {params}
 
     Returns
@@ -345,6 +444,7 @@ def get_td_waveform_modes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments.
+
     {params}
 
     Returns

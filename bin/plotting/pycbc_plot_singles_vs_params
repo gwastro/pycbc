@@ -25,11 +25,11 @@ import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import pylab as pl
+from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-import h5py
 import sys
+from packaging.version import Version
 
 import pycbc
 import pycbc.pnutils
@@ -51,7 +51,10 @@ parser.add_argument('--veto-file', type=str,
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
 parser.add_argument('--filter-string', default=None, type=str,
-                    help='Optional, boolean expression for filtering triggers')
+                    help='Optional, boolean expression for filtering triggers.'
+                         'Example: "self.snr >=6"'
+                         'Parameter in "self.parameter" should be either from'
+                         'trigger or bank params.')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
@@ -127,9 +130,9 @@ fig_caption = f"This plot shows the {opts.z_var} of single detector " + \
 
 if not any(mask):
     # All triggers removed - make a blank plot which says so:
-    fig = pl.figure()
+    fig = plt.figure()
     ax = fig.gca()
-    pl.text(0.5, 0.5, 'no triggers in the range')
+    plt.text(0.5, 0.5, 'no triggers in the range')
 
     pycbc.results.save_fig_with_metadata(
         fig,
@@ -148,7 +151,7 @@ hexbin_style = {
 
 # In earlier versions mpl will try to take the max over bins with 0 triggers
 # and fail, unless we tell it to leave these blank by setting mincnt
-if matplotlib.__version__ < '3.8.1':
+if Version(matplotlib.__version__) < Version('3.8.1'):
     hexbin_style['mincnt'] = 0
 
 if opts.log_x:
@@ -160,7 +163,7 @@ maxz = opts.max_z
 hexbin_style['norm'] = LogNorm(vmin=minz, vmax=maxz)
 
 logging.info('Plotting')
-fig = pl.figure()
+fig = plt.figure()
 ax = fig.gca()
 
 if opts.z_var == 'density':

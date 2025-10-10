@@ -31,13 +31,11 @@ import time
 import numpy
 import dynesty, dynesty.dynesty, dynesty.nestedsamplers
 from pycbc.pool import choose_pool
-from dynesty import utils as dyfunc
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
                                 loadfile)
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 from .base_cube import setup_calls
-from .. import models
 
 
 #

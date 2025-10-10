@@ -17,13 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-The code reads in a compressed template bank and splits it up into
-smaller banks where the number of smaller banks is a user input
+The code reads in a (optionally compressed) template bank and splits it up
+into smaller banks. Either the number of banks or the (approximate) number
+of templates per bank can be specified.
 """
 
 import argparse
 import numpy
-import h5py
 import logging
 from numpy import random
 
@@ -34,7 +34,7 @@ __author__  = "Soumi De <soumi.de@ligo.org>"
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--bank-file", type=str,
+parser.add_argument("--bank-file", type=str, required=True,
                     help="Bank hdf file to load.")
 outbanks = parser.add_mutually_exclusive_group(required=True)
 outbanks.add_argument("--templates-per-bank", type=int,
@@ -43,11 +43,11 @@ outbanks.add_argument("--templates-per-bank", type=int,
 outbanks.add_argument("--number-of-banks", type=int,
                       help="Number of output sub-banks. Either specify this "
                       "or --templates-per-bank, not both.")
-outbanks.add_argument("--output-filenames", nargs='*', default=None,
+outbanks.add_argument("--output-filenames", nargs='*',
                       action="store",
                       help="Directly specify the names of the output files. "
                       "The bank will be split equally between files.")
-parser.add_argument("--output-prefix", default=None,
+parser.add_argument("--output-prefix",
                     help="Prefix to add to the output template bank names, "
                     "for example 'H1L1-BANK'. Output file names would then be "
                     "'H1L1-BANK{x}.hdf' where {x} is 1,2,...")
@@ -67,21 +67,22 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # input checks
-if args.mchirp_sort and (args.random_seed is not None):
-    raise RuntimeError("Can't supply a random seed if not sorting randomly!")
+if args.mchirp_sort and (args.random_sort or args.random_seed is not None):
+    parser.error("Can't use random sort or random seed if using mchirp sort")
 
 if args.output_filenames is None and args.output_prefix is None:
-    raise RuntimeError("Must specify either output filenames or a prefix!")
+    parser.error("Must specify either output filenames or a prefix!")
 
 if args.output_filenames and args.output_prefix:
-    raise RuntimeError("Can't specify both output filenames and a prefix")
+    parser.error("Can't specify both output filenames and a prefix")
 
-pycbc.init_logging(args.verbose)
 logging.info("Loading bank")
 
 tmplt_bank = bank.TemplateBank(args.bank_file)
 
 templates = tmplt_bank.table
+
+# Apply any sorting if required.
 
 if args.random_sort:
     if args.random_seed is not None:
@@ -92,41 +93,36 @@ if args.random_sort:
     tmplt_bank.table = templates
 
 if args.mchirp_sort:
-    from pycbc import pnutils
     mcsort = numpy.argsort(templates.mchirp)
     templates = templates[mcsort]
     tmplt_bank.table = templates
 
-# Split the templates in the bank taken as input into the smaller banks
+# Decide how many output banks we are going to have.
 
-# If an array of filenames
 if args.output_filenames:
-    args.number_of_banks = len(args.output_filenames)
-
-# If the number of output banks is taken as input calculate the number
-# of templates to be stored per bank
-if args.number_of_banks:
+    num_files = len(args.output_filenames)
+elif args.number_of_banks:
     num_files = args.number_of_banks
-    num_per_file = int(templates[:].size/num_files)
-
-# If the number of templates per bank is taken as input calculate the
-# number of output banks
 elif args.templates_per_bank:
-    num_per_file = args.templates_per_bank
-    num_files = int(templates[:].size / num_per_file)
+    num_files = round(templates[:].size / args.templates_per_bank)
+
+# Calculate the number of templates to be stored per bank. For an even
+# distribution, this must be a float, converted to int later in the loop.
+
+num_per_file = templates[:].size / num_files
+
+if num_per_file < 1:
+    raise ValueError("The user choices imply less than one template per bank")
 
 # Generate sub-banks
+
 logging.info("Generating the output sub-banks")
+start_idx = 0
 for ii in range(num_files):
-    start_idx = ii * num_per_file
-    # The output banks are assigned a fixed length equal to the number
-    # of templates per bank requested by the user or calculated earlier
-    # in the code except for the last bank in which the remaining
-    # templates, if any, are put.
-    if ( ii == (num_files-1)):
+    if ii == (num_files - 1):
         end_idx = templates[:].size
     else:
-        end_idx = (ii + 1) * num_per_file
+        end_idx = int((ii + 1) * num_per_file)
 
     # Assign a name to the h5py output file to store the ii'th smaller bank
     if args.output_filenames:
@@ -144,5 +140,7 @@ for ii in range(num_files):
     output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx,
                                      force=args.force)
     output.close()
+
+    start_idx = end_idx
 
 logging.info("finished")

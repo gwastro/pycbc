@@ -25,9 +25,10 @@ from Pegasus.api import Arch, OS, SiteCatalog
 
 from pycbc.version import last_release, version, release  # noqa
 
+
 logger = logging.getLogger('pycbc.workflow.pegasus_sites')
 
-if release == 'True':
+if release:
     sing_version = version
 else:
     sing_version = last_release
@@ -97,18 +98,18 @@ def add_condorpool_symlink_site(sitecat, cp):
                       value="true")
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
-    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
-    site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
                       value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
                       value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="+flock_local",
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
@@ -129,18 +130,18 @@ def add_condorpool_copy_site(sitecat, cp):
                       value=True)
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
-    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
-    site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
                       value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
                       value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="+flock_local",
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
@@ -170,18 +171,18 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="true")
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
-    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
-    site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
+    site.add_profiles(Namespace.CONDOR, key="My.DESIRED_Sites",
                       value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
+    site.add_profiles(Namespace.CONDOR, key="My.IS_GLIDEIN",
                       value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="+flock_local",
+    site.add_profiles(Namespace.CONDOR, key="My.flock_local",
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
@@ -223,21 +224,27 @@ def add_osg_site(sitecat, cp):
                       value="ON_SUCCESS")
     site.add_profiles(Namespace.CONDOR, key="success_exit_code",
                       value="0")
-    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+    site.add_profiles(Namespace.CONDOR, key="My.OpenScienceGrid",
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
                       value="False")
-    site.add_profiles(Namespace.CONDOR, key="+InitializeModulesEnv",
+    site.add_profiles(Namespace.CONDOR, key="ulog_execute_attrs",
+                      value="GLIDEIN_Site")
+    site.add_profiles(Namespace.CONDOR, key="My.InitializeModulesEnv",
                       value="False")
-    site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
+    site.add_profiles(Namespace.CONDOR, key="My.SingularityCleanEnv",
                       value="True")
+    # These numbers below correspond to the codes in table B.2 here:
+    # https://htcondor.readthedocs.io/en/24.0/codes-other-values/job-event-log-codes.html
+    # Values recommended by a condor expert
+    site.add_profiles(Namespace.CONDOR, key="My.DAGManNodesMask",
+                      value=r"\"0,1,2,4,5,7,8,9,10,11,12,13,16,17,24,27,35,36,40\"")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
-                            "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
     cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
     cvmfs_loc += sing_version + '"'
-    site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
+    site.add_profiles(Namespace.CONDOR, key="My.SingularityImage",
                       value=cvmfs_loc)
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")

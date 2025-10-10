@@ -14,7 +14,6 @@
 
 import numpy, operator, argparse, logging
 from pycbc import init_logging, add_common_pycbc_options
-import pycbc.conversions as convert
 from pycbc import libutils
 from pycbc.events import triggers
 from pycbc.io import HFile

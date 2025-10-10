@@ -2,7 +2,7 @@
 import numpy, argparse, pycbc.pnutils, logging
 from pycbc.events import veto
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import ligolw, table, utils as ligolw_utils
+from igwn_ligolw import ligolw, utils as ligolw_utils
 
 
 effd = {"H1":"eff_dist_h", "L1":"eff_dist_l", "V1":"eff_dist_v"}
@@ -26,7 +26,7 @@ pycbc.init_logging(args.verbose)
 
 logging.info('File: %s' % args.injection_file)
 indoc = ligolw_utils.load_filename(args.injection_file, False, contenthandler=LIGOLWContentHandler)
-sim_table = table.Table.get_table(indoc, 'sim_inspiral')
+sim_table = ligolw.Table.get_table(indoc, 'sim_inspiral')
 
 logging.info('%s Injections in file' % len(sim_table))
 

@@ -7,8 +7,8 @@ the capability of doing hierarchical removal of foreground triggers that are
 louder than all of the background triggers. We use this to properly assess
 the FANs of any other gravitational waves in the dataset.
 """
-import argparse, itertools
-import lal, logging, numpy
+import argparse
+import logging, numpy
 from pycbc.events import veto, coinc, significance
 import pycbc.pnutils, pycbc.io
 import sys
@@ -239,7 +239,7 @@ fore_stat = all_trigs.stat[fore_locs]
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-bg_far, fg_far = significance.get_far(
+bg_far, fg_far, sig_info = significance.get_far(
     back_stat,
     fore_stat,
     all_trigs.decimation_factor[back_locs],
@@ -248,7 +248,7 @@ bg_far, fg_far = significance.get_far(
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-bg_far_exc, fg_far_exc = significance.get_far(
+bg_far_exc, fg_far_exc, exc_sig_info = significance.get_far(
     exc_zero_trigs.stat,
     fore_stat,
     exc_zero_trigs.decimation_factor,
@@ -286,10 +286,14 @@ if fore_locs.sum() > 0:
     fap = 1 - numpy.exp(- coinc_time / ifar)
     f['foreground/ifar'] = conv.sec_to_year(ifar)
     f['foreground/fap'] = fap
+    for key, value in sig_info.items():
+        f['foreground'].attrs[key] = value
     ifar_exc = 1. / fg_far_exc
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
+    for key, value in exc_sig_info.items():
+        f['foreground'].attrs[key + '_exc'] = value
 else:
     f['foreground/ifar'] = ifar = numpy.array([])
     f['foreground/fap'] = numpy.array([])
@@ -427,7 +431,7 @@ while numpy.any(ifar_foreground >= background_time):
     logging.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
-    bg_far, fg_far = significance.get_far(
+    bg_far, fg_far, sig_info = significance.get_far(
         back_stat,
         fore_stat,
         all_trigs.decimation_factor[back_locs],
@@ -454,7 +458,7 @@ while numpy.any(ifar_foreground >= background_time):
     # Exclusive background doesn't change when removing foreground triggers.
     # So we don't have to take background ifar, just repopulate ifar_foreground
     else :
-        _, fg_far_exc = significance.get_far(
+        _, fg_far_exc, _ = significance.get_far(
             exc_zero_trigs.stat,
             fore_stat,
             exc_zero_trigs.decimation_factor,
@@ -481,6 +485,8 @@ while numpy.any(ifar_foreground >= background_time):
         fap = 1 - numpy.exp(- coinc_time / ifar)
         f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(ifar)
         f['foreground_h%s/fap' % h_iterations] = fap
+        for key, value in sig_info.items():
+            f['foreground_h%' % h_iterations].attrs[key] = value
 
         # Update ifar and fap for other foreground triggers
         for i in range(len(ifar)):

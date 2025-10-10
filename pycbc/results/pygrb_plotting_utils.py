@@ -25,7 +25,7 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 
 import copy
 import numpy
-from ligo import segments
+import igwn_segments as segments
 from pycbc.results import save_fig_with_metadata
 
 
@@ -71,7 +71,7 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     from pycbc.results.color import ifo_color
 
     ifos = wkflow.ifos
-    if len(science_segs.keys()) == 0:
+    if len(sum(science_segs.values(), [])) == 0:
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
                                   int(wkflow.cp.get("workflow", "end-time")))
     else:

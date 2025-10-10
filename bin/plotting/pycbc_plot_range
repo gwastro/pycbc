@@ -6,7 +6,7 @@ matplotlib.use('Agg');
 import logging
 import numpy
 import argparse
-import pylab
+from matplotlib import pyplot as plt
 import sys
 
 import pycbc.results
@@ -34,10 +34,10 @@ pycbc.init_logging(args.verbose)
 
 canonical_snr = 8.0
 
-fig = pylab.figure(0)
-pylab.xlabel('Time (s)')
-pylab.ylabel('Inspiral Range (Mpc)')
-pylab.grid()
+fig = plt.figure(0)
+plt.xlabel('Time (s)')
+plt.ylabel('Inspiral Range (Mpc)')
+plt.grid()
 
 for psd_file in args.psd_files:
     f = HFile(psd_file, 'r')
@@ -76,11 +76,11 @@ for psd_file in args.psd_files:
         else:
             label = str(ifo)
         wf_key = (m1, m2, apx)
-        pylab.errorbar((start+end)/2, ranges[wf_key], xerr=(end-start)/2,
+        plt.errorbar((start+end)/2, ranges[wf_key], xerr=(end-start)/2,
                        ecolor=pycbc.results.ifo_color(ifo), label=label,
                        fmt='none')
 
-pylab.legend(loc="best", fontsize='small')
+plt.legend(loc="best", fontsize='small')
 
 if len(args.approximant) == 1:
     fig.suptitle('$%sM_{\odot}-%sM_{\odot}$ %s' % (m1, m2, apx))

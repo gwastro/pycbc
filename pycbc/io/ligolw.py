@@ -18,16 +18,11 @@
 import os
 import sys
 import numpy
-from ligo.lw import lsctables
-from ligo.lw import ligolw
-from ligo.lw.ligolw import Param, LIGOLWContentHandler \
-    as OrigLIGOLWContentHandler
-from ligo.lw.lsctables import TableByName
-from ligo.lw.table import Column, TableStream
-from ligo.lw.types import FormatFunc, FromPyType, ToPyType
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.param import Param as LIGOLWParam
-from ligo.lw.array import Array as LIGOLWArray
+from igwn_ligolw import lsctables
+from igwn_ligolw import ligolw
+from igwn_ligolw.ligolw import LIGOLWContentHandler as OrigLIGOLWContentHandler
+from igwn_ligolw.lsctables import TableByName
+from igwn_ligolw.types import FormatFunc, FromPyType, ToPyType
 import pycbc.version as pycbc_version
 
 
@@ -84,7 +79,7 @@ def return_empty_sngl(nones=False):
     sngl = lsctables.SnglInspiral()
     cols = lsctables.SnglInspiralTable.validcolumns
     for entry in cols:
-        col_name = Column.ColumnName(entry)
+        col_name = ligolw.Column.ColumnName(entry)
         value = None if nones else default_null_value(col_name, cols[entry])
         setattr(sngl, col_name, value)
     return sngl
@@ -112,7 +107,7 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
     search_summary = lsctables.SearchSummary()
     cols = lsctables.SearchSummaryTable.validcolumns
     for entry in cols:
-        col_name = Column.ColumnName(entry)
+        col_name = ligolw.Column.ColumnName(entry)
         value = default_null_value(col_name, cols[entry])
         setattr(search_summary, col_name, value)
 
@@ -144,7 +139,7 @@ def create_process_table(document, program_name=None, detectors=None,
     if options is None:
         options = {}
 
-    # ligo.lw does not like `cvs_entry_time` being an empty string
+    # igwn_ligolw does not like `cvs_entry_time` being an empty string
     cvs_entry_time = pycbc_version.date or None
 
     opts = options.copy()
@@ -156,8 +151,7 @@ def create_process_table(document, program_name=None, detectors=None,
         for key in key_del:
             opts.pop(key)
 
-    process = ligolw_process.register_to_xmldoc(
-        document,
+    process = document.register_process(
         program_name,
         opts,
         version=pycbc_version.version,
@@ -183,7 +177,7 @@ def legacy_row_id_converter(ContentHandler):
     def endElementNS(self, uri_localname, qname,
                      __orig_endElementNS=ContentHandler.endElementNS):
         """Convert values of <Param> elements from ilwdchar to int."""
-        if isinstance(self.current, Param) and self.current.Type in IDTypes:
+        if isinstance(self.current, ligolw.Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
             old_val = str(old_type(self.current.pcdata))
             new_value = ROWID_PYTYPE(old_val.split(":")[-1])
@@ -221,7 +215,9 @@ def legacy_row_id_converter(ContentHandler):
             validcolumns = TableByName[parent.Name].validcolumns
             if result.Name not in validcolumns:
                 stripped_column_to_valid_column = {
-                    Column.ColumnName(name): name for name in validcolumns}
+                    ligolw.Column.ColumnName(name): name
+                    for name in validcolumns
+                }
                 if result.Name in stripped_column_to_valid_column:
                     result.setAttribute(
                         'Name', stripped_column_to_valid_column[result.Name])
@@ -239,7 +235,7 @@ def legacy_row_id_converter(ContentHandler):
 
         """
         result = __orig_startStream(self, parent, attrs)
-        if isinstance(result, TableStream):
+        if isinstance(result, ligolw.Table.Stream):
             loadcolumns = set(parent.columnnames)
             if parent.loadcolumns is not None:
                 # FIXME:  convert loadcolumns attributes to sets to
@@ -265,20 +261,20 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
-    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
+    elem.appendChild(ligolw.Param.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
-        data = numpy.row_stack((
+        data = numpy.vstack((
             numpy.arange(len(series.data.data)) * delta,
             series.data.data.real,
             series.data.data.imag
         ))
     else:
-        data = numpy.row_stack((
+        data = numpy.vstack((
             numpy.arange(len(series.data.data)) * delta,
             series.data.data
         ))
-    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
+    a = ligolw.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -308,7 +304,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
             's^-1'
         )
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
+        fs.appendChild(ligolw.Param.from_pyvalue('instrument', instrument))
     return xmldoc
 
 def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
@@ -326,15 +322,15 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
         's'
     )
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
+    eid_param = ligolw.Param.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def get_table_columns(table):
     """Return a list of columns that are present in the given table, in a
-    format that can be passed to `lsctables.New()`.
+    format that can be passed to `igwn_ligolw.Table.new()`.
 
     The split on ":" is needed for columns like `process:process_id`, which
-    must be listed as `process:process_id` in `lsctables.New()`, but are
+    must be listed as `process:process_id` in `igwn_ligolw.Table.new()`, but are
     listed as just `process_id` in the `columnnames` attribute of the given
     table.
     """
@@ -347,6 +343,5 @@ def get_table_columns(table):
 
 
 @legacy_row_id_converter
-@lsctables.use_in
 class LIGOLWContentHandler(OrigLIGOLWContentHandler):
     "Dummy class needed for loading LIGOLW files"

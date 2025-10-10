@@ -293,13 +293,20 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                        low_frequency_cutoff=fmin)
         added_points.append(addidx)
-    logging.info("mismatch: %f, N points: %i (%i added)" %(mismatch,
-                 len(comp_amp), len(added_points)))
+    compression_factor = len(htilde) / len(sample_points)
+    logging.info(
+        "mismatch: %f, N points: %i (%i added), compression:%.3e",
+        mismatch,
+        len(comp_amp),
+        len(added_points),
+        compression_factor
+    )
 
     return CompressedWaveform(sample_points, comp_amp, comp_phase,
                               interpolation=interpolation,
                               tolerance=tolerance, mismatch=mismatch,
-                              precision=precision)
+                              precision=precision,
+                              compression_factor=compression_factor)
 
 _precision_map = {
     'float32': 'single',
@@ -512,12 +519,14 @@ class CompressedWaveform(object):
 
     def __init__(self, sample_points, amplitude, phase,
                  interpolation=None, tolerance=None, mismatch=None,
-                 precision='double', load_to_memory=True):
+                 precision='double', load_to_memory=True,
+                 compression_factor=None):
         self._sample_points = sample_points
         self._amplitude = amplitude
         self._phase = phase
         self._cache = {}
         self.load_to_memory = load_to_memory
+        self.compression_factor = compression_factor
         # if sample points, amplitude, and/or phase are hdf datasets,
         # save their filenames
         self._filenames = {}
@@ -680,6 +689,7 @@ class CompressedWaveform(object):
         fp_group.attrs['interpolation'] = self.interpolation
         fp_group.attrs['tolerance'] = self.tolerance
         fp_group.attrs['precision'] = precision
+        fp_group.attrs['compression_factor'] = self.compression_factor
 
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,

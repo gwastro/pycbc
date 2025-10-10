@@ -55,6 +55,8 @@ def count_n_louder(bstat, fstat, dec,
         The cumulative array of background triggers.
     fore_n_louder: numpy.ndarray
         The number of background triggers above each foreground trigger
+    {} : (empty) dictionary
+        Ensure we return the same tuple of objects as n_louder_from_fit()
     """
     sort = bstat.argsort()
     bstat = copy.deepcopy(bstat)[sort]
@@ -84,7 +86,9 @@ def count_n_louder(bstat, fstat, dec,
 
     unsort = sort.argsort()
     back_cum_num = n_louder[unsort]
-    return back_cum_num, fore_n_louder
+
+    # Empty dictionary to match the return from n_louder_from_fit
+    return back_cum_num, fore_n_louder, {}
 
 
 def n_louder_from_fit(back_stat, fore_stat, dec_facs,
@@ -117,12 +121,17 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     fg_n_louder: numpy.ndarray
         The estimated number of background events louder than each
         foreground event
+    sig_info : a dictionary
+        Information regarding the significance fit
     """
 
     # Calculate the fitting factor of the ranking statistic distribution
-    alpha, _ = trstats.fit_above_thresh(fit_function, back_stat,
-                                        thresh=fit_threshold,
-                                        weights=dec_facs)
+    alpha, sig_alpha = trstats.fit_above_thresh(
+        fit_function,
+        back_stat,
+        thresh=fit_threshold,
+        weights=dec_facs
+    )
 
     # Count background events above threshold as the cum_fit is
     # normalised to 1
@@ -153,7 +162,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
 
     # Count the number of below-threshold background events louder than the
     # bg and foreground
-    bg_n_louder[bg_below], fg_n_louder[fg_below] = count_n_louder(
+    bg_n_louder[bg_below], fg_n_louder[fg_below], _ = count_n_louder(
         back_stat[bg_below],
         fore_stat[fg_below],
         dec_facs[bg_below]
@@ -165,7 +174,8 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     bg_n_louder[bg_below] += n_above
     fg_n_louder[fg_below] += n_above
 
-    return bg_n_louder, fg_n_louder
+    sig_info = {'alpha': alpha, 'sig_alpha': sig_alpha, 'n_above': n_above}
+    return bg_n_louder, fg_n_louder, sig_info
 
 
 _significance_meth_dict = {
@@ -187,8 +197,18 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
     Wrapper to find the correct n_louder calculation method using standard
     inputs
     """
+    # Deal with edge case: we don't expect nan statistic values but if they
+    # exist they will ruin the n_louder count, as they are considered larger
+    # than floats in an argsort.
+    nanmask = np.isnan(back_stat)
+    if any(nanmask):
+        logging.warning(
+            "Setting %d NaN background statistic values to inf",
+            nanmask.sum(),
+        )
+    back_stat_nonan = np.where(nanmask, -np.inf, back_stat)
     return _significance_meth_dict[method](
-        back_stat,
+        back_stat_nonan,
         fore_stat,
         dec_facs,
         **kwargs)
@@ -221,7 +241,7 @@ def get_far(back_stat, fore_stat, dec_facs,
        a FAR
 
     """
-    bg_n_louder, fg_n_louder = get_n_louder(
+    bg_n_louder, fg_n_louder, significance_info = get_n_louder(
         back_stat,
         fore_stat,
         dec_facs,
@@ -239,7 +259,10 @@ def get_far(back_stat, fore_stat, dec_facs,
     bg_far = bg_n_louder / background_time
     fg_far = fg_n_louder / background_time
 
-    return bg_far, fg_far
+    if "n_above" in significance_info:
+        significance_info["rate_above"] = significance_info["n_above"] / background_time
+
+    return bg_far, fg_far, significance_info
 
 
 def insert_significance_option_group(parser):
@@ -288,6 +311,7 @@ def positive_float(inp):
         logger.warning("Value provided to positive_float is less than zero, "
                        "this is not allowed")
         raise ValueError
+
     return fl_in
 
 
@@ -366,7 +390,6 @@ def ifar_opt_to_far_limit(ifar_str):
 
     """
     ifar_float = positive_float(ifar_str)
-
     far_hz = 0. if (ifar_float == 0.) else conv.sec_to_year(1. / ifar_float)
 
     return far_hz

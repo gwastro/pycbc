@@ -26,12 +26,12 @@
 # =============================================================================
 #
 """This module provides utilities for calculating detector responses and timing
-between observatories.
+between ground-based observatories.
 """
 import os
 import logging
 import numpy as np
-from numpy import cos, sin, pi
+from numpy import cos, sin
 
 import lal
 from astropy.time import Time
@@ -474,6 +474,44 @@ class Detector(object):
                                              right_ascension,
                                              declination,
                                              t_gps)
+    
+    def arrival_time(self, ref_tc, ra, dec, ref_frame='geocentric'):
+        """Compute the arrival time in this detector.
+        
+        Parameters
+        ----------
+        ref_tc : {float, lal.LIGOTimeGPS}
+            The coalescence time to convert, defined in ref_frame
+        ra : float
+            Right ascension.
+        dec : float
+            Declination.
+        ref_frame : str (optional)
+            The detector to convert from, in which ref_tc is sampled. Default
+            'geocentric'.
+            
+        Returns
+        -------
+        float : 
+            The coalescence time converted to the current detector frame.
+        """
+        if ref_frame == 'geocentric':
+            # from geocenter
+            tc = ref_tc + \
+                self.time_delay_from_earth_center(ra, dec, ref_tc)
+        elif ref_frame == self.name:
+            # no time shift; sampling in current det
+            tc = ref_tc
+        elif ref_frame in get_available_detectors():
+            # from sampling det
+            refdet = Detector(ref_frame)
+            tc = ref_tc + \
+                self.time_delay_from_detector(refdet, ra, dec, ref_tc)
+        else:
+            raise ValueError(f'Unrecognized ref_frame argument {ref_frame}. '
+                             'Accepted arguments are: "geocentric", '
+                             f'{get_available_detectors()}')
+        return tc
 
     def project_wave(self, hp, hc, ra, dec, polarization,
                      method='lal',
@@ -655,136 +693,6 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     return f_plus, f_cross
 
 
-"""     LISA class      """
-
-
-class LISA(object):
-    """For LISA detector
-    """
-    def __init__(self):
-        None
-
-    def get_pos(self, ref_time):
-        """Return the position of LISA detector for a given reference time
-        Parameters
-        ----------
-        ref_time : numpy.ScalarType
-
-        Returns
-        -------
-        location : numpy.ndarray of shape (3,3)
-               Returns the position of all 3 sattelites with each row
-               correspoding to a single axis.
-        """
-        ref_time = Time(val=ref_time, format='gps', scale='utc').jyear
-        n = np.array(range(1, 4))
-        kappa, _lambda_ = 0, 0
-        alpha = 2. * np.pi * ref_time/1 + kappa
-        beta_n = (n - 1) * 2.0 * pi / 3.0 + _lambda_
-        a, L = 1., 0.03342293561
-        e = L/(2. * a * np.sqrt(3))
-
-        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
-        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*cos(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
-        z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
-        self.location = np.array([x, y, z])
-
-        return self.location
-
-    def get_gcrs_pos(self, location):
-        """ Transforms ICRS frame to GCRS frame
-
-        Parameters
-        ----------
-        loc : numpy.ndarray shape (3,1) units: AU
-              Cartesian Coordinates of the location
-              in ICRS frame
-
-        Returns
-        ----------
-        loc : numpy.ndarray shape (3,1) units: meters
-              GCRS coordinates in cartesian system
-        """
-        loc = location
-        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
-                frame='icrs', representation_type='cartesian').transform_to('gcrs')
-        loc.representation_type = 'cartesian'
-        conv = np.float32(((loc.x.unit/units.m).decompose()).to_string())
-        loc = np.array([np.float32(loc.x), np.float32(loc.y),
-                        np.float32(loc.z)])*conv
-        return loc
-
-    def time_delay_from_location(self, other_location, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector to detector for
-        a signal with the given sky location. In other words return
-        `t1 - t2` where `t1` is the arrival time in this detector and
-        `t2` is the arrival time in the other location. Units(AU)
-
-        Parameters
-        ----------
-        other_location : numpy.ndarray of coordinates in ICRS frame
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
-
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        dx = self.location - other_location
-        cosd = cos(declination)
-        e0 = cosd * cos(right_ascension)
-        e1 = cosd * -sin(right_ascension)
-        e2 = sin(declination)
-        ehat = np.array([e0, e1, e2])
-        return dx.dot(ehat) / constants.c.value
-
-    def time_delay_from_detector(self, det, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector for a signal with
-        the given sky location in ICRS frame; i.e. return `t1 - t2` where
-        `t1` is the arrival time in this detector and `t2` is the arrival
-        time in the other detector.
-
-        Parameters
-        ----------
-        other_detector : detector.Detector
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
-
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        loc = Detector(det, t_gps).get_icrs_pos()
-        return self.time_delay_from_location(loc, right_ascension,
-                                             declination, t_gps)
-
-    def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
-        """Return the time delay from the earth center in ICRS frame
-        """
-        t_gps = Time(val=t_gps, format='gps', scale='utc')
-        earth = coordinates.get_body('earth', t_gps,
-                                     location=None).transform_to('icrs')
-        earth.representation_type = 'cartesian'
-        return self.time_delay_from_location(
-            np.array([np.float32(earth.x), np.float32(earth.y),
-                      np.float32(earth.z)]), right_ascension,
-            declination, t_gps)
-
-
 def ppdets(ifos, separator=', '):
     """Pretty-print a list (or set) of detectors: return a string listing
     the given detectors alphabetically and separated by the given string
@@ -793,3 +701,10 @@ def ppdets(ifos, separator=', '):
     if ifos:
         return separator.join(sorted(ifos))
     return 'no detectors'
+
+__all__ = ['Detector', 'get_available_detectors',
+           'get_available_lal_detectors',
+           'gmst_accurate', 'add_detector_on_earth',
+           'single_arm_frequency_response', 'ppdets',
+           'overhead_antenna_pattern', 'load_detector_config',
+           '_ground_detectors',]

@@ -28,17 +28,16 @@ import argparse
 import copy
 import numpy
 import h5py
+import igwn_segments as segments
 
 from scipy import stats
-import ligo.segments as segments
+from igwn_segments.utils import fromsegwizard
 from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.events import veto
 from pycbc import add_common_pycbc_options
 from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
-
-from ligo.segments.utils import fromsegwizard
 
 
 # =============================================================================
@@ -163,15 +162,6 @@ def pygrb_add_null_snr_opts(parser):
                         "increase above the threshold")
 
 
-def pygrb_add_single_snr_cut_opt(parser):
-    """Add to the parser object an argument to place a threshold on single
-    detector SNR."""
-    parser.add_argument("-B", "--sngl-snr-threshold",
-                        type=float, default=4.0, help="Single detector SNR "
-                        "threshold, the two most sensitive detectors "
-                        "should have SNR above this.")
-
-
 def pygrb_add_bestnr_cut_opt(parser):
     """Add to the parser object an argument to place a threshold on BestNR."""
     if parser is None:
@@ -235,7 +225,10 @@ def _extract_vetoes(veto_file, ifos, offsource):
         for ifo in ifos:
             segs = veto.select_segments_by_definer(veto_file, ifo=ifo)
             segs.coalesce()
-            clean_segs[ifo] = segs
+            if len(segs) > 0:
+                clean_segs[ifo] = segs
+            else:
+                clean_segs[ifo] = segments.segmentlist([offsource])
 
     if clean_segs:
         for ifo in ifos:
@@ -298,21 +291,26 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
         return None
 
     trigs = HFile(input_file, 'r')
-    rw_snr = trigs['network/reweighted_snr'][:]
-    net_ids = trigs['network/event_id'][:]
+    rw_snr = trigs['network/reweighted_snr'][:] \
+        if 'network/reweighted_snr' in trigs.keys() else numpy.array([])
+    net_ids = trigs['network/event_id'][:] \
+        if 'network/event_id' in trigs.keys() \
+        else numpy.array([], dtype=numpy.int64)
 
     # Output the number of items loaded only upon a request by the user who is
     # expected not to set data_tag to 'trigs'or 'injs' when processing the
     # onsource
-    if data_tag=='trigs':
+    if data_tag == 'trigs':
         logging.info("%d triggers loaded.", len(rw_snr))
-    elif data_tag=='injs':
+    elif data_tag == 'injs':
         logging.info("%d injections loaded.", len(rw_snr))
     else:
         logging.info("Loading triggers.")
     ifo_ids = {}
     for ifo in ifos:
-        ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
+        ifo_ids[ifo] = trigs[ifo+'/event_id'][:] \
+            if ifo+'/event_id' in trigs.keys() \
+            else numpy.array([], dtype=numpy.int64)
     trigs.close()
 
     # Apply the reweighted SNR cut on the reweighted SNR
@@ -321,13 +319,12 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
 
     # Establish the indices of data not surviving the cut
     above_thresh = rw_snr > 0
-    num_orig_pts = len(above_thresh)
 
     # Output the number of items surviging vetoes with the same logic as above
     msg = ""
-    if data_tag=='trigs':
+    if data_tag == 'trigs':
         msg += f"{sum(above_thresh)} triggers "
-    elif data_tag=='injs':
+    elif data_tag == 'injs':
         msg = f"{sum(above_thresh)} injections "
     if msg:
         msg += f"surviving reweighted SNR cut at {rw_snr_threshold}."
@@ -345,11 +342,13 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
         for (path, dset) in _dataset_iterator(trigs):
-            # The dataset contains information other than trig/inj properties:
+            # The dataset contains search information or missed injections
+            # information, not properties of triggers or found injections:
             # just copy it
-            if len(dset) != num_orig_pts:
+            if 'search' in path or 'missed' in path or 'gating' in path:
                 trigs_dict[path] = dset[:]
-            # The dataset is relative to an IFO: cut with the correct index
+            # The dataset is trig/inj info at an IFO:
+            # cut with the correct index
             elif path[:2] in ifos:
                 ifo = path[:2]
                 if ifo_ids_above_thresh_locations[ifo].size != 0:
@@ -357,13 +356,14 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                         dset[:][ifo_ids_above_thresh_locations[ifo]]
                 else:
                     trigs_dict[path] = numpy.array([])
-            # The dataset is relative to the network: cut it before copying
+            # The dataset is trig/inj network info: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
 
-            if trigs_dict[path].size == trigs['network/slide_id'][:].size:
-                trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
-                                                 slide_id=slide_id)
+            if 'network/slide_id' in trigs.keys():
+                if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                    trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
+                                                     slide_id=slide_id)
 
     return trigs_dict
 
@@ -374,8 +374,6 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
 def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
                                veto_file=None, keys=None):
     """Separate injections surviving vetoes from vetoed injections.
-    THIS IS ESSENTIALLY AN EMPTY PLACE HOLDER AT THE MOMENT: IT RETURNS
-    THE INJECTIONS GIVEN IN INPUT, WITHOUT APPLYING VETOES.
 
     Parameters
     ----------
@@ -402,15 +400,50 @@ def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
 
     keep_keys = keys if keys else found_injs.keys()
 
-    if not found_missed_file:
-        return (dict.fromkeys(keep_keys, numpy.array([])),
-                dict.fromkeys(keep_keys, numpy.array([])),
-                None, None)
+    if not found_missed_file or ifos[0]+'/end_time' not in found_injs.keys():
+        t_id_key = 'network/template_id'
+        if t_id_key not in keep_keys:
+            keep_keys = list(keep_keys+[t_id_key])
+        empty_dict = dict.fromkeys(keep_keys, numpy.array([]))
+        empty_dict[t_id_key] = \
+            empty_dict[t_id_key].astype(dtype=numpy.int64)
+        return (empty_dict, empty_dict, None, None)
 
-    found_after_vetoes = found_injs
-    missed_after_vetoes = dict.fromkeys(keep_keys, numpy.array([]))
     found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
     veto_idx = numpy.array([], dtype=numpy.int64)
+
+    if veto_file:
+        logging.info("Applying data vetoes to found injections...")
+        for ifo in ifos:
+            inj_time = found_injs[ifo+'/end_time'][:]
+            segs = veto.select_segments_by_definer(veto_file,
+                                                   segment_name=None,
+                                                   ifo=ifo)
+            if len(segs) > 0:
+                idx, _ = veto.indices_outside_segments(inj_time,
+                                                       [veto_file],
+                                                       ifo,
+                                                       None)
+                veto_idx = numpy.append(veto_idx, idx)
+                logging.info("%d injections vetoed due to %s.", len(idx), ifo)
+                idx, _ = veto.indices_within_segments(inj_time,
+                                                      [veto_file],
+                                                      ifo,
+                                                      None)
+                found_idx = numpy.intersect1d(found_idx, idx)
+
+        veto_idx = numpy.unique(veto_idx)
+        logging.info("%d injections vetoed.", len(veto_idx))
+        logging.info("%d injections surviving vetoes.", len(found_idx))
+
+    found_after_vetoes = {}
+    missed_after_vetoes = {}
+    for key in keep_keys:
+        if key == 'network/coincident_snr':
+            found_injs[key] = get_coinc_snr(found_injs)
+        if isinstance(found_injs[key], numpy.ndarray):
+            found_after_vetoes[key] = found_injs[key][found_idx]
+            missed_after_vetoes[key] = found_injs[key][veto_idx]
 
     return found_after_vetoes, missed_after_vetoes, found_idx, veto_idx
 
@@ -492,7 +525,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
                                   in trial_dict[slide_id]]
 
         # Check that the number of triggers has not increased after vetoes
-        assert len(sorted_trigs[slide_id]) <= num_trigs_before,\
+        assert len(sorted_trigs[slide_id]) <= num_trigs_before, \
             f"Slide {slide_id} has {num_trigs_before} triggers before the "\
             f"trials dictionary was used and {len(sorted_trigs[slide_id])} "\
             "after. This should not happen."
@@ -510,7 +543,7 @@ def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    n_surviving_trigs = sum([len(i) for i in sorted_trigs.values()])
+    n_surviving_trigs = sum(len(i) for i in sorted_trigs.values())
     msg = f"{n_surviving_trigs} triggers found within the trials dictionary "
     msg += "and sorted."
     logging.info(msg)
@@ -676,7 +709,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
 
                 iter_int += 1
 
-    total_trials = sum([len(trial_dict[slide_id]) for slide_id in slide_dict])
+    total_trials = sum(len(trial_dict[slide_id]) for slide_id in slide_dict)
     logging.info("%d trials generated.", total_trials)
 
     return trial_dict, total_trials
@@ -701,8 +734,8 @@ def sort_stat(time_veto_max_stat):
 def max_median_stat(slide_dict, time_veto_max_stat, trig_stat, total_trials):
     """Return maximum and median of trig_stat and sorted time_veto_max_stat"""
 
-    max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size
-                   else 0 for slide_id in slide_dict])
+    max_stat = max(trig_stat[slide_id].max() if trig_stat[slide_id].size
+                   else 0 for slide_id in slide_dict)
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
 
@@ -747,7 +780,7 @@ def get_coinc_snr(trigs_or_injs):
 
     coinc_snr = numpy.array([])
     if 'network/coherent_snr' in trigs_or_injs.keys() and \
-        'network/null_snr' in trigs_or_injs.keys():
+            'network/null_snr' in trigs_or_injs.keys():
         coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
         null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
         coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
@@ -765,9 +798,11 @@ def template_hash_to_id(trigger_file, bank_path):
     trigger_file: HFile object for trigger file
     bank_file: filepath for template bank
     """
+    ifos = [k for k in trigger_file.keys() if k != 'network']
+    if ifos[0]+'/template_hash' not in trigger_file.keys():
+        return numpy.array([], dtype=int)
     with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
-    ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
     for idx, t_hash in enumerate(hashes):

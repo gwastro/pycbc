@@ -2,7 +2,7 @@
 """Rewrite statmap file and rerank candidates using the statistic values
 generated from the followup of candidates.
 """
-import numpy, argparse, logging, pycbc
+import numpy, argparse, pycbc
 from pycbc.io import HFile
 from pycbc.conversions import sec_to_year
 from pycbc.events import significance

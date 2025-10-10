@@ -37,20 +37,20 @@ fi
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   ENV_OS="x86_64_rhel_8"
-  yum -y install python39 python39-devel
+  yum -y install python3.11 python3.11-devel
+  alternatives --set python /usr/bin/python3.11
   yum -y groupinstall "Development Tools"
   yum -y install which rsync
   yum clean all
   yum makecache
   yum -y install openssl-devel
-  yum -y install python3-virtualenv
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static gsl gsl-devel --skip-broken
 
   CVMFS_PATH=/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${SOURCE_TAG}
-  virtualenv -p python3.9 ${VENV_PATH}
+  python -m venv --copies ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo "export XDG_CACHE_HOME=\${HOME}/cvmfs-pycbc-${SOURCE_TAG}/.cache" >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
@@ -59,7 +59,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
 
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
-  pip install --upgrade 'pip<22.0' setuptools pytest
+  pip install --upgrade pip setuptools pytest
   pip install six packaging appdirs mkl
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"

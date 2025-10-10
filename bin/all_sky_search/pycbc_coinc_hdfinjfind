@@ -4,8 +4,8 @@ files.
 """
 
 import argparse, logging, types, numpy, os.path
-from ligo.lw import lsctables, utils as ligolw_utils
-from ligo import segments
+from igwn_ligolw import lsctables, utils as ligolw_utils
+import igwn_segments as segments
 import pycbc
 from pycbc import events, init_logging
 from pycbc.events import indices_within_segments

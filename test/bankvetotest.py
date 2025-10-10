@@ -1,8 +1,7 @@
-from pycbc.types import *
-from pycbc.noise.gaussian import *
-from pycbc.filter import *
-from pycbc.waveform import *
-from pycbc.vetoes import *
+from pycbc.noise.gaussian import noise_from_psd
+from pycbc.filter import matched_filter_core, sigmasq, overlap_cplx
+from pycbc.waveform import get_fd_waveform
+from pycbc.vetoes import bank_chisq_from_filters
 import pycbc.psd
 
 sr = 4096.0
