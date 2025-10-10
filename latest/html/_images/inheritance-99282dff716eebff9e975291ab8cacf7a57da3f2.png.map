@@ -1,0 +1,4 @@
+<map id="inheritance91719698da" name="inheritance91719698da">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="5,5,221,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.posterior.PosteriorFile" target="_top" title="Class to handle file IO for the simplified Posterior file." alt="" coords="23,79,203,104"/>
+</map>
