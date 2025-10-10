@@ -755,7 +755,16 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         tvec = net_event_dict[:net_event_size][tcolumn][slide_indices]
         if not window_size == 0:
             # cluster events over the window
+
+            # findchirp_cluster_over_window requires the input to be time
+            # sorted.
+            time_sorting = tvec.argsort()
+            cvec = cvec[time_sorting]
+            tvec = tvec[time_sorting]
+
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+            indices = time_sorting[indices]
+
             # if a slide_indices = 0
             if any(~slide_indices):
                 indices = numpy.concatenate((
