@@ -63,6 +63,8 @@ class DistMarg():
                               marginalize_vector_params=None,
                               marginalize_vector_samples=1e3,
                               marginalize_sky_initial_samples=1e6,
+                              marginalize_polarization=True,
+                              marginalize_polarization_samples=1e3,
                               **kwargs):
         """ Setup the model for use with distance marginalization
 
@@ -96,7 +98,7 @@ class DistMarg():
         -------
         variable_params: list of strings
             Set of variable params (missing distance-related parameter).
-        kwags: dict
+        kwargs: dict
             The keyword arguments to the model initialization, may be modified
             from the original set by this function.
         """
@@ -126,19 +128,14 @@ class DistMarg():
         self.marginalize_sky_initial_samples = \
             int(float(marginalize_sky_initial_samples))
 
+        if marginalize_polarization:
+            pol_uniform = numpy.linspace(0, numpy.pi * 2.0, self.vsamples)
+            self.marginalize_vector_params['polarization'] = pol_uniform
+
         for param in str_to_tuple(marginalize_vector_params, str):
             logging.info('Marginalizing over %s, %s points from prior',
                          param, self.vsamples)
             self.marginalized_vector_priors[param] = pop_prior(param)
-
-        # Remove in the future, backwards compatibility
-        if 'polarization_samples' in kwargs:
-            warnings.warn("use marginalize_vector_samples rather "
-                          "than 'polarization_samples'", DeprecationWarning)
-            pol_uniform = numpy.linspace(0, numpy.pi * 2.0, self.vsamples)
-            self.marginalize_vector_params['polarization'] = pol_uniform
-            self.vsamples = int(kwargs['polarization_samples'])
-            kwargs.pop('polarization_samples')
 
         self.reset_vector_params()
 
