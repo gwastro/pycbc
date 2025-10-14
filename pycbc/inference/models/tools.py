@@ -2,7 +2,6 @@
 """
 
 import logging
-import warnings
 from distutils.util import strtobool
 
 import numpy
