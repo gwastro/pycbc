@@ -83,9 +83,13 @@ for outdir in outdirs:
 
 #Extract all informations from sky grid
 with h5py.File(sky_grid, "r") as f:
-    ra , dec = f['ra'][:], f['dec'][:]
-    dist = f.attrs['input_distribution']
-    input_dist = eval("pycbc.distributions."+dist)
+    ra, dec = f['ra'][:], f['dec'][:]
+    if "input_distribution" in f.attrs.keys():
+        dist = f.attrs['input_distribution']
+        input_dist = eval("pycbc.distributions."+dist)
+    else:
+        mean_ra, mean_dec, sky_error = f.attrs['trigger_ra'], f.attrs['trigger_dec'], f.attrs['sky_error']
+        input_dist = pycbc.distributions.FisherSky(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sky_error)
     samples = input_dist.rvs(1000000)
     input_ra, input_dec = samples['ra'], samples['dec'] 
     ifos = f.attrs["detectors"]
