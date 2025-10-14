@@ -56,6 +56,7 @@ def process_var_strings(qty):
     qty = qty.replace('endtime', 'end_time')
     qty = qty.replace('spin1a', 'spin1_a')
     qty = qty.replace('spin2a', 'spin2_a')
+    qty = qty.replace('chip', 'chi_p')
 
     return qty
 
@@ -105,6 +106,21 @@ def complete_mass_data(injs, key, tag):
     return data
 
 
+def complete_spin_data(injs, key, tag):  
+    """Extract data related to effective precession spin from raw injection data"""
+
+    if key in ('chi_p', 'chip'):
+        mass1 = injs[tag+'/mass1']
+        mass2 = injs[tag+'/mass2'] 
+        spin1x = injs[tag+'/spin1x']
+        spin1y = injs[tag+'/spin1y']
+        spin2x = injs[tag+'/spin2x']
+        spin2y = injs[tag+'/spin2y']
+
+        data = pycbc.conversions.chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
+        return data
+
+
 def complete_sky_error_data(injs, tag):
     """Extract data related to sky_error from raw injection and trigger data"""
 
@@ -148,6 +164,8 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 # data_dict[key] -= grb_time
             elif key in ['mchirp', 'mtotal', 'q']:
                 data_dict[key] = complete_mass_data(injs, key, tag)
+            elif key in ['chi_p', 'chip']:
+                data_dict[key] = complete_spin_data(injs, key, tag)
             elif 'incl' in key:
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
@@ -196,7 +214,7 @@ admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
                              'sky_error', 'skyerror', 'end_time', 'endtime',
                              'dec', 'ra', 'coaphase', 'coa_phase',
                              'eff_site_dist', 'eff_dist',
-                             'effsitedist', 'effdist']
+                             'effsitedist', 'effdist', 'chip', 'chi_p']
 admitted_vars = sorted(set(admitted_vars))
 
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
@@ -429,7 +447,8 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2_a': "Spin on 2nd binary component",
                     'spin2x': "Spin x-component of 2nd binary component",
                     'spin2y': "Spin y-component of 2nd binary component",
-                    'spin2z': "Spin z-component of 2nd binary component"}
+                    'spin2z': "Spin z-component of 2nd binary component",
+                    'chi_p': "Effective precession spin"}
 
 fig = plt.figure()
 ax = fig.gca()
@@ -521,6 +540,14 @@ if "spin" in y_qty and missed_inj['spin2_a'].size:
         ax.set_ylim([0, np.ceil(10 * max(max_missed_inj,
                                          found_inj[y_qty].max())) / 10])
 
+# Handle axis limits when plotting chi_p
+if "chi_p" in x_qty or "chi_p" in y_qty:
+    max_chi_p = 1.0
+    if x_qty == "chi_p":
+        ax.set_xlim(0, max_chi_p)
+    if y_qty == "chi_p":
+        ax.set_ylim(0, max_chi_p)
+        
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
     max_inc = np.pi
