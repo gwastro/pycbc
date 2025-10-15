@@ -238,6 +238,7 @@ elif (args.ra and args.dec and args.sky_error) == None and "Uniform" in args.inp
     }
 else:
     extra_attributes = {
+        'input_distribution': f"UniformDiskSky(mean_ra={args.ra}, mean_dec={args.dec}, radius={args.sky_error})"
         'trigger_ra': args.ra,
         'trigger_dec': args.dec,
         'sky_error': args.sky_error,
