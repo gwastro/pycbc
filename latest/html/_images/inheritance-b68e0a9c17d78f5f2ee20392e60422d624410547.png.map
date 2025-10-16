@@ -1,0 +1,7 @@
+<map id="inheritance34357ee302" name="inheritance34357ee302">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="67,5,283,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="54,79,295,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_nested_sampler.BaseNestedSamplerFile" target="_top" title="Class to handle file IO for the nested samplers cpnest and dynesty." alt="" coords="5,152,344,177"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.nessai.NessaiFile" target="_top" title="Class to handle file IO for the ``nessai`` sampler." alt="" coords="265,225,415,251"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO" target="_top" title="Provides functions for reading/writing dynesty metadata to file." alt="" coords="369,152,642,177"/>
+</map>
