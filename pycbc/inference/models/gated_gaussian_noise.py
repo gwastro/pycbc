@@ -1085,9 +1085,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                                    invpsd=invpsd, method='paint')
             h_gated = h_gated.to_frequencyseries()
             # overwhiten gated waveforms and data
-            # factor of 2 accounts for taking halves in likelihood
-            h_gated *= 2 * invpsd.delta_f * invpsd
-            d_gated *= 2 * invpsd.delta_f * invpsd
+            h_gated *= 4 * invpsd.delta_f * invpsd
+            d_gated *= 4 * invpsd.delta_f * invpsd
             # evaluate the inner products
             hh = h[slc].inner(h_gated[slc]).real # <h, h>
             hd = h[slc].inner(d_gated[slc]) # O(h, d)
@@ -1104,14 +1103,14 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                 start_index = end_index = None
             norm_net += self.det_lognorm(det, start_index, end_index)
         # get the maxL phase
-        maxl_phase = numpy.angle(hd_net)
+        maxl_phase = numpy.angle((hd_net))
         setattr(self._current_stats, 'maxl_phase', maxl_phase)
         # get the marginalized log likelihood ratio
-        loglr = -hh_net
-        cross_term = numpy.sqrt((hd_net.real + dh_net.real)**2 + \
-                                (hd_net.imag - dh_net.imag)**2)
-        loglr += abs(cross_term) + numpy.log(i0e(abs(cross_term)))
-        return norm_net + loglr - dd_net
+        loglr = -hh_net / 2
+        cross_term = numpy.sqrt((hd_net.real/2 + dh_net.real/2)**2 + \
+                                (hd_net.imag/2 - dh_net.imag/2)**2)
+        loglr += cross_term + numpy.log(i0e(cross_term))
+        return norm_net + loglr - dd_net / 2
 
     @property
     def multi_signal_support(self):
