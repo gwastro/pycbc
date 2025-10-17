@@ -30,7 +30,6 @@ from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
-from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, complex_same_precision_as
 from pycbc.filter import sigmasq
@@ -135,8 +134,12 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                                  f_lower=start_frequency,
                                  amplitude_order=amplitude_order)
         if hasattr(wf_params, 'taper'):
-            hp = taper_timeseries(hp, wf_params.taper)
-            hc = taper_timeseries(hc, wf_params.taper)
+            hp = hp.taper_timeseries(location=wf_params.taper, 
+                                     tapermethod=wf_params.get('taper_method', 'lal'), 
+                                     taper_window=wf_params.get('taper_window'))
+            hc = hc.taper_timeseries(location=wf_params.taper, 
+                                     tapermethod=wf_params.get('taper_method', 'lal'), 
+                                     taper_window=wf_params.get('taper_window'))
 
     if not sky_max_template:
         hvec = generate_detector_strain(wf_params, hp, hc)
