@@ -85,9 +85,8 @@ def make_multi_det_grid(args):
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec/--sky-error arguments
         assert args.coverage is None
-        sky_dist = pycbc.distributions.UniformDiskSky(
-            mean_ra=args.ra, mean_dec=args.dec, radius=args.sky_error
-        )
+        args.input_dist = f"pycbc.distributions.UniformDiskSky(mean_ra={args.ra}, mean_dec={args.dec}, radius={args.sky_error})"
+        sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (args.ra, args.dec)))
     elif args.input_dist == 'UniformSky()':
         # Covering the whole sky
@@ -229,20 +228,16 @@ else:
 # Record the input arguments as extra attributes
 if "Uniform" not in args.input_dist and args.coverage is not None:
     extra_attributes = {
-        'input_distribution': args.input_dist,
         'coverage': args.coverage,
     }
-elif (args.ra and args.dec and args.sky_error) == None and "Uniform" in args.input_dist:
+elif (args.ra and args.dec and args.sky_error) is not None:
     extra_attributes = {
-        'input_distribution': args.input_dist,
-    }
-else:
-    extra_attributes = {
-        'input_distribution': f"UniformDiskSky(mean_ra={args.ra}, mean_dec={args.dec}, radius={args.sky_error})"
         'trigger_ra': args.ra,
         'trigger_dec': args.dec,
         'sky_error': args.sky_error,
     }
+
+extra_attributes['input_distribution'] = args.input_dist
 extra_attributes['timing_uncertainty'] = args.timing_uncertainty
 
 sky_grid.write_to_file(args.output, extra_attributes)
