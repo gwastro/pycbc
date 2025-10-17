@@ -106,19 +106,18 @@ def complete_mass_data(injs, key, tag):
     return data
 
 
-def complete_spin_data(injs, key, tag):  
+def complete_spin_data(injs, tag):  
     """Extract data related to effective precession spin from raw injection data"""
 
-    if key in ('chi_p', 'chip'):
-        mass1 = injs[tag+'/mass1']
-        mass2 = injs[tag+'/mass2'] 
-        spin1x = injs[tag+'/spin1x']
-        spin1y = injs[tag+'/spin1y']
-        spin2x = injs[tag+'/spin2x']
-        spin2y = injs[tag+'/spin2y']
+    mass1 = injs[tag+'/mass1']
+    mass2 = injs[tag+'/mass2'] 
+    spin1x = injs[tag+'/spin1x']
+    spin1y = injs[tag+'/spin1y']
+    spin2x = injs[tag+'/spin2x']
+    spin2y = injs[tag+'/spin2y']
 
-        data = pycbc.conversions.chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
-        return data
+    data = pycbc.conversions.chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
+    return data
 
 
 def complete_sky_error_data(injs, tag):
@@ -164,8 +163,8 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 # data_dict[key] -= grb_time
             elif key in ['mchirp', 'mtotal', 'q']:
                 data_dict[key] = complete_mass_data(injs, key, tag)
-            elif key in ['chi_p', 'chip']:
-                data_dict[key] = complete_spin_data(injs, key, tag)
+            elif key == 'chi_p':
+                data_dict[key] = complete_spin_data(injs, tag)
             elif 'incl' in key:
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
@@ -542,11 +541,10 @@ if "spin" in y_qty and missed_inj['spin2_a'].size:
 
 # Handle axis limits when plotting chi_p
 if "chi_p" in x_qty or "chi_p" in y_qty:
-    max_chi_p = 1.0
-    if x_qty == "chi_p":
-        ax.set_xlim(0, max_chi_p)
-    if y_qty == "chi_p":
-        ax.set_ylim(0, max_chi_p)
+    if x_qty == 'chi_p':
+        ax.set_xlim(0, 1)
+    if y_qty == 'chi_p':
+        ax.set_ylim(0, 1)
         
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
@@ -628,7 +626,8 @@ if plot_title is None:
                   'spin2_a': "spin",
                   'spin2x': "spin x-component",
                   'spin2y': "spin y-component",
-                  'spin2z': "spin z-component"}
+                  'spin2z': "spin z-component",
+                  'chi_p': "Effective precession spin"}
 
     if "sky_error" in [x_qty, y_qty]:
         plot_title = "Sky error of recovered injections"
