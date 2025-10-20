@@ -85,7 +85,7 @@ def make_multi_det_grid(args):
     if (args.ra and args.dec and args.sky_error) is not None:
         # --ra/--dec/--sky-error arguments
         assert args.coverage is None
-        args.input_dist = f"pycbc.distributions.UniformDiskSky(mean_ra={args.ra}, mean_dec={args.dec}, radius={args.sky_error})"
+        args.input_dist = f'UniformDiskSky(mean_ra="{args.ra}", mean_dec="{args.dec}", radius="{args.sky_error}")'
         sky_dist = dist_from_str(args.input_dist)
         grid = np.vstack((np.empty((0, 2)), (args.ra, args.dec)))
     elif args.input_dist == 'UniformSky()':
