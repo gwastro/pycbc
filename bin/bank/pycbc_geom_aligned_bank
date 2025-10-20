@@ -611,5 +611,4 @@ workflow += bankverify_node
 workflow.save()
 
 logging.info("GENERATION SUCCESSFUL.")
-logging.info("Submit the resulting dax file to generate your template bank.")
-logging.info("See pycbc_submit_dax --help for instructions.")
+logging.info("Submit the resulting workflow to generate your template bank.")
