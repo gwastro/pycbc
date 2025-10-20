@@ -22,11 +22,9 @@ It contains Gaussian noise, population injections, and glitches.
 
 import os
 import argparse
-import pycbc
 import numpy
 
 from pycbc.types import MultiDetOptionAction
-from pycbc import frame
 import logging
 
 
@@ -36,7 +34,8 @@ parser.add_argument("--ifo-list", nargs="+", type=str,
                         help="List of detector names, e.g. H1 L1 V1",
                         required=True)
 
-parser.add_argument('--low-frequency-cutoff', nargs='+', action=MultiDetOptionAction,
+parser.add_argument('--low-frequency-cutoff', nargs='+',
+                        action=MultiDetOptionAction,
                         metavar='DETECTOR:COLUMN', type=float,
                         help='For each detector, provide minimum frequency for'
                         'the data generation.')
@@ -52,30 +51,32 @@ parser.add_argument('--psd-model', nargs='+', action=MultiDetOptionAction,
                         help='For each detector, provide PSD option for'
                         'the noise generation.')
 
-parser.add_argument('--fake-strain-seed', nargs='+', action=MultiDetOptionAction,
+parser.add_argument('--fake-strain-seed', nargs='+',
+                        action=MultiDetOptionAction,
                         metavar='DETECTOR:COLUMN', type=int,
                         help='For each detector, provide a random number seed')
 
 parser.add_argument('--gps-start-time',
-                    help='GPS start time for frame files',
-                    required=True, type=int)
+                        help='GPS start time for frame files',
+                        required=True, type=int)
 
 parser.add_argument('--gps-end-time',
-                    help='GPS end time for frame files',
-                    required=True, type=int)
+                        help='GPS end time for frame files',
+                        required=True, type=int)
 
 parser.add_argument('--sample-rate', type=int,
-		    help='Sample rate of the frames to be generated')
+		        help='Sample rate of the frames to be generated')
 
 parser.add_argument('--injection-file', type=str,
-                    help='Injection file containing parameters of injection population')
+                        help='Injection file containing parameters of'
+                        'injection population')
 
 parser.add_argument('--output-path',                                 
-                    help="Path for the output frame files",                    
-                    default='.', type=str)
+                        help="Path for the output frame files",                    
+                        default='.', type=str)
 
 parser.add_argument('--tag', help='Provide your tag for naming frame file',
-                    default=None)
+                        default=None)
 
 
 # parse the command line
@@ -83,16 +84,16 @@ opts = parser.parse_args()
 
 # Sanity Checks
 if set(opts.ifo_list) != set(opts.low_frequency_cutoff.keys()):
-    raise ValueError("Low frequency cutoff for each detectors is required")
+    raise ValueError("Low frequency cutoff for each detector is required")
 if set(opts.ifo_list) != set(opts.psd_model.keys()):
-    raise ValueError("PSD model for each detectors is required")
+    raise ValueError("PSD model for each detector is required")
 
 
 for ifo in opts.ifo_list:
     # Sanity Checks
     if opts.fake_strain_seed[ifo] is not None:
         if set(opts.ifo_list) != set(opts.fake_strain_seed.keys()):
-            raise ValueError("Low frequency cutoff for each detectors is required")
+            raise ValueError("Fake strain seed for each detector is required")
 
     logging.info("Generating strain for the Detector:%s"%ifo)
     if opts.fake_strain_seed[ifo] is None:
@@ -102,21 +103,27 @@ for ifo in opts.ifo_list:
 
     time_duration = opts.gps_end_time - opts.gps_start_time
     if opts.tag is None:
-        output_file = '%s/%s-SIMULATED_STRAIN-%d-%d.gwf'%(opts.output_path, ifo, 
-                                                          opts.gps_start_time, time_duration)
+        output_file = '%s/%s-SIMULATED_STRAIN-%d-%d.gwf'%(
+                    opts.output_path, ifo, opts.gps_start_time, time_duration)
     else:
-        output_file = '%s/%s-SIMULATED_STRAIN-%s-%d-%d.gwf'%(opts.output_path, ifo,
-                                                             opts.tag, opts.gps_start_time, 
-                                                             time_duration)
-    args_opt = ['pycbc_condition_strain', '--fake-strain %s'%(opts.psd_model[ifo]), '--fake-strain-seed %d'%rseed,
-                '--sample-rate %d'%(opts.sample_rate), '--gps-start-time %d'%(opts.gps_start_time),
-                '--gps-end-time %d'%(opts.gps_end_time), '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
-                '--output-strain-file %s'%(output_file)]
+        output_file = '%s/%s-SIMULATED_STRAIN-%s-%d-%d.gwf'%(
+                    opts.output_path, ifo, opts.tag, opts.gps_start_time, 
+                    time_duration)
+    args_opt = [
+             'pycbc_condition_strain', 
+             '--fake-strain %s'%(opts.psd_model[ifo]),
+             '--fake-strain-seed %d'%rseed, 
+             '--sample-rate %d'%(opts.sample_rate),
+             '--gps-start-time %d'%(opts.gps_start_time),
+             '--gps-end-time %d'%(opts.gps_end_time),
+             '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
+             '--output-strain-file %s'%(output_file)]
 
     if opts.injection_file is not None:
         args_opt.append('--injection-file %s'%(opts.injection_file))
     if opts.low_frequency_cutoff is not None:
-        args_opt.append('--fake-strain-flow %d'%(opts.low_frequency_cutoff[ifo]))
+        args_opt.append('--fake-strain-flow %d'%(
+                        opts.low_frequency_cutoff[ifo]))
 
 
     cmd = ' '.join(args_opt)
