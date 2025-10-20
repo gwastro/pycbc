@@ -32,7 +32,7 @@ import logging
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--detectors", nargs="+", type=str,
+parser.add_argument("--ifo-list", nargs="+", type=str,
                         help="List of detector names, e.g. H1 L1 V1",
                         required=True)
 
@@ -82,16 +82,16 @@ parser.add_argument('--tag', help='Provide your tag for naming frame file',
 opts = parser.parse_args()
 
 # Sanity Checks
-if set(opts.detectors) != set(opts.low_frequency_cutoff.keys()):
+if set(opts.ifo_list) != set(opts.low_frequency_cutoff.keys()):
     raise ValueError("Low frequency cutoff for each detectors is required")
-if set(opts.detectors) != set(opts.psd_model.keys()):
+if set(opts.ifo_list) != set(opts.psd_model.keys()):
     raise ValueError("PSD model for each detectors is required")
 
 
-for ifo in opts.detectors:
+for ifo in opts.ifo_list:
     # Sanity Checks
     if opts.fake_strain_seed[ifo] is not None:
-        if set(opts.detectors) != set(opts.fake_strain_seed.keys()):
+        if set(opts.ifo_list) != set(opts.fake_strain_seed.keys()):
             raise ValueError("Low frequency cutoff for each detectors is required")
 
     logging.info("Generating strain for the Detector:%s"%ifo)
