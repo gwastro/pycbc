@@ -540,11 +540,10 @@ if "spin" in y_qty and missed_inj['spin2_a'].size:
                                          found_inj[y_qty].max())) / 10])
 
 # Handle axis limits when plotting chi_p
-if "chi_p" in x_qty or "chi_p" in y_qty:
-    if x_qty == 'chi_p':
-        ax.set_xlim(0, 1)
-    if y_qty == 'chi_p':
-        ax.set_ylim(0, 1)
+if x_qty == 'chi_p':
+    ax.set_xlim(0, 1)
+if y_qty == 'chi_p':
+    ax.set_ylim(0, 1)
         
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
