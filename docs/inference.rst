@@ -409,6 +409,13 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``,
 ``h1-transfer-function-d``.
 
+It is possible to generate calibration configuration files from the calibration
+uncertainties estimates provided by the LIGO-Virgo-KAGRA collaboration. For 
+example, the LIGO and Virgo calibration uncertainty estimates for O1-O3 runs 
+can be downloaded from the following DCC link:
+https://dcc.ligo.org/T2100313/public
+
+
 ^^^^^^^^^^^
 Constraints
 ^^^^^^^^^^^
