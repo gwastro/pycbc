@@ -1,6 +1,6 @@
-#############################################################
+##################################################
 ``pycbc_generate_mock_data``: Generating mock data
-#############################################################
+##################################################
 
 ``pycbc_generate_mock_data`` is a command-line tool which can be used for
 generating mock data for a network of detectors. It also has a functionality
