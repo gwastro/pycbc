@@ -415,7 +415,11 @@ example, the LIGO and Virgo calibration uncertainty estimates for O1-O3 runs
 can be downloaded from the following DCC link:
 https://dcc.ligo.org/T2100313/public
 
-
+Once the calibration uncertainty files are downloaded in a local directory, the
+calibration configuration files can be generated using the executable 
+``pycbc_inference_create_calibration_config``. See the section :ref:`Examples` 
+for the working example and run 
+``pycbc_inference_create_calibration_config --help`` for more details.
 ^^^^^^^^^^^
 Constraints
 ^^^^^^^^^^^
