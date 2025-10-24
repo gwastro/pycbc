@@ -71,16 +71,70 @@ parser.add_argument('--injection-file', type=str,
                         help='Injection file containing parameters of'
                         'injection population')
 
-parser.add_argument('--output-path',                                 
-                        help="Path for the output frame files",                    
+parser.add_argument('--output-path',
+                        help="Path for the output frame files",
                         default='.', type=str)
 
 parser.add_argument('--tag', help='Provide your tag for naming frame file',
                         default=None)
 
+parser.add_argument('--len-arm', type=float, default=None,
+                        help="The arm length of LISA, in the unit of 'm'")
+
+parser.add_argument('--acc-noise-level', type=float,
+                        help="The level of acceleration noise")
+
+parser.add_argument('--oms-noise-level', type=float,
+                        help="The level of OMS noise")
+
+parser.add_argument('--tdi', type=str,
+                        help="The version of TDI. Choose from '1.5' or '2.0'")
+
+parser.add_argument('--duration', type=float,
+                        help="The duration of observation, between 0 and 10,"
+                             "in the unit of years")
 
 # parse the command line
 opts = parser.parse_args()
+
+
+# Function to generate command line script
+def create_command_opts(ifo, rseed, output_file):
+    if 'LISA' in kwargs[ifo]:
+        detector_tag = 'space'
+    else:
+        detector_tag = 'ground'
+
+    if detector_tag=='ground':
+        args_opt = [
+             'pycbc_condition_strain',
+             '--fake-strain %s'%(opts.psd_model[ifo]),
+             '--fake-strain-seed %d'%rseed,
+             '--sample-rate %d'%(opts.sample_rate),
+             '--gps-start-time %d'%(opts.gps_start_time),
+             '--gps-end-time %d'%(opts.gps_end_time),
+             '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
+             '--output-strain-file %s'%(output_file)]
+    elif detector_tag=='space':
+        # Sanity Check
+        if opts.len_arm is None:
+            raise ValueError("Space based mission requires len-arm")
+        args_opt = [
+            'pycbc_condition_strain',
+             '--fake-strain %s'%(opts.psd_model[ifo]),
+             '--fake-strain-seed %d'%rseed,
+             '--sample-rate %d'%(opts.sample_rate),
+             '--gps-start-time %d'%(opts.gps_start_time),
+             '--gps-end-time %d'%(opts.gps_end_time),
+             '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
+             '--output-strain-file %s'%(output_file)
+             '--len-arm %s'%(opts.len_arm),
+             '--acc-noise-level %s'%(opts.acc_noise_level),
+             '--oms-noise-level %s'%(opts.oms_noise_level),
+             '--tdi %s'%(opts.tdi),
+             '--duration %s'%(opts.duration)]
+    return args_opt
+
 
 # Sanity Checks
 if set(opts.ifo_list) != set(opts.low_frequency_cutoff.keys()):
@@ -107,18 +161,10 @@ for ifo in opts.ifo_list:
                     opts.output_path, ifo, opts.gps_start_time, time_duration)
     else:
         output_file = '%s/%s-SIMULATED_STRAIN-%s-%d-%d.gwf'%(
-                    opts.output_path, ifo, opts.tag, opts.gps_start_time, 
+                    opts.output_path, ifo, opts.tag, opts.gps_start_time,
                     time_duration)
-    args_opt = [
-             'pycbc_condition_strain', 
-             '--fake-strain %s'%(opts.psd_model[ifo]),
-             '--fake-strain-seed %d'%rseed, 
-             '--sample-rate %d'%(opts.sample_rate),
-             '--gps-start-time %d'%(opts.gps_start_time),
-             '--gps-end-time %d'%(opts.gps_end_time),
-             '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
-             '--output-strain-file %s'%(output_file)]
 
+    args_opt = create_command_opts(ifo, rseed, output_file)
     if opts.injection_file is not None:
         args_opt.append('--injection-file %s'%(opts.injection_file))
     if opts.low_frequency_cutoff is not None:
