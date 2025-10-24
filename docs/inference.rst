@@ -520,6 +520,7 @@ Examples
     inference/examples/lisa_smbhb_inj_pe.rst
     inference/examples/sampler_platter.rst
     inference/models.rst
+    inference/examples/gw150914_calibration.rst
 
 ----------------------------
 Visualizing the Posteriors
