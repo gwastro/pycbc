@@ -1,0 +1,117 @@
+pycbc.inference.models package
+==============================
+
+Submodules
+----------
+
+pycbc.inference.models.analytic module
+--------------------------------------
+
+.. automodule:: pycbc.inference.models.analytic
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.base module
+----------------------------------
+
+.. automodule:: pycbc.inference.models.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.base\_data module
+----------------------------------------
+
+.. automodule:: pycbc.inference.models.base_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.brute\_marg module
+-----------------------------------------
+
+.. automodule:: pycbc.inference.models.brute_marg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.data\_utils module
+-----------------------------------------
+
+.. automodule:: pycbc.inference.models.data_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.gated\_gaussian\_noise module
+----------------------------------------------------
+
+.. automodule:: pycbc.inference.models.gated_gaussian_noise
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.gaussian\_noise module
+---------------------------------------------
+
+.. automodule:: pycbc.inference.models.gaussian_noise
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.hierarchical module
+------------------------------------------
+
+.. automodule:: pycbc.inference.models.hierarchical
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.marginalized\_gaussian\_noise module
+-----------------------------------------------------------
+
+.. automodule:: pycbc.inference.models.marginalized_gaussian_noise
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.relbin module
+------------------------------------
+
+.. automodule:: pycbc.inference.models.relbin
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.relbin\_cpu module
+-----------------------------------------
+
+.. automodule:: pycbc.inference.models.relbin_cpu
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.single\_template module
+----------------------------------------------
+
+.. automodule:: pycbc.inference.models.single_template
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.inference.models.tools module
+-----------------------------------
+
+.. automodule:: pycbc.inference.models.tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.inference.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
