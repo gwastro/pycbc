@@ -61,26 +61,50 @@ class Constraint(object):
         if isinstance(params, dict):
             params = record.FieldArray.from_kwargs(**params)
         elif not isinstance(params, record.FieldArray):
-           raise ValueError("params must be dict or FieldArray instance")
+            raise ValueError("params must be dict or FieldArray instance")
+
+        # Force transform execution before constraint attempt
+        if self.transforms:
+            # transforms.apply_transforms returns a NEW FieldArray object
+            params = transforms.apply_transforms(params, self.transforms)
 
         # try to evaluate; this will assume that all of the needed parameters
         # for the constraint exists in params
         try:
             out = self._constraint(params)
-        except NameError:
-            # one or more needed parameters don't exist; try applying the
-            # transforms
-            params = transforms.apply_transforms(params, self.transforms) \
-                     if self.transforms else params
-            out = self._constraint(params)
+        except Exception as e:
+
+            raise e
+
         if isinstance(out, record.FieldArray):
             out = out.item() if params.size == 1 else out
         return out
 
     def _constraint(self, params):
-        """ Evaluates constraint function.
-        """
-        return params[self.constraint_arg]
+        """ Evaluates constraint function. """
+        eval_scope = {}
+        eval_scope.update(numpy.__dict__)
+
+        if params.size == 0:
+            return numpy.array([], dtype=bool)
+
+        for name in params.dtype.names:
+            data = params[name]
+
+            if data is None:
+                data = numpy.full(params.shape, -numpy.inf)
+            elif data.dtype == object:
+                none_mask = numpy.array([x is None for x in data])
+                data = numpy.copy(data)
+                data[none_mask] = -numpy.inf
+                try:
+                    data = data.astype(float)
+                except ValueError:
+                    pass
+
+            eval_scope[name] = data
+
+        return eval(self.constraint_arg, {"__builtins__": None}, eval_scope)
 
 
 class SupernovaeConvexHull(Constraint):
