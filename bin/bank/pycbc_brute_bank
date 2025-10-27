@@ -83,7 +83,7 @@ parser.add_argument('--nprocesses', type=int, default=1,
 pycbc.psd.insert_psd_option_group(parser)
 parser.add_argument('--use-trimmed-buffer', action='store_true',
     help=('When specified, the match calculation will use only the first and last 100 samples '
-        'of the waveform instead of the full buffer. Enabling this option makes match computation faster.')
+        'of the waveform instead of the full buffer. Enabling this option makes match computation faster.'))
 
 
 args = parser.parse_args()
