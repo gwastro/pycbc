@@ -81,9 +81,9 @@ parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
 parser.add_argument('--nprocesses', type=int, default=1,
     help='Number of processes to use for waveform generation parallelization. If not given then only a single core will be used.')
 pycbc.psd.insert_psd_option_group(parser)
-parser.add_argument('--optimized-match', action='store_true',
-        help='When specified, enables the optimized match configuration by '
-'storing only the head/tail waveform data instead of the full buffer.')
+parser.add_argument('--use-trimmed-buffer', action='store_true',
+    help=('When specified, the match calculation will use only the first and last 100 samples '
+        'of the waveform instead of the full buffer. Enabling this option makes match computation faster.')
 
 
 args = parser.parse_args()
@@ -326,12 +326,12 @@ class GenUniformWaveform(object):
         self.qtilde_view = qtilde[self.kmin:self.flen - 1]
         self.ifft = pycbc.fft.IFFT(qtilde, q)
 
-        if args.optimized_match:
+        self.md = q
+        self.md2 = numpy.zeros(20)
+
+        if args.use_trimmed_buffer:
             self.md = q._data[-100:]
             self.md2 = q._data[0:100]
-        else:
-            self.md = q
-            self.md2 = numpy.zeros(20)
 
     def generate(self, **kwds):
         kwds.update(fdict)
