@@ -54,6 +54,7 @@ jobs:
     - name: Build source distribution
       run: |
         python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
+        pip install pip setuptools --upgrade
         python setup.py sdist
         ls -lh dist
     - name: Publish to PyPI
