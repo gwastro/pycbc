@@ -178,7 +178,8 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
     else:
         raise NotImplementedError(
             f'{eos} is not implemented! Available are: '
-            f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
+            f'{NS_SEQUENCES }')
+        # + list(lalsim.SimNeutronStarEOSNames)}')
     return (ns_compactness, ns_b_mass)
 
 
