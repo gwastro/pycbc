@@ -44,13 +44,8 @@ install_requires = setup_requires + [
     'beautifulsoup4>=4.6.0',
     'tqdm',
     'setuptools',
-    'gwdatafind',
-    'pegasus-wms.api >= 5.1.1',
     'igwn-ligolw',
     'igwn-segments',
-    'lalsuite!=7.2',
-    'lscsoft-glue>=1.59.3',
-    'pykerr',
 ]
 
 def find_files(dirname, relpath=None):

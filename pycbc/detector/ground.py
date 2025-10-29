@@ -33,7 +33,12 @@ import logging
 import numpy as np
 from numpy import cos, sin
 
-import lal
+try:
+    import lal
+    _LAL_AVAILABLE = True
+except ModuleNotFoundError:
+    _LAL_AVAILABLE = False
+
 from astropy.time import Time
 from astropy import constants, coordinates, units
 from astropy.coordinates.matrix_utilities import rotation_matrix
@@ -69,6 +74,8 @@ def get_available_lal_detectors():
     updating in the future. Better if lal would expose this information
     properly.
     """
+    if not _LAL_AVAILABLE:
+        return []
     ld = lal.__dict__
     known_lal_names = [j for j in ld.keys() if "DETECTOR_PREFIX" in j]
     known_prefixes = [ld[k] for k in known_lal_names]
