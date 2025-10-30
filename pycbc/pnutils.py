@@ -32,7 +32,7 @@ import numpy
 from scipy.optimize import bisect, brentq, minimize
 
 from pycbc import conversions, libutils
-from pycbc.constants import MSUN_SI, PI, MTSUN_SI
+from pycbc.constants import MSUN_SI, PI, MTSUN_SI, PC_SI
 
 logger = logging.getLogger('pycbc.pnutils')
 
@@ -190,10 +190,10 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     return beta, sigma, gamma
 
 def solar_mass_to_kg(solar_masses):
-    return solar_masses * constants.MSUN_SI
+    return solar_masses * MSUN_SI
 
 def parsecs_to_meters(distance):
-    return distance * constants.PC_SI
+    return distance * PC_SI
 
 def megaparsecs_to_meters(distance):
     return parsecs_to_meters(distance) * 1e6

@@ -36,7 +36,7 @@ import logging
 from pycbc.detector import Detector
 import pycbc.cosmology
 from pycbc import neutron_stars as ns
-from pycbc.constants import YRJUL_SI, MSUN_SI, MTSUN_SI, C_SI, G_SI
+from pycbc.constants import YRJUL_SI, MSUN_SI, MTSUN_SI, C_SI, G_SI, PI
 
 from .coordinates import (
     spherical_to_cartesian as _spherical_to_cartesian,

@@ -46,7 +46,8 @@ _FALLBACK_MAPPING = {
 # We need to define some constants from astropy values
 MSUN_SI = _FALLBACK_MAPPING['MSUN_SI']
 C_SI = _FALLBACK_MAPPING['C_SI']
-MTSUN_SI = MSUN_SI / (C_SI ** 3)
+G_SI = _FALLBACK_MAPPING['G_SI']
+MTSUN_SI = MSUN_SI * G_SI / (C_SI ** 3)
 
 # Add in these hybrid constants
 _FALLBACK_MAPPING.update({

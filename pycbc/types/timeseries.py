@@ -19,11 +19,16 @@ Provides a class representing a time series.
 """
 import os as _os
 import h5py
+import warnings
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
 from pycbc.types import float32, float64
-import lal as _lal
+try:
+    import lal as _lal
+except:
+    _lal = None
+
 import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
 
@@ -46,7 +51,7 @@ class TimeSeries(Array):
     """
 
     def __init__(self, initial_array, delta_t=None,
-                 epoch=None, dtype=None, copy=True):
+                 epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if delta_t is None:
@@ -57,20 +62,23 @@ class TimeSeries(Array):
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
 
-        # Get epoch from initial_array if epoch not given (or is None)
-        # If initialy array has no epoch, set epoch to 0.
-        # If epoch is provided, use that.
-        if not isinstance(epoch, _lal.LIGOTimeGPS):
-            if epoch is None:
-                if isinstance(initial_array, TimeSeries):
-                    epoch = initial_array._epoch
-                else:
-                    epoch = _lal.LIGOTimeGPS(0)
-            elif epoch is not None:
+        # If epoch is already a float64, we can directly add it,
+        # so don't do this conversion
+        if not isinstance(epoch, float64):
+            if epoch == "":
+                # epoch is not given
                 try:
-                    epoch = _lal.LIGOTimeGPS(epoch)
-                except:
-                    raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+                    # inherit epoch from initial array
+                    epoch = initial_array._epoch
+                except AttributeError:
+                    # nothing given, and can't grab the epoch from initial
+                    # array - fall back to zero
+                    epoch = float64(0)
+            elif epoch is not None: # If it is passed None, we do allow this
+                # epoch is given but is not already a float64 - convert it
+                epoch = float64(epoch)
+
+
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch
@@ -223,7 +231,7 @@ class TimeSeries(Array):
     def start_time(self, time):
         """ Set the start time
         """
-        self._epoch = _lal.LIGOTimeGPS(time)
+        self._epoch = float64(time)
 
     def get_end_time(self):
         """Return time series end time as a LIGOTimeGPS.
@@ -490,6 +498,11 @@ class TimeSeries(Array):
         TypeError
             If time series is stored in GPU memory.
         """
+        if _lal is None:
+            raise ModuleNotFoundError(
+                'Cannot convert to a lal array if lal is not installed'
+            )
+        
         lal_data = None
         ep = self._epoch
 

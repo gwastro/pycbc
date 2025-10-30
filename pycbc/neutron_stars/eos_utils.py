@@ -20,7 +20,7 @@ Utility functions for handling NS equations of state
 import os.path
 import numpy as np
 from scipy.interpolate import interp1d
-# import lalsimulation as lalsim
+import lalsimulation as lalsim
 from . import NS_SEQUENCES, NS_DATA_DIRECTORY
 from .pg_isso_solver import PG_ISSO_solver
 
@@ -160,18 +160,17 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
             ns_mass, ns_seq, extrapolate=extrapolate)
         ns_b_mass = interp_grav_mass_to_baryon_mass(
             ns_mass, ns_seq, extrapolate=extrapolate)
-    # elif eos in lalsim.SimNeutronStarEOSNames:
-    #     #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
-    #     #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
-    #     #r_ns = lalsim.SimNeutronStarRadius(ns_mass * lal.MSUN_SI, eos_obj)
-    #     #ns_compactness = lal.G_SI * ns_mass * lal.MSUN_SI / (r_ns * lal.C_SI**2)
-    #     raise NotImplementedError(
-    #         'LALSimulation EOS interface not yet implemented!')
+    elif eos in lalsim.SimNeutronStarEOSNames:
+        #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
+        #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
+        #r_ns = lalsim.SimNeutronStarRadius(ns_mass * lal.MSUN_SI, eos_obj)
+        #ns_compactness = lal.G_SI * ns_mass * lal.MSUN_SI / (r_ns * lal.C_SI**2)
+        raise NotImplementedError(
+            'LALSimulation EOS interface not yet implemented!')
     else:
         raise NotImplementedError(
             f'{eos} is not implemented! Available are: '
-            f'{NS_SEQUENCES }')
-        # + list(lalsim.SimNeutronStarEOSNames)}')
+            f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
     return (ns_compactness, ns_b_mass)
 
 
