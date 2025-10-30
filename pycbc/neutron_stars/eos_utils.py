@@ -20,6 +20,10 @@ Utility functions for handling NS equations of state
 import os.path
 import numpy as np
 from scipy.interpolate import interp1d
+<<<<<<< HEAD
+=======
+import lalsimulation as lalsim
+>>>>>>> 36ff8fd2b (Update timeseries to use a float64 rather than ligotimegps)
 from . import NS_SEQUENCES, NS_DATA_DIRECTORY
 from .pg_isso_solver import PG_ISSO_solver
 
@@ -178,8 +182,7 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
     else:
         raise NotImplementedError(
             f'{eos} is not implemented! Available are: '
-            f'{NS_SEQUENCES }')
-        # + list(lalsim.SimNeutronStarEOSNames)}')
+            f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
     return (ns_compactness, ns_b_mass)
 
 

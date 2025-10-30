@@ -64,8 +64,6 @@ def get_available_lal_detectors():
     updating in the future. Better if lal would expose this information
     properly.
     """
-    if not _LAL_AVAILABLE:
-        return []
     ld = lal.__dict__
     known_lal_names = [j for j in ld.keys() if "DETECTOR_PREFIX" in j]
     known_prefixes = [ld[k] for k in known_lal_names]
