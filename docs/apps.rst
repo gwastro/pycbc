@@ -21,3 +21,4 @@ template banks) should read the documentation at:
    faithsim
    upload_to_gracedb
    pycbc_condition_strain
+   mock_data_generation
