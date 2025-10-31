@@ -33,7 +33,7 @@ from gwdatafind import find_urls as find_frame_urls
 
 import pycbc
 from pycbc.types import TimeSeries, zeros
-from pycbc.io.hdf import HFile
+import h5py
 
 logger = logging.getLogger('pycbc.frame.frame')
 
@@ -335,7 +335,7 @@ def read_hdf5_frame(location, channels, start_time=None,
 
     all_data = []
     for i, fname in enumerate(locations):
-        with HFile(fname, "r") as f:
+        with h5py.File(fname, "r") as f:
             ch = channels[i].split(':', 1)[1]
             if ch not in f:
                 raise KeyError(f"Channel '{ch}' not found in {fname}")
@@ -385,78 +385,6 @@ def read_hdf5_frame(location, channels, start_time=None,
             all_data.append(TimeSeries(data[start_inx:end_inx], delta_t=1.0/sample_rate,
                       epoch=epoch))
     return all_data if len(all_data) > 1 else all_data[0]
-
-def read_frame_cache(location, channels, start_time=None,
-               end_time=None, duration=None, check_integrity=False,
-               sieve=None):
-    """Read time series from frame cache file.
-
-    Using the `location` to a frame cache ".gwf", ".hdf", ".hdf5", 
-    or ".h5" read in the data for the given channel(s) and output
-    as a TimeSeries or list of TimeSeries.
-
-    Parameters
-    ----------
-    location : string
-        A source of gravitational wave frames. Either a frame filename
-        (can include pattern), a list of frame files, or frame cache file.
-    channels : string or list of strings
-        Either a string that contains the channel name or a list of channel
-        name strings.
-    start_time : {None, LIGOTimeGPS}, optional
-        The gps start time of the time series. Defaults to reading from the
-        beginning of the available frame(s).
-    end_time : {None, LIGOTimeGPS}, optional
-        The gps end time of the time series. Defaults to the end of the frame.
-        Note, this argument is incompatible with `duration`.
-    duration : {None, float}, optional
-        The amount of data to read in seconds. Note, this argument is
-        incompatible with `end`.
-    check_integrity : {True, bool}, optional
-        Test the frame files for internal integrity.
-    sieve : string, optional
-        Selects only frames where the frame URL matches the regular
-        expression sieve
-
-    Returns
-    -------
-    Frame Data: TimeSeries or list of TimeSeries
-        A TimeSeries or a list of TimeSeries, corresponding to the data from
-        the frame cache for a given channel or channels.
-    """
-    hdf5_map = {
-        "hdf5": "hdf5",
-        "h5": "hdf5",
-        "hdf": "hdf5"
-    }
-
-    extensions = []
-    with open(location, "r") as f:
-        for line in f:
-            parts = line.strip().split()
-            if parts:
-                path = parts[-1]
-                ext = path.split(".")[-1].lower() if "." in path else ""
-                ext = hdf5_map.get(ext, ext)
-                extensions.append(ext)
-
-    unique_extensions = sorted(set(extensions))
-
-    if len(unique_extensions) == 1:
-        ext = unique_extensions[0]
-        if ext == "gwf":
-            return read_frame(location, channels, start_time, end_time, duration, check_integrity, sieve)
-        elif ext == "hdf5":
-            paths = []
-            with open(location, "r") as f:
-                for line in f:
-                    parts = line.strip().split()
-                    paths.append(parts[-1])
-            return read_hdf5_frame(paths, channels, start_time, end_time, duration) 
-        else:
-            raise ValueError(f"Unsupported frame file extension '{ext}'")
-    else:
-        raise ValueError(f"Mixed frame file extensions in cache: {', '.join(unique_extensions)}")
 
 def read_gw_data(location, channels, start_time=None,
                end_time=None, duration=None, check_integrity=False,
@@ -508,12 +436,49 @@ def read_gw_data(location, channels, start_time=None,
     else:
         channels = [channels]
 
+    hdf5_map = {
+        "hdf5": "hdf5",
+        "h5": "hdf5",
+        "hdf": "hdf5"
+    }
+
     for i, file_path in enumerate(locations):
         _, file_name = os.path.split(file_path)
         _, file_extension = os.path.splitext(file_name)
 
-        if file_extension in [".lcf", ".cache"]:
-            return read_frame_cache(file_path, channels[i], start_time, end_time, duration, check_integrity, sieve)
+        if file_extension in {".lcf", ".cache"}:
+            paths = []
+            extensions = set()
+
+            with open(file_path, "r") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if not parts:
+                        continue
+
+                    path = parts[-1]
+                    paths.append(path)
+
+                    ext = os.path.splitext(path)[1].lstrip(".").lower()
+                    ext = hdf5_map.get(ext, ext)
+                    extensions.add(ext)
+
+                    if len(extensions) > 1:
+                        raise ValueError(f"Mixed frame file extensions in cache file: {file_path}")
+
+            ext = next(iter(extensions)) if extensions else None
+
+            if ext == "gwf":
+                return read_frame(
+                    file_path, channels[i], start_time, end_time, duration, check_integrity, sieve
+                    )
+            elif ext == "hdf5":
+                return read_hdf5_frame(
+                    paths, channels[i], start_time, end_time, duration
+                )
+            else:
+                raise ValueError(f"Unknown or missing frame file extension: {ext}")
+
         elif file_extension == ".gwf" or _is_gwf(file_path):
             return read_frame(file_path, channels[i], start_time, end_time, duration, check_integrity, sieve)
         elif file_extension in [".hdf", ".hdf5", ".h5"] or _is_hdf5(file_path):
@@ -521,7 +486,6 @@ def read_gw_data(location, channels, start_time=None,
         else:
             raise TypeError("Invalid location name")
 
-    
 def frame_paths(
     frame_type, start_time, end_time, server=None, url_type='file', site=None
 ):
