@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-_description__ = \
+__description__ = \
 """Generate the mock data frame files for a given network of detectors.
 It contains Gaussian noise, population injections, and glitches.
 """
@@ -64,7 +64,7 @@ parser.add_argument('--gps-end-time',
                         help='GPS end time for frame files',
                         required=True, type=int)
 
-parser.add_argument('--sample-rate', type=int,
+parser.add_argument('--sample-rate', type=float,
 		        help='Sample rate of the frames to be generated')
 
 parser.add_argument('--injection-file', type=str,
@@ -100,7 +100,7 @@ opts = parser.parse_args()
 
 # Function to generate command line script
 def create_command_opts(ifo, rseed, output_file):
-    if 'LISA' in kwargs[ifo]:
+    if 'LISA' in ifo:
         detector_tag = 'space'
     else:
         detector_tag = 'ground'
@@ -118,21 +118,34 @@ def create_command_opts(ifo, rseed, output_file):
     elif detector_tag=='space':
         # Sanity Check
         if opts.len_arm is None:
-            raise ValueError("Space based mission requires len-arm")
+            raise ValueError("Space-borne missions require len-arm")
+        # Build extra args for LISA
+        extra_args = []
+        if opts.len_arm is not None:
+            extra_args.append('len_arm:%s' % opts.len_arm)
+        if opts.acc_noise_level is not None:
+            extra_args.append('acc_noise_level:%s' % opts.acc_noise_level)
+        if opts.oms_noise_level is not None:
+            extra_args.append('oms_noise_level:%s' % opts.oms_noise_level)
+        if opts.tdi is not None:
+            extra_args.append('tdi:%s' % opts.tdi)
+        if opts.duration is not None:
+            extra_args.append('duration:%s' % opts.duration)
+        
         args_opt = [
             'pycbc_condition_strain',
-             '--fake-strain %s'%(opts.psd_model[ifo]),
-             '--fake-strain-seed %d'%rseed,
-             '--sample-rate %d'%(opts.sample_rate),
-             '--gps-start-time %d'%(opts.gps_start_time),
-             '--gps-end-time %d'%(opts.gps_end_time),
-             '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
-             '--output-strain-file %s'%(output_file)
-             '--len-arm %s'%(opts.len_arm),
-             '--acc-noise-level %s'%(opts.acc_noise_level),
-             '--oms-noise-level %s'%(opts.oms_noise_level),
-             '--tdi %s'%(opts.tdi),
-             '--duration %s'%(opts.duration)]
+            '--fake-strain %s'%(opts.psd_model[ifo]),
+            '--fake-strain-seed %d'%rseed,
+            '--sample-rate %f'%(opts.sample_rate),
+            '--gps-start-time %d'%(opts.gps_start_time),
+            '--gps-end-time %d'%(opts.gps_end_time),
+            '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
+            '--output-strain-file %s'%(output_file)
+        ]
+        
+        # Add extra args if any
+        if extra_args:
+            args_opt.append('--fake-strain-extra-args %s' % ' '.join(extra_args))
     return args_opt
 
 
@@ -164,16 +177,15 @@ for ifo in opts.ifo_list:
                     opts.output_path, ifo, opts.tag, opts.gps_start_time,
                     time_duration)
 
+    # Get the base command options
     args_opt = create_command_opts(ifo, rseed, output_file)
     if opts.injection_file is not None:
         args_opt.append('--injection-file %s'%(opts.injection_file))
     if opts.low_frequency_cutoff is not None:
-        args_opt.append('--fake-strain-flow %d'%(
+        args_opt.append('--fake-strain-flow %f'%(
                         opts.low_frequency_cutoff[ifo]))
 
 
     cmd = ' '.join(args_opt)
     print(cmd)
     os.system(cmd)
-
-
