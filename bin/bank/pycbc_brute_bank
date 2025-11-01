@@ -237,6 +237,16 @@ class TriangleBank(object):
                 return False
 
             hc = self[j]
+
+            # Defensive initialization if matches/indices are missing
+            if not hasattr(hc, 'matches'):
+                hc.matches = numpy.empty(len(self))
+                hc.matches[:] = numpy.nan
+
+            if not hasattr(hc, 'indices'):
+                hc.indices = numpy.arange(len(self))
+
+
             m = hp.gen.match(hp, hc)
             matches[j] = m
             mnum += 1
