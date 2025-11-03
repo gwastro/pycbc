@@ -386,6 +386,54 @@ def inline_cubic_interp(amp, phase, sample_frequencies, output,
 
     """
     return
+    
+@schemed("pycbc.waveform.decompress_")
+def inline_quadratic_interp(amp, phase, sample_frequencies, output,
+                         df, f_lower, imin, start_index):
+    """Generate a frequency-domain waveform via quadratic interpolation
+    from sampled amplitude and phase. The sample frequency locations
+    for the amplitude and phase must be the same. This function may
+    be less accurate than scipy's linear interpolation, but should be
+    much faster.  Additionally, it is 'schemed' and so may run under
+    either CPU or GPU schemes.
+
+    This function is not ordinarily called directly, but rather by
+    giving the argument 'interpolation' the value 'inline_linear'
+    when calling the function 'fd_decompress' below.
+
+    Parameters
+    ----------
+    amp : array
+        The amplitude of the waveform at the sample frequencies.
+    phase : array
+        The phase of the waveform at the sample frequencies.
+    sample_frequencies : array
+        The frequency (in Hz) of the waveform at the sample frequencies.
+    output : {None, FrequencySeries}
+        The output array to save the decompressed waveform to. If this contains
+        slots for frequencies > the maximum frequency in sample_frequencies,
+        the rest of the values are zeroed. If not provided, must provide a df.
+    df : {None, float}
+        The frequency step to use for the decompressed waveform. Must be
+        provided if out is None.
+    f_lower : float
+        The frequency to start the decompression at. All values at
+        frequencies less than this will be 0 in the decompressed waveform.
+    imin : int
+        The index at which to start in the sampled frequency series. Must
+        therefore be 0 <= imin < len(sample_frequencies)
+    start_index : int
+        The index at which to start in the output frequency;
+        i.e., ceil(f_lower/df).
+
+    Returns
+    -------
+    output : FrequencySeries
+        If out was provided, writes to that array. Otherwise, a new
+        FrequencySeries with the decompressed waveform.
+
+    """
+    return
 
 @schemed("pycbc.waveform.decompress_")
 def inline_linear_interp(amp, phase, sample_frequencies, output,
@@ -436,9 +484,9 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
     return
 
 @schemed("pycbc.waveform.decompress_")
-def inline_quadratic_interp(amp, phase, sample_frequencies, output,
+def inline_quartic_interp(amp, phase, sample_frequencies, output,
                             df, f_lower, imin, start_index):
-    """Generate a frequency-domain waveform via quadratic interpolation
+    """Generate a frequency-domain waveform via quartic interpolation
     from sampled amplitude and phase. The sample frequency locations
     for the amplitude and phase must be the same. This function may
     be less accurate than scipy's quadratic interpolation, but should be
@@ -568,6 +616,10 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     elif interpolation == "inline_cubic":
         # Call the scheme-dependent function
         inline_cubic_interp(amp, phase, sample_frequencies, out,
+                                df, f_lower, imin, start_index)
+    elif interpolation == "inline_quartic":
+        # Call the scheme-dependent function
+        inline_quartic_interp(amp, phase, sample_frequencies, out,
                                 df, f_lower, imin, start_index)
     else:
         # use scipy for fancier interpolation
