@@ -24,6 +24,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // Added for memset
+#include <stdint.h> // Added for int64_t
 #include <complex>
 // This code expects to be passed:
 // h: array of complex doubles
@@ -168,14 +170,14 @@ void _decomp_ccode_double(std::complex<double> * h,
  */
 
 void _decomp_ccode_float(std::complex<float> * h,
-                        float delta_f,
-                        const int64_t hlen,
-                        const int64_t start_index,
-                        float * sample_frequencies,
-                        float * amp,
-                        float * phase,
-                        const int64_t sflen,
-                        const int64_t imin)
+                         float delta_f,
+                         const int64_t hlen,
+                         const int64_t start_index,
+                         float * sample_frequencies,
+                         float * amp,
+                         float * phase,
+                         const int64_t sflen,
+                         const int64_t imin)
 {
     float* outptr = (float*) h;
 
@@ -279,3 +281,367 @@ void _decomp_ccode_float(std::complex<float> * h,
     memset(outptr, 0, sizeof(*outptr)*2*(hlen-findex));
 }
 
+
+/* =====================================================================
+ *
+ * QUADRATIC INTERPOLATION FUNCTIONS ADDED BELOW
+ *
+ * =====================================================================
+ */
+
+
+/**
+* Decompress a waveform using highly optimized quadratic interpolation
+*
+* We quadratically interpolate the amplitude and phase to fill the values
+* between the sample frequencies.
+*
+* This uses a finite-difference stepper for both amplitude and phase,
+* eliminating all transcendental function calls from the innermost loop.
+*
+* BUGFIX: The first segment (i == imin) uses the fast ITERATIVE LINEAR
+* interpolation to avoid boundary conditions.
+*/
+void _decomp_qcode_double(std::complex<double> * h,
+                          double delta_f,
+                          const int64_t hlen,
+                          const int64_t start_index,
+                          double * sample_frequencies,
+                          double * amp,
+                          double * phase,
+                          const int64_t sflen,
+                          const int64_t imin)
+{
+    int64_t k, kmax, k_sub_max;
+    int64_t last_findex = start_index;
+    int update_interval = 128; // For correcting FP error
+    double f, f0, f1, f2, p0, p1, p2, a0, a1, a2;
+    double df = delta_f;
+    double df_inv = 1.0 / df;
+    double h2 = df * df;
+
+    // zero out the beginning
+    memset(h, 0, sizeof(std::complex<double>)*start_index);
+
+    for (int64_t i = imin; i < sflen-1; i++) {
+        // Get segment boundaries
+        f1 = sample_frequencies[i];
+        f2 = sample_frequencies[i+1];
+        a1 = amp[i];
+        a2 = amp[i+1];
+        p1 = phase[i];
+        p2 = phase[i+1];
+
+        // Calculate start and end indices for this segment
+        if (i == imin) {
+            k = start_index;
+        } else {
+            k = (int64_t)ceil(f1 / delta_f);
+        }
+
+        if (i == sflen - 2) {
+           kmax = (int64_t)(f2 / delta_f) + 1;
+        } else {
+           kmax = (int64_t)(f2 / delta_f);
+        }
+
+        if (kmax > hlen) {
+            kmax = hlen;
+        }
+
+        // === BUGFIX: Use robust, FAST linear interpolation for the first segment ===
+        if (i == imin) {
+            double* outptr = (double*) &h[k];
+            double inv_sdf = 1./(f2 - f1);
+            double m_amp = (a2 - a1)*inv_sdf;
+            double b_amp = a1 - m_amp*f1;
+            double m_phi = (p2 - p1)*inv_sdf;
+            double b_phi = p1 - m_phi*f1;
+
+            double h_re, h_im, g_re, g_im, dphi_re, dphi_im;
+            double incrh_re, incrh_im, incrg_re, incrg_im;
+
+            int64_t findex = k;
+            while (findex < kmax){
+                f = findex*df;
+                double interp_amp = m_amp * f + b_amp;
+                double interp_phi = m_phi * f + b_phi;
+                dphi_re = cos(m_phi * df);
+                dphi_im = sin(m_phi * df);
+                h_re = interp_amp * cos(interp_phi);
+                h_im = interp_amp * sin(interp_phi);
+                g_re = m_amp * df * cos(interp_phi);
+                g_im = m_amp * df * sin(interp_phi);
+
+                *outptr = h_re;
+                *(outptr+1) = h_im;
+                outptr += 2;
+                findex++;
+
+                k_sub_max = findex + update_interval;
+                if (k_sub_max > kmax) k_sub_max = kmax;
+                
+                while (findex < k_sub_max){
+                    incrh_re = h_re * dphi_re - h_im * dphi_im;
+                    incrh_im = h_re * dphi_im + h_im * dphi_re;
+                    incrg_re = g_re * dphi_re - g_im * dphi_im;
+                    incrg_im = g_re * dphi_im + g_im * dphi_re;
+                    h_re = incrh_re + incrg_re;
+                    h_im = incrh_im + incrg_im;
+                    g_re = incrg_re;
+                    g_im = incrg_im;
+
+                    *outptr = h_re;
+                    *(outptr+1) = h_im;
+                    outptr += 2;
+                    findex++;
+                }
+            }
+        }
+        // === Use FAST quadratic interpolation for all subsequent segments ===
+        else {
+            // Get 3rd point for quadratic
+            f0 = sample_frequencies[i-1];
+            a0 = amp[i-1];
+            p0 = phase[i-1];
+
+            // Denominators for Lagrange basis (constant for segment)
+            double denom0 = (f0 - f1) * (f0 - f2);
+            double denom1 = (f1 - f0) * (f1 - f2);
+            double denom2 = (f2 - f0) * (f2 - f1);
+
+            // --- Get power-basis coefficients: c2*f^2 + c1*f + c0 ---
+            // c2 = v0/d0 + v1/d1 + v2/d2
+            double c_a2 = a0/denom0 + a1/denom1 + a2/denom2;
+            double c_p2 = p0/denom0 + p1/denom1 + p2/denom2;
+            // c1 = -v0(f1+f2)/d0 - v1(f0+f2)/d1 - v2(f0+f1)/d2
+            double c_a1 = -a0*(f1+f2)/denom0 - a1*(f0+f2)/denom1 - a2*(f0+f1)/denom2;
+            double c_p1 = -p0*(f1+f2)/denom0 - p1*(f0+f2)/denom1 - p2*(f0+f1)/denom2;
+            // c0 = v0*f1*f2/d0 + v1*f0*f2/d1 + v2*f0*f1/d2
+            double c_a0 = a0*f1*f2/denom0 + a1*f0*f2/denom1 + a2*f0*f1/denom2;
+            double c_p0 = p0*f1*f2/denom0 + p1*f0*f2/denom1 + p2*f0*f1/denom2;
+            
+            // --- Finite difference constants (constant for segment) ---
+            double d2_a = 2 * c_a2 * h2;
+            double d2_p = 2 * c_p2 * h2;
+            std::complex<double> d2_phase = std::polar(1.0, d2_p);
+
+            // Stepper variables
+            double a, p, d1_a, d1_p;
+            std::complex<double> phase, d_phase;
+
+            for (; k < kmax; ) {
+                // --- Re-calculate steppers to correct FP error ---
+                f = k * df;
+                k_sub_max = k + update_interval;
+                if (k_sub_max > kmax) k_sub_max = kmax;
+
+                // Initial values for this sub-block
+                a = c_a2*f*f + c_a1*f + c_a0;
+                p = c_p2*f*f + c_p1*f + c_p0;
+                
+                // First differences at f
+                d1_a = c_a2*(2*f*df + h2) + c_a1*df;
+                d1_p = c_p2*(2*f*df + h2) + c_p1*df;
+                
+                // Complex phase steppers
+                phase = std::polar(1.0, p);
+                d_phase = std::polar(1.0, d1_p);
+
+                // --- Fast Inner Loop ---
+                // (No sin/cos/polar calls)
+                for (; k < k_sub_max; k++) {
+                    h[k] = a * phase;
+                    
+                    // Step phase forward
+                    phase = phase * d_phase;
+                    d_phase = d_phase * d2_phase;
+                    
+                    // Step amplitude forward
+                    a = a + d1_a;
+                    d1_a = d1_a + d2_a;
+                }
+            }
+        }
+        last_findex = kmax;
+    }
+
+    // zero out the rest of the array
+    if (last_findex < hlen) {
+        memset(&h[last_findex], 0, sizeof(std::complex<double>)*(hlen-last_findex));
+    }
+}
+
+
+/**
+* Decompress a waveform using highly optimized quadratic interpolation (float version)
+*/
+void _decomp_qcode_float(std::complex<float> * h,
+                         float delta_f,
+                         const int64_t hlen,
+                         const int64_t start_index,
+                         float * sample_frequencies,
+                         float * amp,
+                         float * phase,
+                         const int64_t sflen,
+                         const int64_t imin)
+{
+    int64_t k, kmax, k_sub_max;
+    int64_t last_findex = start_index;
+    int update_interval = 128; // For correcting FP error
+    float f, f0, f1, f2, p0, p1, p2, a0, a1, a2;
+    float df = delta_f;
+    float df_inv = 1.0f / df;
+    float h2 = df * df;
+
+    // zero out the beginning
+    memset(h, 0, sizeof(std::complex<float>)*start_index);
+
+    for (int64_t i = imin; i < sflen-1; i++) {
+        // Get segment boundaries
+        f1 = sample_frequencies[i];
+        f2 = sample_frequencies[i+1];
+        a1 = amp[i];
+        a2 = amp[i+1];
+        p1 = phase[i];
+        p2 = phase[i+1];
+
+        // Calculate start and end indices for this segment
+        if (i == imin) {
+            k = start_index;
+        } else {
+            k = (int64_t)ceil(f1 / delta_f);
+        }
+
+        if (i == sflen - 2) {
+           kmax = (int64_t)(f2 / delta_f) + 1;
+        } else {
+           kmax = (int64_t)(f2 / delta_f);
+        }
+
+        if (kmax > hlen) {
+            kmax = hlen;
+        }
+
+        // === BUGFIX: Use robust, FAST linear interpolation for the first segment ===
+        if (i == imin) {
+            float* outptr = (float*) &h[k];
+            float inv_sdf = 1.0f/(f2 - f1);
+            float m_amp = (a2 - a1)*inv_sdf;
+            float b_amp = a1 - m_amp*f1;
+            float m_phi = (p2 - p1)*inv_sdf;
+            float b_phi = p1 - m_phi*f1;
+
+            float h_re, h_im, g_re, g_im, dphi_re, dphi_im;
+            float incrh_re, incrh_im, incrg_re, incrg_im;
+
+            int64_t findex = k;
+            while (findex < kmax){
+                f = findex*df;
+                float interp_amp = m_amp * f + b_amp;
+                float interp_phi = m_phi * f + b_phi;
+                dphi_re = cosf(m_phi * df);
+                dphi_im = sinf(m_phi * df);
+                h_re = interp_amp * cosf(interp_phi);
+                h_im = interp_amp * sinf(interp_phi);
+                g_re = m_amp * df * cosf(interp_phi);
+                g_im = m_amp * df * sinf(interp_phi);
+
+                *outptr = h_re;
+                *(outptr+1) = h_im;
+                outptr += 2;
+                findex++;
+
+                k_sub_max = findex + update_interval;
+                if (k_sub_max > kmax) k_sub_max = kmax;
+                
+                while (findex < k_sub_max){
+                    incrh_re = h_re * dphi_re - h_im * dphi_im;
+                    incrh_im = h_re * dphi_im + h_im * dphi_re;
+                    incrg_re = g_re * dphi_re - g_im * dphi_im;
+                    incrg_im = g_re * dphi_im + g_im * dphi_re;
+                    h_re = incrh_re + incrg_re;
+                    h_im = incrh_im + incrg_im;
+                    g_re = incrg_re;
+                    g_im = incrg_im;
+
+                    *outptr = h_re;
+                    *(outptr+1) = h_im;
+                    outptr += 2;
+                    findex++;
+                }
+            }
+        }
+        // === Use FAST quadratic interpolation for all subsequent segments ===
+        else {
+            // Get 3rd point for quadratic
+            f0 = sample_frequencies[i-1];
+            a0 = amp[i-1];
+            p0 = phase[i-1];
+
+            // Denominators for Lagrange basis (constant for segment)
+            float denom0 = (f0 - f1) * (f0 - f2);
+            float denom1 = (f1 - f0) * (f1 - f2);
+            float denom2 = (f2 - f0) * (f2 - f1);
+
+            // --- Get power-basis coefficients: c2*f^2 + c1*f + c0 ---
+            // c2 = v0/d0 + v1/d1 + v2/d2
+            float c_a2 = a0/denom0 + a1/denom1 + a2/denom2;
+            float c_p2 = p0/denom0 + p1/denom1 + p2/denom2;
+            // c1 = -v0(f1+f2)/d0 - v1(f0+f2)/d1 - v2(f0+f1)/d2
+            float c_a1 = -a0*(f1+f2)/denom0 - a1*(f0+f2)/denom1 - a2*(f0+f1)/denom2;
+            float c_p1 = -p0*(f1+f2)/denom0 - p1*(f0+f2)/denom1 - p2*(f0+f1)/denom2;
+            // c0 = v0*f1*f2/d0 + v1*f0*f2/d1 + v2*f0*f1/d2
+            float c_a0 = a0*f1*f2/denom0 + a1*f0*f2/denom1 + a2*f0*f1/denom2;
+            float c_p0 = p0*f1*f2/denom0 + p1*f0*f2/denom1 + p2*f0*f1/denom2;
+            
+            // --- Finite difference constants (constant for segment) ---
+            float d2_a = 2 * c_a2 * h2;
+            float d2_p = 2 * c_p2 * h2;
+            std::complex<float> d2_phase = std::polar(1.0f, d2_p);
+
+            // Stepper variables
+            float a, p, d1_a, d1_p;
+            std::complex<float> phase, d_phase;
+
+            for (; k < kmax; ) {
+                // --- Re-calculate steppers to correct FP error ---
+                f = k * df;
+                k_sub_max = k + update_interval;
+                if (k_sub_max > kmax) k_sub_max = kmax;
+
+                // Initial values for this sub-block
+                a = c_a2*f*f + c_a1*f + c_a0;
+                p = c_p2*f*f + c_p1*f + c_p0;
+                
+                // First differences at f
+                d1_a = c_a2*(2*f*df + h2) + c_a1*df;
+                d1_p = c_p2*(2*f*df + h2) + c_p1*df;
+                
+                // Complex phase steppers
+                phase = std::polar(1.0f, p);
+                d_phase = std::polar(1.0f, d1_p);
+
+                // --- Fast Inner Loop ---
+                // (No sin/cos/polar calls)
+                for (; k < k_sub_max; k++) {
+                    h[k] = a * phase;
+                    
+                    // Step phase forward
+                    phase = phase * d_phase;
+                    d_phase = d_phase * d2_phase;
+                    
+                    // Step amplitude forward
+                    a = a + d1_a;
+                    d1_a = d1_a + d2_a;
+                }
+            }
+        }
+        last_findex = kmax;
+    }
+
+    // zero out the rest of the array
+    if (last_findex < hlen) {
+        memset(&h[last_findex], 0, sizeof(std::complex<float>)*(hlen-last_findex));
+    }
+}

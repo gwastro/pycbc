@@ -22,6 +22,7 @@ hdf file."""
 import argparse
 import numpy
 import logging
+import time
 
 import pycbc
 from pycbc import psd
@@ -166,7 +167,10 @@ for ii in range(templates.size):
     if tmplt['approximant'] in args.do_not_compress:
         continue
     # generate the waveform
+    t1 = time.time()
     htilde = bank[ii]
+    htime = time.time() - t1
+    logging.info("... %.2f ms to generate normally", htime * 1000)
     fmin=tmplt.f_lower
     template_duration = htilde.chirp_length
     output['template_duration'][ii] = template_duration
