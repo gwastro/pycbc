@@ -247,7 +247,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     kmax = min(len(htilde), len(hdecomp))
     htilde = htilde[:kmax]
     hdecomp = hdecomp[:kmax]
-    mismatch = 1. - filter.match(hdecomp, htilde, psd=psd,
+    mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                    low_frequency_cutoff=fmin)
     if mismatch > tolerance:
         # we'll need the difference in the waveforms as a function of frequency
