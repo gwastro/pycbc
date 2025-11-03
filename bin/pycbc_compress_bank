@@ -191,7 +191,7 @@ for ii in range(templates.size):
     elif args.compression_algorithm == 'spa':
         sample_points = compress.spa_compression(htilde, fmin, kmax*df,
             min_seglen=args.t_pad,
-            scale=args.sclae).astype(real_same_precision_as(htilde))
+            scale=args.scale).astype(real_same_precision_as(htilde))
     else:
         raise ValueError("unrecognized compression algorithm %s" %(
             args.compression_algorithm))
