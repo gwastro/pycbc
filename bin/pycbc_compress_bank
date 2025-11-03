@@ -88,8 +88,8 @@ parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                     "Otherwise, an error is raised.")
 parser.add_argument("--scale", type=float,
-                    help="Scale factor to apply to the courseness of the initial
-                         "compression points. >1 means a courser set of initial
+                    help="Scale factor to apply to the courseness of the initial "
+                         "compression points. >1 means a courser set of initial "
                          "points. The algorithm will still add points to meet"
                          "the tolerance goals.")
 parser.add_argument(
