@@ -20,18 +20,17 @@ Provides a class representing a time series.
 import os as _os
 import h5py
 import warnings
-from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
-from pycbc.types.array import _nocomplex
-from pycbc.types.frequencyseries import FrequencySeries
-from pycbc.types import float32, float64
-try:
-    import lal as _lal
-except:
-    _lal = None
 
 import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
 
+from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
+from pycbc.types.array import _nocomplex
+from pycbc.types.frequencyseries import FrequencySeries
+from pycbc.types import float32, float64
+from pycbc.libutils import import_optional
+
+_lal = import_optional('lal')
 
 class TimeSeries(Array):
     """Models a time series consisting of uniformly sampled scalar values.
@@ -223,7 +222,7 @@ class TimeSeries(Array):
 
     @property
     def start_time(self):
-        """Return time series start time as a LIGOTimeGPS.
+        """Return time series start time.
         """
         return self._epoch
 
@@ -234,11 +233,11 @@ class TimeSeries(Array):
         self._epoch = float64(time)
 
     def get_end_time(self):
-        """Return time series end time as a LIGOTimeGPS.
+        """Return time series end time.
         """
         return self._epoch + self.get_duration()
     end_time = property(get_end_time,
-                        doc="Time series end time as a LIGOTimeGPS.")
+                        doc="Time series end time.")
 
     def get_sample_times(self):
         """Return an Array containing the sample times.
@@ -491,17 +490,13 @@ class TimeSeries(Array):
             LAL time series object containing the same data as self.
             The actual type depends on the sample's dtype.  If the epoch of
             self is 'None', the epoch of the returned LAL object will be
-            LIGOTimeGPS(0,0); otherwise, the same as that of self.
+            LIGOTimeGPS(0,0);
 
         Raises
         ------
         TypeError
             If time series is stored in GPU memory.
         """
-        if _lal is None:
-            raise ModuleNotFoundError(
-                'Cannot convert to a lal array if lal is not installed'
-            )
         
         lal_data = None
         ep = self._epoch
