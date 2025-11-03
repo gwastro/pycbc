@@ -249,7 +249,7 @@ static inline void _decomp_tcode_segment(
 
 /* =====================================================================
  *
- * FAST QUARTIC INTERPOLATION (HELPER) - NEWLY ADDED
+ * FAST QUARTIC INTERPOLATION (HELPER)
  *
  * =====================================================================
  */
@@ -350,455 +350,46 @@ static inline void _decomp_Qcode_segment(
 
 /* =====================================================================
  *
- * ORIGINAL LINEAR INTERPOLATOR (MAIN)
+ * MASTER TEMPLATED INTERPOLATOR (MAIN) - NEWLY ADDED
  *
  * =====================================================================
  */
-
-void _decomp_ccode_double(std::complex<double> * h,
-                          double delta_f,
-                          const int64_t hlen,
-                          const int64_t start_index,
-                          double * sample_frequencies,
-                          double * amp,
-                          double * phase,
-                          const int64_t sflen,
-                          const int64_t imin)
+template <class T, class T_COMPLEX>
+static inline void _decomp_main_loop(
+    int degree, // The degree of interpolation to aim for
+    T_COMPLEX * h,
+    T delta_f,
+    const int64_t hlen,
+    const int64_t start_index,
+    T * sample_frequencies,
+    T * amp,
+    T * phase,
+    const int64_t sflen,
+    const int64_t imin)
 {
     int64_t k, kmax;
     int64_t last_findex = start_index;
     const int update_interval = 128;
-    double f1, f2, a1, a2, p1, p2;
+    T f0, f1, f2, f3, f4, a0, a1, a2, a3, a4, p0, p1, p2, p3, p4;
+
+    // Determine the maximum possible degree based on number of points
+    int max_possible_degree;
+    if (sflen < 3) max_possible_degree = 1; // Not enough for quadratic
+    else if (sflen < 4) max_possible_degree = 2; // Not enough for cubic
+    else if (sflen < 5) max_possible_degree = 3; // Not enough for quartic
+    else if (sflen < 6) max_possible_degree = 4; // Not enough for quintic
+    else max_possible_degree = 4; // We only implement up to quartic
+
+    // Use the lower of the requested degree or the max possible
+    if (degree > max_possible_degree) {
+        degree = max_possible_degree;
+    }
 
     // zero out the beginning
-    memset(h, 0, sizeof(std::complex<double>)*start_index);
+    memset(h, 0, sizeof(T_COMPLEX)*start_index);
 
     for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
-
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
-
-        // Call the fast linear helper
-        _decomp_ccode_segment<double, std::complex<double>>(
-            &h[k], f1, f2, a1, a2, p1, p2,
-            delta_f, k, kmax, update_interval);
-
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<double>)*(hlen-last_findex));
-    }
-}
-
-void _decomp_ccode_float(std::complex<float> * h,
-                         float delta_f,
-                         const int64_t hlen,
-                         const int64_t start_index,
-                         float * sample_frequencies,
-                         float * amp,
-                         float * phase,
-                         const int64_t sflen,
-                         const int64_t imin)
-{
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    float f1, f2, a1, a2, p1, p2;
-
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<float>)*start_index);
-
-    for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
-
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
-
-        // Call the fast linear helper
-        _decomp_ccode_segment<float, std::complex<float>>(
-            &h[k], f1, f2, a1, a2, p1, p2,
-            delta_f, k, kmax, update_interval);
-
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<float>)*(hlen-last_findex));
-    }
-}
-
-
-/* =====================================================================
- *
- * FAST QUADRATIC INTERPOLATOR (MAIN)
- *
- * =====================================================================
- */
-
-void _decomp_qcode_double(std::complex<double> * h,
-                          double delta_f,
-                          const int64_t hlen,
-                          const int64_t start_index,
-                          double * sample_frequencies,
-                          double * amp,
-                          double * phase,
-                          const int64_t sflen,
-                          const int64_t imin)
-{
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    double f0, f1, f2, a0, a1, a2, p0, p1, p2;
-
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<double>)*start_index);
-
-    for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
-
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
-
-        // === Use robust linear interpolation for the first segment ===
-        if (i == imin) {
-            _decomp_ccode_segment<double, std::complex<double>>(
-                &h[k], f1, f2, a1, a2, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Use fast quadratic interpolation for all subsequent segments ===
-        else {
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-
-            _decomp_qcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<double>)*(hlen-last_findex));
-    }
-}
-
-void _decomp_qcode_float(std::complex<float> * h,
-                         float delta_f,
-                         const int64_t hlen,
-                         const int64_t start_index,
-                         float * sample_frequencies,
-                         float * amp,
-                         float * phase,
-                         const int64_t sflen,
-                         const int64_t imin)
-{
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    float f0, f1, f2, a0, a1, a2, p0, p1, p2;
-
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<float>)*start_index);
-
-    for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
-
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
-
-        // === Use robust linear interpolation for the first segment ===
-        if (i == imin) {
-            _decomp_ccode_segment<float, std::complex<float>>(
-                &h[k], f1, f2, a1, a2, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Use fast quadratic interpolation for all subsequent segments ===
-        else {
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-
-            _decomp_qcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<float>)*(hlen-last_findex));
-    }
-}
-
-
-/* =====================================================================
- *
- * FAST CUBIC INTERPOLATOR (MAIN)
- *
- * =====================================================================
- */
-
-void _decomp_tcode_double(std::complex<double> * h,
-                          double delta_f,
-                          const int64_t hlen,
-                          const int64_t start_index,
-                          double * sample_frequencies,
-                          double * amp,
-                          double * phase,
-                          const int64_t sflen,
-                          const int64_t imin)
-{
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    double f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3;
-
-    // A cubic interpolator requires at least 3 segments
-    // (4 points) to run. If we have less, we must degrade.
-    // sflen=2 (1 seg) -> linear only
-    // sflen=3 (2 segs) -> linear, quadratic
-    // sflen=4 (3 segs) -> linear, quadratic, quadratic
-    // sflen>=5 (>=4 segs) -> linear, quadratic, cubic..., quadratic
-
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<double>)*start_index);
-
-    for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
-
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
-
-        // === Boundary 1: First segment (i == imin) ===
-        // Must use linear (points i, i+1)
-        if (i == imin) {
-            _decomp_ccode_segment<double, std::complex<double>>(
-                &h[k], f1, f2, a1, a2, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 2: Last segment (i == sflen - 2) or not enough points ===
-        // Must use quadratic (points i-1, i, i+1)
-        else if (i == sflen - 2 || sflen < 5) { // Degrade if not enough points for cubic
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-            _decomp_qcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === All other segments: Use fast cubic (points i-1, i, i+1, i+2) ===
-        else {
-            f0 = sample_frequencies[i-1];
-            f3 = sample_frequencies[i+2];
-            a0 = amp[i-1];
-            a3 = amp[i+2];
-            p0 = phase[i-1];
-            p3 = phase[i+2];
-
-            _decomp_tcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3,
-                delta_f, k, kmax, update_interval);
-        }
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<double>)*(hlen-last_findex));
-    }
-}
-
-
-void _decomp_tcode_float(std::complex<float> * h,
-                         float delta_f,
-                         const int64_t hlen,
-                         const int64_t start_index,
-                         float * sample_frequencies,
-                         float * amp,
-                         float * phase,
-                         const int64_t sflen,
-                         const int64_t imin)
-{
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    float f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3;
-
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<float>)*start_index);
-
-    for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
-
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
-
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
-
-        // === Boundary 1: First segment (i == imin) ===
-        if (i == imin) {
-            _decomp_ccode_segment<float, std::complex<float>>(
-                &h[k], f1, f2, a1, a2, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 2: Last segment (i == sflen - 2) or not enough points ===
-        else if (i == sflen - 2 || sflen < 5) { // Degrade if not enough points for cubic
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-            _decomp_qcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === All other segments: Use fast cubic (points i-1, i, i+1, i+2) ===
-        else {
-            f0 = sample_frequencies[i-1];
-            f3 = sample_frequencies[i+2];
-            a0 = amp[i-1];
-            a3 = amp[i+2];
-            p0 = phase[i-1];
-            p3 = phase[i+2];
-
-            _decomp_tcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3,
-                delta_f, k, kmax, update_interval);
-        }
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<float>)*(hlen-last_findex));
-    }
-}
-
-
-/* =====================================================================
- *
- * FAST QUARTIC INTERPOLATOR (MAIN) - NEWLY ADDED
- *
- * =====================================================================
- */
-
-// Main function for quartic interpolation
-void _decomp_Qcode_double(std::complex<double> * h,
-                          double delta_f,
-                          const int64_t hlen,
-                          const int64_t start_index,
-                          double * sample_frequencies,
-                          double * amp,
-                          double * phase,
-                          const int64_t sflen,
-                          const int64_t imin)
-{
-    // Quartic requires 5 points (4 segments).
-    // If fewer than 6 points (5 segments) are available,
-    // degrade to the cubic function which can handle all smaller cases.
-    if (sflen < 6) {
-        _decomp_tcode_double(h, delta_f, hlen, start_index,
-                             sample_frequencies, amp, phase, sflen, imin);
-        return;
-    }
-    
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    double f0, f1, f2, f3, f4, a0, a1, a2, a3, a4, p0, p1, p2, p3, p4;
-
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<double>)*start_index);
-
-    for (int64_t i = imin; i < sflen-1; i++) {
-        // Get segment boundaries
+        // Get segment boundaries (always needed)
         f1 = sample_frequencies[i];
         f2 = sample_frequencies[i+1];
         a1 = amp[i];
@@ -820,169 +411,102 @@ void _decomp_Qcode_double(std::complex<double> * h,
         }
         if (kmax > hlen) kmax = hlen;
 
-        // === Boundary 1: First segment (i == imin) ===
-        if (i == imin) {
-            _decomp_ccode_segment<double, std::complex<double>>(
-                &h[k], f1, f2, a1, a2, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 2: Second segment (i == imin + 1) ===
-        else if (i == imin + 1) {
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-            _decomp_qcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 3: Last segment (i == sflen - 2) ===
-        else if (i == sflen - 2) {
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-            _decomp_qcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 4: Second-to-last segment (i == sflen - 3) ===
-        else if (i == sflen - 3) {
-            f0 = sample_frequencies[i-1];
-            f3 = sample_frequencies[i+2];
-            a0 = amp[i-1];
-            a3 = amp[i+2];
-            p0 = phase[i-1];
-            p3 = phase[i+2];
-            _decomp_tcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3,
-                delta_f, k, kmax, update_interval);
-        }
-        // === All other segments: Use fast quartic (points i-1, i, i+1, i+2, i+3) ===
-        else {
-            f0 = sample_frequencies[i-1];
-            f3 = sample_frequencies[i+2];
-            f4 = sample_frequencies[i+3];
-            a0 = amp[i-1];
-            a3 = amp[i+2];
-            a4 = amp[i+3];
-            p0 = phase[i-1];
-            p3 = phase[i+2];
-            p4 = phase[i+3];
+        // --- Gracefully degrade at the boundaries ---
+        // Start with the highest requested degree
+        int current_degree = degree; 
 
-            _decomp_Qcode_segment<double, std::complex<double>>(
-                &h[k], f0, f1, f2, f3, f4, a0, a1, a2, a3, a4, p0, p1, p2, p3, p4,
-                delta_f, k, kmax, update_interval);
+        // Degrade based on start position
+        if (i == imin) current_degree = 1; // First segment must be linear
+        else if (i == imin + 1 && current_degree > 2) current_degree = 2;
+        else if (i == imin + 2 && current_degree > 3) current_degree = 3;
+
+        // Degrade based on end position (Quartic needs i+3, Cubic needs i+2)
+        if (current_degree > 3 && i >= sflen - 3) current_degree = 3;
+        if (current_degree > 2 && i >= sflen - 2) current_degree = 2;
+
+        // --- Call the correct helper based on current_degree ---
+        switch (current_degree) {
+            case 1:
+                _decomp_ccode_segment<T, T_COMPLEX>(
+                    &h[k], f1, f2, a1, a2, p1, p2,
+                    delta_f, k, kmax, update_interval);
+                break;
+
+            case 2:
+                f0 = sample_frequencies[i-1];
+                a0 = amp[i-1]; p0 = phase[i-1];
+                _decomp_qcode_segment<T, T_COMPLEX>(
+                    &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
+                    delta_f, k, kmax, update_interval);
+                break;
+
+            case 3:
+                f0 = sample_frequencies[i-1];
+                f3 = sample_frequencies[i+2];
+                a0 = amp[i-1]; a3 = amp[i+2];
+                p0 = phase[i-1]; p3 = phase[i+2];
+                _decomp_tcode_segment<T, T_COMPLEX>(
+                    &h[k], f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3,
+                    delta_f, k, kmax, update_interval);
+                break;
+            
+            case 4:
+            default: // Catches degree >= 4
+                f0 = sample_frequencies[i-1];
+                f3 = sample_frequencies[i+2];
+                f4 = sample_frequencies[i+3];
+                a0 = amp[i-1]; a3 = amp[i+2]; a4 = amp[i+3];
+                p0 = phase[i-1]; p3 = phase[i+2]; p4 = phase[i+3];
+                _decomp_Qcode_segment<T, T_COMPLEX>(
+                    &h[k], f0, f1, f2, f3, f4, a0, a1, a2, a3, a4, p0, p1, p2, p3, p4,
+                    delta_f, k, kmax, update_interval);
+                break;
         }
         last_findex = kmax;
     }
+
     // zero out the rest of the array
     if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<double>)*(hlen-last_findex));
+        memset(&h[last_findex], 0, sizeof(T_COMPLEX)*(hlen-last_findex));
     }
 }
 
-// Main function for quartic interpolation (float)
-void _decomp_Qcode_float(std::complex<float> * h,
-                         float delta_f,
-                         const int64_t hlen,
-                         const int64_t start_index,
-                         float * sample_frequencies,
-                         float * amp,
-                         float * phase,
-                         const int64_t sflen,
-                         const int64_t imin)
-{
-    // Degrade to cubic if not enough points
-    if (sflen < 6) {
-        _decomp_tcode_float(h, delta_f, hlen, start_index,
-                            sample_frequencies, amp, phase, sflen, imin);
-        return;
-    }
-    
-    int64_t k, kmax;
-    int64_t last_findex = start_index;
-    const int update_interval = 128;
-    float f0, f1, f2, f3, f4, a0, a1, a2, a3, a4, p0, p1, p2, p3, p4;
 
-    // zero out the beginning
-    memset(h, 0, sizeof(std::complex<float>)*start_index);
+/* =====================================================================
+ *
+ * PUBLIC-FACING STUB FUNCTIONS (REDUCED BOILERPLATE)
+ *
+ * =====================================================================
+ */
 
-    for (int64_t i = imin; i < sflen-1; i++) {
-        f1 = sample_frequencies[i];
-        f2 = sample_frequencies[i+1];
-        a1 = amp[i];
-        a2 = amp[i+1];
-        p1 = phase[i];
-        p2 = phase[i+1];
+// --- LINEAR ---
+void _decomp_ccode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<double, std::complex<double>>(1, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
+void _decomp_ccode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<float, std::complex<float>>(1, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
 
-        if (i == imin) {
-            k = start_index;
-        } else {
-            k = (int64_t)ceil(f1 / delta_f);
-        }
+// --- QUADRATIC ---
+void _decomp_qcode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<double, std::complex<double>>(2, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
+void _decomp_qcode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<float, std::complex<float>>(2, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
 
-        if (i == sflen - 2) {
-           kmax = (int64_t)(f2 / delta_f) + 1;
-        } else {
-           kmax = (int64_t)(f2 / delta_f);
-        }
-        if (kmax > hlen) kmax = hlen;
+// --- CUBIC ---
+void _decomp_tcode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<double, std::complex<double>>(3, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
+void _decomp_tcode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<float, std::complex<float>>(3, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
 
-        // === Boundary 1: First segment (i == imin) ===
-        if (i == imin) {
-            _decomp_ccode_segment<float, std::complex<float>>(
-                &h[k], f1, f2, a1, a2, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 2: Second segment (i == imin + 1) ===
-        else if (i == imin + 1) {
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-            _decomp_qcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 3: Last segment (i == sflen - 2) ===
-        else if (i == sflen - 2) {
-            f0 = sample_frequencies[i-1];
-            a0 = amp[i-1];
-            p0 = phase[i-1];
-            _decomp_qcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, a0, a1, a2, p0, p1, p2,
-                delta_f, k, kmax, update_interval);
-        }
-        // === Boundary 4: Second-to-last segment (i == sflen - 3) ===
-        else if (i == sflen - 3) {
-            f0 = sample_frequencies[i-1];
-            f3 = sample_frequencies[i+2];
-            a0 = amp[i-1];
-            a3 = amp[i+2];
-            p0 = phase[i-1];
-            p3 = phase[i+2];
-            _decomp_tcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, f3, a0, a1, a2, a3, p0, p1, p2, p3,
-                delta_f, k, kmax, update_interval);
-        }
-        // === All other segments: Use fast quartic (points i-1, i, i+1, i+2, i+3) ===
-        else {
-            f0 = sample_frequencies[i-1];
-            f3 = sample_frequencies[i+2];
-            f4 = sample_frequencies[i+3];
-            a0 = amp[i-1];
-            a3 = amp[i+2];
-            a4 = amp[i+3];
-            p0 = phase[i-1];
-            p3 = phase[i+2];
-            p4 = phase[i+3];
-
-            _decomp_Qcode_segment<float, std::complex<float>>(
-                &h[k], f0, f1, f2, f3, f4, a0, a1, a2, a3, a4, p0, p1, p2, p3, p4,
-                delta_f, k, kmax, update_interval);
-        }
-        last_findex = kmax;
-    }
-    // zero out the rest of the array
-    if (last_findex < hlen) {
-        memset(&h[last_findex], 0, sizeof(std::complex<float>)*(hlen-last_findex));
-    }
+// --- QUARTIC ---
+void _decomp_Qcode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<double, std::complex<double>>(4, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+}
+void _decomp_Qcode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
+    _decomp_main_loop<float, std::complex<float>>(4, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
