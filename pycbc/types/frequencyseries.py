@@ -20,13 +20,13 @@ Provides a class representing a frequency series.
 import os as _os
 import h5py
 import warnings
+import numpy as _numpy
+
 from pycbc.types.array import Array, _convert, zeros, _noreal
 from pycbc.types import float64
-try:
-    import lal as _lal
-except ModuleNotFoundError:
-    _lal = None
-import numpy as _numpy
+from pycbc.libutils import import_optional
+
+_lal = import_optional('lal')
 
 class FrequencySeries(Array):
     """Models a frequency series consisting of uniformly sampled scalar values.
@@ -98,12 +98,12 @@ class FrequencySeries(Array):
                        doc="Frequency between consecutive samples in Hertz.")
 
     def get_epoch(self):
-        """Return frequency series epoch as a float64.
+        """Return frequency series epoch
         """
         return self._epoch
     
     epoch = property(get_epoch,
-                     doc="Frequency series epoch as a float64.")
+                     doc="Frequency series epoch.")
 
     def get_sample_frequencies(self):
         """Return an Array containing the sample frequencies.
@@ -333,17 +333,13 @@ class FrequencySeries(Array):
             LAL frequency series object containing the same data as self.
             The actual type depends on the sample's dtype. If the epoch of
             self was 'None', the epoch of the returned LAL object will be
-            LIGOTimeGPS(0,0); otherwise, convert the same as that of self.
+            LIGOTimeGPS(0,0); otherwise, convert it to LIGOTimeGPS
 
         Raises
         ------
         TypeError
             If frequency series is stored in GPU memory.
         """
-        if _lal is None:
-            raise ModuleNotFoundError(
-                'Cannot convert to a lal array if lal is not installed'
-            )
 
         lal_data = None
         if self._epoch is None:

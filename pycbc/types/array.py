@@ -33,10 +33,7 @@ import os as _os
 from functools import wraps
 
 import h5py
-try:
-    import lal as _lal
-except:
-    _lal = None
+
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones
 from numpy.linalg import norm
@@ -44,6 +41,9 @@ from numpy.linalg import norm
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.opt import LimitedSizeDict
+from pycbc.libutils import import_optional
+
+_lal = import_optional('lal')
 
 #! FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
@@ -967,10 +967,6 @@ class Array(object):
     @_convert
     def lal(self):
         """ Returns a LAL Object that contains this data """
-        if _lal is None:
-            raise ModuleNotFoundError(
-                'Cannot convert to lal array if lal is not installed'
-            )
 
         lal_data = None
         if self._data.dtype == float32:
