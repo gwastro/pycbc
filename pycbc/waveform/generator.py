@@ -276,15 +276,16 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         """Applies a taper if it is in current params.
         """
         hp, hc = res
-
-        hp_tapered = hp.taper_timeseries(location=self.current_params['taper'], 
-                                         tapermethod=self.current_params.get('taper_method', 'lal'), 
-                                         taper_window=self.current_params.get('taper_window'))
-        hc_tapered = hc.taper_timeseries(location=self.current_params['taper'], 
-                                         tapermethod=self.current_params.get('taper_method', 'lal'), 
-                                         taper_window=self.current_params.get('taper_window'))
+        if 'taper' in self.current_params:
+            location = self.current_params['taper']
+            hp = hp.taper_timeseries(location=location,
+                                     tapermethod=self.current_params.get('taper_method', 'lal'), 
+                                     taper_window=self.current_params.get('taper_window'))
+            hc = hc.taper_timeseries(location=location,
+                                     tapermethod=self.current_params.get('taper_method', 'lal'), 
+                                     taper_window=self.current_params.get('taper_window'))
  
-        return hp_tapered, hc_tapered
+        return hp, hc
 
 
 class TDomainCBCModesGenerator(BaseCBCGenerator):
