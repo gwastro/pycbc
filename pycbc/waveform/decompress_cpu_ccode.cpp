@@ -377,7 +377,6 @@ static inline void _decomp_main_loop(
     if (sflen < 3) max_possible_degree = 1; // Not enough for quadratic
     else if (sflen < 4) max_possible_degree = 2; // Not enough for cubic
     else if (sflen < 5) max_possible_degree = 3; // Not enough for quartic
-    else if (sflen < 6) max_possible_degree = 4; // Not enough for quintic
     else max_possible_degree = 4; // We only implement up to quartic
 
     // Use the lower of the requested degree or the max possible
@@ -481,32 +480,32 @@ static inline void _decomp_main_loop(
 
 // --- LINEAR ---
 void _decomp_ccode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<double, std::complex<double>>(1, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<double, std::complex<double> >(1, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 void _decomp_ccode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<float, std::complex<float>>(1, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<float, std::complex<float> >(1, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 
 // --- QUADRATIC ---
 void _decomp_qcode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<double, std::complex<double>>(2, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<double, std::complex<double> >(2, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 void _decomp_qcode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<float, std::complex<float>>(2, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<float, std::complex<float> >(2, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 
 // --- CUBIC ---
 void _decomp_tcode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<double, std::complex<double>>(3, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<double, std::complex<double> >(3, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 void _decomp_tcode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<float, std::complex<float>>(3, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<float, std::complex<float> >(3, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 
 // --- QUARTIC ---
 void _decomp_Qcode_double(std::complex<double> * h, double delta_f, const int64_t hlen, const int64_t start_index, double * sample_frequencies, double * amp, double * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<double, std::complex<double>>(4, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<double, std::complex<double> >(4, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
 void _decomp_Qcode_float(std::complex<float> * h, float delta_f, const int64_t hlen, const int64_t start_index, float * sample_frequencies, float * amp, float * phase, const int64_t sflen, const int64_t imin) {
-    _decomp_main_loop<float, std::complex<float>>(4, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
+    _decomp_main_loop<float, std::complex<float> >(4, h, delta_f, hlen, start_index, sample_frequencies, amp, phase, sflen, imin);
 }
