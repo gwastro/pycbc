@@ -67,7 +67,10 @@ def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     # fudge factoriness
     return .022 if t < 0 else (t + fudge_min) * fudge_length
 
-def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
+def mchirp_compression(m1, m2, fmin, fmax,
+                       min_seglen=0.02, 
+                       df_multiple=None,
+                       scale=1):
     """Return the frequencies needed to compress a waveform with the given
     chirp mass. This is based on the estimate in rough_time_estimate.
 
@@ -87,6 +90,8 @@ def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
         Make the compressed sampling frequencies a multiple of the given value.
         If None provided, the returned sample points can have any floating
         point value.
+    scale: float
+        Factor to scale the initial frequency step size by.
 
     Returns
     -------
@@ -99,14 +104,14 @@ def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
         if df_multiple is not None:
             f = int(f/df_multiple)*df_multiple
         sample_points.append(f)
-        f += 1.0 / rough_time_estimate(m1, m2, f, fudge_min=min_seglen)
+        f += 1.0 / rough_time_estimate(m1, m2, f, fudge_min=min_seglen) * scale
     # add the last point
     if sample_points[-1] < fmax:
         sample_points.append(fmax)
     return numpy.array(sample_points)
 
 def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
-        sample_frequencies=None):
+        sample_frequencies=None, scale=1):
     """Returns the frequencies needed to compress the given frequency domain
     waveform. This is done by estimating t(f) of the waveform using the
     stationary phase approximation.
@@ -125,6 +130,8 @@ def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
         The frequencies that the waveform is evaluated at. If None, will
         retrieve the frequencies from the waveform's sample_frequencies
         attribute.
+    scale: float
+        Factor to scale the initial frequency step size by.
 
     Returns
     -------
@@ -144,7 +151,7 @@ def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
         f = int(f/htilde.delta_f)*htilde.delta_f
         sample_points.append(f)
         jj = numpy.searchsorted(sample_frequencies, f)
-        f += 1./(tf[jj:].max()+min_seglen)
+        f += 1./(tf[jj:].max()+min_seglen) * scale
     # add the last point
     if sample_points[-1] < fmax:
         sample_points.append(fmax)

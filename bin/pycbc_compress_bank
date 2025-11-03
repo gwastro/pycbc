@@ -87,6 +87,11 @@ parser.add_argument("--precision", type=str, choices=["double", "single"],
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                     "Otherwise, an error is raised.")
+parser.add_argument("--scale", type=float,
+                    help="Scale factor to apply to the courseness of the initial
+                         "compression points. >1 means a courser set of initial
+                         "points. The algorithm will still add points to meet"
+                         "the tolerance goals.")
 parser.add_argument(
     "--do-not-compress",
     nargs="+",
@@ -180,11 +185,13 @@ for ii in range(templates.size):
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
         sample_points = compress.mchirp_compression(tmplt.mass1, tmplt.mass2,
-            fmin, kmax*df, min_seglen=args.t_pad, df_multiple=df).astype(
+            fmin, kmax*df, min_seglen=args.t_pad, df_multiple=df,
+            scale=args.scale).astype(
             real_same_precision_as(htilde))
     elif args.compression_algorithm == 'spa':
         sample_points = compress.spa_compression(htilde, fmin, kmax*df,
-            min_seglen=args.t_pad).astype(real_same_precision_as(htilde))
+            min_seglen=args.t_pad,
+            scale=args.sclae).astype(real_same_precision_as(htilde))
     else:
         raise ValueError("unrecognized compression algorithm %s" %(
             args.compression_algorithm))
