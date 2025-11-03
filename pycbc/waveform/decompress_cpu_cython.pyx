@@ -61,6 +61,24 @@ cdef extern from "decompress_cpu_ccode.cpp":
                              float * phase,
                              const int64_t sflen,
                              const int64_t imin)
+    void _decomp_tcode_double(double complex * h,
+                              double delta_f,
+                              const int64_t hlen,
+                              const int64_t start_index,
+                              double * sample_frequencies,
+                              double * amp,
+                              double * phase,
+                              const int64_t sflen,
+                              const int64_t imin)
+    void _decomp_tcode_float(float complex * h,
+                             float delta_f,
+                             const int64_t hlen,
+                             const int64_t start_index,
+                             float * sample_frequencies,
+                             float * amp,
+                             float * phase,
+                             const int64_t sflen,
+                             const int64_t imin)
 
 # See simd_threshold_cython in events module for some guidance for how I
 # constructed this in this way
@@ -122,5 +140,35 @@ def decomp_qcode_float(numpy.ndarray[numpy.complex64_t, ndim=1, mode="c"] h not 
                        int sflen,
                        int imin):
     _decomp_qcode_float(&h[0], delta_f, hlen, start_index,
+                         &sample_frequencies[0], &amp[0], &phase[0],
+                         sflen, imin)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def decomp_tcode_double(numpy.ndarray[numpy.complex128_t, ndim=1, mode="c"] h not None,
+                        double delta_f,
+                        int hlen,
+                        int start_index,
+                        numpy.ndarray[double, ndim=1, mode="c"] sample_frequencies not None,
+                        numpy.ndarray[double, ndim=1, mode="c"] amp not None,
+                        numpy.ndarray[double, ndim=1, mode="c"] phase not None,
+                        int sflen,
+                        int imin):
+    _decomp_tcode_double(&h[0], delta_f, hlen, start_index,
+                         &sample_frequencies[0], &amp[0], &phase[0],
+                         sflen, imin)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def decomp_tcode_float(numpy.ndarray[numpy.complex64_t, ndim=1, mode="c"] h not None,
+                       float delta_f,
+                       int hlen,
+                       int start_index,
+                       numpy.ndarray[float, ndim=1, mode="c"] sample_frequencies not None,
+                       numpy.ndarray[float, ndim=1, mode="c"] amp not None,
+                       numpy.ndarray[float, ndim=1, mode="c"] phase not None,
+                       int sflen,
+                       int imin):
+    _decomp_tcode_float(&h[0], delta_f, hlen, start_index,
                          &sample_frequencies[0], &amp[0], &phase[0],
                          sflen, imin)
