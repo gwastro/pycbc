@@ -46,6 +46,7 @@ from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.constants import REARTH_SI, C_SI
 
 logger = logging.getLogger('pycbc.inject.inject')
 
@@ -226,7 +227,7 @@ class _XMLInjectionSet(object):
                     + str(strain.dtype))
 
         lalstrain = strain.lal()
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
+        earth_travel_time = REARTH_SI / C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
 
@@ -597,7 +598,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             t0 = float(strain.start_time)
             t1 = float(strain.end_time)
         else:
-            earth_travel_time = lal.REARTH_SI / lal.C_SI
+            earth_travel_time = REARTH_SI / C_SI
             t0 = float(strain.start_time) - earth_travel_time
             t1 = float(strain.end_time) + earth_travel_time
 
@@ -1338,7 +1339,7 @@ class SGBurstInjectionSet(object):
 
         lalstrain = strain.lal()
         #detector = Detector(detector_name)
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
+        earth_travel_time = REARTH_SI / C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
 
