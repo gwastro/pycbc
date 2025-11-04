@@ -19,7 +19,6 @@ Provides a class representing a frequency series.
 """
 import os as _os
 import h5py
-import warnings
 import numpy as _numpy
 
 from pycbc.types.array import Array, _convert, zeros, _noreal
