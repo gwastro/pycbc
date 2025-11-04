@@ -10,7 +10,6 @@ The priority order for constant lookup is: LAL > Astropy / SciPy / NumPy
 """
 
 import logging
-import warnings
 
 # We define a global logger for this module
 logger = logging.getLogger('pycbc.constants')

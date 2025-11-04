@@ -19,7 +19,6 @@ Provides a class representing a time series.
 """
 import os as _os
 import h5py
-import warnings
 
 import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
