@@ -250,8 +250,11 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     kmax = min(len(htilde), len(hdecomp))
     htilde = htilde[:kmax]
     hdecomp = hdecomp[:kmax]
-    mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
-                                  low_frequency_cutoff=fmin)
+    s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)    
+    s2 = filter.sigma(htilde, psd=psd, low_frequency_cutoff=fmin)
+    htilde2 = htilde / psd / s2
+    mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
+                                  low_frequency_cutoff=fmin, normalized=False))
     if mismatch > tolerance:
         # we'll need the difference in the waveforms as a function of frequency
         vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
@@ -285,6 +288,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         sample_index = new_index
         sample_points = (sample_index * df).astype(
             real_same_precision_as(htilde))
+            
         # get the new compressed points
         comp_amp = amp.take(sample_index)
         comp_phase = phase.take(sample_index)
@@ -303,8 +307,18 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                                               sample_points[minpt:minpt+2],
                                               psd=psd)
         vecdiffs = new_vecdiffs
-        mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
-                                          low_frequency_cutoff=fmin)
+  
+        mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s2, htilde2,
+                                            low_frequency_cutoff=fmin,
+                                            normalized=False,
+                                           ))
+        
+        if mismatch <= tolerance:
+            s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
+            mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
+                                            low_frequency_cutoff=fmin,
+                                            normalized=False,
+                                           ))
         added_points.append(addidx)
     compression_factor = len(htilde) / len(sample_points)
     logging.info(
