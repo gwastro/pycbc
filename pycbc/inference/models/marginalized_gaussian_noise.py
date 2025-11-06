@@ -23,7 +23,7 @@ import logging
 import numpy
 from scipy import special
 from pycbc.waveform import generator, get_fd_waveform
-from pycbc.wavefeform.utils import apply_fd_time_shift
+from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.filter.matchedfilter import overlap_cplx
 from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
