@@ -966,3 +966,78 @@ def marginalize_likelihood(sh, hh,
     if return_peak:
         return vloglr, maxv, maxl
     return vloglr
+
+def hm_phase_marginalize(shm,hmhn):
+        ''' 
+        returns the likelihood marginalized over the phase provided the
+        inner products between each modes
+
+        Inputs:
+        shm : A dictionary of <s|hm>
+
+        hmhn : A dictionary of <hm|hn>
+        
+        '''
+        _m_max = max(shm.keys())
+        z = {p:0 for p in range(1,_m_max+1)}
+        for p in shm:
+            z[p] = -shm[p]
+        hmhm = 0
+        for (m,n) in hmhn:
+            p_val = n-m
+            if p_val in z:
+                z[p_val] += hmhn[(m,n)]
+            if p_val == 0:
+                hmhm += numpy.real(hmhn[(m,n)])
+        
+        N = len(z)
+        w = numpy.zeros(2*N + 1, dtype=complex)
+        z_array = numpy.array([z[i] for i in range(1, N+1)])
+        w[:N] = 1j * numpy.arange(N, 0, -1) * numpy.conj(z_array[::-1])  # (N-k) * conj(z[N-k])
+        w[N] = 0
+        w[N+1:] = -1j*numpy.arange(1, N+1) * z_array  # (k-N) * z[k-N]
+
+        F_last_row = -w[:-1]/w[-1]
+        size = len(F_last_row)
+        ## Create off diagonal matrix of size (2N-1,2N)
+        F = numpy.diag(numpy.ones(size-1, dtype=complex), k=1)
+        F[-1, :] = F_last_row
+
+        eigvals, _ = numpy.linalg.eig(F)
+        all_roots = numpy.angle(eigvals) - 1j*numpy.log(numpy.abs(eigvals))
+        
+        ## Take only the purely real roots
+        ## NOTE : is there a better way of doing this?
+        threshold = 1e-3
+        _roots = numpy.real(all_roots[numpy.abs(numpy.imag(all_roots)) < threshold])
+
+        ##Calculate marg_lhood
+        peak_vals = []
+        correction_factors = []
+        for r in _roots:
+            a = {}
+            for n in range(7):
+                a[n] = 0
+                for p_val in z:
+                    a[n] += (p_val**(n) * z[p_val].real * numpy.cos(p_val*r + (n*numpy.pi/2))
+                             - p_val**(n) * z[p_val].imag * numpy.sin(p_val*r + (n*numpy.pi/2)))
+                a[n] = a[n]/scipy.special.factorial(n)
+
+            if a[2] > 0:
+                cf = numpy.sqrt(numpy.pi)*(
+                    (a[2]**(-1/2))
+                    -(3/4)*(a[4])*(a[2]**(-5/2))
+                    +(15/8)*((0.5*a[3]*a[3])-(a[6]))*(a[2]**(-7/2))
+                    +(105/16)*((0.5*a[4]*a[4])+(a[5]*a[3]))*(a[2]**(-9/2))
+                    +(945/32)*((0.5*a[5]*a[5])+(a[4]*a[6]))*(a[2]**(-11/2))
+                    +(10395/64)*(0.5*a[6]*a[6])*(a[2]**(-13/2))
+                )
+                 
+                correction_factors.append(cf)
+                peak_vals.append(-a[0])
+
+        peak_vals = numpy.array(peak_vals)
+        correction_factors = numpy.array(correction_factors)
+        marg_loglr = (scipy.special.logsumexp(peak_vals,b=correction_factors)
+                      -numpy.log(2*numpy.pi) - (hmhm/2))
+        return marg_loglr
