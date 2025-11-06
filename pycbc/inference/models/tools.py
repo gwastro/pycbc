@@ -9,7 +9,7 @@ import numpy
 import numpy.random
 import tqdm
 
-from scipy.special import logsumexp, i0e
+from scipy.special import logsumexp, i0e, factorial
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
@@ -1021,7 +1021,7 @@ def hm_phase_marginalize(shm,hmhn):
                 for p_val in z:
                     a[n] += (p_val**(n) * z[p_val].real * numpy.cos(p_val*r + (n*numpy.pi/2))
                              - p_val**(n) * z[p_val].imag * numpy.sin(p_val*r + (n*numpy.pi/2)))
-                a[n] = a[n]/scipy.special.factorial(n)
+                a[n] = a[n]/factorial(n)
 
             if a[2] > 0:
                 cf = numpy.sqrt(numpy.pi)*(
@@ -1038,6 +1038,6 @@ def hm_phase_marginalize(shm,hmhn):
 
         peak_vals = numpy.array(peak_vals)
         correction_factors = numpy.array(correction_factors)
-        marg_loglr = (scipy.special.logsumexp(peak_vals,b=correction_factors)
+        marg_loglr = (logsumexp(peak_vals,b=correction_factors)
                       -numpy.log(2*numpy.pi) - (hmhm/2))
         return marg_loglr

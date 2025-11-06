@@ -22,13 +22,14 @@ import itertools
 import logging
 import numpy
 from scipy import special
-
-from pycbc.waveform import generator
+from pycbc.waveform import generator, get_fd_waveform
+from pycbc.wavefeform.utils import apply_fd_time_shift
+from pycbc.filter.matchedfilter import overlap_cplx
 from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
                              create_waveform_generator,
                              GaussianNoise, catch_waveform_error)
-from .tools import marginalize_likelihood, DistMarg
+from .tools import marginalize_likelihood, DistMarg, hm_phase_marginalize
 
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
@@ -895,7 +896,7 @@ class MarginalizedHMPhase(BaseGaussianNoise):
             ## Apply projections for each mode and time shift
             for m in hpm:
                 h_unshifted = fp*hpm[m] + fc*hcm[m]
-                h[ifo][m] = pycbc.waveform.utils.apply_fd_time_shift(h_unshifted, time_shift)
+                h[ifo][m] = apply_fd_time_shift(h_unshifted, time_shift)
             
             # Calculate inner products shm = <s|hm>
             shm[ifo] = {}
