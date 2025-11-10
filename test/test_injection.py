@@ -19,7 +19,6 @@ Unit test for PyCBC's injection module.
 """
 
 import tempfile
-import lal
 import unittest
 import numpy
 from astropy.time import Time
