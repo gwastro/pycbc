@@ -74,6 +74,8 @@ class TimeSeries(Array):
                     epoch = float64(0)
             elif epoch is not None: # If it is passed None, we do allow this
                 # epoch is given but is not already a float64 - convert it
+                if not _numpy.isscalar(epoch):
+                    raise TypeError("epoch must be a number, not array-like")
                 epoch = float64(epoch)
 
 
@@ -97,6 +99,8 @@ class TimeSeries(Array):
 
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
+        if self._epoch is None or other._epoch is None:
+            return False
         dt = abs(float(self.start_time - other.start_time))
         return dt <= 1e-7
 
