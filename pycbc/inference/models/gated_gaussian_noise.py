@@ -992,7 +992,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
     
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, **kwargs):
+                 static_params=None, 
+                 phase_samples=500000, ref_phase=None, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -1000,6 +1001,10 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             static_params=static_params, **kwargs)
         self.det_names = list(self.data.keys())
         self.dets = {}
+        # phase marginalization parameters
+        self.phase_samples = int(phase_samples)
+        self.phases = numpy.linspace(0, 2*numpy.pi, self.phase_samples)
+        self.ref_phase = ref_phase
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -1012,16 +1017,30 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         """
         if self._current_wfs is None:
             params = self.current_params
-            wfs = self.waveform_generator.generate(**params)
-            for det, h in wfs.items():
+            # set the reference phase
+            if self.ref_phase is None:
+                raise KeyError('ref_phase is set to None. Please specify the'
+                               'name of the phase parameter to marginalize '
+                               'over')
+            # generate the cosine and sine terms
+            params[self.ref_phase] = 0
+            cos_wfs = self.waveform_generator.generate(**params)
+            params[self.ref_phase] = numpy.pi/2
+            sin_wfs = self.waveform_generator.generate(**params)
+            wfs = {i: (cos_wfs[i], sin_wfs[i]) for i in self.det_names}
+            for det, (hc, hs) in wfs.items():
                 # make the same length as the data
-                h.resize(len(self.data[det]))
+                hc.resize(len(self.data[det]))
+                hs.resize(len(self.data[det]))
                 # apply high pass
                 if self.highpass_waveforms:
-                    h = highpass(
-                        h.to_timeseries(),
-                        frequency=self.highpass_waveforms).to_frequencyseries()
-                wfs[det] = h
+                    hc = highpass(
+                         hc.to_timeseries(),
+                         frequency=self.highpass_waveforms).to_frequencyseries()
+                    hs = highpass(
+                         hs.to_timeseries(),
+                         frequency=self.highpass_waveforms).to_frequencyseries()
+                wfs[det] = (hc, hs)
             self._current_wfs = wfs
         return self._current_wfs
 
@@ -1031,86 +1050,95 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         wfs = self.get_waveforms()
         out = {}
         # apply the gate
-        for det, h in wfs.items():
-            ht = h.to_timeseries()
+        for det, (hc, hs) in wfs.items():
+            hct = hc.to_timeseries()
+            hst = hs.to_timeseries()
             invpsd = self._invpsds[det]
             gate_times = self.get_gate_times()
             gatestartdelay, dgatedelay = gate_times[det]
-            ht = ht.gate(gatestartdelay + dgatedelay/2,
-                            window=dgatedelay/2, copy=False,
-                            invpsd=invpsd, method='paint')
-            h = ht.to_frequencyseries()
-            out[det] = h
+            hct = hct.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=False,
+                           invpsd=invpsd, method='paint')
+            hst = hst.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=False,
+                           invpsd=invpsd, method='paint')
+            hc = hct.to_frequencyseries()
+            hs = hst.to_frequencyseries()
+            out[det] = (hc, hs)
         return out
     
     @property
     def _extra_stats(self):
-        """Adds the maxL polarization and corresponding likelihood."""
-        return ['maxl_phase']
+        """Adds the maxL phase and corresponding likelihood."""
+        return ['maxl_phase', 'maxl_logl']
     
     @catch_waveform_error
     def _loglikelihood(self):
         r"""Computes the log likelihood.
         """
-        # get the zero-phase waveforms
+        # get waveforms
         wfs = self.get_waveforms()
+        gated_wfs = self.get_gated_waveforms()
         # get data
         data = self.get_data()
         gated_data = self.get_gated_data()
-        # gating params
-        gate_times = self.get_gate_times()
         # cycle over all detectors
-        norm_net = 0.
-        hh_net = 0.
-        hd_net = 0j
-        dh_net = 0j
-        dd_net = 0.
+        norm = 0.
+        hchc = 0.
+        hchs = 0.
+        hshc = 0.
+        hshs = 0.
+        dhc = 0.
+        dhs = 0.
+        hcd = 0.
+        hsd = 0.
+        dd = 0.
         for det in self.det_names:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
-            # overwhiten the gated data in this detector
             invpsd = self._invpsds[det]
             d = data[det].copy()
-            d_gated = gated_data[det].copy()
-            # gate params in this detector
-            gatestartdelay, dgatedelay = gate_times[det]
-            # gate the waveforms
-            h = wfs[det].copy()
-            h_gated = h.to_timeseries()
-            h_gated = h_gated.gate(gatestartdelay + dgatedelay/2,
-                                   window=dgatedelay/2, copy=True,
-                                   invpsd=invpsd, method='paint')
-            h_gated = h_gated.to_frequencyseries()
+            hc, hs = wfs[det]
+            gated_d = gated_data[det].copy()
+            gated_hc, gated_hs = gated_wfs[det]
             # overwhiten gated waveforms and data
-            h_gated *= 4 * invpsd.delta_f * invpsd
-            d_gated *= 4 * invpsd.delta_f * invpsd
+            gated_hc = 2 * invpsd.delta_f * invpsd * gated_hc.copy()
+            gated_hs = 2 * invpsd.delta_f * invpsd * gated_hs.copy()
+            gated_d *= 2 * invpsd.delta_f * invpsd
             # evaluate the inner products
-            hh = h[slc].inner(h_gated[slc]).real # <h, h>
-            hd = h[slc].inner(d_gated[slc]) # O(h, d)
-            dh = d[slc].inner(h_gated[slc]) # O(d, h)
-            dd = d[slc].inner(d_gated[slc]).real # <d, d>
-            hh_net += hh
-            hd_net += hd
-            dh_net += dh
-            dd_net += dd
+            hchc += hc[slc].inner(gated_hc[slc]).real
+            hchs += hc[slc].inner(gated_hs[slc]).real
+            hshc += hs[slc].inner(gated_hc[slc]).real
+            hshs += hs[slc].inner(gated_hs[slc]).real
+            dhc += d[slc].inner(gated_hc[slc]).real
+            dhs += d[slc].inner(gated_hs[slc]).real
+            hcd += hc[slc].inner(gated_d[slc]).real
+            hsd += hs[slc].inner(gated_d[slc]).real
+            dd += d[slc].inner(gated_d[slc]).real
             # get the normalization in this detector
             if self.normalize:
                 start_index, end_index = self.gate_indices(det)
             else:
                 start_index = end_index = None
-            norm_net += self.det_lognorm(det, start_index, end_index)
+            norm += self.det_lognorm(det, start_index, end_index)
+        # numerical marginalization over phases
+        cphi = numpy.cos(self.phases)
+        sphi = numpy.sin(self.phases)
+        hh = cphi*cphi*hchc + sphi*sphi*hshs + cphi*sphi*(hchs+hshc)
+        dh = cphi*dhc + sphi*dhs
+        hd = cphi*hcd + sphi*hsd
+        loglr = -(hh-dh-hd)
+        lognl = -dd
         # get the maxL phase
-        maxl_phase = numpy.angle((hd_net))
-        setattr(self._current_stats, 'maxl_phase', maxl_phase)
+        maxlidx = loglr.argmax()
+        setattr(self._current_stats, 'maxl_phase', self.phases[maxlidx])
+        setattr(self._current_stats, 'maxl_logl', loglr[maxlidx] + lognl + norm)
         # get the marginalized log likelihood ratio
-        loglr = -hh_net / 2
-        cross_term = numpy.sqrt((hd_net.real/2 + dh_net.real/2)**2 + \
-                                (hd_net.imag/2 - dh_net.imag/2)**2)
-        loglr += cross_term + numpy.log(i0e(cross_term))
-        return norm_net + loglr - dd_net / 2
+        marglogl = special.logsumexp(loglr) + lognl + norm - numpy.log(self.phase_samples)
+        return marglogl
 
     @property
     def multi_signal_support(self):
