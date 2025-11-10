@@ -31,7 +31,6 @@ import copy
 import logging
 from abc import ABCMeta, abstractmethod
 
-import lal
 from igwn_ligolw import utils as ligolw_utils, ligolw, lsctables
 
 from pycbc import waveform, frame, libutils

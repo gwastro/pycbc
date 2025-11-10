@@ -25,15 +25,21 @@
 """Generate ringdown templates in the time and frequency domain.
 """
 
-import numpy, lal
+import numpy
 try:
     import pykerr
 except ImportError:
     pykerr = None
-from pycbc.types import (TimeSeries, FrequencySeries, float64, complex128,
-                         zeros)
+
+from pycbc.types import (
+    TimeSeries, FrequencySeries, float64, complex128, zeros
+)
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import get_lm_f0tau_allmodes
+from pycbc.libutils import import_optional
+from pycbc.constants import  MSUN_SI, G_SI, PC_SI, C_SI
+
+lal = import_optional('lal')
 
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
@@ -460,9 +466,9 @@ def Kerr_factor(final_mass, distance):
     ringdowns
     """
     # Convert solar masses to meters
-    mass = final_mass * lal.MSUN_SI * lal.G_SI / lal.C_SI**2
+    mass = final_mass * MSUN_SI * G_SI / C_SI**2
     # Convert Mpc to meters
-    dist = distance * 1e6 * lal.PC_SI
+    dist = distance * 1e6 * PC_SI
     return mass / dist
 
 

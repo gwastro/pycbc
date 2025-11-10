@@ -16,7 +16,6 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
-import lal
 import numpy
 from numpy import sqrt, double, complex128
 from math import pow, log, cos, sin, acos, atan2

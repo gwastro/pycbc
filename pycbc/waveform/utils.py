@@ -24,12 +24,16 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, FrequencySeries, Array, complex_same_precision_as, real_same_precision_as
-import lal
 from math import frexp
 import numpy
-from pycbc.scheme import schemed
 from scipy import signal
+
+from pycbc.types import (
+    TimeSeries, FrequencySeries, Array,
+    complex_same_precision_as, real_same_precision_as
+)
+from pycbc.scheme import schemed
+from pycbc.constants import PI
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
@@ -293,7 +297,7 @@ def frequency_from_polarizations(h_plus, h_cross):
 
     """
     phase = phase_from_polarizations(h_plus, h_cross)
-    freq = numpy.diff(phase) / ( 2 * lal.PI * phase.delta_t )
+    freq = numpy.diff(phase) / ( 2 * PI * phase.delta_t )
     start_time = phase.start_time + phase.delta_t / 2
     return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
         delta_t=phase.delta_t, epoch=start_time)

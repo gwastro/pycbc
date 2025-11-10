@@ -42,6 +42,8 @@ _DEFAULT_MAPPING = {
     'PI': np.pi,
     'TWOPI': 2 * np.pi,
     'GAMMA': np.euler_gamma,
+    'PI_4': np.pi / 4.,
+    'LN2': np.log(2.)
 }
 
 # We need to define some constants from astropy values

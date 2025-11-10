@@ -22,8 +22,10 @@
 #  MA  02111-1307  USA
 
 import cupy as cp
-import lal
 import mako.template
+
+from pycbc.constants import PI_4, TWOPI, LN2
+
 
 taylorf2_text = mako.template.Template("""
     const float f = (i + kmin ) * delta_f;
@@ -37,8 +39,8 @@ taylorf2_text = mako.template.Template("""
     const float v7 = v3 * v4;
     float phasing = 0.;
 
-    float LAL_TWOPI = ${TWOPI};
-    float LAL_PI_4 = ${PI_4};
+    float TWOPI = ${TWOPI};
+    float PI_4 = ${PI_4};
     float log4 = ${LN4};
     float logv = __logf(v);
 
@@ -64,8 +66,8 @@ taylorf2_text = mako.template.Template("""
             break;
     }
     phasing *= pfaN / v5;
-    phasing -=  LAL_PI_4;
-    phasing -= int(phasing / (LAL_TWOPI)) * LAL_TWOPI;
+    phasing -=  PI_4;
+    phasing -= int(phasing / (TWOPI)) * TWOPI;
 
     float pcos;
     float psin;
@@ -73,7 +75,7 @@ taylorf2_text = mako.template.Template("""
 
     htilde.real(pcos * amp2);
     htilde.imag(-psin * amp2);
-""").render(TWOPI=lal.TWOPI, PI_4=lal.PI_4, LN4=2*lal.LN2)
+""").render(TWOPI=TWOPI, PI_4=PI_4, LN4=2*LN2)
 
 
 taylorf2_kernel = cp.ElementwiseKernel(
