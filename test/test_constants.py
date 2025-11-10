@@ -13,7 +13,7 @@ def get_constant_names(module):
     return [
         c for c in dir(module)
         if c.upper() == c
-        and not c.startswith('_') # Exclude all dunders and internal vars
+        and not c.startswith('_') # Exclude all internal vars
     ]
 
 # Define the module name - this is just to make it easier to rename later
@@ -31,39 +31,38 @@ class TestPycbcConstants(unittest.TestCase):
         if _PYCBC_CONSTANTS_MODULE_NAME in sys.modules:
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
 
-        # LAL is available here (imported before the test function or via setup, 
-        # but Python finds it as a true import)
-        import pycbc.constants as lal_constants
-        
-        # Assert availability check is correct for the LAL version
-        # i.e. if we run this test without lal being available,
-        # this check will fail
-        self.assertTrue(lal_constants._LAL_AVAILABLE, 
-                        "LAL-based import failed to detect LAL availability.")
+        # Default constants
+        with mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'default'}):
+            import pycbc.constants as default_constants
 
-        # Now load to get the fallback constants
-        # Re-remove from cache *before* the second import.
-        # This is critical because the @mock.patch only affects 'lal', 
-        # not 'pycbc.constants'.
+        # Assert _CONSTANTS value check for default version
+        self.assertTrue(
+            default_constants._CONSTANTS == 'default', 
+            "Fallback import failed to detect LAL unavailability."
+        )
+
+        # Reset the sys.modules value
         if _PYCBC_CONSTANTS_MODULE_NAME in sys.modules:
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
 
-        with mock.patch.dict('sys.modules', {'lal': None}):
-            import pycbc.constants as fallback_constants
-
-        # Assert availability check is correct for the fallback version
-        self.assertFalse(fallback_constants._LAL_AVAILABLE, 
-                         "Fallback import failed to detect LAL unavailability.")
-
-        # --- Stage 3: Compare Constants ---
+        # LAL is used here
+        with mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'lal'}):
+            import pycbc.constants as lal_constants
         
+        # Assert _CONSTANTS value check for LAL version
+        self.assertTrue(
+            lal_constants._CONSTANTS == 'lal', 
+            "LAL-based import failed to detect LAL availability."
+        )
+
         # Dynamically get the list of constants to check
-        const_name_list = get_constant_names(lal_constants)
+        const_name_list = get_constant_names(default_constants)
 
         # Use unittest's assertion methods instead of if/print/assert
         for const_name in const_name_list:
+            print(f"Checking {const_name}")
             lc = getattr(lal_constants, const_name)
-            fc = getattr(fallback_constants, const_name)
+            fc = getattr(default_constants, const_name)
 
             with self.subTest(constant=const_name):
                 # Check for numerical closeness (standard for float comparisons)
@@ -71,10 +70,9 @@ class TestPycbcConstants(unittest.TestCase):
                     np.isclose(lc, fc),
                     msg=(
                         f"Constant {const_name} value mismatch. "
-                        f"LAL:{lc}, FALLBACK:{fc}"
+                        f"LAL:{lc}, DEFAULT:{fc}"
                     )
                 )
-                
-# Optional: Boilerplate to run the test if the file is executed directly
+
 if __name__ == '__main__':
     unittest.main()
