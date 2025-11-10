@@ -290,8 +290,8 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
                 in2-=1
             # Giving complex input and specifying a real dtype should raise an error
             else:
-                self.assertRaises(TypeError, FrequencySeries, in1,0.1, dtype = self.dtype)
-                self.assertRaises(TypeError, FrequencySeries, in2,0.1, dtype = self.dtype)
+                self.assertRaises(TypeError, FrequencySeries, in1, 0.1, dtype = self.dtype)
+                self.assertRaises(TypeError, FrequencySeries, in2, 0.1, dtype = self.dtype)
 
             # Also, when it is unspecified
             out3 = FrequencySeries(in1,0.1,epoch=self.epoch)
@@ -307,7 +307,12 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
             self.assertEqual(out3._epoch, self.epoch)
 
             # We should also be able to create from a CPU Array
-            out4 = FrequencySeries(cpuarray,0.1, dtype=self.dtype, epoch=self.epoch)
+            out4 = FrequencySeries(
+                cpuarray,
+                0.1,
+                dtype=self.dtype,
+                epoch=self.epoch
+            )
 
             self.assertTrue(type(out4._scheme) == type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
@@ -342,8 +347,18 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
 
         # Also checking that a cpu array can't be made out of another scheme without copying
         if self.scheme != 'cpu':
-            self.assertRaises(TypeError, FrequencySeries, out4, 0.1, copy=False)
-            out6 = FrequencySeries(out4, 0.1, dtype=self.dtype, epoch=self.epoch)
+            self.assertRaises(
+                TypeError,
+                FrequencySeries,
+                out4, 0.1,
+                copy=False
+            )
+            out6 = FrequencySeries(
+                out4,
+                0.1,
+                dtype=self.dtype,
+                epoch=self.epoch
+            )
             self.assertTrue(type(out6._scheme) == DefaultScheme)
             self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0],1)
@@ -356,7 +371,12 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
     def test_list_init(self):
         with self.context:
             # When specified
-            out1 = FrequencySeries([5,3,1],0.1, dtype=self.dtype, epoch=self.epoch)
+            out1 = FrequencySeries(
+                [5,3,1],
+                0.1,
+                dtype=self.dtype,
+                epoch=self.epoch
+            )
 
             self.assertTrue(type(out1._scheme) == type(self.context))
             self.assertTrue(type(out1._data) is SchemeArray)
