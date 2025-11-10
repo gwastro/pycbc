@@ -20,10 +20,6 @@ Utility functions for handling NS equations of state
 import os.path
 import numpy as np
 from scipy.interpolate import interp1d
-<<<<<<< HEAD
-=======
-import lalsimulation as lalsim
->>>>>>> 36ff8fd2b (Update timeseries to use a float64 rather than ligotimegps)
 from . import NS_SEQUENCES, NS_DATA_DIRECTORY
 from .pg_isso_solver import PG_ISSO_solver
 
