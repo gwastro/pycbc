@@ -824,7 +824,8 @@ class MarginalizedHMPhase(BaseGaussianNoise):
         self.sample_rate = sample_rate
         flen = int(round(sample_rate / self.df) / 2 + 1)
         self.flen = flen
-        
+        self.shm = {}
+        self.hmhn = {}
         # Extract mode array from static params
         ## TODO : Fix junk in handling mode_arrays.
         p = self.static_params.copy()
@@ -934,5 +935,6 @@ class MarginalizedHMPhase(BaseGaussianNoise):
                     hmhn_total[(m,n)] += hmhn[ifo][(m,n)]
                 else:
                     hmhn_total[(m,n)] = hmhn[ifo][(m,n)]
-
+        self.shm = shm_total
+        self.hmhn = hmhn_total
         return hm_phase_marginalize(shm_total,hmhn_total)
