@@ -29,7 +29,7 @@ from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 
 from pycbc.types import TimeSeries
-from pycbc.detector import Detector, get_available_detectors
+from pycbc.detector import Detector, get_available_detectors, gmst_accurate
 from pycbc.inject import InjectionSet
 from pycbc.constants import C_SI, G_SI, PI, REARTH_SI, PC_SI
 
@@ -71,8 +71,7 @@ class MyInjection(object):
         row.psi3 = 0
         row.geocent_end_time = int(self.end_time)
         row.geocent_end_time_ns = int(1e9 * (self.end_time - row.geocent_end_time))
-        row.end_time_gmst = lal.GreenwichMeanSiderealTime(
-                lal.LIGOTimeGPS(self.end_time))
+        row.end_time_gmst = gmst_accurate(self.end_time)
         for d in 'lhvgt':
             row.__setattr__('eff_dist_' + d, row.distance)
             row.__setattr__(d + '_end_time', row.geocent_end_time)

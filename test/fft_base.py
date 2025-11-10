@@ -59,17 +59,21 @@ in particular that whichever backend is the default will be tested twice, once a
 'Default' and once under its own name.
 """
 
-import pycbc
-import pycbc.scheme
-import pycbc.types
-from pycbc.types import Array as ar, TimeSeries as ts, FrequencySeries as fs
+import unittest
 import numpy
 from numpy import dtype, float32, float64, complex64, complex128, zeros, real
 from numpy.random import randn
+
 import pycbc.fft
 from pycbc.fft.backend_support import set_backend
-import unittest
-from lal import LIGOTimeGPS as LTG
+import pycbc
+import pycbc.scheme
+import pycbc.types
+from pycbc.types import (
+    Array as ar,
+    TimeSeries as ts,
+    FrequencySeries as fs
+)
 
 # Because we run many similar tests where we only vary dtypes, precisions,
 # or Array/TimeSeries/FrequencySeries, it is helpful to define the following
@@ -467,7 +471,7 @@ class _BaseTestFFTClass(unittest.TestCase):
         self.in_c2c_rev = [3.0-1.0j,-1.0+3.0j]
         self.out_c2c_rev = [2.0+2.0j,4.0-4.0j]
         # For Time/FrequencySeries, we want to test with a non-trivial epoch
-        self.epoch = LTG(3,4)
+        self.epoch = 3 + 4 * 1e-9
         # When we need a delta_t or delta_f for input, use this.
         # Output-appropriate variable is computed.
         self.delta = 1.0/4096.0

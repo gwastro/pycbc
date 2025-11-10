@@ -26,14 +26,15 @@ These are the unittests for the pycbc frequencyseries type
 '''
 
 import unittest
+import numpy
+import os
+import tempfile
+
 from pycbc.types import (
     Array, FrequencySeries, float32, complex64, float64, complex128,
 )
 from pycbc.scheme import DefaultScheme
-import numpy
-import lal
-import os
-import tempfile
+
 from utils import array_base, parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("FrequencySeries")
@@ -99,16 +100,41 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
 
         # Finally, we want to have an array that we shouldn't be able to operate on,
         # because the precision is wrong, and one where the length is wrong.
-        self.bad = FrequencySeries([1,1,1], 0.1, epoch=self.epoch, dtype = self.other_precision[self.odtype])
-        self.bad2 = FrequencySeries([1,1,1,1], 0.1, epoch=self.epoch, dtype = self.dtype)
+        self.bad = FrequencySeries(
+            [1,1,1],
+            0.1,
+            epoch=self.epoch,
+            dtype = self.other_precision[self.odtype]
+        )
+        self.bad2 = FrequencySeries(
+            [1,1,1,1],
+            0.1,
+            epoch=self.epoch,
+            dtype = self.dtype
+        )
 
         # These are FrequencySeries that have problems specific to FrequencySeries
-        self.bad3 = FrequencySeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
+        self.bad3 = FrequencySeries(
+            [1,1,1],
+            0.2,
+            epoch=self.epoch,
+            dtype = self.dtype
+        )
         # This next one is actually okay for frequencyseries
         if self.epoch is None:
-            self.bad4 = FrequencySeries([1,1,1], 0.1, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
+            self.bad4 = FrequencySeries(
+                [1,1,1],
+                0.1,
+                epoch = (1000 + 1e-6),
+                dtype = self.dtype
+            )
         else:
-            self.bad4 = FrequencySeries([1,1,1], 0.1, epoch=None, dtype = self.dtype)
+            self.bad4 = FrequencySeries(
+                [1,1,1],
+                0.1,
+                epoch=None,
+                dtype = self.dtype
+            )
 
     def test_numpy_init(self):
         with self.context:
@@ -535,7 +561,7 @@ types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
 suite = unittest.TestSuite()
 
 # Unlike the regular array tests, we will need to test with an epoch, and with none
-epochs = [lal.LIGOTimeGPS(1000, 1000),None]
+epochs = [(1000 + 1e-6),None]
 
 i = 0
 for t,otypes in types:
