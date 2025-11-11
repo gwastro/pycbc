@@ -986,14 +986,16 @@ class GatedGaussianMargPol(BaseGatedGaussian):
 
 class GatedGaussianMargPhase(BaseGatedGaussian):
     r"""Gated Gaussian noise model that analytically marginalizes over the
-    phase of one of the modes in a multimodal signal.
+    phase of a signal.
+    
+    If a signal is composed over multiple modes, the 
     """
     name = 'gated_gaussian_margphase'
     
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, 
-                 phase_samples=500000, ref_phase=None, **kwargs):
+                 static_params=None, phase_samples=500000, phase_names=None,
+                 ref_phase=None, **kwargs):
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -1004,12 +1006,29 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         # phase marginalization parameters
         self.phase_samples = int(phase_samples)
         self.phases = numpy.linspace(0, 2*numpy.pi, self.phase_samples)
+        if ref_phase is None:
+            raise KeyError('ref_phase is set to None. Please specify the '
+                           'name of the phase parameter to marginalize '
+                           'over')
         self.ref_phase = ref_phase
+        if phase_names is None:
+            warnings.warn('No phase_names provided. Assuming single mode '
+                         f'specified by ref_phase {ref_phase}')
+            self.phase_names = ref_phase
+        elif type(phase_names) == list:
+            self.phase_names = phase_names
+        elif type(phase_names) == str:
+            self.phase_names = phase_names.split(' ')
+        else:
+            raise TypeError('Unrecognized format for phase_names arg. Accepts '
+                            'string, list, or None')
+        # create the waveform generator
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
+            generator_class=generator.FDomainDetFrameTwoPhaseGenerator,
             **self.static_params)
     
     def get_waveforms(self):
@@ -1017,17 +1036,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         """
         if self._current_wfs is None:
             params = self.current_params
-            # set the reference phase
-            if self.ref_phase is None:
-                raise KeyError('ref_phase is set to None. Please specify the'
-                               'name of the phase parameter to marginalize '
-                               'over')
             # generate the cosine and sine terms
-            params[self.ref_phase] = 0
-            cos_wfs = self.waveform_generator.generate(**params)
-            params[self.ref_phase] = numpy.pi/2
-            sin_wfs = self.waveform_generator.generate(**params)
-            wfs = {i: (cos_wfs[i], sin_wfs[i]) for i in self.det_names}
+            wfs = self.waveform_generator.generate(phases=self.phase_names, 
+                                                   **params)
             for det, (hc, hs) in wfs.items():
                 # make the same length as the data
                 hc.resize(len(self.data[det]))
