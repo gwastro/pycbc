@@ -988,7 +988,21 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
     r"""Gated Gaussian noise model that analytically marginalizes over the
     phase of a signal.
     
-    If a signal is composed over multiple modes, the 
+    The phase to be marginalized over is specified by the user using the 
+    `ref_phase` argument. If a model consists of multiple modes each with their
+    own phase, only the reference phase is marginalized over. All phases must
+    be specified with the `phase_names` argument. This can be passed as a list
+    or a string delimited by spaces (e.g. 'phase1 phase2 phase3').
+    
+    Marginalization is done using explicit numerical integration over 500
+    thousand integration points by default. This method assumes that the 
+    waveform h can be written in terms of an overall phase phi as
+        
+        h = h_c * cos(phi) + h_s * sin(phi),
+        
+    where h_c and h_s are the waveform with phi set to zero and pi/2
+    respectively. The number of integration points can be controlled via the
+    `phase_samples` argument.
     """
     name = 'gated_gaussian_margphase'
     
@@ -1012,9 +1026,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                            'over')
         self.ref_phase = ref_phase
         if phase_names is None:
-            warnings.warn('No phase_names provided. Assuming single mode '
-                         f'specified by ref_phase {ref_phase}')
-            self.phase_names = ref_phase
+            logging.warning('No phase_names provided. Assuming single mode '
+                            f'specified by ref_phase {ref_phase}')
+            self.phase_names = [ref_phase]
         elif type(phase_names) == list:
             self.phase_names = phase_names
         elif type(phase_names) == str:
@@ -1022,7 +1036,6 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
         else:
             raise TypeError('Unrecognized format for phase_names arg. Accepts '
                             'string, list, or None')
-        # create the waveform generator
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -1038,6 +1051,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             params = self.current_params
             # generate the cosine and sine terms
             wfs = self.waveform_generator.generate(phases=self.phase_names, 
+                                                   ref_phase=self.ref_phase,
                                                    **params)
             for det, (hc, hs) in wfs.items():
                 # make the same length as the data
@@ -1116,8 +1130,8 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             gated_d = gated_data[det].copy()
             gated_hc, gated_hs = gated_wfs[det]
             # overwhiten gated waveforms and data
-            gated_hc = 2 * invpsd.delta_f * invpsd * gated_hc.copy()
-            gated_hs = 2 * invpsd.delta_f * invpsd * gated_hs.copy()
+            gated_hc *= 2 * invpsd.delta_f * invpsd
+            gated_hs *= 2 * invpsd.delta_f * invpsd
             gated_d *= 2 * invpsd.delta_f * invpsd
             # evaluate the inner products
             hchc += hc[slc].inner(gated_hc[slc]).real

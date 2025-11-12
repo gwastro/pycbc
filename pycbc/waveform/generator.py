@@ -992,13 +992,13 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
 class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform in a specific frame.
     
-    Assuming that the radiation-frame waveform can be decomposed in terms of a
-    phase phi such that:
+    This class assumes that the radiation-frame waveform can be decomposed in
+    terms of a phase phi such that
         
-        h(t) = h_c(t)*cos(phi) + h_s(t)*sin(phi),
+        h = h_c * cos(phi) + h_s * sin(phi),
 
-    this class returns the coefficients h_c and h_s with detector response
-    applied.
+    where h_c and h_s are the waveform evaluated at phi = 0 and phi = pi/2
+    respectively. The output waveforms have the full detector response applied.
 
     Parameters
     ----------
@@ -1012,12 +1012,23 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {float, lal.LIGOTimeGPS
+    epoch : {float, lal.LIGOTimeGPS}
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
     variable_args : {(), list or tuple}
         A list or tuple of strings giving the names and order of parameters
         that will be passed to the generate function.
+    ref_phase : str
+        The phase used as a reference for generating h_c and h_s. If multiple
+        phases are in the signal, the relative difference between phases is
+        maintained during generation. For example, if a waveform has two phases
+        phi1 = pi/3 and phi2 = pi/2, with phi1 set as the reference, h_c will
+        be generated with phi1 = 0 and phi2 = pi/6, and h_s will be generated
+        with phi1 = pi/2 and phi2 = 2pi/3.
+    phases : {list, None}, optional
+        The names of the phase parameters taken in by the waveform approximant.
+        If None, it is assumed that the ref_phase argument is the only phase in
+        the signal.
     \**frozen_params
         Keyword arguments setting the parameters that will not be changed from
         call-to-call of the generate function.
@@ -1068,17 +1079,21 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
         is None, tc may optionally be provided.
     """
 
-    def generate(self, phases=None, **kwargs):
+    def generate(self, phases=None, ref_phase=None, **kwargs):
         """Generates a waveform, applies a time shift and the detector response
         function from the given kwargs.
         """
         self.current_params.update(kwargs)
         rfparams = {param: self.current_params[param]
             for param in kwargs if param not in self.location_args}
-        # generate the cosine term: assume ref_phase = 0
-        hpc, hcc = self.rframe_generator.generate(**rfparams)
+        # generate the cosine term: ref_phase = 0
+        rp = rfparams[ref_phase]
+        cos_params = rfparams.copy()
+        for i in phases:
+            cos_params[i] -= rp
+        hpc, hcc = self.rframe_generator.generate(**cos_params)
         # generate the sine term: shift all phases by pi/2
-        sin_params = rfparams.copy()
+        sin_params = cos_params.copy()
         for i in phases:
             sin_params[i] += pi/2
         hps, hcs = self.rframe_generator.generate(**sin_params)
