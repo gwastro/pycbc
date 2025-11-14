@@ -58,10 +58,7 @@ if wflow.cp.has_option("workflow", "output-directory"):
 else:
     base_dir = os.getcwd()
 triggername = str(wflow.cp.get("workflow", "trigger-name"))
-if wflow.cp.has_option("workflow", "output"):
-    run_dir = os.path.join(base_dir, wflow.cp.get("workflow", "output"))
-else:
-    run_dir = os.path.join(base_dir, "GRB%s" % triggername)
+run_dir = os.path.join(base_dir, args.output_dir)
 logging.info("Workflow will be generated in %s" % run_dir)
 if not os.path.exists(run_dir):
     os.makedirs(run_dir)
