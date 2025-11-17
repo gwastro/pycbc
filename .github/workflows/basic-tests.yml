@@ -1,6 +1,6 @@
 name: basic tests
 
-on: [push, pull_request]
+on: [push, pull_request, release]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
