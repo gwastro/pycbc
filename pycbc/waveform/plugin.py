@@ -122,12 +122,12 @@ def retrieve_waveform_plugins():
                             sequence=True, has_det_response=True)
 
     # Check for td waveforms
-    for plugin in pkg_resources.iter_entry_points('pycbc.waveform.td'):
-        add_custom_waveform(plugin.name, plugin.resolve(), 'time')
+    for plugin in entry_points(group='pycbc.waveform.td'):
+        add_custom_waveform(plugin.name, plugin.load(), 'time')
 
     # Check for td modal waveforms
-    for plugin in pkg_resources.iter_entry_points('pycbc.waveform.td_modes'):
-        add_custom_waveform(plugin.name, plugin.resolve(), 'time',
+    for plugin in entry_points(group='pycbc.waveform.td_modes'):
+        add_custom_waveform(plugin.name, plugin.load(), 'time',
                             modes=True)
 
     # Check for waveform length estimates
