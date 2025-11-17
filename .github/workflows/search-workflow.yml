@@ -10,12 +10,14 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      PEGASUS_METRICS: 'false'
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
     - name: install condor
       run: |
         wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -

@@ -485,7 +485,8 @@ def build_segment_filelist(seg_dir):
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None,
                     onsource_file=None, bank_file=None,
-                    seg_files=None, veto_file=None, tags=None, **kwargs):
+                    seg_files=None, sky_grid_file=None,
+                     veto_file=None, tags=None, **kwargs):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -503,6 +504,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Pass the veto and segment files and options
     if seg_files:
         node.add_input_list_opt('--seg-files', seg_files)
+    if sky_grid_file:
+        node.add_input_opt('--sky-grid', sky_grid_file)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
     # Option to show the onsource trial if this is a plot of all data
@@ -757,10 +760,13 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
     job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
+    return job
+
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
                                  inj_files, bank_file, seg_dir,
-                                 veto_file=None, tags=None,
+                                 sky_grid_file, veto_file=None, 
+                                 tags=None, 
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -798,6 +804,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
+    node.add_input_opt('--sky-grid', sky_grid_file)
     node.add_opt('--segment-dir', seg_dir)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)

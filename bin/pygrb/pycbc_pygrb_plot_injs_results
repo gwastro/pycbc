@@ -33,6 +33,7 @@ import pycbc.results
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.detector import Detector
 
 plt.switch_backend('Agg')
 matplotlib.rc("image")
@@ -55,6 +56,7 @@ def process_var_strings(qty):
     qty = qty.replace('endtime', 'end_time')
     qty = qty.replace('spin1a', 'spin1_a')
     qty = qty.replace('spin2a', 'spin2_a')
+    qty = qty.replace('chip', 'chi_p')
 
     return qty
 
@@ -104,6 +106,20 @@ def complete_mass_data(injs, key, tag):
     return data
 
 
+def complete_spin_data(injs, tag):  
+    """Extract data related to effective precession spin from raw injection data"""
+
+    mass1 = injs[tag+'/mass1']
+    mass2 = injs[tag+'/mass2'] 
+    spin1x = injs[tag+'/spin1x']
+    spin1y = injs[tag+'/spin1y']
+    spin2x = injs[tag+'/spin2x']
+    spin2y = injs[tag+'/spin2y']
+
+    data = pycbc.conversions.chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
+    return data
+
+
 def complete_sky_error_data(injs, tag):
     """Extract data related to sky_error from raw injection and trigger data"""
 
@@ -147,15 +163,29 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 # data_dict[key] -= grb_time
             elif key in ['mchirp', 'mtotal', 'q']:
                 data_dict[key] = complete_mass_data(injs, key, tag)
+            elif key == 'chi_p':
+                data_dict[key] = complete_spin_data(injs, tag)
             elif 'incl' in key:
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
                 data_dict[key] = complete_sky_error_data(injs, tag)
+            elif key == 'eff_dist':
+                eff_dists = np.empty((injs[tag + '/tc'].size, len(ifos)))
+                for i, ifo in enumerate(ifos):
+                    eff_dists[:, i] = Detector(ifo).effective_distance(
+                        injs[tag + '/distance'],
+                        injs[tag + '/ra'],
+                        injs[tag + '/dec'],
+                        injs[tag + '/polarization'],
+                        injs[tag + '/tc'],
+                        injs[tag + '/inclination'],
+                    )
+                data_dict[key] = 1 / (1 / eff_dists).sum(axis=1)
             else:
                 data_dict[key] = injs[tag+'/'+key]
         except KeyError:
             # raise NotImplemented(key+' not allowed: returning empty entry')
-            logging.info("%s/%s not allowed yet", tag, key)
+            logging.warning("%s/%s not allowed yet", tag, key)
 
     # Include information needed to apply vetoes and reweighted SNR cut
     if tag == 'found':
@@ -174,6 +204,18 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
 # =============================================================================
 # Main script starts here
 # =============================================================================
+
+# FIXME: not all of these work
+admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
+                             'spin1a', 'spin2a',
+                             'incl', 'cos_incl', 'abs_incl', 'cos_abs_incl',
+                             'cosincl', 'absincl', 'cosabsincl',
+                             'sky_error', 'skyerror', 'end_time', 'endtime',
+                             'dec', 'ra', 'coaphase', 'coa_phase',
+                             'eff_site_dist', 'eff_dist',
+                             'effsitedist', 'effdist', 'chip', 'chi_p']
+admitted_vars = sorted(set(admitted_vars))
+
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=True)
@@ -181,16 +223,6 @@ parser.add_argument("--trig-file",
                     help="The hdf offsource trigger file", required=True)
 parser.add_argument("--trigger-time",
                     help="The GPS time of the external trigger", required=True)
-# FIXME: not all of these work
-# TODO: effective distance
-admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
-                             'spin1a', 'spin2a',
-                             'incl', 'cos_incl', 'abs_incl', 'cos_abs_incl',
-                             'cosincl', 'absincl', 'cosabsincl',
-                             'sky_error', 'skyerror', 'end_time', 'endtime',
-                             'latitude', 'longitude', 'coaphase', 'coa_phase',
-                             'eff_site_dist', 'eff_dist',
-                             'effsitedist', 'effdist']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_vars,
                     help="Quantity to plot on the horizontal axis. " +
@@ -205,6 +237,8 @@ parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
 parser.add_argument("--colormap", default='cividis_r',
                     help="Type of colormap to be used for the plots.")
+parser.add_argument("--linear-colormap", action='store_true',
+                    help="Use a linear instead of log colormap.")
 parser.add_argument("--far-type", choices=('inclusive', 'exclusive'),
                     default='inclusive',
                     help="Type of far to plot for the color. Choices are "
@@ -223,9 +257,9 @@ x_qty = process_var_strings(opts.x_variable)
 y_qty = process_var_strings(opts.y_variable)
 
 if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
-    err_msg = "A value for --ifo must be provided for "
-    err_msg += "site specific effective distance"
-    parser.error(err_msg)
+    parser.error(
+        "A value for --ifo must be provided for site-specific effective distance"
+    )
 
 # Store options used multiple times in local variables
 outfile = opts.output_file
@@ -386,30 +420,25 @@ if found_quieter[x_qty].size:
 # Make plots
 # ==========
 
-# Info for site-specific plots
-sitename = {'G1': 'GEO', 'H1': 'Hanford', 'L1': 'Livingston', 'V1': 'Virgo',
-            'K1': 'KAGRA', 'A1': 'India Aundha'}
-
 # Take care of axes labels
 axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'mtotal': "Total mass (solar masses)",
                     'q': "Mass ratio",
                     'distance': "Distance (Mpc)",
-                    'eff_site_dist': f"{sitename.get(opts.ifo)} effective "
-                                     "distance (Mpc)",
-                    'eff_dist': "Inverse sum of effective distances (Mpc)",
-                    'end_time': f"Time since {grb_time} (s)",
-                    'sky_error': "Rec. sky error (radians)",
-                    'coa_phase': "Phase of complex SNR (radians)",
-                    'latitude': "Latitude (degrees)",
-                    'longitude': "Longitude (degrees)",
-                    'incl': "Inclination (iota)",
-                    'abs_incl': 'Magnitude of inclination (|iota|)',
+                    'eff_site_dist': f"{opts.ifo} effective distance (Mpc)",
+                    'eff_dist': "Inverse sum of inverse effective distances (Mpc)",
+                    'end_time': "GPS time (s)",
+                    'sky_error': "Rec. sky error (rad)",
+                    'coa_phase': "Phase of complex SNR (rad)",
+                    'dec': "Declination (rad)",
+                    'ra': "Right ascension (rad)",
+                    'incl': "Inclination iota (deg)",
+                    'abs_incl': 'Magnitude of inclination |iota| (deg)',
                     'cos_incl': "cos(iota)",
                     'cos_abs_incl': "cos(|iota|)",
                     'mass1': "Mass of 1st binary component (solar masses)",
                     'mass2': "Mass of 2nd binary component (solar masses)",
-                    'polarization': "Polarization phase (radians)",
+                    'polarization': "Polarization phase (rad)",
                     'spin1_a': "Spin on 1st binary component",
                     'spin1x': "Spin x-component of 1st binary component",
                     'spin1y': "Spin y-component of 1st binary component",
@@ -417,59 +446,84 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2_a': "Spin on 2nd binary component",
                     'spin2x': "Spin x-component of 2nd binary component",
                     'spin2y': "Spin y-component of 2nd binary component",
-                    'spin2z': "Spin z-component of 2nd binary component"}
-
-x_label = axis_labels_dict[x_qty]
-y_label = axis_labels_dict[y_qty]
+                    'spin2z': "Spin z-component of 2nd binary component",
+                    'chi_p': "Effective precession spin"}
 
 fig = plt.figure()
-xscale = "log" if opts.x_log else "linear"
-yscale = "log" if opts.y_log else "linear"
 ax = fig.gca()
-ax.set_xscale(xscale)
-ax.set_yscale(yscale)
-ax.set_xlabel(x_label)
-ax.set_ylabel(y_label)
+ax.set_xscale("log" if opts.x_log else "linear")
+ax.set_yscale("log" if opts.y_log else "linear")
+ax.set_xlabel(axis_labels_dict[x_qty])
+ax.set_ylabel(axis_labels_dict[y_qty])
 
 # Define p-value colour
-cmap = plt.get_cmap('cividis_r')
+cmap = plt.get_cmap(opts.colormap)
 # Set color for out-of-range values
 # cmap.set_over('g')
 
 # Define the 'found' injection colour
 fnd_col = cmap(0)
 fnd_col = np.array([fnd_col])
-if not opts.missed_on_top:
-    if missed_inj[x_qty].size and missed_inj[y_qty].size:
-        ax.scatter(missed_inj[x_qty], missed_inj[y_qty],
-                   c="black", marker="x", s=10)
-    if vetoed[x_qty].size:
-        ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=10)
-    if found_louder[x_qty].size:
-        ax.scatter(found_louder[x_qty], found_louder[y_qty],
-                   c=fnd_col, marker="+", s=30)
-    if found_quieter[x_qty].size:
-        p = ax.scatter(found_quieter[x_qty][FM], found_quieter[y_qty][FM],
-                       c=found_quieter['fap'][FM],
-                       cmap=cmap, vmin=0, vmax=1, s=40,
-                       edgecolor="w", linewidths=2.0)
-        cb = plt.colorbar(p, label="p-value")
-elif opts.missed_on_top:
-    if found_louder[x_qty].size:
-        ax.scatter(found_louder[x_qty], found_louder[y_qty],
-                   c=fnd_col, marker="+", s=15)
-    if found_quieter[x_qty].size:
-        p = ax.scatter(found_quieter[x_qty][MF], found_quieter[y_qty][MF],
-                       c=found_quieter['fap'][MF],
-                       cmap=cmap, vmin=0, vmax=1, s=40,
-                       edgecolor="w", linewidths=2.0)
-        cb = plt.colorbar(p, label="p-value")
-    if vetoed[x_qty].size:
-        ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=40)
-    if missed_inj[x_qty].size and missed_inj[y_qty].size:
-        ax.scatter(missed_inj[x_qty], missed_inj[y_qty],
-                   c="black", marker="x", s=40)
+if opts.missed_on_top:
+    z_orders = ['found louder', 'found quieter', 'vetoed', 'missed']
+    marker_sizes = [15, 40, 40, 40]
+else:
+    z_orders = ['missed', 'vetoed', 'found louder', 'found quieter']
+    marker_sizes = [10, 10, 30, 40]
+
+if missed_inj[x_qty].size and missed_inj[y_qty].size:
+    ax.scatter(
+        missed_inj[x_qty],
+        missed_inj[y_qty],
+        c="black",
+        marker="x",
+        s=marker_sizes[0],
+        zorder=z_orders.index('missed') / len(z_orders) + 1,
+        label="Missed"
+    )
+if vetoed[x_qty].size:
+    ax.scatter(
+        vetoed[x_qty],
+        vetoed[y_qty],
+        c="red",
+        marker="x",
+        s=marker_sizes[1],
+        zorder=z_orders.index('vetoed') / len(z_orders) + 1,
+        label="Found but vetoed"
+    )
+if found_louder[x_qty].size:
+    ax.scatter(
+        found_louder[x_qty],
+        found_louder[y_qty],
+        c=fnd_col,
+        marker="+",
+        s=marker_sizes[2],
+        zorder=z_orders.index('found louder') / len(z_orders) + 1,
+        label="Found louder than offsource"
+    )
+if found_quieter[x_qty].size:
+    if opts.linear_colormap:
+        fq_norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+    else:
+        fq_norm = matplotlib.colors.LogNorm(
+            vmin=min(found_quieter['fap'][FM]), vmax=1
+        )
+    p = ax.scatter(
+        found_quieter[x_qty][FM],
+        found_quieter[y_qty][FM],
+        c=found_quieter['fap'][FM],
+        cmap=cmap,
+        norm=fq_norm,
+        s=marker_sizes[3],
+        edgecolor="w",
+        linewidths=1,
+        zorder=z_orders.index('found quieter') / len(z_orders) + 1,
+        label="Found within offsource"
+    )
+    cb = plt.colorbar(p, label="p-value")
+
 ax.grid()
+ax.legend(loc=(0, 1), ncols=4, fontsize="xx-small", frameon=False)
 
 # Handle axis limits when plotting spins
 if "spin" in x_qty and missed_inj['spin1_a'].size:
@@ -485,6 +539,12 @@ if "spin" in y_qty and missed_inj['spin2_a'].size:
         ax.set_ylim([0, np.ceil(10 * max(max_missed_inj,
                                          found_inj[y_qty].max())) / 10])
 
+# Handle axis limits when plotting chi_p
+if x_qty == 'chi_p':
+    ax.set_xlim(0, 1)
+if y_qty == 'chi_p':
+    ax.set_ylim(0, 1)
+        
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
     max_inc = np.pi
@@ -524,17 +584,19 @@ if "incl" in x_qty or "incl" in y_qty:
 # Take care of caption
 plot_caption = opts.plot_caption
 if plot_caption is None:
-    plot_caption = "A black cross indicates no trigger was found "
-    plot_caption += "coincident with the injection.\n"
-    plot_caption += "A red cross indicates a trigger was found "
-    plot_caption += "coincident with the injection but it was vetoed.\n"
-    plot_caption += "A yellow plus indicates that a trigger was found "
-    plot_caption += "coincident with the injection and it was louder "
-    plot_caption += "than all events in the offsource.\n"
-    plot_caption += "A coloured circle indicates that a trigger was "
-    plot_caption += "found coincident with the injection but it was "
-    plot_caption += "not louder than all offsource events. The colour "
-    plot_caption += "bar gives the p-value of the trigger."
+    plot_caption = (
+        "A black cross indicates no trigger was found "
+        "coincident with the injection.\n"
+        "A red cross indicates a trigger was found "
+        "coincident with the injection but it was vetoed.\n"
+        "A yellow plus indicates that a trigger was found "
+        "coincident with the injection and it was louder "
+        "than all events in the offsource.\n"
+        "A coloured circle indicates that a trigger was "
+        "found coincident with the injection but it was "
+        "not louder than all offsource events. The colour "
+        "bar gives the p-value of the trigger."
+    )
 
 # Take care of title
 plot_title = opts.plot_title
@@ -543,12 +605,12 @@ if plot_title is None:
                   'mtotal': "total mass",
                   'q': "mass ratio",
                   'distance': "distance (Mpc)",
-                  'eff_dist': "inverse sum of effective distances",
+                  'eff_dist': "inverse sum of inverse effective distances",
                   'eff_site_dist': "site specific effective distance",
                   'end_time': "time",
                   'coa_phase': "phase of complex SNR",
-                  'latitude': "latitude",
-                  'longitude': "longitude",
+                  'dec': "declination",
+                  'ra': "right ascension",
                   'incl': "inclination",
                   'cos_incl': "inclination",
                   'abs_incl': "inclination",
@@ -563,7 +625,8 @@ if plot_title is None:
                   'spin2_a': "spin",
                   'spin2x': "spin x-component",
                   'spin2y': "spin y-component",
-                  'spin2z': "spin z-component"}
+                  'spin2z': "spin z-component",
+                  'chi_p': "Effective precession spin"}
 
     if "sky_error" in [x_qty, y_qty]:
         plot_title = "Sky error of recovered injections"
@@ -573,8 +636,20 @@ if plot_title is None:
         plot_title += " and " + title_dict[y_qty]
 
 # Wrap up
+
 plt.tight_layout()
-pycbc.results.save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
-                                     title=plot_title, caption=plot_caption)
+
+fig_kwds = {}
+if outfile.endswith('.png'):
+    fig_kwds['dpi'] = 200
+
+pycbc.results.save_fig_with_metadata(
+    fig,
+    outfile,
+    cmd=' '.join(sys.argv),
+    title=plot_title,
+    caption=plot_caption,
+    fig_kwds=fig_kwds
+)
 plt.close()
 logging.info("Plot complete.")

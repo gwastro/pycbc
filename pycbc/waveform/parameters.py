@@ -57,13 +57,18 @@ class Parameter(str):
     def docstr(self, prefix='', include_label=True):
         """Returns a string summarizing the parameter. Format is:
         <prefix>``name`` : {``default``, ``dtype``}
-        <prefix>   ``description`` Label: ``label``.
+        <prefix>    ``description`` Label: ``label``.
         """
         dtype_str = str(self.dtype).replace("<type '", '').replace("'>", '')
         dtype_str = dtype_str.replace("<class '", '')
+
+        # This handles multi-line descriptions correctly
+        desc_indent = '\n' + prefix + '    '
+        indented_desc = self.description.replace('\n', desc_indent)
+
         outstr = "%s%s : {%s, %s}\n%s    %s" % (
                 prefix, self.name, str(self.default), dtype_str, prefix,
-                self.description)
+                indented_desc)
         if include_label:
             outstr += " Label: %s" % (self.label)
         return outstr

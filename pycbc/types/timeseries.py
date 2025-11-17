@@ -22,6 +22,7 @@ import h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
+from pycbc.types import float32, float64
 import lal as _lal
 import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
@@ -562,7 +563,91 @@ class TimeSeries(Array):
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
                            **kwds)
+    
+    # map between tapering string in sim_inspiral table or inspiral
+    # code option and lalsimulation constants
 
+    def taper_timeseries(self, location=None, tapermethod='lal', return_lal=False, taper_window=None):
+        """
+        Taper either or both ends of a time series using wrapped
+        LALSimulation functions or a constant window taper.
+
+        Parameters
+        ----------
+        tsdata : TimeSeries
+            Series to be tapered, dtype must be either float32 or float64
+        location : string
+            Should be one of ('TAPER_NONE', 'TAPER_START', 'TAPER_END',
+            'TAPER_STARTEND', 'start', 'end', 'startend') - NB 'TAPER_NONE' will
+            not change the series!
+        tapermethod : string
+            Should be one of ('lal', 'constant'). 'lal' uses the LAL tapering
+            functions, 'constant' uses a constant window tapering. Default is 'lal'.
+        taper_window : float
+            If tapermethod is 'constant', this is the length in seconds of
+            the tapering window.
+        return_lal : Boolean
+            If True, return a wrapped LAL time series object, else return a
+            PyCBC time series.
+        """
+        import lalsimulation as sim
+
+        taper_map = {
+            'TAPER_NONE'    : None,
+            'TAPER_START'   : sim.SIM_INSPIRAL_TAPER_START,
+            'start'         : sim.SIM_INSPIRAL_TAPER_START,
+            'TAPER_END'     : sim.SIM_INSPIRAL_TAPER_END,
+            'end'           : sim.SIM_INSPIRAL_TAPER_END,
+            'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND,
+            'startend'      : sim.SIM_INSPIRAL_TAPER_STARTEND}
+
+        taper_func_map = {
+            _numpy.dtype(float32): sim.SimInspiralREAL4WaveTaper,
+            _numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper}
+
+        tsdata = self
+
+        if location is None:
+            raise ValueError("Must specify a tapering method (function was called"
+                            "with location=None)")
+        if location not in taper_map.keys():
+            raise ValueError("Unknown location %s, valid locations are %s" % \
+                            (location, ", ".join(taper_map.keys())))
+        if tsdata.dtype not in (float32, float64):
+            raise TypeError("Strain dtype must be float32 or float64, not "
+                        + str(tsdata.dtype))
+        if tapermethod == 'lal':
+            taper_func = taper_func_map[tsdata.dtype]
+            # make a LAL TimeSeries to pass to the LALSim function
+            ts_lal = tsdata.astype(tsdata.dtype).lal()
+            if taper_map[location] is not None:
+                taper_func(ts_lal.data, taper_map[location])
+            if return_lal:
+                return ts_lal
+            else:
+                return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
+                                epoch=ts_lal.epoch)
+        elif tapermethod == 'constant':
+            # constant window tapering
+            if taper_window is None:
+                raise ValueError("If taper_method is 'constant', taper_window must be set")
+            
+            gate_params = []
+            if location in ('TAPER_START', 'start' 'TAPER_STARTEND'):
+                first_nonzero = _numpy.nonzero(tsdata)[0][0]
+                nonzero_starttime = tsdata.start_time + first_nonzero * tsdata.delta_t
+                gate_params.append((nonzero_starttime, 0, taper_window))
+            if location in ('TAPER_END', 'end', 'TAPER_STARTEND'):
+                last_nonzero = _numpy.nonzero(tsdata)[0][-1]
+                nonzero_endtime = tsdata.end_time - last_nonzero * tsdata.delta_t
+                gate_params.append((nonzero_endtime - taper_window, 0, taper_window))
+            from pycbc.strain import gate_data
+            return gate_data(tsdata, gate_params)
+        else:
+            raise ValueError("Unknown tapering method %s, valid methods are lal and constant" % \
+                            (tapermethod))
+
+    
     def get_gate_indices(self, time, window):
         """Calculates the indices at which a gate should be applied.
 

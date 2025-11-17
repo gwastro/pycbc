@@ -57,22 +57,22 @@ class Constraint(object):
     def __call__(self, params):
         """Evaluates constraint.
         """
-        # cast to FieldArray
+
         if isinstance(params, dict):
             params = record.FieldArray.from_kwargs(**params)
         elif not isinstance(params, record.FieldArray):
-           raise ValueError("params must be dict or FieldArray instance")
+            raise ValueError("params must be dict or FieldArray instance")
 
-        # try to evaluate; this will assume that all of the needed parameters
-        # for the constraint exists in params
         try:
             out = self._constraint(params)
-        except NameError:
-            # one or more needed parameters don't exist; try applying the
-            # transforms
-            params = transforms.apply_transforms(params, self.transforms) \
-                     if self.transforms else params
+        except (NameError, AttributeError, TypeError):
+
+            if self.transforms:
+                params = transforms.apply_transforms(params, self.transforms)
+
             out = self._constraint(params)
+
+
         if isinstance(out, record.FieldArray):
             out = out.item() if params.size == 1 else out
         return out

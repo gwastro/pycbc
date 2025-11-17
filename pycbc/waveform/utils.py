@@ -24,7 +24,7 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as, real_same_precision_as
+from pycbc.types import TimeSeries, FrequencySeries, Array, complex_same_precision_as, real_same_precision_as
 import lal
 from math import frexp
 import numpy
@@ -298,65 +298,6 @@ def frequency_from_polarizations(h_plus, h_cross):
     return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
         delta_t=phase.delta_t, epoch=start_time)
 
-# map between tapering string in sim_inspiral table or inspiral
-# code option and lalsimulation constants
-try:
-    import lalsimulation as sim
-
-    taper_map = {
-        'TAPER_NONE'    : None,
-        'TAPER_START'   : sim.SIM_INSPIRAL_TAPER_START,
-        'start'         : sim.SIM_INSPIRAL_TAPER_START,
-        'TAPER_END'     : sim.SIM_INSPIRAL_TAPER_END,
-        'end'           : sim.SIM_INSPIRAL_TAPER_END,
-        'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND,
-        'startend'      : sim.SIM_INSPIRAL_TAPER_STARTEND
-    }
-
-    taper_func_map = {
-        numpy.dtype(float32): sim.SimInspiralREAL4WaveTaper,
-        numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper
-    }
-except ImportError:
-    taper_map = {}
-    taper_func_map = {}
-
-def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
-    """
-    Taper either or both ends of a time series using wrapped
-    LALSimulation functions
-
-    Parameters
-    ----------
-    tsdata : TimeSeries
-        Series to be tapered, dtype must be either float32 or float64
-    tapermethod : string
-        Should be one of ('TAPER_NONE', 'TAPER_START', 'TAPER_END',
-        'TAPER_STARTEND', 'start', 'end', 'startend') - NB 'TAPER_NONE' will
-        not change the series!
-    return_lal : Boolean
-        If True, return a wrapped LAL time series object, else return a
-        PyCBC time series.
-    """
-    if tapermethod is None:
-        raise ValueError("Must specify a tapering method (function was called"
-                         "with tapermethod=None)")
-    if tapermethod not in taper_map.keys():
-        raise ValueError("Unknown tapering method %s, valid methods are %s" % \
-                         (tapermethod, ", ".join(taper_map.keys())))
-    if tsdata.dtype not in (float32, float64):
-        raise TypeError("Strain dtype must be float32 or float64, not "
-                    + str(tsdata.dtype))
-    taper_func = taper_func_map[tsdata.dtype]
-    # make a LAL TimeSeries to pass to the LALSim function
-    ts_lal = tsdata.astype(tsdata.dtype).lal()
-    if taper_map[tapermethod] is not None:
-        taper_func(ts_lal.data, taper_map[tapermethod])
-    if return_lal:
-        return ts_lal
-    else:
-        return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
-                          epoch=ts_lal.epoch)
 
 @schemed("pycbc.waveform.utils_")
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):

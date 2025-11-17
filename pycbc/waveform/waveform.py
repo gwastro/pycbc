@@ -369,7 +369,7 @@ def get_obj_attrs(obj):
     """
     pr = {}
     if obj is not None:
-        if isinstance(obj, numpy.core.records.record):
+        if isinstance(obj, numpy.record):
             for name in obj.dtype.names:
                 pr[name] = getattr(obj, name)
         elif hasattr(obj, '__dict__') and obj.__dict__:
@@ -504,6 +504,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -540,6 +541,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -563,10 +565,10 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 get_fd_det_waveform_sequence.__doc__ = get_fd_det_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform.
@@ -576,6 +578,7 @@ def get_td_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -600,7 +603,7 @@ def get_td_waveform(template=None, **kwargs):
 
 get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
     params=parameters.td_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
@@ -610,6 +613,7 @@ def get_fd_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -649,7 +653,7 @@ def get_fd_waveform(template=None, **kwargs):
 
 get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def get_fd_waveform_from_td(**params):
     """ Return time domain version of fourier domain approximant.
@@ -726,6 +730,7 @@ def get_fd_det_waveform(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. An example would be a row in an xml table.
+
     {params}
 
     Returns
@@ -748,7 +753,7 @@ def get_fd_det_waveform(template=None, **kwargs):
 
 get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+           include_label=False))
 
 def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     """ The base function to calculate time domain version of fourier
@@ -881,7 +886,7 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=None, **params):
 get_td_det_waveform_from_fd_det.__doc__ = \
     get_td_det_waveform_from_fd_det.__doc__.format(
         params=parameters.td_waveform_params.docstr(prefix="    ",
-            include_label=False).lstrip(' '))
+            include_label=False))
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
@@ -1312,10 +1317,12 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if 'taper' in input_params.keys() and \
                 input_params['taper'] is not None:
-            hp = wfutils.taper_timeseries(hp, input_params['taper'],
-                                          return_lal=False)
-            hc = wfutils.taper_timeseries(hc, input_params['taper'],
-                                          return_lal=False)
+            hp = hp.taper_timeseries(location=input_params['taper'], 
+            tapermethod=input_params.get('taper_method', 'lal'), 
+            taper_window=input_params.get('taper_window'), return_lal=False)
+            hc = hc.taper_timeseries(location=input_params['taper'], 
+            tapermethod=input_params.get('taper_method', 'lal'), 
+            taper_window=input_params.get('taper_window'), return_lal=False)
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t
         # for IMR templates the zero of time is at max amplitude (merger)
