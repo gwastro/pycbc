@@ -53,6 +53,8 @@ parser.add_argument('--approximant',  required=False,
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
+parser.add_argument('--use-td-waveform', action='store_true',
+    help='Generate waveform in the time domain (default is frequency domain).')
 parser.add_argument('--full-resolution-buffer-length', default=None, type=float,
     help='Size of the waveform buffer in seconds for generating time-domain signals at full resolution before conversion to the frequency domain.')
 parser.add_argument('--max-signal-length', type= float,
@@ -363,17 +365,25 @@ class GenUniformWaveform(object):
         if hasattr(kwds['approximant'], 'decode'):
             kwds['approximant'] = kwds['approximant'].decode()
 
+        if args.full_resolution_buffer_length is not None: 
+            buff_len =  args.full_resolution_buffer_length
+        else:
+            buff_len = 1.0 / self.delta_f
+
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
-            if args.full_resolution_buffer_length is not None:
-                # Generate the frequency-domain waveform at full frequency resolution
-                high_hp, high_hc = pycbc.waveform.get_fd_waveform(delta_f=1 / args.full_resolution_buffer_length,
+
+            # Optionally generate time-domain waveform
+            if args.use_td_waveform:
+                hp, hc = pycbc.waveform.get_td_waveform(delta_t=1.0 / args.sample_rate,
                                                     **kwds)
-                # Decimate the generated signal to a reduced frequency resolution
-                hp = decimate_frequency_domain(high_hp, 1 / args.buffer_length)
-                hc = decimate_frequency_domain(high_hc, 1 / args.buffer_length)
+
+                hp = hp.to_frequencyseries(delta_f = 1.0 / buff_len)
+                hc = hc.to_frequencyseries(delta_f = 1.0 / buff_len)
+   
             else:
-                hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
+                hp, hc = pycbc.waveform.get_fd_waveform(delta_f = 1.0 / buff_len,
                                                     **kwds)
+      
             if  args.use_cross:
                 hp = hc
 
@@ -386,6 +396,10 @@ class GenUniformWaveform(object):
                         pycbc.types.zeros(self.flen, dtype=numpy.complex64),
                         delta_f=self.delta_f, delta_t=dt,
                         **kwds)
+
+        if args.full_resolution_buffer_length is not None:
+            # Decimate the generated signal to a reduced frequency resolution
+            hp = decimate_frequency_domain(hp, 1 / args.buffer_length)
 
         hp.resize(self.flen)
         hp = hp.astype(numpy.complex64)
