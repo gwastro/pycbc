@@ -323,20 +323,24 @@ class FastFilter:
                           (cv, cl, cv_out, cl_out, 
                            self.sizes, self.offsets,
                            self.nb, self.snum))
+        # Create template mapping array
+        template_map = cp.empty(total_size, dtype=cp.int32)
+        
         # Split into separate arrays
         cv_filtered = []
         cl_filtered = []
         start = 0
-        for size in self.sizes:
+        for idx, size in enumerate(self.sizes):
             size = int(size)
             if size > 0:
                 cv_filtered.append(cv_out[start:start + size])
                 cl_filtered.append(cl_out[start:start + size])
+                template_map[start:start + size] = idx
             else:
                 cv_filtered.append(cp.empty(0, dtype=cp.complex64))
                 cl_filtered.append(cp.empty(0, dtype=cp.int32))
             start += size
-        return cv_filtered, cl_filtered
+        return cv_filtered, cl_filtered, cv_out, cl_out, self.sizes, template_map
 
 class CUDAThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series_batch, analyse_slice):
@@ -389,9 +393,10 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         #     results.append((cv[w], cl[w]))
 
         # slightly faster version
-        cv_filtered, cl_filtered = self.fast_filter.filter_arrays(self.outv[:, :nb], self.outl[:, :nb])
+        cv_filtered, cl_filtered, cv_out, cl_out, sizes, template_map = \
+            self.fast_filter.filter_arrays(self.outv[:, :nb], self.outl[:, :nb])
         results = list(zip(cv_filtered, cl_filtered))
-        return results
+        return results, cv_out, cl_out, sizes, template_map
 
 def _threshold_cluster_factory(*args, **kwargs):
     return CUDAThresholdCluster

@@ -264,3 +264,186 @@ def spa_tmplt(**kwds):
             amp_factor, kwds['sample_points'], htilde)
 
     return htilde
+
+
+def spa_tmplt_batch(templates_params, filter_length, out, **common_kwds):
+    """
+    Generate multiple TaylorF2 templates in a single batched operation.
+    
+    Parameters
+    ----------
+    templates_params : list of dict
+        List of parameter dictionaries, one per template. Each should contain
+        mass1, mass2, spin1z, spin2z, and optionally distance.
+    filter_length : int
+        Length of the output frequency series
+    out : list of FrequencySeries
+        Pre-allocated output arrays to write templates into
+    **common_kwds : dict
+        Common parameters for all templates (delta_f, f_lower, etc.)
+        
+    Returns
+    -------
+    list of FrequencySeries
+        List of generated templates (same as out parameter)
+    """
+    import cupy as cp
+    from pycbc.types import FrequencySeries, zeros
+    from pycbc.types.array import Array
+    from .spa_tmplt_cupy import spa_tmplt_engine_batch
+    from .waveform import get_waveform_filter_length_in_time
+    import lalsimulation
+    
+    num_templates = len(templates_params)
+    if num_templates == 0:
+        return []
+    
+    # Extract common parameters
+    delta_f = common_kwds['delta_f']
+    f_lower = common_kwds['f_lower']
+    phase_order = int(common_kwds.get('phase_order', -1))
+    spin_order = int(common_kwds.get('spin_order', -1))
+    
+    # Pre-allocate arrays for parameters
+    kmin_list = []
+    kmax_list = []
+    piM_list = []
+    pfaN_list = []
+    pfa2_list = []
+    pfa3_list = []
+    pfa4_list = []
+    pfa5_list = []
+    pfl5_list = []
+    pfa6_list = []
+    pfl6_list = []
+    pfa7_list = []
+    amp_list = []
+    phase_order_list = []
+    
+    lal_pars = lal.CreateDict()
+    if phase_order != -1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars, phase_order)
+    if spin_order != -1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(lal_pars, spin_order)
+    
+    # Compute PN coefficients for each template
+    for params in templates_params:
+        mass1 = params['mass1']
+        mass2 = params['mass2']
+        s1z = params['spin1z']
+        s2z = params['spin2z']
+        distance = params.get('distance', common_kwds.get('distance', 1.0))
+        
+        amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
+        
+        # Calculate PN terms
+        phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
+            float(mass1), float(mass2), float(s1z), float(s2z), lal_pars)
+        
+        pfaN = phasing.v[0]
+        pfa2 = phasing.v[2] / pfaN
+        pfa3 = phasing.v[3] / pfaN
+        pfa4 = phasing.v[4] / pfaN
+        pfa5 = phasing.v[5] / pfaN
+        pfa6 = (phasing.v[6] - phasing.vlogv[6] * log(4)) / pfaN
+        pfa7 = phasing.v[7] / pfaN
+        pfl5 = phasing.vlogv[5] / pfaN
+        pfl6 = phasing.vlogv[6] / pfaN
+        
+        piM = lal.PI * (mass1 + mass2) * lal.MTSUN_SI
+        
+        kmin = int(f_lower / float(delta_f))
+        
+        # Get max frequency
+        if 'f_final' in common_kwds and common_kwds['f_final'] > 0.:
+            fstop = common_kwds['f_final']
+        else:
+            vISCO = 1. / sqrt(6.)
+            fstop = vISCO * vISCO * vISCO / piM
+            
+        kmax = int(fstop / delta_f)
+        # Ensure kmax doesn't exceed filter_length - 1 (final point must be 0)
+        if kmax >= filter_length:
+            kmax = filter_length - 1
+        
+        kmin_list.append(kmin)
+        kmax_list.append(kmax)
+        piM_list.append(piM)
+        pfaN_list.append(pfaN)
+        pfa2_list.append(pfa2)
+        pfa3_list.append(pfa3)
+        pfa4_list.append(pfa4)
+        pfa5_list.append(pfa5)
+        pfl5_list.append(pfl5)
+        pfa6_list.append(pfa6)
+        pfl6_list.append(pfl6)
+        pfa7_list.append(pfa7)
+        amp_list.append(amp_factor)
+        phase_order_list.append(phase_order)
+    
+    # Use the provided filter_length for output size
+    n = filter_length
+    
+    # Find the common frequency length for the batch kernel
+    # Each template needs different kmax-kmin, so we use the maximum span
+    freq_spans = [kmax_list[i] - kmin_list[i] for i in range(num_templates)]
+    freq_length = max(freq_spans)
+    
+    # Transfer parameters to GPU
+    kmin_gpu = cp.asarray(kmin_list, dtype=cp.int64)
+    freq_spans_gpu = cp.asarray(freq_spans, dtype=cp.int32)
+    phase_order_gpu = cp.asarray(phase_order_list, dtype=cp.int64)
+    piM_gpu = cp.asarray(piM_list, dtype=cp.float32)
+    pfaN_gpu = cp.asarray(pfaN_list, dtype=cp.float32)
+    pfa2_gpu = cp.asarray(pfa2_list, dtype=cp.float32)
+    pfa3_gpu = cp.asarray(pfa3_list, dtype=cp.float32)
+    pfa4_gpu = cp.asarray(pfa4_list, dtype=cp.float32)
+    pfa5_gpu = cp.asarray(pfa5_list, dtype=cp.float32)
+    pfl5_gpu = cp.asarray(pfl5_list, dtype=cp.float32)
+    pfa6_gpu = cp.asarray(pfa6_list, dtype=cp.float32)
+    pfl6_gpu = cp.asarray(pfl6_list, dtype=cp.float32)
+    pfa7_gpu = cp.asarray(pfa7_list, dtype=cp.float32)
+    amp_gpu = cp.asarray(amp_list, dtype=cp.float32)
+    
+    # Allocate output array on GPU
+    htilde_batch_gpu = cp.zeros(num_templates * freq_length, dtype=cp.complex64)
+    
+    # Call batched kernel
+    spa_tmplt_engine_batch(
+        htilde_batch_gpu, kmin_gpu, freq_spans_gpu, phase_order_gpu,
+        delta_f, piM_gpu, pfaN_gpu,
+        pfa2_gpu, pfa3_gpu, pfa4_gpu, pfa5_gpu, pfl5_gpu,
+        pfa6_gpu, pfl6_gpu, pfa7_gpu, amp_gpu,
+        num_templates, freq_length
+    )
+    
+    # Extract individual templates from batch result
+    templates = []
+    for i, params in enumerate(templates_params):
+        # Use pre-allocated output memory
+        htilde_data = out[i]
+        htilde = FrequencySeries(htilde_data, delta_f=delta_f, copy=False)
+        
+        # Clear the output array
+        htilde_data.clear()
+        
+        # Copy the relevant portion from GPU batch to this template
+        # Each template occupies freq_length elements in the batch array
+        start_idx = i * freq_length
+        end_idx = start_idx + freq_spans[i]
+        # Extract the slice from GPU and assign to the PyCBC array
+        htilde_data._data[kmin_list[i]:kmax_list[i]] = htilde_batch_gpu[start_idx:end_idx]
+        
+        # Set metadata
+        htilde.chirp_length = get_waveform_filter_length_in_time(
+            mass1=params['mass1'], mass2=params['mass2'],
+            spin1z=params['spin1z'], spin2z=params['spin2z'],
+            f_lower=f_lower, phase_order=phase_order,
+            approximant='SPAtmplt'
+        )
+        htilde.length_in_time = htilde.chirp_length
+        
+        templates.append(htilde)
+    
+    return templates
+

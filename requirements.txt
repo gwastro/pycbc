@@ -30,7 +30,7 @@ urllib3
 
 # need to pin until pegasus for further upstream
 # addresses incompatibility between old flask/jinja2 and latest markupsafe
-markupsafe <= 2.0.1
+# markupsafe <= 2.0.1
 
 # Requirements for ligoxml access needed by some workflows
 python-ligo-lw >= 1.8.1

@@ -16,6 +16,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import time
+t_very_start = time.time()
+
 import sys
 import os
 import copy
@@ -23,7 +26,6 @@ import logging
 import argparse
 import cupy
 import itertools
-import time
 from pycbc.pool import BroadcastPool as Pool
 
 import pycbc
@@ -36,6 +38,8 @@ import pycbc.inject
 from pycbc.scheme import CUPYScheme
 last_progress_update = -1.0
 import numpy
+
+print(f"PROFILE: Import time: {time.time() - t_very_start:.2f} s", flush=True)
 
 def update_progress(p,u,n):
     """ updates a file 'progress.txt' with a value 0 .. 1.0 when enough (filtering) progress was made
@@ -257,17 +261,22 @@ def template_triggers(t_nums):
     using_cupy = isinstance(ctx, pycbc.scheme.CUPYScheme)
     
     for s_num, stilde in enumerate(segments):
+        segment_start = time.time()
+        
         # Skip if any template in batch should be rejected
         if not all(inj_filter_rejector.template_segment_checker(bank, t_num, stilde) 
                   for t_num in t_nums):
             continue
 
         if templates is None:
+            template_gen_start = time.time()
             if not using_cupy:
                 templates = [bank[t_nums[0]]]
             else:
                 templates = bank[t_nums]
             tparams = [template.params for template in templates]
+            template_gen_time = time.time() - template_gen_start
+            print(f"PROFILE: Template generation time: {template_gen_time:.4f} s")
 
         if opt.update_progress:
             # Use first template for progress since we're batching
@@ -282,17 +291,30 @@ def template_triggers(t_nums):
             # Get sigmasq for all templates in batch
             t_start = time.time()
             sigmasqs = [template.sigmasq(stilde.psd) for template in templates]
-            print("Sigmasq time: ", time.time() - t_start)
+            sigmasq_time = time.time() - t_start
+            print("PROFILE: Sigmasq time: %.4f s" % sigmasq_time)
+            
             t_start = time.time()
-            snrs, norms, corrs, idxs, snrvs = \
+            snrs, norms, corrs, idxs, snrvs, snrv_arr, idxv_arr, sizes, template_map = \
                 matched_filter.matched_filter_and_cluster(s_num,
                                                         sigmasqs,
                                                         cluster_window,
                                                         epoch=stilde._epoch)
-            print("Matched filter time: ", time.time() - t_start)
+            mf_time = time.time() - t_start
+            print("PROFILE: Matched filter time: %.4f s" % mf_time)
+            
+            # Compute batched chisq for all triggers at once
+            t_start = time.time()
+            chisqs, chisq_dofs = \
+                power_chisq.values_batch(matched_filter.corr_mem, snrv_arr, norms, sizes, 
+                                        template_map, stilde.psd, idxv_arr + stilde.analyze.start, 
+                                        templates)
+            chisq_time = time.time() - t_start
+            print("PROFILE: Chisq time: %.4f s" % chisq_time)
         else:
             # Process templates one at a time for other schemes
             snrs, norms, corrs, idxs, snrvs, sigmasqs = [], [], [], [], [], []
+            chisqs, chisq_dofs = [], []
             for template in templates:
                 sigmasq = template.sigmasq(stilde.psd)
                 s, n, c, i, sv = \
@@ -306,22 +328,33 @@ def template_triggers(t_nums):
                 idxs.append(i)
                 snrvs.append(sv)
                 sigmasqs.append(sigmasq)
+                
+                # For non-CUPY, compute chisq per template
+                if len(i) > 0:
+                    chisq, chisq_dof = \
+                        power_chisq.values(c, sv, n, stilde.psd,
+                                          i + stilde.analyze.start, template)
+                else:
+                    chisq, chisq_dof = None, None
+                chisqs.append(chisq)
+                chisq_dofs.append(chisq_dof)
 
         # Process results for each template
-        for tidx, (template, snr, norm, corr, idx, snrv) in \
-                enumerate(zip(templates, snrs, norms, corrs, idxs, snrvs)):
+        for tidx, (template, snr, norm, corr, idx, snrv, chisq, chisq_dof) in \
+                enumerate(zip(templates, snrs, norms, corrs, idxs, snrvs, chisqs, chisq_dofs)):
             if not len(idx):
                 continue
             norm = float(norm)
 
             out_vals = out_vals_ref.copy()
+            
+            # Use pre-computed chisq values
+            out_vals['chisq'] = chisq.copy() if hasattr(chisq, 'copy') else chisq
+            out_vals['chisq_dof'] = chisq_dof.copy() if hasattr(chisq_dof, 'copy') else chisq_dof
+            
             out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
                 bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
                                 idx + stilde.analyze.start)
-
-            out_vals['chisq'], out_vals['chisq_dof'] = \
-                power_chisq.values(corr, snrv, norm, stilde.psd,
-                                 idx + stilde.analyze.start, template)
 
             out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
                                                   snrv, norm,
@@ -338,7 +371,14 @@ def template_triggers(t_nums):
 
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
-            out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasqs[tidx]
+            
+            # Handle sigmasq for both CUPY and non-CUPY cases
+            if using_cupy:
+                # For CUPY, use cupy zeros
+                import cupy as cp
+                out_vals['sigmasq'] = cp.zeros(len(snrv), dtype=float32) + sigmasqs[tidx]
+            else:
+                out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasqs[tidx]
             
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \
@@ -348,6 +388,9 @@ def template_triggers(t_nums):
                                                opt.sample_rate)
 
             out_vals_all[tidx].append(copy.deepcopy(out_vals))
+        
+        segment_time = time.time() - segment_start
+        print(f"PROFILE: Total segment time: {segment_time:.4f} s")
 
     return out_vals_all, tparams
 
@@ -509,6 +552,7 @@ with ctx:
     logging.info("Template bank size after thinning: %s", len(bank))
 
     tsetup = time.time() - tstart
+    logging.info("PROFILE: Setup time (data loading, PSD, etc): %.2f sec", tsetup)
     tcheckpoint = time.time()
 
     tanalyze = list(range(tnum_start, len(bank)))
@@ -535,8 +579,12 @@ with ctx:
             data = [template_triggers(tchunk)]
         else:
             data = list(mmap(template_triggers, tchunk))
+        
+        data_time = time.time() - chunk_start
+        print(f"PROFILE: template_triggers call time: {data_time:.4f} s")
             
         # Rest of the event processing remains the same
+        event_proc_start = time.time()
         for elem in data:
             for idx in range(len(elem[0])):
                 out_vals_all, tparam = elem[0][idx], elem[1][idx]
@@ -548,11 +596,15 @@ with ctx:
                 
                     event_mgr.cluster_template_events("time_index", "snr", cluster_window)
                     event_mgr.finalize_template_events()
+        
+        event_proc_time = time.time() - event_proc_start
+        print(f"PROFILE: Event processing time: {event_proc_time:.4f} s")
                 
         if opt.finalize_events_template_rate is not None:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)      
 
             chunk_time = time.time() - chunk_start
+            print(f"PROFILE: Total chunk time: {chunk_time:.4f} s")
             avg_template_time = chunk_time / len(tchunk) if len(tchunk) > 0 else 0
             logging.info("Processed %d templates in %.2f sec (%.2f sec/template)", 
                         len(tchunk), chunk_time, avg_template_time)
@@ -574,19 +626,26 @@ with ctx:
     tloop_end = time.time()
     tloop_total = tloop_end - tloop_start
     avg_template_time = tloop_total / templates_processed if templates_processed > 0 else 0
-    logging.info("Main loop completed in %.2f sec", tloop_total)
-    logging.info("Average processing time per template: %.2f sec", avg_template_time)
+    logging.info("PROFILE: Main loop completed in %.2f sec", tloop_total)
+    logging.info("PROFILE: Processed %d templates", templates_processed)
+    logging.info("PROFILE: Average time per template: %.4f sec", avg_template_time)
 
+finalize_start = time.time()
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
+finalize_time = time.time() - finalize_start
+logging.info("PROFILE: Event finalization time: %.2f sec", finalize_time)
 logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
 
 tstop = time.time()
 run_time = tstop - tstart
 event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 
+write_start = time.time()
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
+write_time = time.time() - write_start
+logging.info("PROFILE: Write events time: %.2f sec", write_time)
 
 if opt.fft_backends == 'fftw':
     if opt.fftw_output_float_wisdom_file:

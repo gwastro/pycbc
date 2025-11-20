@@ -806,71 +806,172 @@ class FilterBank(TemplateBank):
 
         # Handle list of indices for batch loading
         templates = []
-        if self.out is None:
-            tempout = zeros(self.filter_length, dtype=self.dtype)
-        else:
-            tempout = self.out
-        for i, idx in enumerate(index):
-            approximant = self.approximant(idx)
-            f_end = self.end_frequency(idx)
-            if f_end is None or f_end >= (self.filter_length * self.delta_f):
-                f_end = (self.filter_length-1) * self.delta_f
-
-            # Find start frequency
-            f_low = find_variable_start_frequency(approximant,
-                                                self.table[idx],
-                                                self.f_lower,
-                                                self.max_template_length)
-            logging.info('%s: generating %s from %s Hz' %
-                        (idx, approximant, f_low))
-
-            # Clear storage memory
-            poke = tempout[i].data
-            tempout[i].clear()
-
-            # Get waveform filter
-            distance = 1.0 / DYN_RANGE_FAC
-            if self.has_compressed_waveforms and self.enable_compressed_waveforms:
-                htilde = self.get_decompressed_waveform(tempout[i], idx,
-                                                        f_lower=f_low,
-                                                        approximant=approximant,
-                                                        df=None)
+        
+        # Check if we can use batched template generation
+        # This is beneficial for SPAtmplt on GPU (CuPy scheme)
+        use_batched_gen = False
+        if len(index) > 1:
+            # Check if all templates use SPAtmplt and are not compressed
+            approxs = [self.approximant(idx) for idx in index]
+            all_spatmplt = all(a == 'SPAtmplt' for a in approxs)
+            no_compression = not (self.has_compressed_waveforms and self.enable_compressed_waveforms)
+            
+            # Check if we're using CuPy (GPU scheme)
+            try:
+                from pycbc.scheme import CUPYScheme
+                from pycbc.types.array import _convert
+                # Try to detect if we're in a CuPy context
+                test_arr = zeros(1, dtype=self.dtype)
+                is_cupy = hasattr(test_arr._data, 'device')
+                use_batched_gen = all_spatmplt and no_compression and is_cupy
+            except ImportError:
+                pass
+        
+        if use_batched_gen:
+            # Batched generation for SPAtmplt on GPU
+            from pycbc.waveform.spa_tmplt import spa_tmplt_batch
+            
+            # Use pre-allocated output memory if provided
+            if self.out is None:
+                tempout = [zeros(self.filter_length, dtype=self.dtype) for _ in range(len(index))]
             else:
-                htilde = pycbc.waveform.get_waveform_filter(
-                    tempout[i][0:self.filter_length],
-                    self.table[idx],
-                    approximant=approximant,
-                    f_lower=f_low,
-                    f_final=f_end,
-                    delta_f=self.delta_f,
-                    delta_t=self.delta_t,
-                    distance=distance,
-                    **self.extra_args)
+                tempout = self.out
+            
+            # Prepare common parameters
+            distance = 1.0 / DYN_RANGE_FAC
+            common_kwds = {
+                'delta_f': self.delta_f,
+                'f_lower': self.f_lower,
+                'distance': distance,
+                **self.extra_args
+            }
+            
+            # Prepare per-template parameters
+            templates_params = []
+            f_end_list = []
+            f_low_list = []
+            
+            for idx in index:
+                f_end = self.end_frequency(idx)
+                if f_end is None or f_end >= (self.filter_length * self.delta_f):
+                    f_end = (self.filter_length-1) * self.delta_f
+                
+                f_low = find_variable_start_frequency('SPAtmplt',
+                                                    self.table[idx],
+                                                    self.f_lower,
+                                                    self.max_template_length)
+                
+                params = {
+                    'mass1': self.table[idx].mass1,
+                    'mass2': self.table[idx].mass2,
+                    'spin1z': self.table[idx].spin1z,
+                    'spin2z': self.table[idx].spin2z,
+                    'distance': distance
+                }
+                
+                templates_params.append(params)
+                f_end_list.append(f_end)
+                f_low_list.append(f_low)
+            
+            # Log single message for the entire batch
+            logging.info('Generating templates %s-%s (%d templates) in batch from %s Hz' % 
+                        (index[0], index[-1], len(index), min(f_low_list)))
+            
+            # Don't add f_final to common_kwds - let each template calculate its own fstop
+            # based on its masses
+            
+            # Generate all templates in one batch, writing into tempout memory
+            htilde_list = spa_tmplt_batch(templates_params, self.filter_length, tempout, **common_kwds)
+            
+            # Process each template
+            for i, (idx, htilde) in enumerate(zip(index, htilde_list)):
+                template_duration = htilde.chirp_length if hasattr(htilde, 'chirp_length') else None
+                ttotal = htilde.length_in_time if hasattr(htilde, 'length_in_time') else None
+                
+                self.table[idx].template_duration = template_duration
+                
+                htilde = htilde.astype(self.dtype)
+                htilde.f_lower = f_low_list[i]
+                htilde.min_f_lower = self.min_f_lower
+                htilde.end_idx = int(f_end_list[i] / htilde.delta_f)
+                htilde.params = self.table[idx]
+                htilde.chirp_length = template_duration
+                htilde.length_in_time = ttotal
+                htilde.approximant = 'SPAtmplt'
+                htilde.end_frequency = f_end_list[i]
+                
+                # Add sigmasq method
+                htilde.sigmasq = types.MethodType(sigma_cached, htilde)
+                htilde._sigmasq = {}
+                
+                templates.append(htilde)
+        else:
+            # Original sequential generation
+            if self.out is None:
+                tempout = [zeros(self.filter_length, dtype=self.dtype)]
+            else:
+                tempout = self.out
+            for i, idx in enumerate(index):
+                approximant = self.approximant(idx)
+                f_end = self.end_frequency(idx)
+                if f_end is None or f_end >= (self.filter_length * self.delta_f):
+                    f_end = (self.filter_length-1) * self.delta_f
 
-            # Handle duration info
-            ttotal = template_duration = None
-            if hasattr(htilde, 'length_in_time'):
-                ttotal = htilde.length_in_time
-            if hasattr(htilde, 'chirp_length'):
-                template_duration = htilde.chirp_length
+                # Find start frequency
+                f_low = find_variable_start_frequency(approximant,
+                                                    self.table[idx],
+                                                    self.f_lower,
+                                                    self.max_template_length)
+                logging.info('%s: generating %s from %s Hz' %
+                            (idx, approximant, f_low))
 
-            self.table[idx].template_duration = template_duration
+                # Clear storage memory
+                poke = tempout[i].data
+                tempout[i].clear()
 
-            htilde = htilde.astype(self.dtype)
-            htilde.f_lower = f_low
-            htilde.min_f_lower = self.min_f_lower
-            htilde.end_idx = int(f_end / htilde.delta_f)
-            htilde.params = self.table[idx]
-            htilde.chirp_length = template_duration
-            htilde.length_in_time = ttotal
-            htilde.approximant = approximant
-            htilde.end_frequency = f_end
+                # Get waveform filter
+                distance = 1.0 / DYN_RANGE_FAC
+                if self.has_compressed_waveforms and self.enable_compressed_waveforms:
+                    htilde = self.get_decompressed_waveform(tempout[i], idx,
+                                                            f_lower=f_low,
+                                                            approximant=approximant,
+                                                            df=None)
+                else:
+                    htilde = pycbc.waveform.get_waveform_filter(
+                        tempout[i][0:self.filter_length],
+                        self.table[idx],
+                        approximant=approximant,
+                        f_lower=f_low,
+                        f_final=f_end,
+                        delta_f=self.delta_f,
+                        delta_t=self.delta_t,
+                        distance=distance,
+                        **self.extra_args)
 
-            # Add sigmasq method
-            htilde.sigmasq = types.MethodType(sigma_cached, htilde)
-            htilde._sigmasq = {}
+                # Handle duration info
+                ttotal = template_duration = None
+                if hasattr(htilde, 'length_in_time'):
+                    ttotal = htilde.length_in_time
+                if hasattr(htilde, 'chirp_length'):
+                    template_duration = htilde.chirp_length
 
-            templates.append(htilde)
+                self.table[idx].template_duration = template_duration
+
+                htilde = htilde.astype(self.dtype)
+                htilde.f_lower = f_low
+                htilde.min_f_lower = self.min_f_lower
+                htilde.end_idx = int(f_end / htilde.delta_f)
+                htilde.params = self.table[idx]
+                htilde.chirp_length = template_duration
+                htilde.length_in_time = ttotal
+                htilde.approximant = approximant
+                htilde.end_frequency = f_end
+
+                # Add sigmasq method
+                htilde.sigmasq = types.MethodType(sigma_cached, htilde)
+                htilde._sigmasq = {}
+
+                templates.append(htilde)
 
         return templates
 

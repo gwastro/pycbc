@@ -399,6 +399,114 @@ class SingleDetPowerChisq(object):
         else:
             return None, None
 
+    def values_batch(self, corrs, snrvs, snr_norms, sizes, template_map, psd, indices, templates):
+        """ Calculate the chisq at points given by indices for a batch of templates.
+
+        Parameters
+        ----------
+        corrs : cupy array
+            2D array or list of correlation vectors for all templates
+        snrvs : cupy array
+            1D concatenated array of SNR values at trigger points
+        snr_norms : cupy array
+            1D array of normalization factors for each template
+        sizes : cupy array
+            Number of triggers for each template
+        template_map : cupy array
+            Maps each trigger to its template index
+        psd : FrequencySeries
+            Power spectral density
+        indices : cupy array
+            1D concatenated array of trigger indices
+        templates : list
+            List of template objects
+
+        Returns
+        -------
+        chisq_list : list of Arrays
+            Chisq values for each template
+        chisq_dof_list : list of Arrays
+            Degrees of freedom for each template
+        """
+        if self.do:
+            import cupy as cp
+            from .chisq_cupy import shift_sum_batch
+            
+            if not self.snr_threshold:
+                raise NotImplementedError("Batched chisq currently requires snr_threshold to be set")
+            
+            # Filter triggers by SNR threshold
+            num_triggers = len(indices)
+            if self.snr_threshold:
+                # Apply SNR threshold per trigger using template_map to get correct norm
+                snr_norms_per_trigger = snr_norms[template_map]
+                above = cp.abs(snrvs * snr_norms_per_trigger) > self.snr_threshold
+                num_above = int(above.sum())
+                logging.info('%s above chisq activation threshold' % num_above)
+                
+                # Filter arrays to only above-threshold triggers
+                above_indices = indices[above]
+                above_snrvs = snrvs[above]
+                above_template_map = template_map[above]
+            else:
+                num_above = num_triggers
+                above_indices = indices
+                above_snrvs = snrvs
+                above_template_map = template_map
+            
+            chisq_out = cp.zeros(num_triggers, dtype=numpy.float32)
+            chisq_dof_out = cp.zeros(num_triggers, dtype=numpy.int32)
+            chisq_list = []
+            chisq_dof_list = []
+
+            if num_above > 0:
+                # Get bins for all templates
+                bins = [self.cached_chisq_bins(template, psd) for template in templates]
+                bin_lengths = cp.array([len(cbin) for cbin in bins], dtype=cp.uint32)
+                dof = (bin_lengths - 1) * 2 - 2
+
+                # DEBUG: Log first few trigger indices and template mapping
+                if len(above_indices) > 0:
+                    logging.info(f'DEBUG batch chisq: first 5 indices: {above_indices[:min(5,len(above_indices))]}')
+                    logging.info(f'DEBUG batch chisq: first 5 template_map: {above_template_map[:min(5,len(above_template_map))]}')
+                    logging.info(f'DEBUG batch chisq: bin_lengths: {bin_lengths}')
+                    logging.info(f'DEBUG batch chisq: len(corrs)={len(corrs)}, corrs[0] shape={corrs[0].shape if hasattr(corrs[0], "shape") else len(corrs[0])}')
+
+                # Compute chisq for all above-threshold triggers at once
+                chisq = shift_sum_batch(corrs, above_indices, bins, bin_lengths, above_template_map)
+                
+                # Compute full chisq values
+                # chisq = (chisq * num_bins - |snr|^2) * norm^2
+                # For batched case, need to apply correct normalization per trigger
+                num_bins = bin_lengths[above_template_map] - 1
+                snr_norms_per_trigger = snr_norms[above_template_map]
+                snr_mag_sq = (above_snrvs.conj() * above_snrvs).real
+                chisq_computed = (chisq * num_bins - snr_mag_sq) * (snr_norms_per_trigger ** 2.0)
+                
+                # Fill in only the above-threshold triggers
+                if self.snr_threshold:
+                    chisq_out[above] = chisq_computed
+                    chisq_dof_out[above] = dof[above_template_map]
+                else:
+                    chisq_out[:] = chisq_computed
+                    chisq_dof_out[:] = dof[above_template_map]
+
+            # Split results by template
+            start = 0
+            for idx, size in enumerate(sizes):
+                size = int(size)
+                if size > 0:
+                    chisq_list.append(chisq_out[start:start + size])
+                    chisq_dof_list.append(chisq_dof_out[start:start + size])
+                else:
+                    chisq_list.append(cp.empty(0, dtype=numpy.float32))
+                    chisq_dof_list.append(cp.empty(0, dtype=numpy.int32))
+                start += size
+
+            return chisq_list, chisq_dof_list
+        else:
+            return None, None
+
 
 class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
     """Class that handles precomputation and memory management for efficiently
