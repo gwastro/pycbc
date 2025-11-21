@@ -53,7 +53,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._overwhitened_data = {}
         # cache the current gated data
         self._gated_data = {}
-        # cache terms related to normalization and gating 
+        # cache terms related to normalization and gating
         self._invasds = {}
         self._Rss = {}
         self._lognorm = {}
@@ -77,7 +77,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def from_config(cls, cp, data_section='data', data=None, psds=None,
                     **kwargs):
         """Adds addiotional keyword arguments based on config file.
-        
+
         Additional keyword arguments are:
 
            * ``highpass_waveforms`` : waveforms will be highpassed.
@@ -142,10 +142,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
             if self.normalize:
                 self._set_covfit(det)
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
- 
+
     def _set_covfit(self, det):
         """Sets the fit function for estimating the covariance determinant.
-        
+
         This must be called after the PSDs have been set, otherwise a
         ValueError will be raised.
         """
@@ -813,7 +813,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # the waveforms are a dictionary of (hp, hc)
             pols = []
             for h in wfs[det]:
-                ht = h.to_timeseries() 
+                ht = h.to_timeseries()
                 ht = ht.gate(gatestartdelay + dgatedelay/2,
                             window=dgatedelay/2, copy=False,
                             invpsd=invpsd, method='paint')
@@ -986,25 +986,25 @@ class GatedGaussianMargPol(BaseGatedGaussian):
 class GatedGaussianMargPhase(BaseGatedGaussian):
     r"""Gated Gaussian noise model that analytically marginalizes over the
     phase of a signal.
-    
+
     The phase to be marginalized over is specified by the user using the 
     `ref_phase` argument. If a model consists of multiple modes each with their
     own phase, only the reference phase is marginalized over. All phases must
     be specified with the `phase_names` argument. This can be passed as a list
     or a string delimited by spaces (e.g. 'phase1 phase2 phase3').
-    
+
     Marginalization is done using explicit numerical integration over 500
-    thousand integration points by default. This method assumes that the 
+    thousand integration points by default. This method assumes that the
     waveform h can be written in terms of an overall phase phi as
-        
+
         h = h_c * cos(phi) + h_s * sin(phi),
-        
+
     where h_c and h_s are the waveform with phi set to zero and pi/2
     respectively. The number of integration points can be controlled via the
     `phase_samples` argument.
     """
     name = 'gated_gaussian_margphase'
-    
+
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, phase_samples=500000, phase_names=None,
@@ -1042,7 +1042,7 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameTwoPhaseGenerator,
             **self.static_params)
-    
+
     def get_waveforms(self):
         r"""Generate the waveforms.
         """
@@ -1090,12 +1090,12 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
             hs = hst.to_frequencyseries()
             out[det] = (hc, hs)
         return out
-    
+
     @property
     def _extra_stats(self):
         """Adds the maxL phase and corresponding likelihood."""
         return ['maxl_phase', 'maxl_logl']
-    
+
     @catch_waveform_error
     def _loglikelihood(self):
         r"""Computes the log likelihood.
