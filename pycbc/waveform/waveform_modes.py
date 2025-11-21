@@ -23,7 +23,6 @@ from pycbc import libutils, pnutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from pycbc.constants import MSUN_SI, PC_SI
 from .waveform import (props, _check_lal_pars, check_args)
-from pycbc.waveform import ringdown
 from . import parameters
 
 lalsimulation = libutils.import_optional('lalsimulation')
