@@ -344,7 +344,7 @@ class FDomainMassSpinRingdownGenerator(BaseGenerator):
 
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainFreqTauRingdownGenerator, self).__init__(ringdown.get_fd_from_final_mass_spin,
+        super(FDomainMassSpinRingdownGenerator, self).__init__(ringdown.get_fd_from_final_mass_spin,
             variable_args=variable_args, **frozen_params)
 
 
