@@ -35,7 +35,6 @@ from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator,
                              catch_waveform_error)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
-from scipy.special import i0e
 
 
 class BaseGatedGaussian(BaseGaussianNoise):
