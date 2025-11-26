@@ -27,9 +27,7 @@ from pycbc.constants import (
     C_SI, PI, G_SI, MSUN_SI, MTSUN_SI, PC_SI, MRSUN_SI, GAMMA
 )
 
-preamble = """
-#include <lal/LALConstants.h>
-"""
+preamble = ""
 
 phenomC_text = """
     /* ********* Main paper : Phys Rev D82, 064016 (2010) ********* */
@@ -55,7 +53,7 @@ phenomC_text = """
           (1. + log(v3)) * pfa5 * v5 + (pfa6  + pfa6log * log(v3))*v6 +
           pfa7 * v7;
     phSPA *= (pfaN / v5);
-    phSPA -= (LAL_PI/4.0);
+    phSPA -= (PI/4.0);
 
     double phPM = (a1/(w3 * w * w)) + (a2/w3) + (a3/w) + a4 + (a5 * w * w) +(a6 * w3);
     phPM /= eta;
@@ -87,7 +85,7 @@ phenomC_text = """
     if( xdot > 0.0 )
     {
       omgdot = 1.5 * v * xdot;
-      ampfac = sqrt( LAL_PI / omgdot );
+      ampfac = sqrt( PI / omgdot );
       ampSPAre = ampfac * AN * v2 * (1. + A2 * v2 + A3 * v3 + A4 * v4 +
               A5 * v5 + (A6 + A6log * log(v2)) * v6);
       ampSPAim = ampfac * AN * v2 * (A5imag * v5 + A6imag * v6);
@@ -113,7 +111,7 @@ phenomC_text = """
 
 """
 
-phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f,
+phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f, double PI,
                                        double eta, double Xi, double distance,
                                        double m_sec, double piM, double Mfrd,
                                        double pfaN, double pfa2, double pfa3, double pfa4,
@@ -129,7 +127,7 @@ phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin,
                                        double A5imag, double A6, double A6log, double A6imag,
                                        double g1, double del1, double del2, double Q""",
                     phenomC_text, "phenomC_kernel",
-                    preamble=preamble, options=pkg_config_header_strings(['lal']))
+                    preamble=preamble)
 
 
 def FinalSpin( Xi, eta ):
@@ -381,7 +379,7 @@ def imrphenomc_tmplt(**kwds):
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
 
-    phenomC_kernel(htilde.data[kmin:kmax], kmin, delta_f, eta, Xi, distance,
+    phenomC_kernel(htilde.data[kmin:kmax], kmin, delta_f, PI, eta, Xi, distance,
                                        m_sec,  piM,  Mfrd,
                                        pfaN,  pfa2,  pfa3,  pfa4, pfa5,  pfa6,  pfa6log,  pfa7,
                                        a1,  a2,  a3,  a4, a5,  a6,  b1,  b2,

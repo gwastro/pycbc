@@ -32,8 +32,6 @@ from pycbc.constants import PI
 preamble = f"""
 #include <cuComplex.h>
 #include <math.h>
-#define TWOPI {PI * 2.:.17g}
-#define PI_4 {PI / 4.:.17g}
 """
 
 spintaylorf2_text = """
@@ -53,7 +51,7 @@ spintaylorf2_text = """
     double dEnergy = 0.;
     double flux = 0.;
     double amp;
-    double shft = -TWOPI * tC;
+    double shft = -(2.0 * PI) * tC;
     double RE_prec_facP;
     double IM_prec_facP;
     double RE_prec_facC;
@@ -223,8 +221,8 @@ spintaylorf2_text = """
     phasing += 2.*zeta;
     amp = amp0 * sqrt(-dEnergy/flux) * v;
 
-    const double CPhasing = amp * cos(phasing - PI_4);
-    const double SPhasing = amp * sin(phasing - PI_4);
+    const double CPhasing = amp * cos(phasing - (PI / 4.0));
+    const double SPhasing = amp * sin(phasing - (PI / 4.0));
     htildeP[i]._M_re = RE_prec_facP * CPhasing + IM_prec_facP * SPhasing ;
     htildeP[i]._M_im = IM_prec_facP * CPhasing - RE_prec_facP * SPhasing ;
     htildeC[i]._M_re = RE_prec_facC * CPhasing + IM_prec_facC * SPhasing ;
@@ -235,7 +233,7 @@ spintaylorf2_text = """
 spintaylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htildeP,
                                            pycuda::complex<double> *htildeC,
                                            int kmin, int phase_order,
-                                           int amplitude_order, double delta_f,
+                                           int amplitude_order, double delta_f, double PI,
                                            double piM, double pfaN,
                                            double pfa2, double pfa3,
                                            double pfa4, double pfa5,
@@ -404,7 +402,7 @@ def spintaylorf2(**kwds):
     htildeP = FrequencySeries(zeros(n,dtype=complex128), delta_f=delta_f, copy=False)
     htildeC = FrequencySeries(zeros(n,dtype=complex128), delta_f=delta_f, copy=False)
     spintaylorf2_kernel(htildeP.data[kmin:kmax], htildeC.data[kmin:kmax],
-                        kmin, phase_order, amplitude_order, delta_f, piM, pfaN,
+                        kmin, phase_order, amplitude_order, delta_f, PI, piM, pfaN,
                         pfa2, pfa3, pfa4, pfa5, pfl5,
                         pfa6, pfl6, pfa7, FTaN, FTa2,
                         FTa3, FTa4, FTa5, FTa6,
