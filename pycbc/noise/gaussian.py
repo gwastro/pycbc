@@ -30,10 +30,8 @@ noise spectrum.
 from pycbc import libutils
 from pycbc.types import TimeSeries, zeros
 from pycbc.types import complex_same_precision_as, FrequencySeries
-import lal
 import numpy.random
-
-lalsimulation = libutils.import_optional('lalsimulation')
+import pycbc.psd
 
 def frequency_noise_from_psd(psd, seed=None):
     """ Create noise with a given psd.
@@ -77,10 +75,8 @@ def frequency_noise_from_psd(psd, seed=None):
 
 def noise_from_psd(length, delta_t, psd, seed=None):
     """ Create noise with a given psd.
-
     Return noise with a given psd. Note that if unique noise is desired
     a unique seed should be provided.
-
     Parameters
     ----------
     length : int
@@ -91,42 +87,33 @@ def noise_from_psd(length, delta_t, psd, seed=None):
         The noise weighting to color the noise.
     seed : {0, int}
         The seed to generate the noise.
-
     Returns
     --------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
     """
-    noise_ts = TimeSeries(zeros(length), delta_t=delta_t)
+    delta_f = 1.0 / (length * delta_t)
+    flen = int(length / 2) + 1
 
-    if seed is None:
-        seed = numpy.random.randint(2**32)
+    resampled_psd = FrequencySeries(zeros(flen), delta_f=delta_f)
 
-    randomness = lal.gsl_rng("ranlux", seed)
+    # Resample the given PSD to the frequencies we need
+    for i in range(flen):
+        f = i * delta_f
+        if f <= psd.sample_frequencies[-1]:
+            resampled_psd[i] = psd.at_frequency(f)
 
-    N = int (1.0 / delta_t / psd.delta_f)
-    n = N//2+1
-    stride = N//2
+    # Generate frequency-domain noise
+    noise_freq = frequency_noise_from_psd(resampled_psd, seed=seed)
 
-    if n > len(psd):
-        raise ValueError("PSD not compatible with requested delta_t")
+    # Convert to time series
+    # The to_timeseries() method will create a time series of the correct
+    # length and delta_t
+    noise_ts = noise_freq.to_timeseries()
 
-    psd = (psd[0:n]).lal()
-    psd.data.data[n-1] = 0
-    psd.data.data[0] = 0
-
-    segment = TimeSeries(zeros(N), delta_t=delta_t).lal()
-    length_generated = 0
-
-    lalsimulation.SimNoise(segment, 0, psd, randomness)
-    while (length_generated < length):
-        if (length_generated + stride) < length:
-            noise_ts.data[length_generated:length_generated+stride] = segment.data.data[0:stride]
-        else:
-            noise_ts.data[length_generated:length] = segment.data.data[0:length-length_generated]
-
-        length_generated += stride
-        lalsimulation.SimNoise(segment, stride, psd, randomness)
+    # The length may be off by one, so we resize if needed
+    if len(noise_ts) != length:
+        noise_ts.resize(length)
 
     return noise_ts
 
@@ -155,8 +142,6 @@ def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
     """
-    import pycbc.psd
-
     # We just need enough resolution to resolve lines
     delta_f = 1.0 / 8
     flen = int(.5 / delta_t / delta_f) + 1
