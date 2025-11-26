@@ -24,15 +24,17 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
+
 from math import frexp
 import numpy
+
 from scipy import signal
 
+from pycbc.scheme import schemed
 from pycbc.types import (
     TimeSeries, FrequencySeries, Array,
     complex_same_precision_as, real_same_precision_as
 )
-from pycbc.scheme import schemed
 from pycbc.constants import PI
 
 def ceilpow2(n):

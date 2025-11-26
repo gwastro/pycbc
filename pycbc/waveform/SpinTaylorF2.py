@@ -27,9 +27,13 @@ from pycbc.types import FrequencySeries, zeros
 from pycbc.waveform.utils import ceilpow2
 from pycbc.constants import MTSUN_SI, PC_SI, PI, MRSUN_SI, GAMMA
 
-preamble = """
-#include <lal/LALConstants.h>
+from pycbc.constants import PI
+
+preamble = f"""
 #include <cuComplex.h>
+#include <math.h>
+#define TWOPI {PI * 2.:.17g}
+#define PI_4 {PI / 4.:.17g}
 """
 
 spintaylorf2_text = """
@@ -49,7 +53,7 @@ spintaylorf2_text = """
     double dEnergy = 0.;
     double flux = 0.;
     double amp;
-    double shft = -LAL_TWOPI * tC;
+    double shft = -TWOPI * tC;
     double RE_prec_facP;
     double IM_prec_facP;
     double RE_prec_facC;
@@ -219,8 +223,8 @@ spintaylorf2_text = """
     phasing += 2.*zeta;
     amp = amp0 * sqrt(-dEnergy/flux) * v;
 
-    const double CPhasing = amp * cos(phasing - LAL_PI_4);
-    const double SPhasing = amp * sin(phasing - LAL_PI_4);
+    const double CPhasing = amp * cos(phasing - PI_4);
+    const double SPhasing = amp * sin(phasing - PI_4);
     htildeP[i]._M_re = RE_prec_facP * CPhasing + IM_prec_facP * SPhasing ;
     htildeP[i]._M_im = IM_prec_facP * CPhasing - RE_prec_facP * SPhasing ;
     htildeC[i]._M_re = RE_prec_facC * CPhasing + IM_prec_facC * SPhasing ;
@@ -256,7 +260,7 @@ spintaylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htildeP,
                                            double psiJ_P, double psiJ_C,
                                            double gamma0""",
                     spintaylorf2_text, "spintaylorf2_kernel",
-                    preamble=preamble, options=pkg_config_header_strings(['lal']))
+                    preamble=preamble, options=pkg_config_header_strings([]))
 
 def spintaylorf2(**kwds):
     """ Return a SpinTaylorF2 waveform using CUDA to generate the phase and amplitude

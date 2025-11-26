@@ -41,6 +41,7 @@ _DEFAULT_MAPPING = {
     'YRJUL_SI': aunits.year.to(aunits.s),   # years in seconds
     'PI': np.pi,
     'TWOPI': 2 * np.pi,
+    'PI_4': np.pi / 4,
     'GAMMA': np.euler_gamma,
     'PI_4': np.pi / 4.,
     'LN2': np.log(2.)

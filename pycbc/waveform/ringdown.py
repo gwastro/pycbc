@@ -26,20 +26,15 @@
 """
 
 import numpy
-try:
-    import pykerr
-except ImportError:
-    pykerr = None
 
-from pycbc.types import (
-    TimeSeries, FrequencySeries, float64, complex128, zeros
-)
+from pycbc.libutils import import_optional
+pykerr = import_optional('pykerr')
+lal = import_optional('lal')
+from pycbc.types import (TimeSeries, FrequencySeries, float64, complex128,
+                         zeros)
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import get_lm_f0tau_allmodes
-from pycbc.libutils import import_optional
-from pycbc.constants import  MSUN_SI, G_SI, PC_SI, C_SI
-
-lal = import_optional('lal')
+from pycbc.constants import MSUN_SI, G_SI, C_SI, PC_SI
 
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
@@ -437,6 +432,11 @@ def spher_harms(harmonics='spherical', l=None, m=None, n=0,
         The harmonic of the -m mode.
     """
     if harmonics == 'spherical':
+        if lal is None:
+            raise ImportError(
+                "lal must be installed for spherical "
+                "harmonics"
+            )
         xlm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
                                                 l, m)
         xlnm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,

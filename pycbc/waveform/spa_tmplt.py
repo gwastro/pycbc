@@ -23,8 +23,9 @@
 """
 from math import sqrt, log
 import warnings
-import numpy, pycbc.pnutils
+import numpy
 
+import pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2

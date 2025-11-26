@@ -26,7 +26,6 @@ import mako.template
 
 from pycbc.constants import PI_4, TWOPI, LN2
 
-
 taylorf2_text = mako.template.Template("""
     const float f = (i + kmin ) * delta_f;
     const float amp2 = amp * __powf(f, -7.0/6.0);
