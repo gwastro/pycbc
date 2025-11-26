@@ -20,13 +20,9 @@ def get_constant_names(module):
 _PYCBC_CONSTANTS_MODULE_NAME = 'pycbc.constants'
 
 class TestPycbcConstants(unittest.TestCase):
-    """Tests the fallback mechanism of pycbc.constants."""
+    """Tests the choice mechanism of pycbc.constants."""
 
-
-
-    def test_constants_fallback(self):
-        """Tests that constants fall back to Astropy/Numpy when LAL is unavailable."""
-        
+    def setUp(self):
         # We need a fresh import, so we must remove it from cache if it exists.
         if _PYCBC_CONSTANTS_MODULE_NAME in sys.modules:
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
@@ -34,12 +30,7 @@ class TestPycbcConstants(unittest.TestCase):
         # Default constants
         with mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'default'}):
             import pycbc.constants as default_constants
-
-        # Assert _CONSTANTS value check for default version
-        self.assertTrue(
-            default_constants._CONSTANTS == 'default', 
-            "Fallback import failed to detect LAL unavailability."
-        )
+        self.default_constants = default_constants
 
         # Reset the sys.modules value
         if _PYCBC_CONSTANTS_MODULE_NAME in sys.modules:
@@ -48,21 +39,32 @@ class TestPycbcConstants(unittest.TestCase):
         # LAL is used here
         with mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'lal'}):
             import pycbc.constants as lal_constants
-        
-        # Assert _CONSTANTS value check for LAL version
-        self.assertTrue(
-            lal_constants._CONSTANTS == 'lal', 
-            "LAL-based import failed to detect LAL availability."
-        )
+        self.lal_constants = lal_constants
 
         # Dynamically get the list of constants to check
-        const_name_list = get_constant_names(default_constants)
+        self.const_name_list = get_constant_names(default_constants)
 
+    def test_constants_choice(self):
+        """Tests that constants are chosen correctly given the environment variable"""
+        
+        # Assert _CONSTANTS value check for default version
+        self.assertTrue(
+            self.default_constants._CONSTANTS == 'default',
+            "Import has provided wrong constants given environment variable."
+        )
+
+        # Assert _CONSTANTS value check for LAL version
+        self.assertTrue(
+            self.lal_constants._CONSTANTS == 'lal',
+            "Import has provided wrong constants given environment variable."
+        )
+
+    def test_lal_default_match(self):
+        """Tests that LAL constants match default constants."""
         # Use unittest's assertion methods instead of if/print/assert
-        for const_name in const_name_list:
-            print(f"Checking {const_name}")
-            lc = getattr(lal_constants, const_name)
-            fc = getattr(default_constants, const_name)
+        for const_name in self.const_name_list:
+            lc = getattr(self.lal_constants, const_name)
+            fc = getattr(self.default_constants, const_name)
 
             with self.subTest(constant=const_name):
                 # Check for numerical closeness (standard for float comparisons)
