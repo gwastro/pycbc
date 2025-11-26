@@ -27,19 +27,24 @@ These are the unittests for noise generation
 import unittest
 import pycbc.psd
 from utils import simple_exit
-from pycbc.noise.reproduceable import noise_from_string
+from pycbc.noise.reproduceable import noise_from_string as rep_noise_from_string
 from pycbc.fft.fftw import set_measure_level
 from pycbc.noise.reproduceable import normal
+from pycbc.noise.gaussian import noise_from_string as gaussian_noise_from_string
+
 set_measure_level(0)
 
-class TestNoise(unittest.TestCase):
+class TestNoiseReproduceable(unittest.TestCase):
     def setUp(self,*args):
-        self.ts = noise_from_string('aLIGOZeroDetHighPower',
-                                    100, 200,
-                                    sample_rate=1024,
-                                    seed=0,
-                                    low_frequency_cutoff=1.0,
-                                    filter_duration=64)
+        self.ts = rep_noise_from_string(
+            'aLIGOZeroDetHighPower',
+            100,
+            200,
+            sample_rate=1024,
+            seed=0,
+            low_frequency_cutoff=1.0,
+            filter_duration=64
+        )
 
     def test_consistent_result(self):
         # This just checks that the result hasn't changed. If it has
@@ -49,6 +54,12 @@ class TestNoise(unittest.TestCase):
 
         diff = abs(summ - comp)
         self.assertTrue(diff < 1e-30)
+
+        std = self.ts.data.std()
+        comp = 1.1461606806180472e-20
+        diff = abs(std - comp)
+        self.assertTrue(diff < 1e-30)
+
 
     def test_noise_psd(self):
         p = self.ts.psd(4)
@@ -65,8 +76,74 @@ class TestNoise(unittest.TestCase):
         ts2 = normal(25, 35, sample_rate=16384, seed=87693)
         self.assertEqual(ts1.time_slice(25, 30), ts2.time_slice(25, 30))
 
+class TestNoiseGaussian(unittest.TestCase):
+    def setUp(self,*args):
+        self.ts = gaussian_noise_from_string(
+            'aLIGOZeroDetHighPower',
+            102400,
+            delta_t=1./1024,
+            seed=1865,
+            low_frequency_cutoff=1.0,
+        )
+        self.ts._epoch = 100
+
+    def test_noise_psd(self):
+        p = self.ts.psd(4)
+        p2 = pycbc.psd.from_string('aLIGOZeroDetHighPower', len(p),
+                                  p.delta_f, 1.0)
+        kmin = int(1.0 / p.delta_f)
+        kmax = int(500 / p.delta_f)
+        ratio = p[kmin:kmax] / p2[kmin:kmax]
+        ave = ratio.numpy().mean()
+        self.assertAlmostEqual(ave, 1, 1)
+
+    def test_consistent_result(self):
+        # This just checks that the result hasn't changed. If it has
+        # you should find out why
+        summ = self.ts.sum()
+        comp = -3.4666738998970245e-33
+
+        diff = abs(summ - comp)
+        self.assertTrue(diff < 1e-40)
+
+        std = self.ts.data.std()
+        comp = 1.3670623471855284e-20
+
+        diff = abs(std - comp)
+        self.assertTrue(diff < 1e-30)
+
+
+    
+print('Plotting for test')
+gn = TestNoiseGaussian()
+gn.setUp()
+
+rn = TestNoiseReproduceable()
+rn.setUp()
+
+from matplotlib import pyplot as plt
+
+fig, ax = plt.subplots(1)
+ax.plot(gn.ts.sample_times, gn.ts, label='Gaussian')
+ax.plot(rn.ts.sample_times, rn.ts, label='Reproducible')
+ax.legend()
+fig.savefig('test.png')
+
+gp = gn.ts.psd(4)
+rp = rn.ts.psd(4)
+p2 = pycbc.psd.from_string('aLIGOZeroDetHighPower', len(gp),
+                            gp.delta_f, 1.0)
+
+fig, ax = plt.subplots(1)
+ax.loglog(gp.sample_frequencies, gp, label='Gaussian')
+ax.loglog(rp.sample_frequencies, rp, label='Reproducible')
+ax.loglog(p2.sample_frequencies, p2, label='from_string')
+ax.legend()
+fig.savefig('test_psd.png')
+
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoise))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoiseReproduceable))
+suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoiseGaussian))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
