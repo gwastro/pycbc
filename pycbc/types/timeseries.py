@@ -74,7 +74,8 @@ class TimeSeries(Array):
                     epoch = float64(0)
             elif epoch is not None: # If it is passed None, we do allow this
                 # epoch is given but is not already a float64 - convert it
-                if not _numpy.isscalar(epoch):
+                is_ltg = _lal is not None and isinstance(epoch, _lal.LIGOTimeGPS)
+                if not is_ltg and not _numpy.isscalar(epoch):
                     raise TypeError("epoch must be a number, not array-like")
                 epoch = float64(epoch)
 
