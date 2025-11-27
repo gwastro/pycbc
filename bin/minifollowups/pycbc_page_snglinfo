@@ -18,7 +18,6 @@
 """ Make tables describing a sngl event"""
 import sys
 import numpy
-import datetime
 import argparse
 import matplotlib
 matplotlib.use('Agg')

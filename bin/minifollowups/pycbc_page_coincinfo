@@ -21,7 +21,6 @@ import logging
 import sys
 import matplotlib
 matplotlib.use('Agg')
-import datetime
 import numpy
 
 from astropy.time import Time
