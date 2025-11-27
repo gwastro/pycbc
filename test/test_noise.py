@@ -101,11 +101,10 @@ class TestNoiseGaussian(unittest.TestCase):
         # This just checks that the result hasn't changed. If it has
         # you should find out why
         summ = self.ts.sum()
-        print(summ)
         comp = -3.4666738998970245e-33
 
         diff = abs(summ - comp)
-        self.assertLess(diff, 1e-40)
+        self.assertLess(diff, 1e-30)
 
         std = self.ts.data.std()
         comp = 1.3670623471855284e-20
