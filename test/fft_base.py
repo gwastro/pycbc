@@ -68,11 +68,11 @@ import pycbc.fft
 from pycbc.fft.backend_support import set_backend
 import pycbc
 import pycbc.scheme
-import pycbc.types
 from pycbc.types import (
     Array as ar,
     TimeSeries as ts,
-    FrequencySeries as fs
+    FrequencySeries as fs,
+    zeros
 )
 
 # Because we run many similar tests where we only vary dtypes, precisions,
@@ -242,7 +242,7 @@ def _test_random(test_case, inarr, outarr, tol):
                     inarr *= outarr._delta_t
                 elif isinstance(outarr, fs):
                     inarr *= outarr._delta_f
-            if type(inarr) == pycbc.types.Array:
+            if type(inarr) == ar:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 inarr /= len(inarr) 
@@ -294,7 +294,7 @@ def _test_random(test_case, inarr, outarr, tol):
                     outarr *= inarr._delta_t
                 elif isinstance(inarr, fs):
                     outarr *= inarr._delta_f
-            if type(inarr) == pycbc.types.Array:
+            if type(inarr) == ar:
                 # An Array FFTed and then IFFTEd will be scaled by its length
                 # Frequency and TimeSeries have no scaling
                 outarr /= len(inarr)
@@ -332,9 +332,9 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
             fft_class.execute()
 
         outty = type(outarr)
-        outzer = pycbc.types.zeros(len(outarr))
+        outzer = zeros(len(outarr))
         # If we give an output array that is wrong only in length, raise ValueError:
-        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),
+        out_badlen = outty(zeros(len(outarr)+1),
                            dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.fft, *args)
@@ -385,10 +385,10 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
             ifft_class.execute()
 
         outty = type(outarr)
-        outzer = pycbc.types.zeros(len(outarr))
+        outzer = zeros(len(outarr))
         # If we give an output array that is wrong only in length,
         # raise ValueError:
-        out_badlen = outty(pycbc.types.zeros(len(outarr)+1), 
+        out_badlen = outty(zeros(len(outarr)+1), 
                            dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
@@ -413,7 +413,7 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
             except KeyError:
                 delta = new_args.pop('delta_f')
                 new_args.update({'delta_t' : delta})
-        in_badkind = type(inarr)(pycbc.types.zeros(len(inarr)),
+        in_badkind = type(inarr)(zeros(len(inarr)),
                                  dtype=_bad_dtype[dtype(outarr).type],
                                  **new_args)
         args = [in_badkind, outarr]

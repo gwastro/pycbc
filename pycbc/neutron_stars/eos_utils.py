@@ -25,7 +25,7 @@ from .pg_isso_solver import PG_ISSO_solver
 
 from pycbc.libutils import import_optional
 from pycbc.constants import (
-    MSUN_SI, G_SI, MSUN_SI, C_SI
+    MSUN_SI, G_SI, C_SI
 )
 
 lalsim = import_optional('lalsimulation')

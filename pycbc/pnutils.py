@@ -277,7 +277,7 @@ def f_ERD(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.07 * 0.5326 / (2*PI * 0.955 * M * MSUN_SI)
+    return 1.07 * 0.5326 / (2*PI * 0.955 * M * MTSUN_SI)
 
 def f_FRD(m1, m2):
     """

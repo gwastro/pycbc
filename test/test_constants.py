@@ -4,7 +4,6 @@ we fall back on from astropy or numpy as appropriate
 """
 import unittest
 import sys
-from unittest import mock
 import numpy as np
 
 
@@ -28,7 +27,7 @@ class TestPycbcConstants(unittest.TestCase):
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
 
         # Default constants
-        with mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'default'}):
+        with unittest.mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'default'}):
             import pycbc.constants as default_constants
         self.default_constants = default_constants
 
@@ -37,7 +36,7 @@ class TestPycbcConstants(unittest.TestCase):
             del sys.modules[_PYCBC_CONSTANTS_MODULE_NAME]
 
         # LAL is used here
-        with mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'lal'}):
+        with unittest.mock.patch.dict('os.environ', {'PYCBC_CONSTANT_SOURCE': 'lal'}):
             import pycbc.constants as lal_constants
         self.lal_constants = lal_constants
 

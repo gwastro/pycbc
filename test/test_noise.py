@@ -53,12 +53,12 @@ class TestNoiseReproduceable(unittest.TestCase):
         comp = 4.265258573533567e-18
 
         diff = abs(summ - comp)
-        self.assertTrue(diff < 1e-30)
+        self.assertLess(diff, 1e-30)
 
         std = self.ts.data.std()
         comp = 1.1461606806180472e-20
         diff = abs(std - comp)
-        self.assertTrue(diff < 1e-30)
+        self.assertLess(diff, 1e-30)
 
 
     def test_noise_psd(self):
@@ -104,42 +104,14 @@ class TestNoiseGaussian(unittest.TestCase):
         comp = -3.4666738998970245e-33
 
         diff = abs(summ - comp)
-        self.assertTrue(diff < 1e-40)
+        self.assertLess(diff, 1e-40)
 
         std = self.ts.data.std()
         comp = 1.3670623471855284e-20
 
         diff = abs(std - comp)
-        self.assertTrue(diff < 1e-30)
+        self.assertLess(diff, 1e-30)
 
-
-    
-print('Plotting for test')
-gn = TestNoiseGaussian()
-gn.setUp()
-
-rn = TestNoiseReproduceable()
-rn.setUp()
-
-from matplotlib import pyplot as plt
-
-fig, ax = plt.subplots(1)
-ax.plot(gn.ts.sample_times, gn.ts, label='Gaussian')
-ax.plot(rn.ts.sample_times, rn.ts, label='Reproducible')
-ax.legend()
-fig.savefig('test.png')
-
-gp = gn.ts.psd(4)
-rp = rn.ts.psd(4)
-p2 = pycbc.psd.from_string('aLIGOZeroDetHighPower', len(gp),
-                            gp.delta_f, 1.0)
-
-fig, ax = plt.subplots(1)
-ax.loglog(gp.sample_frequencies, gp, label='Gaussian')
-ax.loglog(rp.sample_frequencies, rp, label='Reproducible')
-ax.loglog(p2.sample_frequencies, p2, label='from_string')
-ax.legend()
-fig.savefig('test_psd.png')
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoiseReproduceable))

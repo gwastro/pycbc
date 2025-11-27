@@ -27,8 +27,6 @@ from pycbc.types import FrequencySeries, zeros
 from pycbc.waveform.utils import ceilpow2
 from pycbc.constants import MTSUN_SI, PC_SI, PI, MRSUN_SI, GAMMA
 
-from pycbc.constants import PI
-
 preamble = f"""
 #include <cuComplex.h>
 #include <math.h>

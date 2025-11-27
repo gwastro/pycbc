@@ -2,11 +2,10 @@
 Constants module for PyCBC.
 
 This module provides constants from various packages (LAL, astropy, numpy)
-based on a preferred order of availability. This helps minimize dependency bloat
-by relying on smaller, more general packages (astropy/numpy) when the large
-LALSuite dependency is not available.
+based on a choice set by environment variable.
 
-The priority order for constant lookup is: LAL > Astropy / SciPy / NumPy
+The constant choice is set by setting the PYCBC_CONSTANT_SOURCE environment
+variable. Allowed values are 'default' or 'lal'.
 """
 
 import logging
