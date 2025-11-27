@@ -11,3 +11,8 @@ def strip_time(time):
     midnight_date = Time(time, format='gps').to_datetime().date()
     midnight_dt = datetime.datetime.combine(midnight_date, dtt.min)
     return Time(midnight_dt, format='datetime').gps, midnight_date.strftime("%Y-%m-%d")
+
+
+__all__ = [
+    'strip_time',
+]
