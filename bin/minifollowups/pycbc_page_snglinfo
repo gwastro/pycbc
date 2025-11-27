@@ -23,7 +23,7 @@ import argparse
 import matplotlib
 matplotlib.use('Agg')
 
-from astropy import Time
+from astropy.time import Time
 
 import pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.results import followup

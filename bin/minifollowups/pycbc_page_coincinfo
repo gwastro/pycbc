@@ -24,7 +24,7 @@ matplotlib.use('Agg')
 import datetime
 import numpy
 
-from astropy import Time
+from astropy.time import Time
 
 from pycbc import add_common_pycbc_options
 import pycbc.results
