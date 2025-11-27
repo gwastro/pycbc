@@ -27,9 +27,9 @@
 noise spectrum.
 """
 
-from pycbc import libutils
-from pycbc.types import TimeSeries, zeros
-from pycbc.types import complex_same_precision_as, FrequencySeries
+from pycbc.types import (
+    zeros, complex_same_precision_as, FrequencySeries
+)
 import numpy.random
 import pycbc.psd
 
