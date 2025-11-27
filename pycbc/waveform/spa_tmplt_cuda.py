@@ -23,7 +23,6 @@
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.libutils import pkg_config_header_strings
 from pycbc.constants import PI
 
 preamble = ""

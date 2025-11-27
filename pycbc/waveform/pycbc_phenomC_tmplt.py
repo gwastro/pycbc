@@ -21,7 +21,6 @@ from numpy import sqrt, log, float128
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.libutils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros, Array, complex64
 from pycbc.constants import (
     C_SI, PI, G_SI, MSUN_SI, MTSUN_SI, PC_SI, MRSUN_SI, GAMMA
