@@ -891,12 +891,14 @@ class MarginalizedHMPhase(BaseGaussianNoise):
             
             time_delay = self.det[ifo].time_delay_from_earth_center(params['ra'],params['dec'],
                                                                     params['tc'])
-            
+            ## This is tc in det frame
             time_shift = time_delay + params['tc']
 
             ## Apply projections for each mode and time shift
             for m in hpm:
                 h_unshifted = fp*hpm[m] + fc*hcm[m]
+                ## Set epoch to data epoch
+                h_unshifted._epoch = self.data[ifo].start_time
                 h[ifo][m] = apply_fd_time_shift(h_unshifted, time_shift)
             
             # Calculate inner products shm = <s|hm>
