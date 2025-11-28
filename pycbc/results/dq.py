@@ -46,9 +46,8 @@ def get_summary_page_link(ifo, utc_time):
     ----------
     ifo : string
         The detector name
-    utc_time : datetime.date or datetime.datetime or sequence
-        Either a datetime.date/datetime.datetime object, or a sequence whose
-        first three elements are year, month, day (in that order).
+    utc_time : sequence
+        First three elements must be strings giving year, month, day resp.
 
     Returns
     -------
@@ -82,9 +81,9 @@ def get_summary_page_link(ifo, utc_time):
             )
 
         # alog format is day-month-year
-        alog_utc = '%02d-%02d-%4d' % (day, month, year)
+        alog_utc = '%02d-%02d-%4d' % (utc_time[2], utc_time[1], utc_time[0])
         # summary page is exactly the reverse
-        ext = '%4d%02d%02d' % (year, month, day)
+        ext = '%4d%02d%02d' % (utc_time[0], utc_time[1], utc_time[2])
         return_string = search_form % (ifo.lower(), ifo.lower(), alog_utc, alog_utc)
         return return_string + data[ifo] % ext
 

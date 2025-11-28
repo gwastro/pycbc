@@ -16,7 +16,7 @@ from igwn_ligolw import utils as ligolw_utils
 
 import pycbc
 from pycbc import version as pycbc_version
-from pycbc import pnutils, constants
+from pycbc import pnutils
 from pycbc.io.ligolw import (
     return_empty_sngl,
     create_process_table,
@@ -213,7 +213,7 @@ class CandidateForGraceDB(object):
         coinc_inspiral_row.end_time = sngl_populated.end_time
         coinc_inspiral_row.end_time_ns = sngl_populated.end_time_ns
         coinc_inspiral_row.snr = network_snrsq ** 0.5
-        far = 1.0 / (constants.YRJUL_SI * coinc_results['foreground/ifar'])
+        far = 1.0 / (lal.YRJUL_SI * coinc_results['foreground/ifar'])
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
