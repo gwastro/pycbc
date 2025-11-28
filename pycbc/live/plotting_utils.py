@@ -12,7 +12,7 @@ def strip_time(gps_time):
 
     Parameters
     ----------
-    time : float or int
+    gps_time : float or int
         GPS time to be stripped to midnight (seconds since GPS epoch).
 
     Returns
