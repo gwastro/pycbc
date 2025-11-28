@@ -501,9 +501,8 @@ class TimeSeries(Array):
         TypeError
             If time series is stored in GPU memory.
         """
-        
         lal_data = None
-        ep = self._epoch
+        ep = _lal.LIGOTimeGPS(self._epoch)
 
         if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
