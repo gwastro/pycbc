@@ -18,12 +18,11 @@
 """ Make tables describing a sngl event"""
 import sys
 import numpy
-import datetime
 import argparse
 import matplotlib
 matplotlib.use('Agg')
 
-import lal
+from astropy.time import Time
 
 import pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.results import followup
@@ -119,7 +118,7 @@ if args.n_loudest is not None:
 
 # make a table for the single detector information ############################
 time = sngl_file.end_time[0]
-utc = lal.GPSToUTC(int(time))[0:6]
+utc = Time(time, format='gps').to_datetime()
 
 # Headers here will contain the list of headers that will appear in the
 # resulting single-detector summary table.
@@ -138,7 +137,7 @@ if args.include_summary_page_link:
     headers.append("Detector&nbsp;status")
 
 # End times
-data[0].append(str(datetime.datetime(*utc)))
+data[0].append(str(utc))
 data[0].append('%.3f' % time)
 headers.append("UTC")
 headers.append("End&nbsp;time")

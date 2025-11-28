@@ -836,8 +836,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         starts = []
         ends = []
         for seg in self.segments[self.ifos[0]]:
-            starts.append(seg.start_time.gpsSeconds)
-            ends.append(seg.end_time.gpsSeconds)
+            starts.append(int(seg.start_time))
+            ends.append(int(seg.end_time))
         f['search/segments/start_times'] = starts
         f['search/segments/end_times'] = ends
         # Individual ifo stuff

@@ -46,8 +46,9 @@ def get_summary_page_link(ifo, utc_time):
     ----------
     ifo : string
         The detector name
-    utc_time : sequence
-        First three elements must be strings giving year, month, day resp.
+    utc_time : datetime.date or datetime.datetime or sequence
+        Either a datetime.date/datetime.datetime object, or a sequence whose
+        first three elements are year, month, day (in that order).
 
     Returns
     -------
@@ -59,10 +60,23 @@ def get_summary_page_link(ifo, utc_time):
     if ifo not in data:
         return ifo
     else:
+        # support datetime/date objects or sequences (year, month, day)
+        try:
+            if hasattr(utc_time, 'year') and hasattr(utc_time, 'month') and hasattr(utc_time, 'day'):
+                year = int(utc_time.year)
+                month = int(utc_time.month)
+                day = int(utc_time.day)
+            else:
+                year = int(utc_time[0])
+                month = int(utc_time[1])
+                day = int(utc_time[2])
+        except Exception:
+            raise TypeError("utc_time must be a datetime/date or a sequence (year, month, day)")
+
         # alog format is day-month-year
-        alog_utc = '%02d-%02d-%4d' % (utc_time[2], utc_time[1], utc_time[0])
+        alog_utc = '%02d-%02d-%4d' % (day, month, year)
         # summary page is exactly the reverse
-        ext = '%4d%02d%02d' % (utc_time[0], utc_time[1], utc_time[2])
+        ext = '%4d%02d%02d' % (year, month, day)
         return_string = search_form % (ifo.lower(), ifo.lower(), alog_utc, alog_utc)
         return return_string + data[ifo] % ext
 
