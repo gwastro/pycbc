@@ -81,8 +81,6 @@ def get_constant(name):
     NotImplementedError
         If the constant is not found in any of the available packages.
     """
-        
-
     if _CONSTANTS == 'lal': # Allow lal, or LAL, or whatever
         if lal is None:
             raise ImportError(
