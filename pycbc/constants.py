@@ -42,7 +42,6 @@ _DEFAULT_MAPPING = {
     'TWOPI': 2 * np.pi,
     'PI_4': np.pi / 4,
     'GAMMA': np.euler_gamma,
-    'PI_4': np.pi / 4.,
     'LN2': np.log(2.)
 }
 
