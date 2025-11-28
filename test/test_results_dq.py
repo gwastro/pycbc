@@ -21,8 +21,13 @@ class TestGetSummaryPageLink(unittest.TestCase):
     def setUp(self):
         self.dq = load_dq_module()
 
-    def test_valid_date_returns_string(self):
+    def test_valid_datetime_returns_string(self):
         out = self.dq.get_summary_page_link('H1', datetime.date(2020, 1, 2))
+        self.assertIsInstance(out, str)
+        self.assertIn('Summary', out)
+
+    def test_valid_date_tuple_returns_string(self):
+        out = self.dq.get_summary_page_link('H1', (2020, 1, 2))
         self.assertIsInstance(out, str)
         self.assertIn('Summary', out)
 
