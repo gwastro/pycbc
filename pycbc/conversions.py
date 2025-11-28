@@ -32,11 +32,11 @@ import copy
 import numpy
 import logging
 
-import lal
 
 from pycbc.detector import Detector
 import pycbc.cosmology
 from pycbc import neutron_stars as ns
+from pycbc.constants import YRJUL_SI, MSUN_SI, MTSUN_SI, C_SI, G_SI, PI
 
 from .coordinates import (
     spherical_to_cartesian as _spherical_to_cartesian,
@@ -99,7 +99,7 @@ def formatreturn(arg, input_is_array=False):
 
 def sec_to_year(sec):
     """ Converts number of seconds to number of years """
-    return sec / lal.YRJUL_SI
+    return sec / YRJUL_SI
 
 
 def hypertriangle(*params, bounds=(0, 1)):
@@ -398,7 +398,7 @@ def tau0_from_mtotal_eta(mtotal, eta, f_lower):
     the given frequency.
     """
     # convert to seconds
-    mtotal = mtotal * lal.MTSUN_SI
+    mtotal = mtotal * MTSUN_SI
     # formulae from arxiv.org:0706.4437
     return _a0(f_lower) / (mtotal**(5./3.) * eta)
 
@@ -407,7 +407,7 @@ def tau0_from_mchirp(mchirp, f_lower):
     r"""Returns :math:`\tau_0` from the chirp mass and the given frequency.
     """
     # convert to seconds
-    mchirp = mchirp * lal.MTSUN_SI
+    mchirp = mchirp * MTSUN_SI
     # formulae from arxiv.org:0706.4437
     return _a0(f_lower) / mchirp ** (5./3.)
 
@@ -417,7 +417,7 @@ def tau3_from_mtotal_eta(mtotal, eta, f_lower):
     the given frequency.
     """
     # convert to seconds
-    mtotal = mtotal * lal.MTSUN_SI
+    mtotal = mtotal * MTSUN_SI
     # formulae from arxiv.org:0706.4437
     return _a3(f_lower) / (mtotal**(2./3.) * eta)
 
@@ -443,7 +443,7 @@ def mchirp_from_tau0(tau0, f_lower):
     """
     mchirp = (_a0(f_lower) / tau0) ** (3./5.)  # in seconds
     # convert back to solar mass units
-    return mchirp / lal.MTSUN_SI
+    return mchirp / MTSUN_SI
 
 
 def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
@@ -452,7 +452,7 @@ def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
     mtotal = (tau3 / _a3(f_lower)) / (tau0 / _a0(f_lower))
     if not in_seconds:
         # convert back to solar mass units
-        mtotal /= lal.MTSUN_SI
+        mtotal /= MTSUN_SI
     return mtotal
 
 
@@ -1026,8 +1026,8 @@ def spin_from_pulsar_freq(mass, radius, freq):
         The spin frequency of the pulsar, in Hz.
     """
     omega = 2 * numpy.pi * freq
-    mt = mass * lal.MTSUN_SI
-    mominert = (2/5.) * mt * (radius * 1000 / lal.C_SI)**2
+    mt = mass * MTSUN_SI
+    mominert = (2/5.) * mt * (radius * 1000 / C_SI)**2
     return mominert * omega / mt**2
 
 
@@ -1403,7 +1403,7 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     # from Berti et al. 2006
     spin = final_spin_from_f0_tau(f0, tau, l=l, m=m)
     a, b, c = _berti_mass_constants[l,m]
-    return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
+    return (a + b*(1-spin)**c)/(2*numpy.pi*f0*MTSUN_SI)
 
 def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     """Returns the QNM frequency (in Hz) of a chosen new (l,m) mode from the
@@ -1544,14 +1544,14 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
         if approximant == 'NRSur7dq4':
             from lalsimulation import nrfits
             try:
-                res = nrfits.eval_nrfit(m1*lal.MSUN_SI,
-                                        m2*lal.MSUN_SI,
+                res = nrfits.eval_nrfit(m1*MSUN_SI,
+                                        m2*MSUN_SI,
                                         spin1, spin2, 'NRSur7dq4Remnant',
                                         ['FinalMass', 'FinalSpin'],
                                         f_ref=f_ref)
             except RuntimeError:
                 continue
-            final_mass[ii] = res['FinalMass'][0] / lal.MSUN_SI
+            final_mass[ii] = res['FinalMass'][0] / MSUN_SI
             sf = res['FinalSpin']
             final_spin[ii] = (sf**2).sum()**0.5
             if sf[-1] < 0:
@@ -1696,7 +1696,7 @@ def velocity_to_frequency(v, M):
     f : float
         Gravitational-wave frequency
     """
-    return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
+    return v**(3.0) / (M * MTSUN_SI * PI)
 
 def frequency_to_velocity(f, M):
     """ Calculate the invariant velocity from the total
@@ -1714,7 +1714,7 @@ def frequency_to_velocity(f, M):
     v : float or numpy.array
         Invariant velocity
     """
-    return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
+    return (PI * M * MTSUN_SI * f)**(1.0/3.0)
 
 
 def f_schwarzchild_isco(M):
@@ -1773,13 +1773,13 @@ def nltides_coefs(amplitude, n, m1, m2):
 
     # Calculate chirp mass
     mc = mchirp_from_mass1_mass2(m1, m2)
-    mc *= lal.lal.MSUN_SI
+    mc *= MSUN_SI
 
     # Calculate constants in phasing
     a = (96./5.) * \
-        (lal.lal.G_SI * lal.lal.PI * mc * f_ref / lal.lal.C_SI**3.)**(5./3.)
+        (G_SI * PI * mc * f_ref / C_SI**3.)**(5./3.)
     b = 6. * amplitude
-    t_of_f_factor = -1./(lal.lal.PI*f_ref) * b/(a*a * (n-4.))
+    t_of_f_factor = -1./(PI*f_ref) * b/(a*a * (n-4.))
     phi_of_f_factor = -2.*b / (a*a * (n-3.))
 
     return f_ref, t_of_f_factor, phi_of_f_factor
