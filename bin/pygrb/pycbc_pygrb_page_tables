@@ -702,8 +702,16 @@ if found_missed_file is not None:
             cut_injs[key] = np.full(len(cut_injs['mass1']), -1)
         if key not in missed_injs:
             missed_injs[key] = np.full(len(missed_injs['mass1']), -1)
+    # Update the data to include a label stating whether the injection was
+    # vetoed, found and then removed due to the reweighted SNR cut, or missed
+    vetoed['category'] = np.full(len(vetoed['mass1']), 'Vetoed')
+    cut_injs['category'] = np.full(len(cut_injs['mass1']), 'Cut')
+    missed_injs['category'] = np.full(len(missed_injs['mass1']), 'Missed')
+    # Update the header and table formatter
+    th += ['Category']
+    format_strings.extend(['##'])
     t_missed = [np.concatenate((missed_injs[key], vetoed[key], cut_injs[key]))
-                for key in keys]
+                for key in keys+['category']]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
     logging.info("Writing %d missed, vetoed, and cut injections to html file.",
