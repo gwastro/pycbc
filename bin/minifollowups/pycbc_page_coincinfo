@@ -21,9 +21,10 @@ import logging
 import sys
 import matplotlib
 matplotlib.use('Agg')
+import datetime
 import numpy
 
-from astropy.time import Time
+import lal
 
 from pycbc import add_common_pycbc_options
 import pycbc.results
@@ -174,8 +175,7 @@ for ifo in files.keys():
                                                       bank['mass2'][tid]))[0]
 
     time = d['end_time'][i]
-    utc = Time(time, format='gps').to_datetime()
-
+    utc = lal.GPSToUTC(int(time))[0:6]
     trig_dict = {
         k: numpy.array([d[k][i]])
         for k in d.keys()
@@ -192,7 +192,7 @@ for ifo in files.keys():
         headers.append("Detector&nbsp;status")
 
     # End times
-    data[-1].append(str(utc))
+    data[-1].append(str(datetime.datetime(*utc)))
     data[-1].append('%.3f' % time)
     headers.append("UTC&nbsp;End&nbsp;Time")
     headers.append("GPS&nbsp;End&nbsp;time")

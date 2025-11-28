@@ -18,13 +18,10 @@ import logging
 import subprocess
 import urllib.parse
 
+import lal
+import lalframe
+
 import pycbc.version
-from pycbc.libutils import import_optional
-
-lal = import_optional('lal')
-lalframe = import_optional('lalframe')
-lalsimulation = import_optional('lalsimulation')
-
 
 logger = logging.getLogger('pycbc.results.versioning')
 
@@ -45,54 +42,53 @@ def get_library_version_info():
         info_dct['Committer'] = vcs_object.vcsCommitter
         info_dct['Date'] = vcs_object.vcsDate
 
-    if lal is not None:
-        lalinfo = {}
-        lalinfo['Name'] = 'LAL'
-        try:
-            lalinfo['ID'] = lal.VCSId
-            lalinfo['Status'] = lal.VCSStatus
-            lalinfo['Version'] = lal.VCSVersion
-            lalinfo['Tag'] = lal.VCSTag
-            lalinfo['Author'] = lal.VCSAuthor
-            lalinfo['Branch'] = lal.VCSBranch
-            lalinfo['Committer'] = lal.VCSCommitter
-            lalinfo['Date'] = lal.VCSDate
-        except AttributeError:
-            add_info_new_version(lalinfo, lal, '')
-        library_list.append(lalinfo)
+    lalinfo = {}
+    lalinfo['Name'] = 'LAL'
+    try:
+        lalinfo['ID'] = lal.VCSId
+        lalinfo['Status'] = lal.VCSStatus
+        lalinfo['Version'] = lal.VCSVersion
+        lalinfo['Tag'] = lal.VCSTag
+        lalinfo['Author'] = lal.VCSAuthor
+        lalinfo['Branch'] = lal.VCSBranch
+        lalinfo['Committer'] = lal.VCSCommitter
+        lalinfo['Date'] = lal.VCSDate
+    except AttributeError:
+        add_info_new_version(lalinfo, lal, '')
+    library_list.append(lalinfo)
 
-    if lalframe is not None:
-        lalframeinfo = {}
-        try:
-            lalframeinfo['Name'] = 'LALFrame'
-            lalframeinfo['ID'] = lalframe.FrameVCSId
-            lalframeinfo['Status'] = lalframe.FrameVCSStatus
-            lalframeinfo['Version'] = lalframe.FrameVCSVersion
-            lalframeinfo['Tag'] = lalframe.FrameVCSTag
-            lalframeinfo['Author'] = lalframe.FrameVCSAuthor
-            lalframeinfo['Branch'] = lalframe.FrameVCSBranch
-            lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
-            lalframeinfo['Date'] = lalframe.FrameVCSDate
-        except AttributeError:
-            add_info_new_version(lalframeinfo, lalframe, 'Frame')
-        library_list.append(lalframeinfo)
+    lalframeinfo = {}
+    try:
+        lalframeinfo['Name'] = 'LALFrame'
+        lalframeinfo['ID'] = lalframe.FrameVCSId
+        lalframeinfo['Status'] = lalframe.FrameVCSStatus
+        lalframeinfo['Version'] = lalframe.FrameVCSVersion
+        lalframeinfo['Tag'] = lalframe.FrameVCSTag
+        lalframeinfo['Author'] = lalframe.FrameVCSAuthor
+        lalframeinfo['Branch'] = lalframe.FrameVCSBranch
+        lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
+        lalframeinfo['Date'] = lalframe.FrameVCSDate
+    except AttributeError:
+        add_info_new_version(lalframeinfo, lalframe, 'Frame')
+    library_list.append(lalframeinfo)
 
-    if lalsimulation is not None:
-        lalsimulationinfo = {}
-        lalsimulationinfo['Name'] = 'LALSimulation'
-        try:
-            lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
-            lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
-            lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
-            lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
-            lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
-            lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
-            lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
-            lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
-        except AttributeError:
-            add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
-
-        library_list.append(lalsimulationinfo)
+    lalsimulationinfo = {}
+    lalsimulationinfo['Name'] = 'LALSimulation'
+    try:
+        import lalsimulation
+        lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
+        lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
+        lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
+        lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
+        lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
+        lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
+        lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
+        lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
+    except AttributeError:
+        add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
+    except ImportError:
+        pass
+    library_list.append(lalsimulationinfo)
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'
