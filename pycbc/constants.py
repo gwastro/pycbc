@@ -84,6 +84,11 @@ def get_constant(name):
         
 
     if _CONSTANTS == 'lal': # Allow lal, or LAL, or whatever
+        if lal is None:
+            raise ImportError(
+                "PYCBC_CONSTANT_SOURCE is set to 'lal', but the 'lal' module is not installed. "
+                "Please install the 'lal' package to use LAL constants."
+            )
         return getattr(lal, name)
 
     elif name in _DEFAULT_MAPPING:
