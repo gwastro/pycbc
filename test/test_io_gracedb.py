@@ -112,7 +112,7 @@ class TestIOGraceDB(unittest.TestCase):
             # The upload will fail, but it should not raise an exception
             # and it should still leave the event file around
             coinc.upload(coinc_file_name, gracedb_server='localhost',
-                         testing=True)
+                         testing=True, force_noauth=True)
         else:
             # no GraceDb module, so just save the coinc file
             coinc.save(coinc_file_name)

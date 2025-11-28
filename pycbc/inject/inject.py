@@ -104,8 +104,12 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     # taper the polarizations
     try:
-        hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
-        hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
+        hp_tapered = hp.taper_timeseries(location=inj.taper, 
+                                         tapermethod=inj.get('taper_method', 'lal'), 
+                                         taper_window=inj.get('taper_window'))
+        hc_tapered = hc.taper_timeseries(location=inj.taper, 
+                                         tapermethod=inj.get('taper_method', 'lal'), 
+                                         taper_window=inj.get('taper_window'))
     except AttributeError:
         hp_tapered = hp
         hc_tapered = hc
@@ -161,10 +165,17 @@ class _XMLInjectionSet(object):
         self.table = lsctables.SimInspiralTable.get_table(self.indoc)
         self.extra_args = kwds
 
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None,
-              inj_filter_rejector=None,
-              injection_sample_rate=None,):
+    def apply(
+        self,
+        strain,
+        detector_name,
+        f_lower=None,
+        distance_scale=1,
+        simulation_ids=None,
+        inj_filter_rejector=None,
+        injection_sample_rate=None,
+        generate_injections=True,
+    ):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -187,6 +198,13 @@ class _XMLInjectionSet(object):
             injection if necessary.
         injection_sample_rate: float, optional
             The sample rate to generate the signal before injection
+        generate_injections: boolean, optional (default=True)
+            If this is False, injections will not be added to the data. This
+            can be used if your data already contains injections, or if you
+            are separately providing injection strain to add to the data, and
+            you still want to know injection times to make use of injection
+            optimizations (mostly through the InjFilterRejector).
+            Not implemented for XML injections.
 
         Returns
         -------
@@ -197,6 +215,12 @@ class _XMLInjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
+        if not generate_injections:
+            raise NotImplementedError(
+                "XML injections do not support the generate_injections "
+                "key-word argument."
+            )
+
         if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
@@ -497,10 +521,17 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
     injtype = 'cbc'
     required_params = ('tc',)
 
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None,
-              inj_filter_rejector=None,
-              injection_sample_rate=None,):
+    def apply(
+        self,
+        strain,
+        detector_name,
+        f_lower=None,
+        distance_scale=1,
+        simulation_ids=None,
+        inj_filter_rejector=None,
+        injection_sample_rate=None,
+        generate_injections=True,
+    ):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -523,6 +554,12 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             injection if necessary.
         injection_sample_rate: float, optional
             The sample rate to generate the signal before injection
+        generate_injections: boolean, optional (default=True)
+            If this is False, injections will not be added to the data. This
+            can be used if your data already contains injections, or if you
+            are separately providing injection strain to add to the data, and
+            you still want to know injection times to make use of injection
+            optimizations (mostly through the InjFilterRejector).
 
         Returns
         -------
@@ -533,11 +570,29 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         TypeError
             For invalid types of `strain`.
         """
+        # There is a case where injections are not added to the data, but
+        # still need to be generated for the match threshold option in the
+        # InjFilterRejector. User needs to be careful with this though!
+        if inj_filter_rejector is not None:
+            if inj_filter_rejector.match_threshold and not generate_injections:
+                warn_msg = (
+                    "You have asked to use the match threshold option in "
+                    "InjFilterRejector, but injections are not being "
+                    "directly added from the supplied injection file. "
+                    "Be very sure that the injection file exactly matches "
+                    "how the injections were pregenerated!"
+                )
+                logging.warn(warn_msg)
+        must_make_injections = (
+            generate_injections or (
+               inj_filter_rejector and inj_filter_rejector.match_threshold
+            )
+        )
+
         if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()
         if self.table[0]['approximant'] in fd_det:
             t0 = float(strain.start_time)
             t1 = float(strain.end_time)
@@ -546,8 +601,12 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             t0 = float(strain.start_time) - earth_travel_time
             t1 = float(strain.end_time) + earth_travel_time
 
-        # pick lalsimulation injection function
-        add_injection = injection_func_map[strain.dtype]
+
+        if generate_injections:
+            lalstrain = strain.lal()
+
+            # pick lalsimulation injection function
+            add_injection = injection_func_map[strain.dtype]
 
         delta_t = strain.delta_t
         if injection_sample_rate is not None:
@@ -569,21 +628,33 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             start_time = inj.tc - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
-            signal = self.make_strain_from_inj_object(inj, delta_t,
-                     detector_name, f_lower=f_l,
-                     distance_scale=distance_scale)
-            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
-            if float(signal.start_time) > t1:
-                continue
+            if must_make_injections:
+                signal = self.make_strain_from_inj_object(
+                    inj,
+                    delta_t,
+                    detector_name,
+                    f_lower=f_l,
+                    distance_scale=distance_scale,
+                )
+                signal = resample_to_delta_t(
+                    signal,
+                    strain.delta_t,
+                    method='ldas'
+                )
+                if float(signal.start_time) > t1:
+                    continue
+                signal = signal.astype(strain.dtype)
+                injected_ids.append(ii)
+                if inj_filter_rejector is not None:
+                   inj_filter_rejector.generate_short_inj_from_inj(signal, ii)
 
-            signal = signal.astype(strain.dtype)
-            signal_lal = signal.lal()
-            add_injection(lalstrain, signal_lal, None)
-            injected_ids.append(ii)
-            if inj_filter_rejector is not None:
-                inj_filter_rejector.generate_short_inj_from_inj(signal, ii)
 
-        strain.data[:] = lalstrain.data.data[:]
+            if generate_injections:
+                signal_lal = signal.lal()
+                add_injection(lalstrain, signal_lal, None)
+
+        if generate_injections:
+            strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
         injected.table = injections[np.array(injected_ids).astype(int)]
@@ -663,9 +734,16 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
     injtype = 'ringdown'
     required_params = ('tc',)
 
-    def apply(self, strain, detector_name, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None,
-              injection_sample_rate=None):
+    def apply(
+        self,
+        strain,
+        detector_name,
+        distance_scale=1,
+        simulation_ids=None,
+        inj_filter_rejector=None,
+        injection_sample_rate=None,
+        generate_injections=True,
+    ):
         """Add injection (as seen by a particular detector) to a time series.
 
         Parameters
@@ -684,6 +762,13 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
             be raised.
         injection_sample_rate: float, optional
             The sample rate to generate the signal before injection
+        generate_injections: boolean, optional (default=True)
+            If this is False, injections will not be added to the data. This
+            can be used if your data already contains injections, or if you
+            are separately providing injection strain to add to the data, and
+            you still want to know injection times to make use of injection
+            optimizations (mostly through the InjFilterRejector).
+            Not yet implemented for Ringdown Injection Files.
 
         Returns
         -------
@@ -693,12 +778,20 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         ------
         NotImplementedError
             If an ``inj_filter_rejector`` is provided.
+            Or if generate_injections is not True.
         TypeError
             For invalid types of `strain`.
         """
         if inj_filter_rejector is not None:
             raise NotImplementedError("Ringdown injections do not support "
                                       "inj_filter_rejector")
+
+        if not generate_injections:
+            raise NotImplementedError(
+                "The generate_injections flag is not implemented for Ringdown "
+                "injections."
+            )
+
         if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
@@ -937,11 +1030,25 @@ class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
                                   side='right')
         return ts
 
-    def apply(self, strain, detector_name, distance_scale=1,
-              injection_sample_rate=None, inj_filter_rejector=None):
+    def apply(
+        self,
+        strain,
+        detector_name,
+        distance_scale=1,
+        injection_sample_rate=None,
+        inj_filter_rejector=None,
+        generate_injections=True
+    ):
         if inj_filter_rejector is not None:
             raise NotImplementedError("IncoherentFromFile injections do not "
                                       "support inj_filter_rejector")
+
+        if not generate_injections:
+            raise NotImplementedError(
+                "IncoherentFromFile injections do not support the "
+                "generate_injections key-word argument."
+            )
+
         if injection_sample_rate is not None:
             delta_t = 1./injection_sample_rate
         else:
@@ -1262,7 +1369,9 @@ class SGBurstInjectionSet(object):
 
             # compute the detector response, taper it if requested
             # and add it to the strain
-            strain = wfutils.taper_timeseries(strain, inj.taper)
+            strain = strain.taper_timeseries(location=inj.taper, 
+                                             tapermethod=inj.get('taper_method', 'lal'), 
+                                             taper_window=inj.get('taper_window'))
             signal_lal = hp.astype(strain.dtype).lal()
             add_injection(lalstrain, signal_lal, None)
 

@@ -36,10 +36,7 @@ urllib3
 markupsafe <= 2.0.1
 
 # Requirements for LIGO Light-Weight XML format access needed by some workflows
-# FIXME Version 2.1.0 + lalsuite 7.25.1 produce errors arising from the old
-# python-ligo-lw module. Remove pin when we have moved to a lalsuite that no
-# longer depends on python-ligo-lw.
-igwn-ligolw<2.1.0
+igwn-ligolw
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1

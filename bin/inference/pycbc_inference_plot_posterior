@@ -79,6 +79,11 @@ parser.add_argument("--plot-maxl", action="store_true", default=False,
 parser.add_argument('--legend-location', default='upper right',
                     help='Where to put the legend (if multiple files are '
                          'provided). Default is "upper right".')
+parser.add_argument('--legend-bbox-to-anchor', default='(1.0, 1.0)',
+                    help='Box that is used to position the legend in conjunction with loc.')
+parser.add_argument('--legend-fontsize', default='medium',
+                    help="The font size of legend. Default is 'medium'."
+                         "Choose from int or {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}.")
 parser.add_argument('--dpi', type=int, default=200,
                     help="Set the DPI of the plot. Default is 200.")
 # style option
@@ -112,6 +117,15 @@ if opts.plot_maxl:
         opts.parameters.append('loglikelihood')
 else:
     add_logl = False
+
+# parse legend bbox
+def parse_tuple(value):
+    try:
+        return tuple(map(float, value.strip("()").split(",")))
+    except Exception as e:
+        raise argparse.ArgumentTypeError(f"Invalid tuple format: {value}") from e
+
+opts.legend_bbox_to_anchor = parse_tuple(opts.legend_bbox_to_anchor)
 
 # set logging
 pycbc.init_logging(opts.verbose)
@@ -358,7 +372,8 @@ if len(opts.input_file) > 1:
     else:
         addto = fig
     addto.legend(loc=opts.legend_location, handles=handles,
-                 labels=labels)
+                 labels=labels, fontsize=opts.legend_fontsize,
+                 bbox_to_anchor=opts.legend_bbox_to_anchor)
 
 # set DPI
 fig.set_dpi(opts.dpi)

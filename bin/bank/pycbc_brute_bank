@@ -38,7 +38,8 @@ pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--output-file', required=True,
     help='Output file name for template bank.')
 parser.add_argument('--input-file',
-    help='Bank to use as a starting point.')
+    help='Bank to use as an initial set of starting samples.')
+parser.add_argument('--keep-entire-input-file', help="All of the templates in the input file will be kept in the output file, even if they do not pass normal mismatch criteria.", action='store_true')
 parser.add_argument('--input-config',
     help='Draw parameters from the given configure file.')
 parser.add_argument('--params',
@@ -81,6 +82,11 @@ parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
 parser.add_argument('--nprocesses', type=int, default=1,
     help='Number of processes to use for waveform generation parallelization. If not given then only a single core will be used.')
 pycbc.psd.insert_psd_option_group(parser)
+parser.add_argument('--use-trimmed-buffer', action='store_true',
+    help=('When specified, the match calculation will use only the first and last 100 samples '
+        'of the waveform instead of the full buffer. Enabling this option makes match computation faster.'))
+
+
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
@@ -231,6 +237,16 @@ class TriangleBank(object):
                 return False
 
             hc = self[j]
+
+            # Defensive initialization if matches/indices are missing
+            if not hasattr(hc, 'matches'):
+                hc.matches = numpy.empty(len(self))
+                hc.matches[:] = numpy.nan
+
+            if not hasattr(hc, 'indices'):
+                hc.indices = numpy.arange(len(self))
+
+
             m = hp.gen.match(hp, hc)
             matches[j] = m
             mnum += 1
@@ -249,7 +265,7 @@ class TriangleBank(object):
             if m > mmax:
                 mmax = m
 
-    def check_params(self, gen, params, threshold):
+    def check_params(self, gen, params, threshold, force_add=False):
         num_added = 0
         total_num = len(tuple(params.values())[0])
         waveform_cache = []
@@ -268,6 +284,9 @@ class TriangleBank(object):
                 hp.gen = gen
                 hp.threshold = threshold
                 if hp not in self:
+                    num_added += 1
+                    self.insert(hp)
+                elif force_add:
                     num_added += 1
                     self.insert(hp)
             else:
@@ -320,8 +339,13 @@ class GenUniformWaveform(object):
         q = pycbc.types.zeros(tlen, numpy.complex64)
         self.qtilde_view = qtilde[self.kmin:self.flen - 1]
         self.ifft = pycbc.fft.IFFT(qtilde, q)
-        self.md = q._data[-100:]
-        self.md2 = q._data[0:100]
+
+        self.md = q
+        self.md2 = numpy.zeros(20)
+
+        if args.use_trimmed_buffer:
+            self.md = q._data[-100:]
+            self.md2 = q._data[0:100]
 
     def generate(self, **kwds):
         kwds.update(fdict)
@@ -403,8 +427,8 @@ def wf_wrapper(p):
 if args.input_file:
     f = HFile(args.input_file, 'r')
     params = {k: f[k][:] for k in f}
-    bank, _ = bank.check_params(gen, params, args.minimal_match)
-
+    bank, _ = bank.check_params(gen, params, args.minimal_match, 
+                                force_add=args.keep_entire_input_file)
 
 def draw(rtype):
 
