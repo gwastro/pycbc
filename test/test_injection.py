@@ -19,19 +19,16 @@ Unit test for PyCBC's injection module.
 """
 
 import tempfile
+import lal
+from pycbc.types import TimeSeries
+from pycbc.detector import Detector, get_available_detectors
+from pycbc.inject import InjectionSet
 import unittest
 import numpy
-from astropy.time import Time
 import itertools
 from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
-
-from pycbc.types import TimeSeries
-from pycbc.detector import Detector, get_available_detectors, gmst_accurate
-from pycbc.inject import InjectionSet
-from pycbc.constants import C_SI, G_SI, PI, REARTH_SI, PC_SI
-
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
@@ -53,8 +50,8 @@ class MyInjection(object):
         row.polarization = self.polarization
         row.phi0 = 0
         row.f_lower = 20
-        row.f_final = C_SI ** 3 / \
-                (6. ** (3. / 2.) * PI * G_SI * total_mass)
+        row.f_final = lal.C_SI ** 3 / \
+                (6. ** (3. / 2.) * lal.PI * lal.G_SI * total_mass)
         row.spin1x = row.spin1y = row.spin1z = 0
         row.spin2x = row.spin2y = row.spin2z = 0
         row.alpha1 = 0
@@ -70,7 +67,8 @@ class MyInjection(object):
         row.psi3 = 0
         row.geocent_end_time = int(self.end_time)
         row.geocent_end_time_ns = int(1e9 * (self.end_time - row.geocent_end_time))
-        row.end_time_gmst = gmst_accurate(self.end_time)
+        row.end_time_gmst = lal.GreenwichMeanSiderealTime(
+                lal.LIGOTimeGPS(self.end_time))
         for d in 'lhvgt':
             row.__setattr__('eff_dist_' + d, row.distance)
             row.__setattr__(d + '_end_time', row.geocent_end_time)
@@ -92,11 +90,11 @@ class TestInjection(unittest.TestCase):
         self.assertTrue('V1' in available_detectors)
         self.detectors = [Detector(d) for d in ['H1', 'L1', 'V1']]
         self.sample_rate = 4096.
-        self.earth_time = REARTH_SI / C_SI
+        self.earth_time = lal.REARTH_SI / lal.C_SI
 
         # create a few random injections
         self.injections = []
-        start_time = numpy.floor(Time.now().to_value('gps'))
+        start_time = float(lal.GPSTimeNow())
         taper_choices = ('TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND')
         for i, taper in zip(range(20), itertools.cycle(taper_choices)):
             inj = MyInjection()
@@ -105,11 +103,11 @@ class TestInjection(unittest.TestCase):
             random = numpy.random.uniform
             inj.mass1 = random(low=1., high=20.)
             inj.mass2 = random(low=1., high=20.)
-            inj.distance = random(low=0.9, high=1.1) * 1e6 * PC_SI
+            inj.distance = random(low=0.9, high=1.1) * 1e6 * lal.PC_SI
             inj.latitude = numpy.arccos(random(low=-1, high=1))
-            inj.longitude = random(low=0, high=2 * PI)
+            inj.longitude = random(low=0, high=2 * lal.PI)
             inj.inclination = numpy.arccos(random(low=-1, high=1))
-            inj.polarization = random(low=0, high=2 * PI)
+            inj.polarization = random(low=0, high=2 * lal.PI)
             inj.taper = taper
             self.injections.append(inj)
 
@@ -138,7 +136,7 @@ class TestInjection(unittest.TestCase):
             for inj in self.injections:
                 ts = TimeSeries(numpy.zeros(int(10 * self.sample_rate)),
                                 delta_t=1/self.sample_rate,
-                                epoch=inj.end_time - 5,
+                                epoch=lal.LIGOTimeGPS(inj.end_time - 5),
                                 dtype=numpy.float64)
                 injections.apply(ts, det.name)
                 max_amp, max_loc = ts.abs_max_loc()
@@ -158,7 +156,7 @@ class TestInjection(unittest.TestCase):
             for epoch in clear_times:
                 ts = TimeSeries(numpy.zeros(int(10 * self.sample_rate)),
                                 delta_t=1/self.sample_rate,
-                                epoch=epoch,
+                                epoch=lal.LIGOTimeGPS(epoch),
                                 dtype=numpy.float64)
                 injections.apply(ts, det.name)
                 max_amp, max_loc = ts.abs_max_loc()

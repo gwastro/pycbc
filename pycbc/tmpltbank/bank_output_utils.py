@@ -1,6 +1,7 @@
 import logging
 import numpy
 
+from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from igwn_ligolw import ligolw, lsctables, utils as ligolw_utils
 
 from pycbc import pnutils
@@ -9,7 +10,6 @@ from pycbc.io.ligolw import (
     return_empty_sngl, return_search_summary, create_process_table
 )
 from pycbc.io.hdf import HFile
-from pycbc.constants import PI, MTSUN_SI, TWOPI, GAMMA
 
 from pycbc.waveform import get_waveform_filter_length_in_time as gwflit
 

@@ -16,19 +16,20 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
+import lal
 import numpy
 from numpy import sqrt, double, complex128
 from math import pow, log, cos, sin, acos, atan2
 
 from pycuda.elementwise import ElementwiseKernel
 
+from pycbc.libutils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros
 from pycbc.waveform.utils import ceilpow2
-from pycbc.constants import MTSUN_SI, PC_SI, PI, MRSUN_SI, GAMMA
 
-preamble = f"""
+preamble = """
+#include <lal/LALConstants.h>
 #include <cuComplex.h>
-#include <math.h>
 """
 
 spintaylorf2_text = """
@@ -48,7 +49,7 @@ spintaylorf2_text = """
     double dEnergy = 0.;
     double flux = 0.;
     double amp;
-    double shft = -(2.0 * PI) * tC;
+    double shft = -LAL_TWOPI * tC;
     double RE_prec_facP;
     double IM_prec_facP;
     double RE_prec_facC;
@@ -218,8 +219,8 @@ spintaylorf2_text = """
     phasing += 2.*zeta;
     amp = amp0 * sqrt(-dEnergy/flux) * v;
 
-    const double CPhasing = amp * cos(phasing - (PI / 4.0));
-    const double SPhasing = amp * sin(phasing - (PI / 4.0));
+    const double CPhasing = amp * cos(phasing - LAL_PI_4);
+    const double SPhasing = amp * sin(phasing - LAL_PI_4);
     htildeP[i]._M_re = RE_prec_facP * CPhasing + IM_prec_facP * SPhasing ;
     htildeP[i]._M_im = IM_prec_facP * CPhasing - RE_prec_facP * SPhasing ;
     htildeC[i]._M_re = RE_prec_facC * CPhasing + IM_prec_facC * SPhasing ;
@@ -230,7 +231,7 @@ spintaylorf2_text = """
 spintaylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htildeP,
                                            pycuda::complex<double> *htildeC,
                                            int kmin, int phase_order,
-                                           int amplitude_order, double delta_f, double PI,
+                                           int amplitude_order, double delta_f,
                                            double piM, double pfaN,
                                            double pfa2, double pfa3,
                                            double pfa4, double pfa5,
@@ -255,7 +256,7 @@ spintaylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htildeP,
                                            double psiJ_P, double psiJ_C,
                                            double gamma0""",
                     spintaylorf2_text, "spintaylorf2_kernel",
-                    preamble=preamble)
+                    preamble=preamble, options=pkg_config_header_strings(['lal']))
 
 def spintaylorf2(**kwds):
     """ Return a SpinTaylorF2 waveform using CUDA to generate the phase and amplitude
@@ -281,8 +282,8 @@ def spintaylorf2(**kwds):
     tC= -1.0 / delta_f
     M = mass1 + mass2
     eta = mass1 * mass2 / (M * M)
-    m_sec = M * MTSUN_SI
-    piM = PI * m_sec
+    m_sec = M * lal.MTSUN_SI
+    piM = lal.PI * m_sec
 
     vISCO = 1. / sqrt(6.)
     fISCO = vISCO * vISCO * vISCO / piM
@@ -306,7 +307,7 @@ def spintaylorf2(**kwds):
     rotLy = lnhatx*sin(psiJ) + lnhaty*cos(psiJ)
     alpha0 = atan2(rotLy, rotLx) # FIXME: check that rotLy and rotLx are not both 0
     psiJ_P =psiJ + psi
-    psiJ_C =psiJ + psi + PI/4.
+    psiJ_C =psiJ + psi + lal.PI/4.
 
     #####Calculate the Coefficients#####
     #quadparam = 1.
@@ -321,9 +322,9 @@ def spintaylorf2(**kwds):
     pn_gamma = (5.*(146597. + 7056.*eta)*mass1/(2268.*M) - 10.*eta*(1276. + 153.*eta)/81.)*chi*kappa
     prec_fac0 = 5.*(4. + 3.*mass2/mass1)/64.
     dtdv2 = 743./336. + 11.*eta/4.
-    dtdv3 = -4.*PI + pn_beta
+    dtdv3 = -4.*lal.PI + pn_beta
     dtdv4 = 3058673./1016064. + 5429.*eta/1008. + 617.*eta*eta/144. - pn_sigma
-    dtdv5 = (-7729./672.+13.*eta/8.)*PI + 9.*pn_gamma/40.
+    dtdv5 = (-7729./672.+13.*eta/8.)*lal.PI + 9.*pn_gamma/40.
 
     #####Calculate the Initial Euler Angles alpha_ref, beta_ref=0 and zeta_ref#####
     gam = gamma0*v0
@@ -359,47 +360,47 @@ def spintaylorf2(**kwds):
     lambdaa = -1987./3080.0
     pfaN = 3.0/(128.0 * eta)
     pfa2 = 5.0*(743.0/84 + 11.0 * eta)/9.0
-    pfa3 = -16.0*PI + 4.0*pn_beta
+    pfa3 = -16.0*lal.PI + 4.0*pn_beta
     pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
             10.0*pn_sigma
-    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * PI - pn_gamma
-    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * PI - pn_gamma * 3
-    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * PI * PI- \
-            6848.0/21.0*GAMMA) + \
-            eta * (-15335.597827/3.048192 + 2255./12. * PI * \
-            PI - 1760./3.*theta +12320./9.*lambdaa) + \
+    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - pn_gamma
+    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - pn_gamma * 3
+    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.PI * lal.PI- \
+            6848.0/21.0*lal.GAMMA) + \
+            eta * (-15335.597827/3.048192 + 2255./12. * lal.PI * \
+            lal.PI - 1760./3.*theta +12320./9.*lambdaa) + \
             eta*eta * 76055.0/1728.0 - \
             eta*eta*eta*  127825.0/1296.0
     pfl6 = -6848.0/21.0
-    pfa7 = PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
+    pfa7 = lal.PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
             14809.0 * eta*eta)
 
     FTaN = 32.0 * eta*eta / 5.0
     FTa2 = -(12.47/3.36 + 3.5/1.2 * eta)
-    FTa3 = 4.0 * PI
+    FTa3 = 4.0 * lal.PI
     FTa4 = -(44.711/9.072 - 92.71/5.04 * eta - 6.5/1.8 * eta*eta)
-    FTa5 = -(81.91/6.72 + 58.3/2.4 * eta) * PI
-    FTa6 = (664.3739519/6.9854400 + 16.0/3.0 * PI*PI -
-            17.12/1.05 * GAMMA +
-         (4.1/4.8 * PI*PI - 134.543/7.776) * eta -
+    FTa5 = -(81.91/6.72 + 58.3/2.4 * eta) * lal.PI
+    FTa6 = (664.3739519/6.9854400 + 16.0/3.0 * lal.PI*lal.PI -
+            17.12/1.05 * lal.GAMMA +
+         (4.1/4.8 * lal.PI*lal.PI - 134.543/7.776) * eta -
          94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta)
     FTl6 = -8.56/1.05
     FTa7 = -(162.85/5.04 - 214.745/1.728 * eta - 193.385/3.024 * eta*eta) \
-            * PI
+            * lal.PI
 
     dETaN = 2 * -eta/2.0
     dETa1 = 2 * -(3.0/4.0 + 1.0/12.0 * eta)
     dETa2 = 3 * -(27.0/8.0 - 19.0/8.0 * eta + 1./24.0 * eta*eta)
-    dETa3 = 4 * -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * PI*PI) *
+    dETa3 = 4 * -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * lal.PI*lal.PI) *
                              eta + 15.5/9.6 * eta*eta + 3.5/518.4 * eta*eta*eta)
 
-    amp0 = -4. * mass1 * mass2 / (1.0e+06 * distance * PC_SI ) * \
-                    MRSUN_SI * MTSUN_SI * sqrt(PI/12.0)
+    amp0 = -4. * mass1 * mass2 / (1.0e+06 * distance * lal.PC_SI ) * \
+                    lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
 
     htildeP = FrequencySeries(zeros(n,dtype=complex128), delta_f=delta_f, copy=False)
     htildeC = FrequencySeries(zeros(n,dtype=complex128), delta_f=delta_f, copy=False)
     spintaylorf2_kernel(htildeP.data[kmin:kmax], htildeC.data[kmin:kmax],
-                        kmin, phase_order, amplitude_order, delta_f, PI, piM, pfaN,
+                        kmin, phase_order, amplitude_order, delta_f, piM, pfaN,
                         pfa2, pfa3, pfa4, pfa5, pfl5,
                         pfa6, pfl6, pfa7, FTaN, FTa2,
                         FTa3, FTa4, FTa5, FTa6,
