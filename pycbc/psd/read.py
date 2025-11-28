@@ -18,12 +18,7 @@
 
 import logging
 import numpy
-import xml.etree.ElementTree as ET
-import io
-
 import scipy.interpolate
-from igwn_ligolw import utils as ligolw_utils
-
 from pycbc.types import FrequencySeries
 
 logger = logging.getLogger('pycbc.psd.read')
@@ -136,111 +131,6 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
     return from_numpy_arrays(freq_data, noise_data, length, delta_f,
                              low_freq_cutoff)
 
-
-def _strip_ns(tag):
-    # remove namespace if present
-    return tag.split('}', 1)[-1] if '}' in tag else tag
-
-def _extract_array_text(elem):
-    # find a child element that likely contains the numerical array
-    # common candidates: 'Array', 'data', 'ArrayData'
-    for child in elem.iter():
-        tag = _strip_ns(child.tag)
-        if tag.lower() in ('array', 'arraydata', 'data', 'values') and child.text:
-            return child.text
-    # fallback: if element itself contains whitespace-separated numbers
-    if elem.text and any(ch.isdigit() for ch in elem.text):
-        return elem.text
-    return None
-
-def _parse_psd_xmldoc(xml_bytes, root_name):
-    """
-    Parse bytes into ElementTree and extract PSD entries.
-
-    Parameters
-    ----------
-    xml_bytes: byte string
-        The xml document as a bytestring
-    root_name: string
-        If given use this as the root name for the PSD XML file.
-
-    Returns
-    -------
-    dict: The PSDs
-
-    """
-
-    # Avoid importing lal.series here by parsing the LIGOLW XML directly.
-    # Use igwn_ligolw's load_fileobj to transparently handle compression,
-    # then parse the resulting bytes with ElementTree. This keeps the
-    # runtime dependency on lal.series optional.
-    try:
-        tree = ET.parse(io.BytesIO(xml_bytes))
-        root = tree.getroot()
-    except Exception:
-        # Try parsing as text
-        root = ET.fromstring(xml_bytes.decode('utf-8'))
-
-    psd_entries = {}
-    # Find all elements whose tag matches root_name (ignoring namespace)
-    for elem in root.iter():
-        if _strip_ns(elem.tag) == root_name:
-            # identify name / ifo string
-            name = None
-            # common places: attribute 'Name', child <Name>, child <ifo>
-            if 'Name' in elem.attrib:
-                name = elem.attrib.get('Name')
-            if not name:
-                name_tag = elem.find('.//{*}Name')
-                if name_tag is not None and name_tag.text:
-                    name = name_tag.text.strip()
-            if not name:
-                ifo_tag = elem.find('.//{*}ifo')
-                if ifo_tag is not None and ifo_tag.text:
-                    name = ifo_tag.text.strip()
-            # deltaF may appear as child <deltaF> or attribute
-            delta_f = None
-            if 'deltaF' in elem.attrib:
-                try:
-                    delta_f = float(elem.attrib['deltaF'])
-                except Exception:
-                    delta_f = None
-            if delta_f is None:
-                df_tag = elem.find('.//{*}deltaF')
-                if df_tag is not None and df_tag.text:
-                    try:
-                        delta_f = float(df_tag.text.strip())
-                    except Exception:
-                        delta_f = None
-
-            # extract numerical array text and convert to numpy array
-            arr_text = _extract_array_text(elem)
-            noise_data = None
-            if arr_text:
-                # the array text may contain newlines, commas or extra spaces
-                # parse floats by splitting on whitespace and commas
-                import re
-
-                tokens = re.split('[,\s]+', arr_text.strip())
-                # filter out any empty tokens
-                tokens = [t for t in tokens if t]
-                try:
-                    noise_data = numpy.array([float(t) for t in tokens], dtype=numpy.float64)
-                except Exception:
-                    noise_data = None
-
-            if noise_data is None or delta_f is None:
-                # skip entries we couldn't parse
-                continue
-
-            # if name still None, try to fall back to an index-based name
-            if name is None:
-                name = f'psd_{len(psd_entries)}'
-
-            psd_entries[name] = {'data': noise_data, 'delta_f': delta_f}
-
-    return psd_entries
-
 def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
              root_name='psd'):
     """Read a LIGOLW XML file containing one-sided PSD data and generate
@@ -270,27 +160,27 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     psd : FrequencySeries
         The generated frequency series.
     """
-    
+    import lal.series
+    from igwn_ligolw import utils as ligolw_utils
 
     with open(filename, 'rb') as fp:
-        # load_fileobj handles compression transparently and returns raw bytes
-        xml_bytes = ligolw_utils.load_fileobj(fp, compress='auto')
-        psd_dict = _parse_psd_xmldoc(xml_bytes, root_name=root_name)
+        ct_handler = lal.series.PSDContentHandler
+        xml_doc = ligolw_utils.load_fileobj(fp, compress='auto',
+                                            contenthandler=ct_handler)
+        psd_dict = lal.series.read_psd_xmldoc(xml_doc, root_name=root_name)
 
     if ifo_string is not None:
-        try:
-            psd_freq_series = psd_dict[ifo_string]
-        except KeyError:
-            raise KeyError(f"PSD with ifo string '{ifo_string}' not found in XML file")
+        psd_freq_series = psd_dict[ifo_string]
     elif len(psd_dict.keys()) == 1:
-        psd_freq_series = psd_dict[next(iter(psd_dict.keys()))]
+        psd_freq_series = psd_dict[tuple(psd_dict.keys())[0]]
     else:
         raise ValueError(
-            "No ifo string given and input XML file does not contain exactly one PSD. Specify which PSD you want to use."
+            "No ifo string given and input XML file contains not "
+            "exactly one PSD. Specify which PSD you want to use."
         )
 
-    noise_data = psd_freq_series['data']
-    freq_data = numpy.arange(len(noise_data)) * psd_freq_series['deltaF']
+    noise_data = psd_freq_series.data.data[:]
+    freq_data = numpy.arange(len(noise_data)) * psd_freq_series.deltaF
 
     return from_numpy_arrays(freq_data, noise_data, length, delta_f,
                              low_freq_cutoff)
