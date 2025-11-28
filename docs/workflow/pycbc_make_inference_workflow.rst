@@ -189,7 +189,7 @@ to your config files. ``request_disk`` and ``request_memory`` may also be requir
     condor|accounting_group = accounting.tag
     condor|request_disk = 1024
 
-Here, ``${ACCOUNTING_GROUP}`` is the appropriate tag for your workflow.
+Here, ``accounting.tag`` should be replaced with the appropriate tag for your workflow.
 
 Once it is running, you can monitor the status of the workflow by running
 ``./status`` from within the ``${WORKFLOW_NAME}-output`` directory. If your
