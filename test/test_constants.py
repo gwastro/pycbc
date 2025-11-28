@@ -3,6 +3,7 @@ Test that the constants provided from LAL match closely to the options that
 we fall back on from astropy or numpy as appropriate
 """
 import unittest
+import unittest.mock
 import sys
 import numpy as np
 
