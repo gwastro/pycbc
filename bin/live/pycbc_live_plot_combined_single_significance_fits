@@ -22,9 +22,8 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-from lal import gpstime
-
 import pycbc
+from pycbc.live import strip_time
 from pycbc.io.hdf import HFile
 
 
@@ -115,9 +114,10 @@ t = min_start
 # Last tick will be the midnight after the last datapoint
 while t < max_end + 86400:
     # Strip off the time information, ticks are at midnight
-    time_dt = gpstime.gps_to_utc(t).date()
-    xtix_labels.append(time_dt.strftime("%Y-%m-%d"))
-    xtix.append(gpstime.utc_to_gps(time_dt).gpsSeconds)
+
+    time_midnight, str_date = strip_time(t)
+    xtix_labels.append(str_date)
+    xtix.append(time_midnight)
     t += 86400
 
 logging.info("Plotting fits information")
