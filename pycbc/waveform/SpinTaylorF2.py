@@ -22,7 +22,6 @@ from math import pow, log, cos, sin, acos, atan2
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.libutils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros
 from pycbc.waveform.utils import ceilpow2
 from pycbc.constants import MTSUN_SI, PC_SI, PI, MRSUN_SI, GAMMA
@@ -256,7 +255,7 @@ spintaylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htildeP,
                                            double psiJ_P, double psiJ_C,
                                            double gamma0""",
                     spintaylorf2_text, "spintaylorf2_kernel",
-                    preamble=preamble, options=pkg_config_header_strings([]))
+                    preamble=preamble)
 
 def spintaylorf2(**kwds):
     """ Return a SpinTaylorF2 waveform using CUDA to generate the phase and amplitude

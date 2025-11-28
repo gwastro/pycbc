@@ -591,6 +591,124 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         return numpy.log(rate)
 
+    def debug_trace_candidate(self, stats, shift, to_shift, idx):
+        """
+        Debug helper mirroring the interface in the new implementation.
+        Trace internal intermediate values for a single global candidate
+        index through the phasetd binning and lookup machinery.
+        Returns a dict similar to the new implementation for parity checks.
+        """
+        to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
+
+        if not self.has_hist:
+            self.get_hist()
+
+        snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1)
+                           for ifo in self.ifos])
+        smin = numpy.argmin(snrs, axis=0)
+        rtypes = {ifo: numpy.where(smin == j)[0]
+                  for j, ifo in enumerate(self.ifos)}
+
+        # Find which ref_ifo contains our global index
+        ref_ifo = None
+        for ifo in self.ifos:
+            if idx in rtypes[ifo]:
+                ref_ifo = ifo
+                break
+        if ref_ifo is None:
+            raise IndexError(f"Index {idx} not found in any reference rtype")
+
+        # Prepare per-ifo arrays
+        ps = {ifo: numpy.array(stats[ifo]['coa_phase'], ndmin=1)
+              for ifo in self.ifos}
+        ts = {ifo: numpy.array(stats[ifo]['end_time'], ndmin=1)
+              for ifo in self.ifos}
+        ss = {ifo: numpy.array(stats[ifo]['snr'], ndmin=1)
+              for ifo in self.ifos}
+        sigs = {ifo: (numpy.array(stats[ifo]['sigmasq'], ndmin=1) ** 0.5)
+                for ifo in self.ifos}
+
+        rtype = rtypes[ref_ifo]
+        pref = ps[ref_ifo]
+        tref = ts[ref_ifo]
+        sref = ss[ref_ifo]
+        sigref = sigs[ref_ifo]
+
+        # cached arrays (small local ones)
+        length = len(rtype)
+        pdif = numpy.zeros(length, dtype=numpy.float64)
+        tdif = numpy.zeros(length, dtype=numpy.float64)
+        sdif = numpy.zeros(length, dtype=numpy.float64)
+        pbin = numpy.zeros(length, dtype=numpy.int32)
+        tbin = numpy.zeros(length, dtype=numpy.int32)
+        sbin = numpy.zeros(length, dtype=numpy.int32)
+
+        other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]
+        binned = []
+        for ifo in other_ifos:
+            sc = stats[ifo]
+            p = numpy.array(sc['coa_phase'], ndmin=1)[rtype]
+            t = numpy.array(sc['end_time'], ndmin=1)[rtype]
+            s = numpy.array(sc['snr'], ndmin=1)[rtype]
+
+            sense = self.relsense[ifo]
+            sig = (numpy.array(sc['sigmasq'], ndmin=1) ** 0.5)[rtype]
+
+            pdif = (pref - p) % (numpy.pi * 2.0)
+            tdif = shift[rtype] * to_shift[ref_ifo] + \
+                tref - shift[rtype] * to_shift[ifo] - t
+            sdif = s / sref * sense / self.relsense[self.hist_ifos[0]] * sigref / sig
+
+            tbin = (tdif / self.twidth).astype(int)
+            pbin = (pdif / self.pwidth).astype(int)
+            sbin = (sdif / self.swidth).astype(int)
+            binned += [tbin, pbin, sbin]
+
+        # Convert and lookup similar to logsignalrate
+        nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
+        for i, b in enumerate(binned):
+            nbinned['c%s' % i] = b
+
+        if not self.two_det_flag:
+            loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
+            loc[loc == len(self.weights[ref_ifo])] = 0
+
+            pos = int(numpy.where(rtype == idx)[0][0])
+
+            if numpy.array_equal(self.param_bin[ref_ifo][loc[pos]], nbinned[pos]):
+                rate_val = float(self.weights[ref_ifo][loc[pos]])
+            else:
+                rate_val = float(self.max_penalty)
+
+            rate_val *= (float(sref[rtype[pos]]) / float(self.ref_snr)) ** -4.0
+
+            return {
+                'ref_ifo': ref_ifo,
+                'pos_in_rtype': pos,
+                'pdif': pdif.copy(),
+                'tdif': tdif.copy(),
+                'sdif': sdif.copy(),
+                'pbin': pbin.copy(),
+                'tbin': tbin.copy(),
+                'sbin': sbin.copy(),
+                'nbinned_pos': nbinned[pos].copy(),
+                'loc_pos': int(loc[pos]),
+                'rate_value': rate_val,
+                'sref': sref[rtype].copy(),
+                'rtype': rtype.copy(),
+            }
+        else:
+            pos = int(numpy.where(rtype == idx)[0][0])
+            return {
+                'ref_ifo': ref_ifo,
+                'pos_in_rtype': pos,
+                'pbin': pbin.copy(),
+                'tbin': tbin.copy(),
+                'sbin': sbin.copy(),
+                'sref': sref[rtype].copy(),
+                'rtype': rtype.copy(),
+            }
+
     def single(self, trigs):
         """
         Calculate the necessary single detector information
