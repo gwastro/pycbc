@@ -740,12 +740,6 @@ class CoincExpireBuffer(object):
         self.index = 0
         self.ifos = ifos
 
-        # Optional parallel origins buffer (stores per-element origin metadata)
-        # This is used for transient debugging only; it mirrors self.buffer and
-        # will be managed in parallel with the main buffer when origin_values
-        # are provided to `add`.
-        self._origins = numpy.zeros(initial_size, dtype=object)
-
         self.time = {}
         self.timer = {}
         for ifo in self.ifos:
@@ -793,28 +787,11 @@ class CoincExpireBuffer(object):
             for ifo in self.ifos:
                 self.timer[ifo].resize(newlen)
             self.buffer.resize(newlen, refcheck=False)
-            # resize origins buffer as well
-            self._origins = numpy.resize(self._origins, newlen)
 
         self.buffer[self.index:self.index+len(values)] = values
         if len(values) > 0:
             for ifo in self.ifos:
                 self.timer[ifo][self.index:self.index+len(values)] = times[ifo]
-
-            # If caller provided transient origin_values in the special
-            # times structure (times may include a key '__origins' with a
-            # sequence aligned to `values`) then use that to populate the
-            # origins buffer in parallel. This is intentionally non-invasive
-            # (backwards compatible) — callers that do not supply
-            # '__origins' are unaffected.
-            if isinstance(times, dict) and '__origins' in times:
-                origins = times['__origins']
-                try:
-                    self._origins[self.index:self.index+len(values)] = origins
-                except Exception:
-                    # Fallback: store Python list entries
-                    for k, o in enumerate(origins):
-                        self._origins[self.index + k] = o
 
             self.index += len(values)
 
@@ -830,14 +807,6 @@ class CoincExpireBuffer(object):
                 self.expiration,
                 self.index
             )
-            # Keep origins in sync with compacted buffer
-            try:
-                # After the cython compact, the new index is self.index and
-                # the valid data is in self.buffer[:self.index]. Keep the
-                # origins aligned by slicing the same way.
-                self._origins = self._origins[:self.index]
-            except Exception:
-                pass
         else:
             # Numpy version for >2 ifo case
             keep = None
@@ -848,11 +817,6 @@ class CoincExpireBuffer(object):
             self.buffer[:keep.sum()] = self.buffer[:self.index][keep]
             for ifo in self.ifos:
                 self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
-            # Keep origins aligned if present
-            try:
-                self._origins[:keep.sum()] = self._origins[:self.index][keep]
-            except Exception:
-                pass
             self.index = keep.sum()
 
     def num_greater(self, value):
@@ -863,18 +827,6 @@ class CoincExpireBuffer(object):
     def data(self):
         """Return the array of elements"""
         return self.buffer[:self.index]
-
-    @property
-    def origins_data(self):
-        """Return the array of origin metadata parallel to `data`.
-
-        Elements correspond positionally to `self.data`. If origin metadata
-        was not provided for an element, the slot may be None.
-        """
-        try:
-            return self._origins[:self.index]
-        except Exception:
-            return None
 
 
 class LiveCoincTimeslideBackgroundEstimator(object):
@@ -1173,7 +1125,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         for ifo in ifos:
             trigs = results[ifo]
 
-            if len(trigs['snr']) > 0:
+            if len(trigs['snr'] > 0):
                 trigsc = copy.copy(trigs)
                 trigsc['ifo'] = ifo
                 trigsc['chisq'] = trigs['chisq'] * trigs['chisq_dof']

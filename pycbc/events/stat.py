@@ -675,13 +675,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if not self.has_hist:
             self.get_hist()
 
-        # Keep a short ring of the last few logsignalrate call internals for
-        # post-mortem debugging. Each entry contains per-ref_ifo binned
-        # arrays and the final rate array. This is intended as temporary
-        # debug aid used by tests.
-        if not hasattr(self, '_last_logsignalrate_data'):
-            self._last_logsignalrate_data = []
-
         # Figure out which ifo of the contributing ifos has the smallest SNR,
         # to use as reference for choosing the signal histogram.
         snrs = numpy.array(
@@ -695,16 +688,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
-        # Optional tracing: if self.trace_idx is set by a test, record
-        # detailed intermediate values for the corresponding global index
-        # when it is encountered. This is intentionally non-invasive and
-        # cleared after a single print to avoid spamming logs.
-        trace_idx = None
-        if hasattr(self, 'trace_idx') and self.trace_idx is not None:
-            try:
-                trace_idx = int(self.trace_idx)
-            except Exception:
-                trace_idx = None
         ps = {ifo: numpy.array(stats[ifo]['coa_phase'],
                                dtype=numpy.float32, ndmin=1)
               for ifo in self.ifos}
@@ -714,8 +697,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         ss = {ifo: numpy.array(stats[ifo]['snr'],
                                dtype=numpy.float32, ndmin=1)
               for ifo in self.ifos}
-        sigs = {ifo: numpy.sqrt(numpy.array(stats[ifo]['sigmasq'],
-                                             dtype=numpy.float32, ndmin=1))
+        sigs = {ifo: numpy.array(stats[ifo]['sigmasq'],
+                                 dtype=numpy.float32, ndmin=1)
                 for ifo in self.ifos}
         for ref_ifo in self.ifos:
             rtype = rtypes[ref_ifo]
@@ -726,12 +709,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             senseref = self.relsense[self.hist_ifos[0]]
 
             binned = []
-            ref_entry = {
-                'ref_ifo': ref_ifo,
-                'rtype': rtype.copy(),
-                'binned': [],
-                'sref': sref.copy(),
-            }
             other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]
             for ifo in other_ifos:
                 # Assign cached memory
@@ -778,34 +755,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                     self.pbin[:length],
                     self.sbin[:length],
                 ]
-                ref_entry['binned'].append((
-                    self.tbin[:length].copy(),
-                    self.pbin[:length].copy(),
-                    self.sbin[:length].copy(),
-                ))
-
-            # If tracing requested and this reference ifo contains the
-            # requested global index, print the intermediate arrays for
-            # diagnosis and then clear the trace flag.
-            if trace_idx is not None and trace_idx in rtype:
-                pos = int(numpy.where(rtype == trace_idx)[0][0])
-                try:
-                    print('\n==== TRACE: phasetd intermediate for index', trace_idx, 'ref_ifo', ref_ifo, 'pos', pos, flush=True)
-                    print(' pdif[pos]:', float(self.pdif[pos]), 'tdif[pos]:', float(self.tdif[pos]), 'sdif[pos]:', float(self.sdif[pos]))
-                    print(' pbin[pos], tbin[pos], sbin[pos]:', int(self.pbin[pos]), int(self.tbin[pos]), int(self.sbin[pos]))
-                    print(' binned (first 10 tbin):', self.tbin[:min(10, length)])
-                    print(' binned (first 10 pbin):', self.pbin[:min(10, length)])
-                    print(' binned (first 10 sbin):', self.sbin[:min(10, length)])
-                except Exception as e:
-                    print(' Trace print failed:', e)
-                # clear to avoid repeated prints
-                try:
-                    delattr = False
-                    # Prefer deleting attribute if present
-                    if hasattr(self, 'trace_idx'):
-                        self.trace_idx = None
-                except Exception:
-                    pass
 
             # Read signal weight from precalculated histogram
             if self.two_det_flag:
@@ -846,218 +795,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 # Scale by signal population SNR
                 rate[rtype] *= (sref[rtype] / self.ref_snr) ** -4.
 
-            # Store the per-ref_ifo entry for post-mortem inspection
-            try:
-                ref_entry['loc'] = loc.copy()
-            except Exception:
-                ref_entry['loc'] = None
-            ref_entry['rate_indices'] = rtype.copy()
-            # Also save the per-ref_ifo rate values for the rtype positions
-            try:
-                ref_entry['rate_values'] = rate[rtype].copy()
-            except Exception:
-                ref_entry['rate_values'] = None
-
-            # Append to a short history buffer (keep larger window to help
-            # replay-based mapping from global coinc index -> per-call rtype)
-            self._last_logsignalrate_data.append({'ref_entry': ref_entry})
-            # keep only last N entries
-            _MAX_LOGSIG_HISTORY = 1024
-            if len(self._last_logsignalrate_data) > _MAX_LOGSIG_HISTORY:
-                self._last_logsignalrate_data.pop(0)
-
-        # Save the final rate array as well
-        try:
-            self._last_logsignalrate_rate = rate.copy()
-        except Exception:
-            self._last_logsignalrate_rate = None
-
         return numpy.log(rate)
-
-    def debug_trace_candidate(self, stats, shift, to_shift, idx):
-        """
-        Trace internal intermediate values for a single global candidate index
-        through the phasetd binning and lookup machinery. This is a
-        non-invasive debug helper intended for tests to call; it returns a
-        dictionary of intermediate arrays/values for the requested index.
-
-        Parameters
-        ----------
-        stats : dict
-            Single-detector quantities for each detector (same shape as
-            passed to `logsignalrate`).
-        shift : numpy.ndarray
-            Time shift vector (as passed to `logsignalrate`).
-        to_shift : list
-            Multiples of the time shift applied for each ifo.
-        idx : int
-            Global index of the candidate to trace (an index into the
-            flattened coinc list used by `logsignalrate`).
-
-        Returns
-        -------
-        dict
-            Keys include: 'ref_ifo', 'pos_in_rtype', 'pdif', 'tdif', 'sdif',
-            'pbin', 'tbin', 'sbin', 'nbinned', 'loc', 'rate_value',
-            'sref', 'rtype'
-        """
-        # Prepare arrays (same setup as in logsignalrate)
-        to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
-        if not self.has_hist:
-            self.get_hist()
-
-        snrs = numpy.array(
-            [numpy.array(stats[ifo]["snr"], ndmin=1) for ifo in self.ifos]
-        )
-        smin = snrs.argmin(axis=0)
-        rtypes = {ifo: numpy.where(smin == j)[0] for j, ifo in enumerate(self.ifos)}
-
-        # Find which ref_ifo contains our global index
-        ref_ifo = None
-        for ifo in self.ifos:
-            if idx in rtypes[ifo]:
-                ref_ifo = ifo
-                break
-
-        # If not found in the freshly computed rtypes (e.g. because the
-        # caller is replaying a previously-saved global index), look through
-        # the short ring buffer of the last logsignalrate internals and try
-        # to map the global index to a stored ref_entry. This lets tests
-        # trace candidates after the fact without needing to perfectly
-        # reproduce the rtypes computation here.
-        if ref_ifo is None and hasattr(self, '_last_logsignalrate_data'):
-            for ent in self._last_logsignalrate_data:
-                ref_e = ent.get('ref_entry', {})
-                if 'rate_indices' in ref_e and idx in ref_e['rate_indices']:
-                    # Use stored information from this ref_entry
-                    ref_ifo = ref_e.get('ref_ifo')
-                    # rate_indices is the rtype saved at call time
-                    rtypes = {r_ifo: (ref_e['rate_indices'] if r_ifo == ref_ifo else rtypes[r_ifo])
-                              for r_ifo in self.ifos}
-                    # Also expose the saved binned arrays and sref/loc if present
-                    saved_binned = ref_e.get('binned')
-                    saved_sref = ref_e.get('sref')
-                    saved_loc = ref_e.get('loc', None)
-                    break
-
-        if ref_ifo is None:
-            raise IndexError(f"Index {idx} not found in any reference rtype")
-
-        # Prepare per-ifo arrays
-        ps = {ifo: numpy.array(stats[ifo]["coa_phase"], dtype=numpy.float32, ndmin=1)
-              for ifo in self.ifos}
-        ts = {ifo: numpy.array(stats[ifo]["end_time"], dtype=numpy.float64, ndmin=1)
-              for ifo in self.ifos}
-        ss = {ifo: numpy.array(stats[ifo]["snr"], dtype=numpy.float32, ndmin=1)
-              for ifo in self.ifos}
-        sigs = {ifo: numpy.sqrt(numpy.array(stats[ifo]["sigmasq"], dtype=numpy.float32, ndmin=1))
-                for ifo in self.ifos}
-
-        # Reference arrays for this ifo
-        rtype = rtypes[ref_ifo]
-        pref = ps[ref_ifo]
-        tref = ts[ref_ifo]
-        sref = ss[ref_ifo]
-        sigref = sigs[ref_ifo]
-
-        # Ensure cached memory large enough
-        length = len(rtype)
-        while length > len(self.pdif):
-            newlen = len(self.pdif) * 2
-            self.pdif = numpy.zeros(newlen, dtype=numpy.float64)
-            self.tdif = numpy.zeros(newlen, dtype=numpy.float64)
-            self.sdif = numpy.zeros(newlen, dtype=numpy.float64)
-            self.pbin = numpy.zeros(newlen, dtype=numpy.int32)
-            self.tbin = numpy.zeros(newlen, dtype=numpy.int32)
-            self.sbin = numpy.zeros(newlen, dtype=numpy.int32)
-
-        # For simplicity handle the case with a single other_ifo (common)
-        other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]
-        binned = []
-        for ifo in other_ifos:
-            logsignalrateinternals_computepsignalbins(
-                self.pdif,
-                self.tdif,
-                self.sdif,
-                self.pbin,
-                self.tbin,
-                self.sbin,
-                ps[ifo],
-                ts[ifo],
-                ss[ifo],
-                sigs[ifo],
-                pref,
-                tref,
-                sref,
-                sigref,
-                shift,
-                rtypes[ref_ifo],
-                self.relsense[ifo],
-                self.relsense[self.hist_ifos[0]],
-                self.twidth,
-                self.pwidth,
-                self.swidth,
-                to_shift[ref_ifo],
-                to_shift[ifo],
-                length,
-            )
-
-            binned += [
-                self.tbin[:length],
-                self.pbin[:length],
-                self.sbin[:length],
-            ]
-
-        # Convert to nbinned dtype for lookup
-        if not self.two_det_flag:
-            nbinned = numpy.zeros(len(binned[1]), dtype=self.pdtype)
-            for i, b in enumerate(binned):
-                nbinned[f"c{i}"] = b
-
-            loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
-            # Normalise out-of-range locations
-            loc[loc == len(self.weights[ref_ifo])] = 0
-
-            # Position within rtype
-            pos = int(numpy.where(rtype == idx)[0][0])
-
-            # Compute rate value for this position and scaling
-            if numpy.array_equal(self.param_bin[ref_ifo][loc[pos]], nbinned[pos]):
-                rate_val = float(self.weights[ref_ifo][loc[pos]])
-            else:
-                rate_val = float(self.max_penalty)
-
-            # Apply SNR population scaling
-            rate_val *= (float(sref[rtype[pos]]) / float(self.ref_snr)) ** -4.0
-
-            return {
-                "ref_ifo": ref_ifo,
-                "pos_in_rtype": pos,
-                "pdif": self.pdif[:length].copy(),
-                "tdif": self.tdif[:length].copy(),
-                "sdif": self.sdif[:length].copy(),
-                "pbin": self.pbin[:length].copy(),
-                "tbin": self.tbin[:length].copy(),
-                "sbin": self.sbin[:length].copy(),
-                "nbinned_pos": nbinned[pos].copy(),
-                "loc_pos": int(loc[pos]),
-                "rate_value": rate_val,
-                "sref": sref[rtype].copy(),
-                "rtype": rtype.copy(),
-            }
-        else:
-            # For two-detector case, the helper uses the two_det_weights
-            # table; return the binned indices for inspection instead.
-            pos = int(numpy.where(rtype == idx)[0][0])
-            return {
-                "ref_ifo": ref_ifo,
-                "pos_in_rtype": pos,
-                "pbin": self.pbin[:length].copy(),
-                "tbin": self.tbin[:length].copy(),
-                "sbin": self.sbin[:length].copy(),
-                "sref": sref[rtype].copy(),
-                "rtype": rtype.copy(),
-            }
 
     def single(self, trigs):
         """
