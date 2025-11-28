@@ -70,8 +70,16 @@ def get_summary_page_link(ifo, utc_time):
                 year = int(utc_time[0])
                 month = int(utc_time[1])
                 day = int(utc_time[2])
-        except Exception:
-            raise TypeError("utc_time must be a datetime/date or a sequence (year, month, day)")
+        except (AttributeError, TypeError, IndexError, ValueError) as e:
+            # Give a more informative error including the received value/type and
+            # the original exception to help debugging (for example when utc_time
+            # is a float and indexing utc_time[0] raises a TypeError).
+            raise TypeError(
+                "utc_time must be a datetime/date or a sequence (year, month, day); "
+                "got {} (type {}) - original error: {}".format(
+                    utc_time, type(utc_time).__name__, e
+                )
+            )
 
         # alog format is day-month-year
         alog_utc = '%02d-%02d-%4d' % (day, month, year)
