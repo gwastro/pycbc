@@ -23,7 +23,7 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-from astropy.time import Time
+from lal import gpstime
 
 import pycbc
 from pycbc.bin_utils import IrregularBins
@@ -81,14 +81,8 @@ with HFile(args.trigger_fits_file, 'r') as trfit_f:
     fit_function = {ifo: trfit_f[ifo].attrs['fit_function'] for ifo in ifos}
     start_time = trfit_f.attrs['fit_start_gps_time']
     end_time = trfit_f.attrs['fit_end_gps_time']
-    start_str = Time(
-        start_time,
-        format='gps'
-    ).to_datetime().strftime("%Y-%m-%d %H:%M:%S")
-    end_str = Time(
-        end_time,
-        format='gps'
-    ).to_datetime().strftime("%Y-%m-%d %H:%M:%S")
+    start_str = gpstime.gps_to_utc(start_time).strftime("%Y-%m-%d %H:%M:%S")
+    end_str = gpstime.gps_to_utc(end_time).strftime("%Y-%m-%d %H:%M:%S")
 
     # Get the triggers for each detector
     # (This is ones which passed the cuts in the fitting code)
