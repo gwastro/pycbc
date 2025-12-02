@@ -167,6 +167,35 @@ command generate the LISA mock data with signals and noise::
         --tag LISA_NOISE_PLUS_SIGNAL
 
 
+The command :command:`pycbc_create_injections` can be used to generate such an
+injection configuration file. The example below shows how to create a file 
+containing one LISA injection:
+
+.. code-block:: bash
+
+    pycbc_create_injections --verbose \
+        --config-files injections_lisa.ini \
+        --ninjections 1 \
+        --seed 10 \
+        --output-file injections_lisa.hdf \
+        --variable-params-section variable_params \
+        --static-params-section static_params \
+        --dist-section prior
+
+The example ``injection_lisa.ini`` file can be downloaded from
+`examples/mdc_examples/injection_lisa.ini <examples/mdc_generation/injections_lisa.ini>`_.
+
+.. important::
+
+   To generate LISA mock data, you must install the following packages in order
+   inside your virtual environment:
+
+   1. **BBHx**  
+      https://github.com/mikekatz04/BBHx/tree/v1.0.5
+
+   2. **BBHx waveform plugin**  
+      https://github.com/gwastro/BBHX-waveform-model
+
 ---------------------------------------------------------
 Signal-only (zero-noise) LISA mock data
 ---------------------------------------------------------
