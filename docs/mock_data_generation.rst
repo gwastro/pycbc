@@ -62,7 +62,8 @@ Signals embedded in noise
 To generate time series data for a detector network, that contain the signal(s)
 and noise realization, one need to provide an ``hdf`` injection file containing
 the list of injection parameters. The following command generate the projected
-signals in each detector of the network, without the noise::
+signals in each detector of the network, embeded in the noise described by PSD
+of each detectors::
 
      pycbc_generate_mock_data \
         --ifo-list H1 L1 V1 \
