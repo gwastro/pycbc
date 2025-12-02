@@ -16,12 +16,23 @@ detailed list of all options, and option-specific help, see the output of::
 
     pycbc_generate_mock_data --help
 
-=========================================================
-Generate mock data realization for ground based detectors
-=========================================================
+==========================================================
+Generate Mock Data Realizations for Ground-Based Detectors
+==========================================================
 
-The following command generate 16 second of data for a given noise realization 
-without any signal or glitch::
+This section demonstrates how to generate simulated strain data for a network
+of ground-based gravitational-wave detectors using
+:command:`pycbc_generate_mock_data`.
+
+Mock data can include **noise only**, **signals only**, or **signals embedded
+in noise**, depending on the options provided.
+
+---------------------------------------------------------
+Noise-only mock data
+---------------------------------------------------------
+
+The following command generates a **100-second noise realization** for the H1,
+L1, and V1 interferometers, without any injected signals or glitches::
 
     pycbc_generate_mock_data \
         --ifo-list H1 L1 V1 \
@@ -44,6 +55,10 @@ and end times determine the duration of the data segment, while the
 ``--fake-strain-seed`` option ensures that each detector's noise is drawn from
 an independent random realization.
 
+---------------------------------------------------------
+Signals embedded in noise
+---------------------------------------------------------
+
 To generate time series data for a detector network, that contain the signal(s)
 and noise realization, one need to provide an ``hdf`` injection file containing
 the list of injection parameters. The following command generate the projected
@@ -65,6 +80,9 @@ signals in each detector of the network, without the noise::
         --tag HLV_NOISE \
         --injection-file injection_10inj.hdf
 
+---------------------------------------------------------
+Signal-only (zero-noise) mock data
+---------------------------------------------------------
 The following command generate the projected signals in each detector of the 
 network, without the noise::
 
@@ -87,9 +105,18 @@ network, without the noise::
 =================================
 Example Generating LISA mock data
 =================================
-In order to generate the LISA mock data, one need to provide additional options
-related to LISA. The following command generate the LISA noise (without 
-signals) for the given PSD::
+
+Generating mock data for LISA requires providing several LISA-specific options,
+including the spacecraft arm length, optical metrology (OMS) noise, acceleration
+noise, and the Time-Delay Interferometry (TDI) generation. The examples below
+demonstrate how to generate noise-only datasets, signal+noise datasets, and
+signal-only datasets for the LISA TDI channels A, E, and T.
+
+---------------------------------------------------------
+Noise-only LISA mock data
+---------------------------------------------------------
+The following command generates **noise-only** TDI data for the LISA A, E, and T
+channels, using analytical PSD models for the corresponding TDI variables::
 
     pycbc_generate_mock_data \
         --ifo-list LISA_A LISA_E LISA_T \
@@ -109,6 +136,11 @@ signals) for the given PSD::
                     LISA_E:SIMULATED_STRAIN \
                     LISA_T:SIMULATED_STRAIN \
         --tag LISA_NOISE
+
+
+---------------------------------------------------------
+Signal + noise LISA mock data
+---------------------------------------------------------
 
 To generate data containing signal+noise, one need to provide an injection 
 ``hdf`` file. This file may contain one or more injections. The following 
@@ -135,7 +167,11 @@ command generate the LISA mock data with signals and noise::
         --tag LISA_NOISE_PLUS_SIGNAL
 
 
-The following command generate the LISA signals without noise::
+---------------------------------------------------------
+Signal-only (zero-noise) LISA mock data
+---------------------------------------------------------
+To generate **signal-only** mock data (no instrument noise), simply use the
+``zeroNoise`` PSD::
 
     pcbc_generate_mock_data \
         --ifo-list LISA_A LISA_E LISA_T \
