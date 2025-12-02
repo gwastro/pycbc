@@ -22,3 +22,4 @@ template banks) should read the documentation at:
    upload_to_gracedb
    pycbc_condition_strain
    mock_data_generation
+
