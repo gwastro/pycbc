@@ -113,6 +113,17 @@ noise, and the Time-Delay Interferometry (TDI) generation. The examples below
 demonstrate how to generate noise-only datasets, signal+noise datasets, and
 signal-only datasets for the LISA TDI channels A, E, and T.
 
+.. important::
+
+   To generate LISA mock data, you must install the following packages in order
+   inside your virtual environment:
+
+   1. **BBHx**  
+      https://github.com/mikekatz04/BBHx/tree/v1.0.5
+
+   2. **BBHx waveform plugin**  
+      https://github.com/gwastro/BBHX-waveform-model
+
 ---------------------------------------------------------
 Noise-only LISA mock data
 ---------------------------------------------------------
@@ -184,23 +195,20 @@ containing one LISA SMBHB injection:
         --static-params-section static_params \
         --dist-section prior
 
-The example ``injection_lisa_1_smbhb.ini`` file can be downloaded from
-`examples/mdc_generation/injection_lisa_1_smbhb.ini <examples/mdc_generation/injection_lisa_1_smbhb.ini>`_.
+The example ``injection_lisa_1_smbhb.ini`` file can be downloaded from here:
 
-.. important::
+.. dropdown:: Injection Configuration File
+    :animate: fade-in-slide-down
 
-   To generate LISA mock data, you must install the following packages in order
-   inside your virtual environment:
+    .. literalinclude:: ../examples/mdc_generation/injection_lisa_1_smbhb.ini
+       :language: ini
 
-   1. **BBHx**  
-      https://github.com/mikekatz04/BBHx/tree/v1.0.5
-
-   2. **BBHx waveform plugin**  
-      https://github.com/gwastro/BBHX-waveform-model
+    :download:`Download <../examples/mdc_generation/injection_lisa_1_smbhb.ini>`
 
 ---------------------------------------------------------
 Signal-only (zero-noise) LISA mock data
 ---------------------------------------------------------
+
 To generate **signal-only** mock data (no instrument noise), simply use the
 ``zeroNoise`` PSD::
 
