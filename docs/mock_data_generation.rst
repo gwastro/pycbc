@@ -185,7 +185,7 @@ containing one LISA SMBHB injection:
         --dist-section prior
 
 The example ``injection_lisa_1_smbhb.ini`` file can be downloaded from
-`examples/mdc_examples/injection_lisa.ini <examples/mdc_generation/injection_lisa_1_smbhb.ini>`_.
+`examples/mdc_generation/injection_lisa_1_smbhb.ini <examples/mdc_generation/injection_lisa_1_smbhb.ini>`_.
 
 .. important::
 
