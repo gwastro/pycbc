@@ -23,16 +23,16 @@ It contains Gaussian noise, population injections, and glitches.
 import os
 import argparse
 import numpy
-
+import pycbc
 from pycbc.types import MultiDetOptionAction
 import logging
 
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 
 parser.add_argument("--ifo-list", nargs="+", type=str,
-                        help="List of detector names, e.g. H1 L1 V1",
-                        required=True)
+                        help="List of detector names, e.g. H1 L1 V1")
 
 parser.add_argument('--low-frequency-cutoff', nargs='+',
                         action=MultiDetOptionAction,
@@ -62,13 +62,11 @@ parser.add_argument('--fake-strain-from-file', nargs='+',
                         help='For each detector, provide a file (e.g. txt) to '
                              'load the fake strain from, instead of generating it.')
 
-parser.add_argument('--gps-start-time',
-                        help='GPS start time for frame files',
-                        required=True, type=int)
+parser.add_argument('--gps-start-time', type=int,
+                        help='GPS start time for frame files')
 
-parser.add_argument('--gps-end-time',
-                        help='GPS end time for frame files',
-                        required=True, type=int)
+parser.add_argument('--gps-end-time', type=int,
+                        help='GPS end time for frame files')
 
 parser.add_argument('--sample-rate', type=float,
 		        help='Sample rate of the frames to be generated')
