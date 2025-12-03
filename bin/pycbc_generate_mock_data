@@ -56,6 +56,12 @@ parser.add_argument('--fake-strain-seed', nargs='+',
                         metavar='DETECTOR:COLUMN', type=int,
                         help='For each detector, provide a random number seed')
 
+parser.add_argument('--fake-strain-from-file', nargs='+', 
+                        action=MultiDetOptionAction,
+                        metavar='DETECTOR:FILE', type=str,
+                        help='For each detector, provide a file (e.g. txt) to '
+                             'load the fake strain from, instead of generating it.')
+
 parser.add_argument('--gps-start-time',
                         help='GPS start time for frame files',
                         required=True, type=int)
@@ -111,10 +117,22 @@ def create_command_opts(ifo, rseed, output_file):
     else:
         detector_tag = 'ground'
 
+    # Determine the source of the strain (PSD Model OR File)
+    strain_source_args = []
+    
+    # Priority: Check if file is provided first
+    if opts.fake_strain_from_file and ifo in opts.fake_strain_from_file:
+        strain_source_args.append('--fake-strain-from-file %s' % opts.fake_strain_from_file[ifo])
+    # Otherwise, check if PSD model is provided
+    elif opts.psd_model and ifo in opts.psd_model:
+        strain_source_args.append('--fake-strain %s' % opts.psd_model[ifo])
+    else:
+        # This shouldn't happen if sanity check passes, but good for safety
+        raise ValueError(f"No strain source (PSD or File) provided for detector {ifo}")
+
     if detector_tag=='ground':
         args_opt = [
              'pycbc_condition_strain',
-             '--fake-strain %s'%(opts.psd_model[ifo]),
              '--fake-strain-seed %d'%rseed,
              '--sample-rate %d'%(opts.sample_rate),
              '--gps-start-time %d'%(opts.gps_start_time),
@@ -122,25 +140,27 @@ def create_command_opts(ifo, rseed, output_file):
              '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
              '--output-strain-file %s'%(output_file)]
         
-        # If user explicitly provided extended args, pass them, but no auto-fill magic here.
+        # Add the determined source arguments
+        args_opt.extend(strain_source_args)
+        
+        # Pass explicit extended args if provided (no auto-fill for ground)
         if opts.fake_strain_sample_rate is not None:
              args_opt.append('--fake-strain-sample-rate %f' % opts.fake_strain_sample_rate)
         if opts.fake_strain_filter_duration is not None:
              args_opt.append('--fake-strain-filter-duration %f' % opts.fake_strain_filter_duration)
 
-    elif detector_tag=='space':        
+    elif detector_tag=='space':
         # Sanity Check
         if opts.len_arm is None:
             raise ValueError("Space-borne missions require len-arm")
-        
+
         # If user didn't specify fake-strain-sample-rate, 
-        # force it to match the global sample-rate (e.g. 0.2 Hz).
-        # This prevents the default 16384 Hz memory explosion.
+        # force it to match the global sample-rate.
         fake_rate = opts.fake_strain_sample_rate
         if fake_rate is None and opts.sample_rate is not None:
             fake_rate = opts.sample_rate
         
-        # Build LISA extra args
+        # Build extra args for LISA
         extra_args = []
         if opts.len_arm is not None:
             extra_args.append('len_arm:%s' % opts.len_arm)
@@ -155,7 +175,6 @@ def create_command_opts(ifo, rseed, output_file):
         
         args_opt = [
             'pycbc_condition_strain',
-            '--fake-strain %s'%(opts.psd_model[ifo]),
             '--fake-strain-seed %d'%rseed,
             '--sample-rate %f'%(opts.sample_rate),
             '--gps-start-time %d'%(opts.gps_start_time),
@@ -163,8 +182,10 @@ def create_command_opts(ifo, rseed, output_file):
             '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
             '--output-strain-file %s'%(output_file)
         ]
-        
-        # Append user-provided extra arguments
+
+        # Add the determined source arguments
+        args_opt.extend(strain_source_args)
+
         if fake_rate is not None:
             args_opt.append('--fake-strain-sample-rate %f' % fake_rate)
         
@@ -181,8 +202,14 @@ def create_command_opts(ifo, rseed, output_file):
 # Sanity Checks
 if set(opts.ifo_list) != set(opts.low_frequency_cutoff.keys()):
     raise ValueError("Low frequency cutoff for each detector is required")
-if set(opts.ifo_list) != set(opts.psd_model.keys()):
-    raise ValueError("PSD model for each detector is required")
+
+# New Logic: Ensure each IFO has EITHER a PSD model OR a File
+provided_psds = set(opts.psd_model.keys()) if opts.psd_model else set()
+provided_files = set(opts.fake_strain_from_file.keys()) if opts.fake_strain_from_file else set()
+
+# Check if IFOs are subset of (PSDs U Files)
+if not set(opts.ifo_list).issubset(provided_psds.union(provided_files)):
+    raise ValueError("For each detector, you must provide either a --psd-model or a --fake-strain-from-file.")
 
 
 for ifo in opts.ifo_list:
