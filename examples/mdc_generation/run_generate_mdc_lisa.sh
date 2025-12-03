@@ -42,7 +42,7 @@ pycbc_generate_mock_data \
         --channel-name LISA_A:SIMULATED_STRAIN \
                        LISA_E:SIMULATED_STRAIN \
                        LISA_T:SIMULATED_STRAIN \
-        --injection-file injections_lisa.hdf \
+        --injection-file injection_lisa_1_smbhb.hdf \
         --tag LISA_NOISE_SIGNAL \
         --fake-strain-filter-duration 31536000
 
@@ -62,6 +62,6 @@ pycbc_generate_mock_data \
         --channel-name LISA_A:SIMULATED_STRAIN \
                        LISA_E:SIMULATED_STRAIN \
                        LISA_T:SIMULATED_STRAIN \
-        --injection-file injections_lisa.hdf \
+        --injection-file injection_lisa_1_smbhb.hdf \
         --tag LISA_ZERONOISE_SIGNAL \
         --fake-strain-filter-duration 31536000

@@ -79,7 +79,7 @@ of each detectors::
                        L1:SIMULATED_STRAIN \
                        V1:SIMULATED_STRAIN \
         --tag HLV_NOISE_SIGNAL \
-        --injection-file injection_10inj.hdf
+        --injection-file injection_hlv_10_bbh.hdf
 
 ---------------------------------------------------------
 Signal-only (zero-noise) mock data
@@ -101,7 +101,7 @@ network, without the noise::
                        L1:SIMULATED_STRAIN \
                        V1:SIMULATED_STRAIN \
         --tag HLV_SIGNAL \
-        --injection-file injection_10inj.hdf
+        --injection-file injection_hlv_10_bbh.hdf
 
 =================================
 Example Generating LISA mock data
@@ -164,7 +164,7 @@ command generate the LISA mock data with signals and noise::
         --channel-name LISA_A:SIMULATED_STRAIN \
                        LISA_E:SIMULATED_STRAIN \
                        LISA_T:SIMULATED_STRAIN \
-        --injection-file injections_lisa.hdf \
+        --injection-file injection_lisa_1_smbhb.hdf \
         --tag LISA_NOISE_SIGNAL \
         --fake-strain-filter-duration 31536000
 
@@ -176,16 +176,16 @@ containing one LISA SMBHB injection:
 .. code-block:: bash
 
     pycbc_create_injections --verbose \
-        --config-files injections_lisa.ini \
+        --config-files injection_lisa_1_smbhb.ini \
         --ninjections 1 \
         --seed 10 \
-        --output-file injections_lisa.hdf \
+        --output-file injection_lisa_1_smbhb.hdf \
         --variable-params-section variable_params \
         --static-params-section static_params \
         --dist-section prior
 
-The example ``injection_lisa.ini`` file can be downloaded from
-`examples/mdc_examples/injection_lisa.ini <examples/mdc_generation/injections_lisa.ini>`_.
+The example ``injection_lisa_1_smbhb.ini`` file can be downloaded from
+`examples/mdc_examples/injection_lisa.ini <examples/mdc_generation/injection_lisa_1_smbhb.ini>`_.
 
 .. important::
 
@@ -219,6 +219,6 @@ To generate **signal-only** mock data (no instrument noise), simply use the
         --channel-name LISA_A:SIMULATED_STRAIN \
                        LISA_E:SIMULATED_STRAIN \
                        LISA_T:SIMULATED_STRAIN \
-        --injection-file injections_lisa.hdf \
+        --injection-file injection_lisa_1_smbhb.hdf \
         --tag LISA_ZERONOISE_SIGNAL \
         --fake-strain-filter-duration 31536000
