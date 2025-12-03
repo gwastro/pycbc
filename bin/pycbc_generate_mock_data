@@ -67,6 +67,12 @@ parser.add_argument('--gps-end-time',
 parser.add_argument('--sample-rate', type=float,
 		        help='Sample rate of the frames to be generated')
 
+parser.add_argument('--fake-strain-sample-rate', type=float,
+                help='Sample rate for the fake strain generation (defaults to sample-rate if not set)')
+
+parser.add_argument('--fake-strain-filter-duration', type=float,
+                help='Duration of the filter used for coloring the noise')
+
 parser.add_argument('--injection-file', type=str,
                         help='Injection file containing parameters of'
                         'injection population')
@@ -115,11 +121,26 @@ def create_command_opts(ifo, rseed, output_file):
              '--gps-end-time %d'%(opts.gps_end_time),
              '--channel-name %s:%s'%(ifo, opts.channel_name[ifo]),
              '--output-strain-file %s'%(output_file)]
-    elif detector_tag=='space':
+        
+        # If user explicitly provided extended args, pass them, but no auto-fill magic here.
+        if opts.fake_strain_sample_rate is not None:
+             args_opt.append('--fake-strain-sample-rate %f' % opts.fake_strain_sample_rate)
+        if opts.fake_strain_filter_duration is not None:
+             args_opt.append('--fake-strain-filter-duration %f' % opts.fake_strain_filter_duration)
+
+    elif detector_tag=='space':        
         # Sanity Check
         if opts.len_arm is None:
             raise ValueError("Space-borne missions require len-arm")
-        # Build extra args for LISA
+        
+        # If user didn't specify fake-strain-sample-rate, 
+        # force it to match the global sample-rate (e.g. 0.2 Hz).
+        # This prevents the default 16384 Hz memory explosion.
+        fake_rate = opts.fake_strain_sample_rate
+        if fake_rate is None and opts.sample_rate is not None:
+            fake_rate = opts.sample_rate
+        
+        # Build LISA extra args
         extra_args = []
         if opts.len_arm is not None:
             extra_args.append('len_arm:%s' % opts.len_arm)
@@ -143,9 +164,17 @@ def create_command_opts(ifo, rseed, output_file):
             '--output-strain-file %s'%(output_file)
         ]
         
+        # Append user-provided extra arguments
+        if fake_rate is not None:
+            args_opt.append('--fake-strain-sample-rate %f' % fake_rate)
+        
+        if opts.fake_strain_filter_duration is not None:
+            args_opt.append('--fake-strain-filter-duration %f' % opts.fake_strain_filter_duration)
+        
         # Add extra args if any
         if extra_args:
             args_opt.append('--fake-strain-extra-args %s' % ' '.join(extra_args))
+            
     return args_opt
 
 

@@ -78,7 +78,7 @@ of each detectors::
         --channel-name H1:SIMULATED_STRAIN \
                        L1:SIMULATED_STRAIN \
                        V1:SIMULATED_STRAIN \
-        --tag HLV_NOISE \
+        --tag HLV_NOISE_SIGNAL \
         --injection-file injection_10inj.hdf
 
 ---------------------------------------------------------
@@ -100,7 +100,7 @@ network, without the noise::
         --channel-name H1:SIMULATED_STRAIN \
                        L1:SIMULATED_STRAIN \
                        V1:SIMULATED_STRAIN \
-        --tag HLV_NOISE \
+        --tag HLV_SIGNAL \
         --injection-file injection_10inj.hdf
 
 =================================
@@ -126,18 +126,18 @@ channels, using analytical PSD models for the corresponding TDI variables::
                     LISA_E:analytical_psd_lisa_tdi_AE \
                     LISA_T:analytical_psd_lisa_tdi_T \
         --fake-strain-seed LISA_A:100 LISA_E:150 LISA_T:200 \
-        --gps-start-time 2121224.274911478 \
-        --gps-end-time 4799924.274911478 \
+        --gps-start-time 0 \
+        --gps-end-time 31536000 \
         --sample-rate 0.2 \
         --len-arm 2.5e9 \
         --acc-noise-level 2.4e-15 \
         --oms-noise-level 7.9e-12 \
         --tdi '2.0' \
         --channel-name LISA_A:SIMULATED_STRAIN \
-                    LISA_E:SIMULATED_STRAIN \
-                    LISA_T:SIMULATED_STRAIN \
-        --tag LISA_NOISE
-
+                       LISA_E:SIMULATED_STRAIN \
+                       LISA_T:SIMULATED_STRAIN \
+        --tag LISA_NOISE \
+        --fake-strain-filter-duration 31536000
 
 ---------------------------------------------------------
 Signal + noise LISA mock data
@@ -147,15 +147,15 @@ To generate data containing signal+noise, one need to provide an injection
 ``hdf`` file. This file may contain one or more injections. The following 
 command generate the LISA mock data with signals and noise::
 
-    pcbc_generate_mock_data \\
+    pycbc_generate_mock_data \
         --ifo-list LISA_A LISA_E LISA_T \
         --low-frequency-cutoff LISA_A:1e-4 LISA_E:1e-4 LISA_T:1e-4 \
         --psd-model LISA_A:analytical_psd_lisa_tdi_AE \
                     LISA_E:analytical_psd_lisa_tdi_AE \
                     LISA_T:analytical_psd_lisa_tdi_T \
         --fake-strain-seed LISA_A:100 LISA_E:150 LISA_T:200 \
-        --gps-start-time 2121224.274911478 \
-        --gps-end-time 4799924.274911478 \
+        --gps-start-time 0 \
+        --gps-end-time 31536000 \
         --sample-rate 0.2 \
         --len-arm 2.5e9 \
         --acc-noise-level 2.4e-15 \
@@ -165,12 +165,13 @@ command generate the LISA mock data with signals and noise::
                        LISA_E:SIMULATED_STRAIN \
                        LISA_T:SIMULATED_STRAIN \
         --injection-file injections_lisa.hdf \
-        --tag LISA_NOISE_PLUS_SIGNAL
+        --tag LISA_NOISE_SIGNAL \
+        --fake-strain-filter-duration 31536000
 
 
 The command :command:`pycbc_create_injections` can be used to generate such an
 injection configuration file. The example below shows how to create a file 
-containing one LISA injection:
+containing one LISA SMBHB injection:
 
 .. code-block:: bash
 
@@ -203,13 +204,13 @@ Signal-only (zero-noise) LISA mock data
 To generate **signal-only** mock data (no instrument noise), simply use the
 ``zeroNoise`` PSD::
 
-    pcbc_generate_mock_data \
+    pycbc_generate_mock_data \
         --ifo-list LISA_A LISA_E LISA_T \
         --low-frequency-cutoff LISA_A:1e-4 LISA_E:1e-4 LISA_T:1e-4 \
         --psd-model LISA_A:zeroNoise LISA_E:zeroNoise LISA_T:zeroNoise \
         --fake-strain-seed LISA_A:100 LISA_E:150 LISA_T:200 \
-        --gps-start-time 2121224.274911478 \
-        --gps-end-time 4799924.274911478 \
+        --gps-start-time 0 \
+        --gps-end-time 31536000 \
         --sample-rate 0.2 \
         --len-arm 2.5e9 \
         --acc-noise-level 2.4e-15 \
@@ -219,5 +220,5 @@ To generate **signal-only** mock data (no instrument noise), simply use the
                        LISA_E:SIMULATED_STRAIN \
                        LISA_T:SIMULATED_STRAIN \
         --injection-file injections_lisa.hdf \
-        --tag LISA_ZERONOISE_SIGNAL 
-
+        --tag LISA_ZERONOISE_SIGNAL \
+        --fake-strain-filter-duration 31536000
