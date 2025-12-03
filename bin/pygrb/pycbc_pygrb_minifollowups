@@ -27,6 +27,7 @@ import os
 import argparse
 import logging
 
+from igwn_segments import segmentlist
 import pycbc.workflow as wf
 from pycbc.workflow.core import FileList, resolve_url_to_file
 import pycbc.workflow.minifollowups as mini
@@ -182,9 +183,17 @@ if veto_file:
     veto_file = wf.resolve_url_to_file(veto_file)
 
 # Convert the segments files to a FileList
-seg_files = wf.FileList([
+seg_file_abs_paths = [
     wf.resolve_url_to_file(os.path.join(start_rundir, f))
     for f in args.seg_files
+]
+seg_files = wf.FileList(seg_file_abs_paths)
+
+# The Q-scan jobs need to be told the valid science segments to deal with
+# triggers near the boundaries correctly. We use the offsource segment as a
+# proxy for the valid science segments, and ignore vetoed time inside it.
+valid_segs = segmentlist([
+    ppu._read_seg_files(seg_file_abs_paths)['off']
 ])
 
 # (Loudest) off/on-source events are on time-slid data so the
@@ -220,7 +229,8 @@ for num_event in range(num_events):
         for ifo in ifos:
             files += mini.make_qscan_plot(workflow, ifo, gps_time,
                                           args.output_dir,
-                                          tags=tags)
+                                          tags=tags,
+                                          data_segments=valid_segs)
     # Handle off/on-source loudest triggers follow-up (which may be on slid
     # data in the case of the off-source)
     else:
@@ -235,7 +245,8 @@ for num_event in range(num_events):
                                           tags=tags)
             files += mini.make_qscan_plot(workflow, ifo, ifo_time,
                                           args.output_dir,
-                                          tags=tags)
+                                          tags=tags,
+                                          data_segments=valid_segs)
 
     layouts += list(layout.grouper(files, 2))
 
