@@ -1119,21 +1119,21 @@ class RatioFilterBank(FilterBank):
         self.coarse_indices.sort()
 
     def get_coarse_template(self, coarse_index):
-        """Wrapper to get the frequency-domain waveform from the internal coarse bank.
-        
-        Parameters
-        ----------
-        coarse_index : int
-            The index of the template in the *coarse* bank.
+            """Wrapper to get the frequency-domain waveform from the internal coarse bank.
+            
+            Parameters
+            ----------
+            coarse_index : int
+                The index of the template in the *coarse* bank.
 
-        Returns
-        -------
-        htilde : FrequencySeries
-            The reference waveform.
-        """
-        # This reuses all the complex logic in FilterBank.get_template
-        # (variable start frequency, decompression if enabled, etc.)
-        return self.coarse_bank.get_template(coarse_index)
+            Returns
+            -------
+            htilde : FrequencySeries
+                The reference waveform.
+            """
+            # FIX: Use bracket access instead of .get_template()
+            # FilterBank uses __getitem__ to handle waveform generation/decompression
+            return self.coarse_bank[coarse_index]
 
     def get_firs(self, coarse_index):
         """Retrieve the FIR tap information for the batch of fine templates
