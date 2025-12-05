@@ -191,6 +191,8 @@ def main():
     parser.add_argument('--min-match', type=float, default=0.99)
     parser.add_argument('--n-processes', '-n', type=int, default=1)
     parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument('--waveform-decompression-method', type=str, default=None,
+                        help="Method used to decompress waveforms (e.g. 'inline_linear'). ")
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
@@ -210,53 +212,56 @@ def main():
                              low_frequency_cutoff=args.f_low)
 
     logging.info("Loading coarse bank references...")
-    coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f, dtype=np.complex128, 
-                             low_frequency_cutoff=args.f_low, approximant=args.approximant)
+    coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f,
+                             dtype=np.complex128, 
+                             low_frequency_cutoff=args.f_low,
+                             approximant=args.approximant,
+                             waveform_decompression_method=args.waveform_decompression_method)
     show_progress = (args.verbose == 0)
     coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
 
     if not coarse_waveforms: sys.exit("ERROR: Coarse bank empty!")
 
     logging.info("Opening fine bank...")
-    fine_bank = FilterBank(args.fine_bank, flen, args.delta_f, dtype=np.complex128, 
-                           low_frequency_cutoff=args.f_low, approximant=args.approximant)
+    fine_bank = FilterBank(args.fine_bank, flen, args.delta_f,
+                           dtype=np.complex128, 
+                           low_frequency_cutoff=args.f_low,
+                           approximant=args.approximant,
+                           waveform_decompression_method=args.waveform_decompression_method)
     n_fine = len(fine_bank)
     
     logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
     fine_waveforms = [h.copy() for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
     
-    fine_bank_params = {}
-    if hasattr(fine_bank, 'table'):
-        for key in fine_bank.table.fieldnames:
-             fine_bank_params[key] = fine_bank.table[key][:]
+    # --- PHASE 1: Write File Headers via TemplateBank reuse ---
+    logging.info("Writing bank parameters to output file...")
     
-    with h5py.File(args.output_file, 'w') as f_out:
-        logging.info("Writing fine bank parameters to output root...")
-        if hasattr(fine_bank, 'table'):
-            for key in fine_bank.table.fieldnames:
-                # ADDED COMPRESSION
-                f_out.create_dataset(key, data=fine_bank.table[key][:],
-                                     compression="gzip", compression_opts=4)
-        
-        fir_group = f_out.create_group("fir_data")
-        
-        coarse_params_group = fir_group.create_group("coarse_bank_params")
-        if hasattr(coarse_bank, 'table'):
-            for key in coarse_bank.table.fieldnames:
-                # ADDED COMPRESSION
-                coarse_params_group.create_dataset(key, data=coarse_bank.table[key][:],
-                                                   compression="gzip", compression_opts=4)
-        
-        for arg, val in vars(args).items():
-            if val is not None and isinstance(val, (int, float, str)):
-                 fir_group.attrs[arg] = val
+    # 1. Write Fine Bank to Root
+    # CHANGE: Set write_compressed_waveforms=False. 
+    # We rely on FIR taps + References for these, so we don't want the bloat of compressed waveforms.
+    f_out = fine_bank.write_to_hdf(args.output_file, force=True, 
+                                   write_compressed_waveforms=False)
 
-        logging.info(f"Starting pool with {args.n_processes} processes...")
-        failed_count = 0
-        job_list = range(n_fine)
-        
-        all_results = [None] * n_fine
+    # 2. Write Coarse Bank to Subgroup
+    # We keep compressed waveforms here (default=True) because these ARE the references.
+    coarse_bank.write_to_hdf(args.output_file, file_handler=f_out, 
+                             group_key="fir_data/coarse_bank_params",
+                             write_compressed_waveforms=True)
+    
+    # 3. Add Metadata attributes
+    # We use require_group because the previous step created 'fir_data/coarse_bank_params'
+    fir_group = f_out.require_group("fir_data")
+    for arg, val in vars(args).items():
+        if val is not None and isinstance(val, (int, float, str)):
+             fir_group.attrs[arg] = val
 
+    # --- PHASE 2: Calculation Loop ---
+    logging.info(f"Starting pool with {args.n_processes} processes...")
+    failed_count = 0
+    job_list = range(n_fine)
+    all_results = [None] * n_fine
+    
+    try:
         with mp.Pool(processes=args.n_processes, initializer=init_worker, 
                      initargs=(coarse_waveforms, fine_waveforms, psd, args)) as pool:
             
@@ -267,7 +272,6 @@ def main():
 
             for result in results_iter:
                 i, coarse_match, c_idx, qa_match, final_taps_data = result
-                
                 all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data)
                 
                 is_fail = (c_idx == -1) or (qa_match < args.min_match)
@@ -282,6 +286,7 @@ def main():
                     logging.info(f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, Final={qa_match:.5f}, Mism={mismatch:.5e}")
                     log.handlers[0].flush() # Flush stdout
 
+        # --- PHASE 3: Write Results ---
         logging.info("All templates processed. Writing grouped results to HDF5...")
         
         results_by_coarse_idx = defaultdict(list)
@@ -297,9 +302,9 @@ def main():
             
             k_max_group = max([len(r[3]) for r in results_list] + [1])
             
-            # ADDED COMPRESSION + CHUNKING
+            # Use gzip compression for the large tap arrays
             dset_taps = c_group.create_dataset('taps', (n_group, k_max_group), dtype='float32',
-                                               chunks=(1, k_max_group), compression="gzip", compression_opts=4)
+                                              chunks=(1, k_max_group), compression="gzip", compression_opts=4)
             dset_actual = c_group.create_dataset('actual_tap_count', (n_group,), dtype='int32',
                                                  chunks=True, compression="gzip", compression_opts=4)
             dset_fine_idx = c_group.create_dataset('fine_bank_index', (n_group,), dtype='int32',
@@ -321,7 +326,11 @@ def main():
                 dset_match[j] = qa_match
                 dset_c_match[j] = coarse_match
                 
-    logging.info(f"Done. Saved to {args.output_file}")
+        logging.info(f"Done. Saved to {args.output_file}")
+        
+    finally:
+        f_out.close()
+
     summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match})."
     if failed_count > 0: logging.warning(summary_msg)
     else: logging.info(summary_msg)
