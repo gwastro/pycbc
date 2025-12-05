@@ -206,6 +206,7 @@ def tuple_to_hash(tuple_to_be_hashed):
                         digest_size=8)
     return np.frombuffer(h.digest(), dtype=int)[0]
 
+
 class TemplateBank(object):
     r"""Class to provide some basic helper functions and information
     about elements of a template bank.
@@ -583,30 +584,31 @@ class TemplateBank(object):
         self.table = self.table[indices_unique]
 
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
-            """ Initialize FilterBank common fields
+        """ Initialize FilterBank common fields
 
-            Parameters
-            ----------
-            low_frequency_cutoff: {float, None}, Optional
-                A low frequency cutoff which overrides any given within the
-                template bank file.
-            """
+        Parameters
+        ----------
+        low_frequency_cutoff: {float, None}, Optional
+            A low frequency cutoff which overrides any given within the
+            template bank file.
+        """
 
-            # Make sure we have a template duration field
-            if not hasattr(self.table, 'template_duration'):
-                self.table = self.table.add_fields(np.zeros(len(self.table),
-                                         dtype=np.float32), 'template_duration')
+        # Make sure we have a template duration field
+        if not hasattr(self.table, 'template_duration'):
+            self.table = self.table.add_fields(np.zeros(len(self.table),
+                                     dtype=np.float32), 'template_duration')
 
-            # Make sure we have a f_lower field
-            if low_frequency_cutoff is not None:
-                if not hasattr(self.table, 'f_lower'):
-                    vec = np.zeros(len(self.table), dtype=np.float32)
-                    self.table = self.table.add_fields(vec, 'f_lower')
-                self.table['f_lower'][:] = low_frequency_cutoff
+        # Make sure we have a f_lower field
+        if low_frequency_cutoff is not None:
+            if not hasattr(self.table, 'f_lower'):
+                vec = np.zeros(len(self.table), dtype=np.float32)
+                self.table = self.table.add_fields(vec, 'f_lower')
+            self.table['f_lower'][:] = low_frequency_cutoff
 
-            self.min_f_lower = min(self.table['f_lower'])
-            if self.f_lower is None and self.min_f_lower == 0.:
-                raise ValueError('Invalid low-frequency cutoff settings')
+        self.min_f_lower = min(self.table['f_lower'])
+        if self.f_lower is None and self.min_f_lower == 0.:
+            raise ValueError('Invalid low-frequency cutoff settings')
+
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
