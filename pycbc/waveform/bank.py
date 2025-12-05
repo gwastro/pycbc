@@ -863,13 +863,21 @@ class FilterBank(TemplateBank):
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be
         # erased by the type conversion below.
-        ttotal = template_duration = None
         if hasattr(htilde, 'length_in_time'):
             ttotal = htilde.length_in_time
-        if hasattr(htilde, 'chirp_length'):
+        else:
+            ttotal = None
+        # First try to load template_duration from get_waveform_filter,
+        # if not exists, check if the template bank file contains template_duration,
+        # if none of them exists, return None 
+        if hasattr(htilde, 'chirp_length') and htilde.chirp_length is not None:
             template_duration = htilde.chirp_length
-
-        self.table[index].template_duration = template_duration
+            self.table[index].template_duration = template_duration
+        elif self.table[index].template_duration > 0:
+            template_duration = self.table[index].template_duration
+        else:
+            template_duration = None
+            self.table[index].template_duration = None
 
         htilde = htilde.astype(self.dtype)
         htilde.f_lower = f_low
