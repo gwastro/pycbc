@@ -206,7 +206,6 @@ def tuple_to_hash(tuple_to_be_hashed):
                         digest_size=8)
     return np.frombuffer(h.digest(), dtype=int)[0]
 
-
 class TemplateBank(object):
     r"""Class to provide some basic helper functions and information
     about elements of a template bank.
@@ -584,31 +583,30 @@ class TemplateBank(object):
         self.table = self.table[indices_unique]
 
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
-        """ Initialize FilterBank common fields
+            """ Initialize FilterBank common fields
 
-        Parameters
-        ----------
-        low_frequency_cutoff: {float, None}, Optional
-            A low frequency cutoff which overrides any given within the
-            template bank file.
-        """
+            Parameters
+            ----------
+            low_frequency_cutoff: {float, None}, Optional
+                A low frequency cutoff which overrides any given within the
+                template bank file.
+            """
 
-        # Make sure we have a template duration field
-        if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(np.zeros(len(self.table),
-                                     dtype=np.float32), 'template_duration')
+            # Make sure we have a template duration field
+            if not hasattr(self.table, 'template_duration'):
+                self.table = self.table.add_fields(np.zeros(len(self.table),
+                                         dtype=np.float32), 'template_duration')
 
-        # Make sure we have a f_lower field
-        if low_frequency_cutoff is not None:
-            if not hasattr(self.table, 'f_lower'):
-                vec = np.zeros(len(self.table), dtype=np.float32)
-                self.table = self.table.add_fields(vec, 'f_lower')
-            self.table['f_lower'][:] = low_frequency_cutoff
+            # Make sure we have a f_lower field
+            if low_frequency_cutoff is not None:
+                if not hasattr(self.table, 'f_lower'):
+                    vec = np.zeros(len(self.table), dtype=np.float32)
+                    self.table = self.table.add_fields(vec, 'f_lower')
+                self.table['f_lower'][:] = low_frequency_cutoff
 
-        self.min_f_lower = min(self.table['f_lower'])
-        if self.f_lower is None and self.min_f_lower == 0.:
-            raise ValueError('Invalid low-frequency cutoff settings')
-
+            self.min_f_lower = min(self.table['f_lower'])
+            if self.f_lower is None and self.min_f_lower == 0.:
+                raise ValueError('Invalid low-frequency cutoff settings')
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
@@ -1089,8 +1087,128 @@ class FilterBankSkyMax(TemplateBank):
 
         return hplus, hcross
 
+class RatioFilterBank(FilterBank):
+    """Class for managing a hierarchical template bank for Ratio-Filter Dechirping.
+
+    This bank relies on an HDF5 file structure where a 'fine' template bank
+    is stored at the root, and a 'coarse' reference bank is stored within
+    a 'fir_data/coarse_bank_params' group. 
+    
+    It manages the retrieval of "Ratio Filters" (FIR taps) that map a 
+    coarse reference to many fine templates.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the HDF5 file.
+    filter_length : int
+        The length of the frequency domain filter (and reference waveform) in samples.
+    delta_f : float
+        Frequency resolution.
+    dtype : numpy.dtype
+        Data type for the waveforms (usually complex64).
+    approximant : str, optional
+        Approximant used for the waveforms.
+    **kwds :
+        Additional arguments passed to FilterBank/TemplateBank.
+    """
+
+    def __init__(self, filename, filter_length, delta_f, dtype,
+                 approximant=None, **kwds):
+        
+        # 1. Initialize self as the "Fine" bank (Root of HDF5)
+        # This gives us access to self.table (the target parameters)
+        super(RatioFilterBank, self).__init__(
+            filename, filter_length, delta_f, dtype, 
+            approximant=approximant, **kwds
+        )
+        
+        # Verify file structure
+        if 'fir_data' not in self.filehandler:
+            raise ValueError(f"File {filename} does not contain 'fir_data' group required for RatioFilterBank.")
+
+        self.fir_group = self.filehandler['fir_data']
+        
+        # 2. Initialize the internal Coarse Bank
+        # We use the reuse strategy: passing our own filehandler to avoid 
+        # re-opening the file, and using group_key to point to the params.
+        self.coarse_bank = FilterBank(
+            filename, filter_length, delta_f, dtype,
+            approximant=approximant, # We assume coarse/fine use same approximant
+            group_key='fir_data/coarse_bank_params',
+            file_handler=self.filehandler,
+            **kwds
+        )
+        
+        # Load metadata attributes
+        self.n_taps = self.fir_group.attrs.get('n_taps', None)
+        self.sample_rate = self.fir_group.attrs.get('sample_rate', None)
+        
+        # Cache valid coarse keys (directories like "0", "1") for iteration
+        # These keys correspond to indices in the coarse_bank
+        self.coarse_keys = [k for k in self.fir_group.keys() if k.isdigit()]
+        
+        # Convert to sorted integers for deterministic iteration order
+        self.coarse_indices = np.array([int(k) for k in self.coarse_keys], dtype=int)
+        self.coarse_indices.sort()
+
+    def get_coarse_template(self, coarse_index):
+        """Wrapper to get the frequency-domain waveform from the internal coarse bank.
+        
+        Parameters
+        ----------
+        coarse_index : int
+            The index of the template in the *coarse* bank.
+
+        Returns
+        -------
+        htilde : FrequencySeries
+            The reference waveform.
+        """
+        # This reuses all the complex logic in FilterBank.get_template
+        # (variable start frequency, decompression if enabled, etc.)
+        return self.coarse_bank.get_template(coarse_index)
+
+    def get_firs(self, coarse_index):
+        """Retrieve the FIR tap information for the batch of fine templates
+        associated with a specific coarse reference.
+
+        Parameters
+        ----------
+        coarse_index : int
+            The index of the coarse template.
+
+        Returns
+        -------
+        taps : np.ndarray
+            2D array of FIR taps (shape: [N_fine_in_group, N_taps]).
+        actual_tap_counts : np.ndarray
+             1D array containing the valid number of taps for each filter 
+             (since 'taps' might be zero-padded).
+        fine_indices : np.ndarray
+             1D array of indices pointing to `self.table` (the fine bank)
+             that these filters correspond to.
+        """
+        group_key = str(coarse_index)
+        if group_key not in self.fir_group:
+            raise ValueError(f"Coarse index {coarse_index} not found in FIR data.")
+        
+        c_group = self.fir_group[group_key]
+        
+        # Load datasets entirely into memory as they are processed in a batch
+        # These keys match the output of the generation script provided
+        taps = c_group['taps'][:]
+        actual_tap_counts = c_group['actual_tap_count'][:]
+        fine_indices = c_group['fine_bank_index'][:]
+        
+        return taps, actual_tap_counts, fine_indices
+
+    @property
+    def coarse_size(self):
+        """The number of templates in the coarse reference bank."""
+        return len(self.coarse_bank)
 
 __all__ = ('sigma_cached', 'boolargs_from_apprxstr', 'add_approximant_arg',
            'parse_approximant_arg', 'tuple_to_hash', 'TemplateBank',
            'LiveFilterBank', 'FilterBank', 'find_variable_start_frequency',
-           'FilterBankSkyMax')
+           'FilterBankSkyMax', 'RatioFilterBank')
