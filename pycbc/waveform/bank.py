@@ -206,7 +206,6 @@ def tuple_to_hash(tuple_to_be_hashed):
                         digest_size=8)
     return np.frombuffer(h.digest(), dtype=int)[0]
 
-
 class TemplateBank(object):
     r"""Class to provide some basic helper functions and information
     about elements of a template bank.
@@ -240,6 +239,12 @@ class TemplateBank(object):
         the file. Note that derived parameters can only be used if the
         needed parameters are in the file; e.g., you cannot use `chi_eff` if
         `spin1z`, `spin2z`, `mass1`, and `mass2` are in the input file.
+    group_key : {None, string}
+        If loading from an HDF file, specify the group path (e.g., 'fir_data/coarse')
+        where the template parameters are stored. If None, defaults to the file root.
+    file_handler : {None, pycbc.io.HFile}
+        An optional, already-open HDF file object. If provided, the class will
+        read from this object instead of opening the filename from disk.
     \**kwds :
         Any additional keyword arguments are stored to the `extra_args`
         attribute.
@@ -262,7 +267,7 @@ class TemplateBank(object):
         Any extra keyword arguments that were provided on initialization.
     """
     def __init__(self, filename, approximant=None, parameters=None,
-                 **kwds):
+                 group_key=None, file_handler=None, **kwds):
         self.has_compressed_waveforms = False
         ext = os.path.basename(filename)
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
@@ -283,13 +288,26 @@ class TemplateBank(object):
 
         elif ext.endswith(('hdf', '.h5', '.hdf5')):
             self.indoc = None
-            f = pycbc.io.HFile(filename, 'r')
-            self.filehandler = f
+            
+            # Use existing file handler if provided, otherwise open file
+            if file_handler is not None:
+                f = file_handler
+                self.filehandler = f 
+            else:
+                f = pycbc.io.HFile(filename, 'r')
+                self.filehandler = f
+
+            # Determine the root group to read from
+            if group_key:
+                root = f[group_key]
+            else:
+                root = f
+
             try:
-                fileparams = list(f.attrs['parameters'])
+                fileparams = list(root.attrs['parameters'])
             except KeyError:
                 # just assume all of the top-level groups are the parameters
-                fileparams = list(f.keys())
+                fileparams = list(root.keys())
                 logging.info("WARNING: no parameters attribute found. "
                     "Assuming that %s " %(', '.join(fileparams)) +
                     "are the parameters.")
@@ -315,14 +333,14 @@ class TemplateBank(object):
             dtype = []
             data = {}
             for key in common_fields+add_fields:
-                data[key] = f[key][:]
+                data[key] = root[key][:]
                 dtype.append((key, data[key].dtype))
-            num = f[fileparams[0]].size
+            num = root[fileparams[0]].size
             self.table = pycbc.io.WaveformArray(num, dtype=dtype)
             for key in data:
                 self.table[key] = data[key]
             # add the compressed waveforms, if they exist
-            self.has_compressed_waveforms = 'compressed_waveforms' in f
+            self.has_compressed_waveforms = 'compressed_waveforms' in root
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -372,60 +390,100 @@ class TemplateBank(object):
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
-                     force=False, skip_fields=None,
-                     write_compressed_waveforms=True):
-        """Writes self to the given hdf file.
+                         force=False, skip_fields=None,
+                         write_compressed_waveforms=True,
+                         group_key=None, file_handler=None):
+            """Writes self to the given hdf file.
 
-        Parameters
-        ----------
-        filename : str
-            The name of the file to write to. Must be a recognised HDF5
-            file extension
-        start_index : If a specific slice of the template bank is to be
-            written to the hdf file, this would specify the index of the
-            first template in the slice
-        stop_index : If a specific slice of the template bank is to be
-            written to the hdf file, this would specify the index of the
-            last template in the slice
-        force : {False, bool}
-            If the file already exists, it will be overwritten if True.
-            Otherwise, an OSError is raised if the file exists.
-        skip_fields : {None, (list of) strings}
-            Do not write the given fields to the hdf file. Default is None,
-            in which case all fields in self.table.fieldnames are written.
-        write_compressed_waveforms : {True, bool}
-            Write compressed waveforms to the output (hdf) file if this is
-            True, which is the default setting. If False, do not write the
-            compressed waveforms group, but only the template parameters to
-            the output file.
+            Parameters
+            ----------
+            filename : str
+                The name of the file to write to. Must be a recognised HDF5
+                file extension.
+            start_index : int, optional
+                If a specific slice of the template bank is to be written, 
+                this specifies the index of the first template.
+            stop_index : int, optional
+                If a specific slice of the template bank is to be written, 
+                this specifies the index of the last template.
+            force : {False, bool}
+                If the file already exists, it will be overwritten if True.
+                Otherwise, an OSError is raised if the file exists.
+            skip_fields : {None, (list of) strings}
+                Do not write the given fields to the hdf file. Default is None.
+            write_compressed_waveforms : {True, bool}
+                Write compressed waveforms to the output (hdf) file if this is
+                True.
+            group_key : {None, str}
+                If provided, write the bank parameters into this HDF5 group 
+                path (e.g. 'fir_data/coarse_bank_params'). The group will be 
+                created if it doesn't exist.
+            file_handler : {None, h5py.File or pycbc.io.HFile}
+                If provided, write to this open file object instead of opening 
+                'filename'.
 
-        Returns
-        -------
-        pycbc.io.HFile
-            The file handler to the output hdf file (left open).
-        """
-        if not filename.endswith(('.hdf', '.h5', '.hdf5')):
-            raise ValueError("Unrecoginized file extension")
-        if os.path.exists(filename) and not force:
-            raise IOError("File %s already exists" %(filename))
-        f = pycbc.io.HFile(filename, 'w')
-        parameters = self.parameters
-        if skip_fields is not None:
-            if not isinstance(skip_fields, list):
-                skip_fields = [skip_fields]
-            parameters = [p for p in parameters if p not in skip_fields]
-        # save the parameters
-        f.attrs['parameters'] = parameters
-        write_tbl = self.table[start_index:stop_index]
-        for p in parameters:
-            f[p] = write_tbl[p]
-        if write_compressed_waveforms and self.has_compressed_waveforms:
-            for tmplt_hash in write_tbl.template_hash:
-                compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
-                                        self.filehandler, tmplt_hash,
-                                        load_now=True)
-                compressed_waveform.write_to_hdf(f, tmplt_hash)
-        return f
+            Returns
+            -------
+            pycbc.io.HFile
+                The file handler to the output hdf file (left open).
+            """
+            # 1. Handle File Opening
+            if file_handler is not None:
+                f = file_handler
+            else:
+                if not filename.endswith(('.hdf', '.h5', '.hdf5')):
+                    raise ValueError("Unrecoginized file extension")
+                
+                # If we are writing to a specific group, we likely want to 'append' 
+                # to the file if it exists, unless force=True which implies a wipe.
+                if os.path.exists(filename) and not force:
+                    if group_key is None:
+                        raise IOError("File %s already exists" % filename)
+                    mode = 'a' # Append if we are just adding a group
+                else:
+                    mode = 'w' # Create new / Overwrite
+                
+                f = pycbc.io.HFile(filename, mode)
+
+            # 2. Handle Group Selection
+            if group_key:
+                # require_group ensures it exists, creating it if necessary
+                root = f.require_group(group_key)
+            else:
+                root = f
+
+            # 3. Prepare Fields
+            parameters = self.parameters
+            if skip_fields is not None:
+                if not isinstance(skip_fields, list):
+                    skip_fields = [skip_fields]
+                parameters = [p for p in parameters if p not in skip_fields]
+
+            # 4. Write Data
+            # save the parameters list as an attribute of the group/root
+            root.attrs['parameters'] = parameters
+            
+            write_tbl = self.table[start_index:stop_index]
+            for p in parameters:
+                # If the dataset exists (e.g. appending/overwriting in 'a' mode), 
+                # we need to delete it first or overwrite it. 
+                if p in root:
+                    del root[p]
+                root[p] = write_tbl[p]
+
+            # 5. Write Compressed Waveforms
+            if write_compressed_waveforms and self.has_compressed_waveforms:
+                # If writing to a group, compressed waveforms are usually expected
+                # to be relative to that bank's location or in a shared location?
+                # Standard behavior is writing to 'compressed_waveforms' key in 'root'.
+                for tmplt_hash in write_tbl.template_hash:
+                    compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
+                                            self.filehandler, tmplt_hash,
+                                            load_now=True)
+                    # This writes to root['compressed_waveforms'] relative to the passed object
+                    compressed_waveform.write_to_hdf(root, tmplt_hash)
+
+            return f
 
     def end_frequency(self, index):
         """ Return the end frequency of the waveform at the given index value
@@ -491,31 +549,30 @@ class TemplateBank(object):
         self.table = self.table[indices_unique]
 
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
-        """ Initialize FilterBank common fields
+            """ Initialize FilterBank common fields
 
-        Parameters
-        ----------
-        low_frequency_cutoff: {float, None}, Optional
-            A low frequency cutoff which overrides any given within the
-            template bank file.
-        """
+            Parameters
+            ----------
+            low_frequency_cutoff: {float, None}, Optional
+                A low frequency cutoff which overrides any given within the
+                template bank file.
+            """
 
-        # Make sure we have a template duration field
-        if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(np.zeros(len(self.table),
-                                     dtype=np.float32), 'template_duration')
+            # Make sure we have a template duration field
+            if not hasattr(self.table, 'template_duration'):
+                self.table = self.table.add_fields(np.zeros(len(self.table),
+                                         dtype=np.float32), 'template_duration')
 
-        # Make sure we have a f_lower field
-        if low_frequency_cutoff is not None:
-            if not hasattr(self.table, 'f_lower'):
-                vec = np.zeros(len(self.table), dtype=np.float32)
-                self.table = self.table.add_fields(vec, 'f_lower')
-            self.table['f_lower'][:] = low_frequency_cutoff
+            # Make sure we have a f_lower field
+            if low_frequency_cutoff is not None:
+                if not hasattr(self.table, 'f_lower'):
+                    vec = np.zeros(len(self.table), dtype=np.float32)
+                    self.table = self.table.add_fields(vec, 'f_lower')
+                self.table['f_lower'][:] = low_frequency_cutoff
 
-        self.min_f_lower = min(self.table['f_lower'])
-        if self.f_lower is None and self.min_f_lower == 0.:
-            raise ValueError('Invalid low-frequency cutoff settings')
-
+            self.min_f_lower = min(self.table['f_lower'])
+            if self.f_lower is None and self.min_f_lower == 0.:
+                raise ValueError('Invalid low-frequency cutoff settings')
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
@@ -996,8 +1053,128 @@ class FilterBankSkyMax(TemplateBank):
 
         return hplus, hcross
 
+class RatioFilterBank(FilterBank):
+    """Class for managing a hierarchical template bank for Ratio-Filter Dechirping.
+
+    This bank relies on an HDF5 file structure where a 'fine' template bank
+    is stored at the root, and a 'coarse' reference bank is stored within
+    a 'fir_data/coarse_bank_params' group. 
+    
+    It manages the retrieval of "Ratio Filters" (FIR taps) that map a 
+    coarse reference to many fine templates.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the HDF5 file.
+    filter_length : int
+        The length of the frequency domain filter (and reference waveform) in samples.
+    delta_f : float
+        Frequency resolution.
+    dtype : numpy.dtype
+        Data type for the waveforms (usually complex64).
+    approximant : str, optional
+        Approximant used for the waveforms.
+    **kwds :
+        Additional arguments passed to FilterBank/TemplateBank.
+    """
+
+    def __init__(self, filename, filter_length, delta_f, dtype,
+                 approximant=None, **kwds):
+        
+        # 1. Initialize self as the "Fine" bank (Root of HDF5)
+        # This gives us access to self.table (the target parameters)
+        super(RatioFilterBank, self).__init__(
+            filename, filter_length, delta_f, dtype, 
+            approximant=approximant, **kwds
+        )
+        
+        # Verify file structure
+        if 'fir_data' not in self.filehandler:
+            raise ValueError(f"File {filename} does not contain 'fir_data' group required for RatioFilterBank.")
+
+        self.fir_group = self.filehandler['fir_data']
+        
+        # 2. Initialize the internal Coarse Bank
+        # We use the reuse strategy: passing our own filehandler to avoid 
+        # re-opening the file, and using group_key to point to the params.
+        self.coarse_bank = FilterBank(
+            filename, filter_length, delta_f, dtype,
+            approximant=approximant, # We assume coarse/fine use same approximant
+            group_key='fir_data/coarse_bank_params',
+            file_handler=self.filehandler,
+            **kwds
+        )
+        
+        # Load metadata attributes
+        self.n_taps = self.fir_group.attrs.get('n_taps', None)
+        self.sample_rate = self.fir_group.attrs.get('sample_rate', None)
+        
+        # Cache valid coarse keys (directories like "0", "1") for iteration
+        # These keys correspond to indices in the coarse_bank
+        self.coarse_keys = [k for k in self.fir_group.keys() if k.isdigit()]
+        
+        # Convert to sorted integers for deterministic iteration order
+        self.coarse_indices = np.array([int(k) for k in self.coarse_keys], dtype=int)
+        self.coarse_indices.sort()
+
+    def get_coarse_template(self, coarse_index):
+        """Wrapper to get the frequency-domain waveform from the internal coarse bank.
+        
+        Parameters
+        ----------
+        coarse_index : int
+            The index of the template in the *coarse* bank.
+
+        Returns
+        -------
+        htilde : FrequencySeries
+            The reference waveform.
+        """
+        # This reuses all the complex logic in FilterBank.get_template
+        # (variable start frequency, decompression if enabled, etc.)
+        return self.coarse_bank.get_template(coarse_index)
+
+    def get_firs(self, coarse_index):
+        """Retrieve the FIR tap information for the batch of fine templates
+        associated with a specific coarse reference.
+
+        Parameters
+        ----------
+        coarse_index : int
+            The index of the coarse template.
+
+        Returns
+        -------
+        taps : np.ndarray
+            2D array of FIR taps (shape: [N_fine_in_group, N_taps]).
+        actual_tap_counts : np.ndarray
+             1D array containing the valid number of taps for each filter 
+             (since 'taps' might be zero-padded).
+        fine_indices : np.ndarray
+             1D array of indices pointing to `self.table` (the fine bank)
+             that these filters correspond to.
+        """
+        group_key = str(coarse_index)
+        if group_key not in self.fir_group:
+            raise ValueError(f"Coarse index {coarse_index} not found in FIR data.")
+        
+        c_group = self.fir_group[group_key]
+        
+        # Load datasets entirely into memory as they are processed in a batch
+        # These keys match the output of the generation script provided
+        taps = c_group['taps'][:]
+        actual_tap_counts = c_group['actual_tap_count'][:]
+        fine_indices = c_group['fine_bank_index'][:]
+        
+        return taps, actual_tap_counts, fine_indices
+
+    @property
+    def coarse_size(self):
+        """The number of templates in the coarse reference bank."""
+        return len(self.coarse_bank)
 
 __all__ = ('sigma_cached', 'boolargs_from_apprxstr', 'add_approximant_arg',
            'parse_approximant_arg', 'tuple_to_hash', 'TemplateBank',
            'LiveFilterBank', 'FilterBank', 'find_variable_start_frequency',
-           'FilterBankSkyMax')
+           'FilterBankSkyMax', 'RatioFilterBank')
