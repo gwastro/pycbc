@@ -137,7 +137,7 @@ def process_template(i):
 
     ratio = np.zeros_like(h_fine.numpy(), dtype=np.complex128)
     np.divide(h_fine.numpy(), h_ref_np, out=ratio, where=good_ref)
-
+    
     psd_np = g_psd.numpy()
     freqs = h_fine.sample_frequencies.numpy()
     band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
@@ -191,8 +191,6 @@ def main():
     parser.add_argument('--min-match', type=float, default=0.99)
     parser.add_argument('--n-processes', '-n', type=int, default=1)
     parser.add_argument('--verbose', '-v', action='count', default=0)
-    parser.add_argument('--waveform-decompression-method', type=str, default=None,
-                        help="Method used to decompress waveforms (e.g. 'inline_linear'). ")
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
@@ -216,7 +214,7 @@ def main():
                              dtype=np.complex128, 
                              low_frequency_cutoff=args.f_low,
                              approximant=args.approximant,
-                             waveform_decompression_method=args.waveform_decompression_method)
+                             enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
     coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
 
@@ -227,7 +225,7 @@ def main():
                            dtype=np.complex128, 
                            low_frequency_cutoff=args.f_low,
                            approximant=args.approximant,
-                           waveform_decompression_method=args.waveform_decompression_method)
+                           enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
     
     logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
