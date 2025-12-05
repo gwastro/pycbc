@@ -1,0 +1,331 @@
+#! /usr/bin/env python
+import argparse
+import sys
+import numpy as np
+import h5py
+import logging
+import multiprocessing as mp
+from tqdm import tqdm
+from collections import defaultdict
+import pycbc
+import pycbc.psd
+from pycbc.filter import match, overlap, sigmasq
+from pycbc.waveform import get_fd_waveform
+from pycbc.waveform.bank import FilterBank
+from pycbc.types import TimeSeries, FrequencySeries
+
+# --- GLOBAL WORKER DATA (set by initializer) ---
+g_coarse_waveforms = None
+g_fine_waveforms = None # Use g_fine_waveforms
+g_psd = None
+g_args = None
+
+def init_worker(coarse_waveforms, fine_waveforms, psd, args_namespace):
+    """
+    Initializer function for each worker process.
+    Sets read-only global variables.
+    """
+    global g_coarse_waveforms, g_fine_waveforms, g_psd, g_args
+    g_coarse_waveforms = coarse_waveforms
+    g_fine_waveforms = fine_waveforms # Assign to g_fine_waveforms
+    g_psd = psd
+    g_args = args_namespace
+    # Silence worker logging
+    logging.getLogger('pycbc').setLevel(logging.CRITICAL + 1)
+
+# --- 1. Filter Designer (Double Precision) ---
+def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None):
+    if hasattr(H_target_pos, 'numpy'): 
+        H_target_pos = H_target_pos.numpy().astype(np.complex128)
+    else:
+        H_target_pos = np.array(H_target_pos, dtype=np.complex128)
+        
+    if hasattr(valid_mask_pos, 'numpy'): 
+        valid_mask_pos = valid_mask_pos.numpy()
+
+    N_nyquist = len(H_target_pos)
+    f_grid_pos = np.linspace(0.0, 0.5, N_nyquist, dtype=np.float64)
+    
+    valid_indices = np.where(valid_mask_pos)[0]
+    f_valid = f_grid_pos[valid_indices]
+    b_complex = H_target_pos[valid_indices]
+    
+    if weights_pos is not None:
+        if hasattr(weights_pos, 'numpy'): weights_pos = weights_pos.numpy()
+        w_valid = weights_pos[valid_indices].astype(np.float64)
+        w_max = np.max(w_valid)
+        if w_max > 0:
+            w_valid /= w_max
+        b_complex = b_complex * w_valid
+    else:
+        w_valid = 1.0
+
+    if K_taps % 2 == 1: 
+        k_idx = np.arange(-(K_taps-1)//2, (K_taps-1)//2 + 1, dtype=np.float64)
+    else:
+        k_idx = np.arange(-K_taps//2 + 1, K_taps//2 + 1, dtype=np.float64)
+
+    A_complex = np.exp(-2j * np.pi * np.outer(f_valid, k_idx))
+
+    if weights_pos is not None:
+        if isinstance(w_valid, np.ndarray):
+             A_complex *= w_valid[:, None]
+        else:
+             A_complex *= w_valid
+
+    A_real = np.vstack([A_complex.real, A_complex.imag])
+    b_real = np.concatenate([b_complex.real, b_complex.imag])
+    
+    if not np.all(np.isfinite(A_real)) or not np.all(np.isfinite(b_real)):
+        return np.zeros(K_taps, dtype=np.float64)
+
+    h_optimal, _, _, _ = np.linalg.lstsq(A_real, b_real, rcond=None)
+    return h_optimal
+
+# --- 2. Verification (Double Precision) ---
+def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
+    N = (len(h_ref) - 1) * 2
+    K = len(taps)
+    h_fir_time = np.zeros(N, dtype=np.float64)
+    
+    if K == 0: # Handle zero-tap (identity) filter
+         return match(h_fine, h_ref, psd=psd, low_frequency_cutoff=f_low)[0]
+
+    if K % 2 == 1: k_start = -(K - 1) // 2
+    else: k_start = -K // 2 + 1
+    indices = (np.arange(k_start, k_start + K) + N) % N
+    h_fir_time[indices] = taps
+    
+    delta_t = 1.0 / (N * h_ref.delta_f)
+    ts = TimeSeries(h_fir_time, delta_t=delta_t)
+    H_fir = ts.to_frequencyseries(delta_f=h_ref.delta_f)
+    
+    if len(H_fir) > len(h_ref): H_fir = H_fir[:len(h_ref)]
+    elif len(H_fir) < len(h_ref): H_fir.resize(len(h_ref))
+
+    h_rec = h_ref * H_fir
+    m, _ = match(h_fine, h_rec, psd=psd, low_frequency_cutoff=f_low)
+    return m
+
+# --- 3. WORKER FUNCTION (Executes in parallel) ---
+def process_template(i):
+    """
+    Worker function that runs the full design loop for a single template index 'i'.
+    """
+    h_fine = g_fine_waveforms[i] # Use the fork-safe list
+
+    if sigmasq(h_fine, psd=g_psd, low_frequency_cutoff=g_args.f_low) <= 0:
+        return i, 0.0, -1, 0.0, np.array([], dtype=np.float64)
+
+    best_match = 0.0
+    best_c_idx = -1
+    for c_idx, h_ref in enumerate(g_coarse_waveforms):
+        m, _ = match(h_fine, h_ref, psd=g_psd, low_frequency_cutoff=g_args.f_low)
+        if m > best_match:
+            best_match = m
+            best_c_idx = c_idx
+    
+    if best_c_idx == -1:
+        return i, 0.0, -1, 0.0, np.array([], dtype=np.float64)
+
+    h_ref = g_coarse_waveforms[best_c_idx]
+    h_ref_np = h_ref.numpy()
+
+    ref_mag = np.abs(h_ref_np)
+    safe_threshold = np.max(ref_mag) * 1e-9
+    good_ref = (ref_mag > safe_threshold)
+
+    ratio = np.zeros_like(h_fine.numpy(), dtype=np.complex128)
+    np.divide(h_fine.numpy(), h_ref_np, out=ratio, where=good_ref)
+
+    psd_np = g_psd.numpy()
+    freqs = h_fine.sample_frequencies.numpy()
+    band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
+    valid_psd = (psd_np > 0)
+    
+    weights_snr = np.zeros_like(psd_np, dtype=np.float64)
+    np.divide(ref_mag**2, psd_np, out=weights_snr, where=(band_mask & valid_psd))
+    
+    ratio = np.nan_to_num(ratio, copy=False)
+    weights_snr = np.nan_to_num(weights_snr, copy=False)
+    this_valid_mask = band_mask & good_ref
+
+    if np.sum(this_valid_mask) < g_args.n_taps:
+         return i, 0.0, best_c_idx, best_match, np.array([], dtype=np.float64)
+
+    H_target_raw = ratio * g_args.sample_rate
+    current_taps = g_args.n_taps
+    best_qa_match = best_match
+    final_taps_data = np.array([], dtype=np.float64)
+
+    while current_taps <= g_args.max_taps:
+        taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
+                                          current_taps, weights_pos=weights_snr)
+        qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
+        
+        if qa_match > best_qa_match:
+            best_qa_match = qa_match
+            final_taps_data = taps
+
+        if g_args.verbose >= 2: 
+             print(f"[Worker {i}] Taps={current_taps}, Match={qa_match:.5f}")
+
+        if qa_match >= g_args.min_match: break
+        current_taps += g_args.tap_step
+    
+    return i, best_match, best_c_idx, best_qa_match, final_taps_data
+
+# --- 4. MAIN PROCESS ---
+def main():
+    parser = argparse.ArgumentParser(description="Generate Optimized FIR Filter Bank (MP)")
+    parser.add_argument('--coarse-bank', required=True)
+    parser.add_argument('--fine-bank', required=True)
+    parser.add_argument('--output-file', required=True)
+    parser.add_argument('--approximant', type=str, default='IMRPhenomD')
+    parser.add_argument('--f-low', type=float, default=20.0)
+    parser.add_argument('--sample-rate', type=float, default=2048.0)
+    parser.add_argument('--delta-f', type=float, default=None, required=True)
+    parser.add_argument('--n-taps', type=int, default=251)
+    parser.add_argument('--max-taps', type=int, default=1025)
+    parser.add_argument('--tap-step', type=int, default=100)
+    parser.add_argument('--min-match', type=float, default=0.99)
+    parser.add_argument('--n-processes', '-n', type=int, default=1)
+    parser.add_argument('--verbose', '-v', action='count', default=0)
+    pycbc.psd.insert_psd_option_group(parser)
+    args = parser.parse_args()
+
+    pycbc.init_logging(args.verbose)
+    
+    # Reroute logger to stdout to avoid tqdm conflict
+    log = logging.getLogger()
+    if args.verbose > 0 and log.handlers:
+        if isinstance(log.handlers[0], logging.StreamHandler):
+            log.handlers[0].stream = sys.stdout
+
+    f_final = args.sample_rate / 2.0
+    flen = int(f_final / args.delta_f) + 1
+    logging.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
+
+    psd = pycbc.psd.from_cli(args, length=flen, delta_f=args.delta_f, 
+                             low_frequency_cutoff=args.f_low)
+
+    logging.info("Loading coarse bank references...")
+    coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f, dtype=np.complex128, 
+                             low_frequency_cutoff=args.f_low, approximant=args.approximant)
+    show_progress = (args.verbose == 0)
+    coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
+
+    if not coarse_waveforms: sys.exit("ERROR: Coarse bank empty!")
+
+    logging.info("Opening fine bank...")
+    fine_bank = FilterBank(args.fine_bank, flen, args.delta_f, dtype=np.complex128, 
+                           low_frequency_cutoff=args.f_low, approximant=args.approximant)
+    n_fine = len(fine_bank)
+    
+    logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
+    fine_waveforms = [h.copy() for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
+    
+    fine_bank_params = {}
+    if hasattr(fine_bank, 'table'):
+        for key in fine_bank.table.fieldnames:
+             fine_bank_params[key] = fine_bank.table[key][:]
+    
+    with h5py.File(args.output_file, 'w') as f_out:
+        logging.info("Writing fine bank parameters to output root...")
+        if hasattr(fine_bank, 'table'):
+            for key in fine_bank.table.fieldnames:
+                # ADDED COMPRESSION
+                f_out.create_dataset(key, data=fine_bank.table[key][:],
+                                     compression="gzip", compression_opts=4)
+        
+        fir_group = f_out.create_group("fir_data")
+        
+        coarse_params_group = fir_group.create_group("coarse_bank_params")
+        if hasattr(coarse_bank, 'table'):
+            for key in coarse_bank.table.fieldnames:
+                # ADDED COMPRESSION
+                coarse_params_group.create_dataset(key, data=coarse_bank.table[key][:],
+                                                   compression="gzip", compression_opts=4)
+        
+        for arg, val in vars(args).items():
+            if val is not None and isinstance(val, (int, float, str)):
+                 fir_group.attrs[arg] = val
+
+        logging.info(f"Starting pool with {args.n_processes} processes...")
+        failed_count = 0
+        job_list = range(n_fine)
+        
+        all_results = [None] * n_fine
+
+        with mp.Pool(processes=args.n_processes, initializer=init_worker, 
+                     initargs=(coarse_waveforms, fine_waveforms, psd, args)) as pool:
+            
+            results_iter = pool.imap_unordered(process_template, job_list)
+            if not args.verbose:
+                 results_iter = tqdm(results_iter, total=n_fine, desc="Designing Filters", 
+                                     postfix={"failed": 0}, file=sys.stderr)
+
+            for result in results_iter:
+                i, coarse_match, c_idx, qa_match, final_taps_data = result
+                
+                all_results[i] = (coarse_match, c_idx, qa_match, final_taps_data)
+                
+                is_fail = (c_idx == -1) or (qa_match < args.min_match)
+                if is_fail:
+                    failed_count += 1
+
+                if not args.verbose:
+                    results_iter.set_postfix(failed=failed_count)
+                
+                if args.verbose >= 1:
+                    mismatch = 1.0 - qa_match
+                    logging.info(f"T{i} (Ref {c_idx}): Coarse={coarse_match:.4f}, Taps={len(final_taps_data)}, Final={qa_match:.5f}, Mism={mismatch:.5e}")
+                    log.handlers[0].flush() # Flush stdout
+
+        logging.info("All templates processed. Writing grouped results to HDF5...")
+        
+        results_by_coarse_idx = defaultdict(list)
+        for i, res in enumerate(all_results):
+            if res is None: continue 
+            c_idx = res[1]
+            if c_idx != -1:
+                results_by_coarse_idx[c_idx].append(res + (i,))
+        
+        for c_idx, results_list in results_by_coarse_idx.items():
+            c_group = fir_group.create_group(str(c_idx))
+            n_group = len(results_list)
+            
+            k_max_group = max([len(r[3]) for r in results_list] + [1])
+            
+            # ADDED COMPRESSION + CHUNKING
+            dset_taps = c_group.create_dataset('taps', (n_group, k_max_group), dtype='float32',
+                                               chunks=(1, k_max_group), compression="gzip", compression_opts=4)
+            dset_actual = c_group.create_dataset('actual_tap_count', (n_group,), dtype='int32',
+                                                 chunks=True, compression="gzip", compression_opts=4)
+            dset_fine_idx = c_group.create_dataset('fine_bank_index', (n_group,), dtype='int32',
+                                                   chunks=True, compression="gzip", compression_opts=4)
+            dset_match = c_group.create_dataset('filter_match', (n_group,), dtype='float32',
+                                                chunks=True, compression="gzip", compression_opts=4)
+            dset_c_match = c_group.create_dataset('coarse_match', (n_group,), dtype='float32',
+                                                  chunks=True, compression="gzip", compression_opts=4)
+            
+            for j, result in enumerate(results_list):
+                coarse_match, _, qa_match, final_taps_data, i = result
+                
+                taps_padded = np.zeros(k_max_group, dtype=np.float32)
+                taps_padded[:len(final_taps_data)] = final_taps_data.astype(np.float32)
+                
+                dset_taps[j, :] = taps_padded
+                dset_actual[j] = len(final_taps_data)
+                dset_fine_idx[j] = i
+                dset_match[j] = qa_match
+                dset_c_match[j] = coarse_match
+                
+    logging.info(f"Done. Saved to {args.output_file}")
+    summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match})."
+    if failed_count > 0: logging.warning(summary_msg)
+    else: logging.info(summary_msg)
+
+if __name__ == '__main__':
+    mp.freeze_support()
+    main()
