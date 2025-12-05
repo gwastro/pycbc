@@ -27,10 +27,10 @@ import numpy
 import cupy as cp
 from mako.template import Template
 
-import pycbc.constants
+from pycbc.constants import TWOPI
 
 LALARGS = {
-    'TWOPI': pycbc.constants.TWOPI,
+    'TWOPI': TWOPI,
 }
 
 accum_diff_sq_kernel = cp.ElementwiseKernel(
