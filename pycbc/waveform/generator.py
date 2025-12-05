@@ -40,7 +40,6 @@ from pycbc.waveform.utils import apply_fseries_time_shift, \
                                  ceilpow2, apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc.pool import use_mpi
-import lal as _lal
 from pycbc import strain
 
 
@@ -466,7 +465,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {float, lal.LIGOTimeGPS
+    epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
     variable_args : {(), list or tuple}
@@ -557,7 +556,7 @@ class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
         function. A time shift is applied to the waveform equal to tc-epoch.
         Update by using ``set_epoch``
         """
-        return _lal.LIGOTimeGPS(self._epoch)
+        return self._epoch
 
     @abstractmethod
     def generate(self, **kwargs):
@@ -589,7 +588,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {float, lal.LIGOTimeGPS
+    epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
     variable_args : {(), list or tuple}
@@ -608,7 +607,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
     detector_names : list
         The list of detector names. If no detectors were provided, then this
         will be ['RF'] for "radiation frame".
-    epoch : lal.LIGOTimeGPS
+    epoch : float
         The GPS start time of the frequency series returned by the generate function.
         A time shift is applied to the waveform equal to tc-epoch. Update by using
         ``set_epoch``.
@@ -737,7 +736,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {float, lal.LIGOTimeGPS
+    epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
     variable_args : {(), list or tuple}
@@ -756,7 +755,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
     detector_names : list
         The list of detector names. If no detectors were provided, then this
         will be ['RF'] for "radiation frame".
-    epoch : lal.LIGOTimeGPS
+    epoch : float
         The GPS start time of the frequency series returned by the generate function.
         A time shift is applied to the waveform equal to tc-epoch. Update by using
         ``set_epoch``.
@@ -884,7 +883,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {float, lal.LIGOTimeGPS
+    epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
     variable_args : {(), list or tuple}
@@ -903,7 +902,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
     detector_names : list
         The list of detector names. If no detectors were provided, then this
         will be ['RF'] for "radiation frame".
-    epoch : lal.LIGOTimeGPS
+    epoch : float
         The GPS start time of the frequency series returned by the generate function.
         A time shift is applied to the waveform equal to tc-epoch. Update by using
         ``set_epoch``.
@@ -985,7 +984,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {float, lal.LIGOTimeGPS
+    epoch : float
         The epoch start time to set the waveform to. A time shift = tc - epoch is
         applied to waveforms before returning.
     variable_args : {(), list or tuple}
@@ -1004,7 +1003,7 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
     detector_names : list
         The list of detector names. If no detectors were provided, then this
         will be ['RF'] for "radiation frame".
-    epoch : lal.LIGOTimeGPS
+    epoch : float
         The GPS start time of the frequency series returned by the generate
         function. A time shift is applied to the waveform equal to tc-epoch.
         Update by using ``set_epoch``.
@@ -1180,7 +1179,7 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
         function. A time shift is applied to the waveform equal to tc-epoch.
         Update by using ``set_epoch``
         """
-        return _lal.LIGOTimeGPS(self._epoch)
+        return self._epoch
 
     @staticmethod
     def select_rframe_generator(approximant):
