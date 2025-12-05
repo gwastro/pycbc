@@ -81,7 +81,7 @@ def get_constant(name):
     NotImplementedError
         If the constant is not found in any of the available packages.
     """
-    if _CONSTANTS == 'lal': # Allow lal, or LAL, or whatever
+    if _CONSTANTS.lower() == 'lal': # Allow LAL
         if lal is None:
             raise ImportError(
                 "PYCBC_CONSTANT_SOURCE is set to 'lal', but the 'lal' module is not installed. "

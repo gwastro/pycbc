@@ -355,7 +355,7 @@ def spintaylorf2(**kwds):
     IM_SBfac3= -2.*sin(thetaJ)
     IM_SBfac4= cos(thetaJ)
 
-    #####Calculate the PN terms # FIXME replace with functions in lalsimulation #####
+    #####Calculate the PN terms#####
     theta = -11831./9240.
     lambdaa = -1987./3080.0
     pfaN = 3.0/(128.0 * eta)
