@@ -632,10 +632,12 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
             delta_f=df)
     else:
         # check for precision compatibility
-        if out.precision == 'double' and precision == 'single':
-            amp = amp.astype(numpy.float64)
-            phase = phase.astype(numpy.float64)
-            sample_frequencies = sample_frequencies.astype(numpy.float64)
+        if out.precision != precision:
+            precision = out.precision
+            rtype = _real_dtypes[precision]
+            amp = amp.astype(rtype)
+            phase = phase.astype(rtype)
+            sample_frequencies = sample_frequencies.astype(rtype)
         df = out.delta_f
         hlen = len(out)
     if f_lower is None:
