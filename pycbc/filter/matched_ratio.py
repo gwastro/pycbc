@@ -76,13 +76,10 @@ class RatioMatchedFilterControl(object):
             out=self.ref_snr_mem,
             h_norm=h_norm 
         )
-        snr *= norm
-        
-        print("SNR MAX", abs(ref_data).max())
         
         # 3. Execute Blocked Kernel
         local_idxs, t_idxs, snr_vals = self._execute_blocked_kernel(
-            ref_data.numpy() * stilde.delta_t, filters_f, n_taps, valid_slice
+            snr.numpy() * (norm * stilde.delta_t), filters_f, n_taps, valid_slice
         )
         
         # 4. Map indices
@@ -120,9 +117,6 @@ class RatioMatchedFilterControl(object):
             
             current_data = padded_reshaped[:batch_len].copy()
             padded_reshaped[:batch_len] = current_data[rows, shifted_cols]
-            
-            from matplotlib import pyplot as plt
-            plt.plot(padded_reshaped[0,:])
 
             # 3. Execute FFT (Direct MKL call)
             fft_out = self.fft_lib.fft(padded_reshaped[:batch_len], axis=-1)
