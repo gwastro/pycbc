@@ -376,9 +376,7 @@ class TemplateBank(object):
                 self.table = pycbc.io.WaveformArray(0, dtype=[])
 
             # add the compressed waveforms, if they exist IN THIS GROUP
-            print(root.keys())
             self.has_compressed_waveforms = 'compressed_waveforms' in root
-            print(self.has_compressed_waveforms)
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -801,9 +799,7 @@ class FilterBank(TemplateBank):
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
             parameters=parameters, **kwds)
-        print("end of filter init", self.has_compressed_waveforms)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
-        print("end of filter init", self.has_compressed_waveforms)
 
 
     def get_decompressed_waveform(self, tempout, index, f_lower=None,
@@ -929,8 +925,6 @@ class FilterBank(TemplateBank):
         distance = 1.0 / DYN_RANGE_FAC
         full_calculate_waveform = True
         
-        print(self)
-        print(self.has_compressed_waveforms, self.enable_compressed_waveforms)
         if (self.has_compressed_waveforms and self.enable_compressed_waveforms):
             try:
                 htilde = self.get_decompressed_waveform(
