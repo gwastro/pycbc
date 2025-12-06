@@ -34,54 +34,71 @@ def init_worker(coarse_waveforms, fine_waveforms, psd, args_namespace):
     logging.getLogger('pycbc').setLevel(logging.CRITICAL + 1)
 
 # --- 1. Filter Designer (Double Precision) ---
-def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None):
-    if hasattr(H_target_pos, 'numpy'): 
-        H_target_pos = H_target_pos.numpy().astype(np.complex128)
-    else:
-        H_target_pos = np.array(H_target_pos, dtype=np.complex128)
-        
-    if hasattr(valid_mask_pos, 'numpy'): 
-        valid_mask_pos = valid_mask_pos.numpy()
-
+def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None, reg_type='ridge', reg_val=1e-2):
+    """
+    Designs a filter using regularized least squares.
+    reg_type='ridge'      -> Minimizes energy (Standard)
+    reg_type='derivative' -> Minimizes roughness (Smooth coefficients)
+    """
+    weights_pos = None
+    # 1. Setup Grid
     N_nyquist = len(H_target_pos)
-    f_grid_pos = np.linspace(0.0, 0.5, N_nyquist, dtype=np.float64)
+    N_full = 2 * (N_nyquist - 1)
+    f_grid_pos = np.arange(N_nyquist) / N_full
     
+    # 2. Select Valid
     valid_indices = np.where(valid_mask_pos)[0]
     f_valid = f_grid_pos[valid_indices]
     b_complex = H_target_pos[valid_indices]
+
+    # 3. Design Matrix A
+    if K_taps % 2 == 1:
+        k_idx = np.arange(-(K_taps-1)//2, (K_taps-1)//2 + 1)
+    else:
+        k_idx = np.arange(-K_taps//2 + 1, K_taps//2 + 1)
+
+    A_complex = np.exp(-1j * 2 * np.pi * np.outer(f_valid, k_idx))
     
+    # Weights
     if weights_pos is not None:
-        if hasattr(weights_pos, 'numpy'): weights_pos = weights_pos.numpy()
-        w_valid = weights_pos[valid_indices].astype(np.float64)
-        w_max = np.max(w_valid)
-        if w_max > 0:
-            w_valid /= w_max
-        b_complex = b_complex * w_valid
-    else:
-        w_valid = 1.0
+        w_valid = weights_pos[valid_indices]
+        A_complex *= w_valid[:, None]
+        b_complex *= w_valid
 
-    if K_taps % 2 == 1: 
-        k_idx = np.arange(-(K_taps-1)//2, (K_taps-1)//2 + 1, dtype=np.float64)
-    else:
-        k_idx = np.arange(-K_taps//2 + 1, K_taps//2 + 1, dtype=np.float64)
-
-    A_complex = np.exp(-2j * np.pi * np.outer(f_valid, k_idx))
-
-    if weights_pos is not None:
-        if isinstance(w_valid, np.ndarray):
-             A_complex *= w_valid[:, None]
-        else:
-             A_complex *= w_valid
-
+    # Real Stack
     A_real = np.vstack([A_complex.real, A_complex.imag])
     b_real = np.concatenate([b_complex.real, b_complex.imag])
     
-    if not np.all(np.isfinite(A_real)) or not np.all(np.isfinite(b_real)):
-        return np.zeros(K_taps, dtype=np.float64)
+    # --- REGULARIZATION ---
+    if reg_val > 0:
+        if reg_type == 'derivative':
+            # Create Difference Matrix (size K-1 x K)
+            # Row 0: [1, -1, 0, ...]
+            reg_matrix = np.zeros((K_taps - 1, K_taps))
+            for i in range(K_taps - 1):
+                reg_matrix[i, i] = 1
+                reg_matrix[i, i+1] = -1
+            
+            # Scale by sqrt(lambda)
+            reg_matrix *= np.sqrt(reg_val)
+            target_reg = np.zeros(K_taps - 1)
+            
+        else: # Default 'ridge'
+            reg_matrix = np.eye(K_taps) * np.sqrt(reg_val)
+            target_reg = np.zeros(K_taps)
 
-    h_optimal, _, _, _ = np.linalg.lstsq(A_real, b_real, rcond=None)
-    return h_optimal
+        # Stack onto system
+        A_final = np.vstack([A_real, reg_matrix])
+        b_final = np.concatenate([b_real, target_reg])
+    else:
+        A_final, b_final = A_real, b_real
+  
 
+    # Solve
+    h_optimal, _, _, _ = np.linalg.lstsq(A_final, b_final, rcond=None)
+    
+    return h_optimal     
+        
 # --- 2. Verification (Double Precision) ---
 def verify_filter_match(taps, h_ref, h_fine, psd, f_low):
     N = (len(h_ref) - 1) * 2

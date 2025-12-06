@@ -130,6 +130,8 @@ def fast_multiply_analytic_cython(
     # return it to be a drop-in replacement.
     return out_batch
 
+# ... (Previous imports and fast_multiply remain the same) ...
+
 @cython.boundscheck(False) 
 @cython.wraparound(False) 
 @cython.cdivision(True)   
@@ -138,38 +140,31 @@ def find_peaks_in_block_cython(
     long t_start,
     long n_valid,
     float threshold_sq,
-    long window_size, # Unused, but kept for API compatibility
-    long f_start_offset
+    long window_size, 
+    long f_start_offset,
+    long input_offset=0 # <--- NEW ARGUMENT
 ):
     """
     Cython version of the manually vectorized "max-reduction" kernel.
     Returns three separate, flat lists (f_idx, t_idx, snr)
     """
     
-    # --- C-level variable declarations ---
     cdef long n_filters_in_batch = corr_output.shape[0]
-    
-    # Python lists for output. Cython is very fast at appending.
     cdef list f_idx_list = []
     cdef list t_idx_list = []
     cdef list snr_list = []
-    
     cdef int VEC_WIDTH = 16
     
-    # --- Cython Optimization: Use C arrays on the stack ---
-    # This is *much* faster than calling np.full()
     cdef float32_t current_max_snr_sq_vec[16]
     cdef int64_t current_max_idx_vec[16]
     
-    # --- Loop iterators ---
-    cdef long f_batch_idx, i, idx
-    cdef int v_lane # Use int, it's just 0-15
+    cdef long f_batch_idx, i, idx, read_idx
+    cdef int v_lane
     cdef int32_t f_global_idx
     cdef complex64_t z
     cdef float32_t mag_sq
     cdef float32_t final_max_snr_sq
     cdef int64_t final_max_idx
-    
     
     for f_batch_idx in range(n_filters_in_batch):
         f_global_idx = <int32_t>(f_start_offset + f_batch_idx)
@@ -179,22 +174,26 @@ def find_peaks_in_block_cython(
             current_max_snr_sq_vec[v_lane] = threshold_sq
             current_max_idx_vec[v_lane] = -1
 
-        # --- Main vectorized loop (no 'prange' needed) ---
-        # The C compiler will vectorize this if it can
+        # --- Main vectorized loop ---
         for i in range(n_valid // VEC_WIDTH):
             for v_lane in range(VEC_WIDTH):
                 idx = i * VEC_WIDTH + v_lane
-                # Direct C-level array access (no overhead)
-                z = corr_output[f_batch_idx, idx]
+                
+                # Apply Offset Here
+                read_idx = idx + input_offset
+                
+                z = corr_output[f_batch_idx, read_idx]
                 mag_sq = z.real * z.real + z.imag * z.imag
 
                 if mag_sq > current_max_snr_sq_vec[v_lane]:
                     current_max_snr_sq_vec[v_lane] = mag_sq
+                    # Return Global Time Index (t_start corresponds to idx=0)
                     current_max_idx_vec[v_lane] = t_start + idx
 
         # --- Epilogue ---
         for i in range((n_valid // VEC_WIDTH) * VEC_WIDTH, n_valid):
-            z = corr_output[f_batch_idx, i]
+            read_idx = i + input_offset
+            z = corr_output[f_batch_idx, read_idx]
             mag_sq = z.real * z.real + z.imag * z.imag
             
             if mag_sq > current_max_snr_sq_vec[0]:
@@ -209,10 +208,9 @@ def find_peaks_in_block_cython(
                 final_max_snr_sq = current_max_snr_sq_vec[v_lane]
                 final_max_idx = current_max_idx_vec[v_lane]
         
-        # --- Commit to the three flat lists ---
         if final_max_idx != -1:
             f_idx_list.append(f_global_idx)
             t_idx_list.append(final_max_idx)
-            snr_list.append(sqrt(final_max_snr_sq)) # Use C's sqrt
+            snr_list.append(sqrt(final_max_snr_sq))
             
     return (f_idx_list, t_idx_list, snr_list)
