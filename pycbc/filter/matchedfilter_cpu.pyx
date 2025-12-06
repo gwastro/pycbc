@@ -26,6 +26,13 @@ import numpy
 from .matchedfilter import _BaseCorrelator
 cimport numpy, cython
 from cython.parallel import prange
+from libc.math cimport sqrt
+
+# --- Typedefs for Ratio Filter Kernels ---
+ctypedef numpy.complex64_t complex64_t
+ctypedef numpy.float32_t float32_t
+ctypedef numpy.int32_t int32_t
+ctypedef numpy.int64_t int64_t
 
 ctypedef fused COMPLEXTYPE:
     float complex
@@ -84,3 +91,128 @@ class CPUCorrelator(_BaseCorrelator):
 
 def _correlate_factory(x, y, z):
     return CPUCorrelator
+
+# -----------------------------------------------------------------------------
+# Ratio Filter Optimization Kernels
+# -----------------------------------------------------------------------------
+
+@cython.boundscheck(False) 
+@cython.wraparound(False) 
+@cython.cdivision(True)   
+def fast_multiply_analytic_cython(
+    numpy.ndarray[complex64_t, ndim=1, mode="c"] data_f,
+    numpy.ndarray[complex64_t, ndim=2, mode="c"] filter_batch_f,
+    numpy.ndarray[complex64_t, ndim=2, mode="c"] out_batch
+):
+    """
+    Cython version of the "half-only" analytic signal multiply.
+    
+    This kernel is single-threaded and relies on the C compiler's
+    autovectorizer (enabled by -march=native) to use AVX.
+    """
+    
+    # --- C-level variable declarations ---
+    cdef long batch_size = filter_batch_f.shape[0]
+    cdef long n_fft = filter_batch_f.shape[1]
+    
+    # We only compute up to the Nyquist bin
+    cdef long n_half_plus_one = (n_fft // 2) + 1 
+    
+    cdef long i, j # Loop iterators
+
+    # This is a pure C-loop, no Python overhead.
+    for i in range(batch_size):
+        for j in range(n_half_plus_one):
+            # Direct C-level complex multiplication
+            out_batch[i, j] = data_f[j] * filter_batch_f[i, j]
+            
+    # We are modifying 'out_batch' in-place, but we
+    # return it to be a drop-in replacement.
+    return out_batch
+
+@cython.boundscheck(False) 
+@cython.wraparound(False) 
+@cython.cdivision(True)   
+def find_peaks_in_block_cython(
+    numpy.ndarray[complex64_t, ndim=2, mode="c"] corr_output,
+    long t_start,
+    long n_valid,
+    float threshold_sq,
+    long window_size, # Unused, but kept for API compatibility
+    long f_start_offset
+):
+    """
+    Cython version of the manually vectorized "max-reduction" kernel.
+    Returns three separate, flat lists (f_idx, t_idx, snr)
+    """
+    
+    # --- C-level variable declarations ---
+    cdef long n_filters_in_batch = corr_output.shape[0]
+    
+    # Python lists for output. Cython is very fast at appending.
+    cdef list f_idx_list = []
+    cdef list t_idx_list = []
+    cdef list snr_list = []
+    
+    cdef int VEC_WIDTH = 16
+    
+    # --- Cython Optimization: Use C arrays on the stack ---
+    # This is *much* faster than calling np.full()
+    cdef float32_t current_max_snr_sq_vec[16]
+    cdef int64_t current_max_idx_vec[16]
+    
+    # --- Loop iterators ---
+    cdef long f_batch_idx, i, idx
+    cdef int v_lane # Use int, it's just 0-15
+    cdef int32_t f_global_idx
+    cdef complex64_t z
+    cdef float32_t mag_sq
+    cdef float32_t final_max_snr_sq
+    cdef int64_t final_max_idx
+    
+    
+    for f_batch_idx in range(n_filters_in_batch):
+        f_global_idx = <int32_t>(f_start_offset + f_batch_idx)
+
+        # --- Initialize C stack arrays ---
+        for v_lane in range(VEC_WIDTH):
+            current_max_snr_sq_vec[v_lane] = threshold_sq
+            current_max_idx_vec[v_lane] = -1
+
+        # --- Main vectorized loop (no 'prange' needed) ---
+        # The C compiler will vectorize this if it can
+        for i in range(n_valid // VEC_WIDTH):
+            for v_lane in range(VEC_WIDTH):
+                idx = i * VEC_WIDTH + v_lane
+                # Direct C-level array access (no overhead)
+                z = corr_output[f_batch_idx, idx]
+                mag_sq = z.real * z.real + z.imag * z.imag
+
+                if mag_sq > current_max_snr_sq_vec[v_lane]:
+                    current_max_snr_sq_vec[v_lane] = mag_sq
+                    current_max_idx_vec[v_lane] = t_start + idx
+
+        # --- Epilogue ---
+        for i in range((n_valid // VEC_WIDTH) * VEC_WIDTH, n_valid):
+            z = corr_output[f_batch_idx, i]
+            mag_sq = z.real * z.real + z.imag * z.imag
+            
+            if mag_sq > current_max_snr_sq_vec[0]:
+                current_max_snr_sq_vec[0] = mag_sq
+                current_max_idx_vec[0] = t_start + i
+        
+        # --- Final Reduction ---
+        final_max_snr_sq = threshold_sq
+        final_max_idx = -1
+        for v_lane in range(VEC_WIDTH):
+            if current_max_snr_sq_vec[v_lane] > final_max_snr_sq:
+                final_max_snr_sq = current_max_snr_sq_vec[v_lane]
+                final_max_idx = current_max_idx_vec[v_lane]
+        
+        # --- Commit to the three flat lists ---
+        if final_max_idx != -1:
+            f_idx_list.append(f_global_idx)
+            t_idx_list.append(final_max_idx)
+            snr_list.append(sqrt(final_max_snr_sq)) # Use C's sqrt
+            
+    return (f_idx_list, t_idx_list, snr_list)
