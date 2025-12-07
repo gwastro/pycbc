@@ -227,7 +227,7 @@ def main():
             out_vals['snr'] = np.array(snr_sq_list)
             
             # Zero-fill, these are all just dummy values for now
-            dummy =  zeros(len(rhos), dtype=float32)
+            dummy =  zeros(len(time_list), dtype=float32)
             out_vals['chisq'] = dummy
             out_vals['chisq_dof'] = dummy
             out_vals['new_snr'] = dummy
