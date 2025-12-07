@@ -157,6 +157,7 @@ def find_peaks_in_block_cython(
     
     cdef float32_t current_max_snr_sq_vec[16]
     cdef int64_t current_max_idx_vec[16]
+    cdef complex64_t current_max_z_vec[16]
     
     cdef long f_batch_idx, i, idx, read_idx
     cdef int v_lane
@@ -189,6 +190,7 @@ def find_peaks_in_block_cython(
                     current_max_snr_sq_vec[v_lane] = mag_sq
                     # Return Global Time Index (t_start corresponds to idx=0)
                     current_max_idx_vec[v_lane] = t_start + idx
+                    current_max_z_vec[v_lane] = z
 
         # --- Epilogue ---
         for i in range((n_valid // VEC_WIDTH) * VEC_WIDTH, n_valid):
@@ -199,18 +201,21 @@ def find_peaks_in_block_cython(
             if mag_sq > current_max_snr_sq_vec[0]:
                 current_max_snr_sq_vec[0] = mag_sq
                 current_max_idx_vec[0] = t_start + i
+                current_max_z_vec[0] = z
         
         # --- Final Reduction ---
         final_max_snr_sq = threshold_sq
         final_max_idx = -1
+        final_max_z = 0 + 0j
         for v_lane in range(VEC_WIDTH):
             if current_max_snr_sq_vec[v_lane] > final_max_snr_sq:
                 final_max_snr_sq = current_max_snr_sq_vec[v_lane]
                 final_max_idx = current_max_idx_vec[v_lane]
+                final_max_z = current_max_z_vec[v_lane]
         
         if final_max_idx != -1:
             f_idx_list.append(f_global_idx)
             t_idx_list.append(final_max_idx)
-            snr_list.append(sqrt(final_max_snr_sq))
+            snr_list.append(final_max_z)
             
     return (f_idx_list, t_idx_list, snr_list)
