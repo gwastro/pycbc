@@ -54,6 +54,8 @@ def get_args():
                        help="High frequency cutoff (defaults to Nyquist).")
     group.add_argument('--batch-size', type=int, default=64,
                        help="Number of filters to process in one FFT batch.")
+    group.add_argument('--fir-length', type=int, default=4096,
+                       help="")
     
     # Clustering
     parser.add_argument("--cluster-window", type=float, default=0,
@@ -127,7 +129,7 @@ def main():
             snr_threshold=args.snr_threshold,
             delta_f=delta_f,
             high_frequency_cutoff=args.high_frequency_cutoff,
-            fir_fft_length=4096,
+            fir_fft_length=args.fir_length,
             batch_size=args.batch_size
         )
         
@@ -173,28 +175,31 @@ def main():
         seg_fine_mappings = []
         
         for i, coarse_idx in enumerate(bank.coarse_indices):
-            logging.info(f"  Ratio Batch {i}/{n_coarse}")
             ref_template = bank.get_coarse_template(coarse_idx)
             taps, counts, fine_indices = bank.get_firs(coarse_idx)
             filters_f, n_taps_max = engine.prepare_filters(taps, counts)
+            logging.info(f"  Ratio Batch {i+1}/{n_coarse}, {len(taps)} FIR templates")
 
             for s_num, stilde in enumerate(segments):
                 logging.info(f"Processing Segment {s_num}")
+                t1 = time.time()
                 
                 ids_local, t_idxs, snrs = engine.process_segment(
                     stilde, stilde.psd, ref_template, filters_f, n_taps_max, 
                     np.arange(len(fine_indices)),
                     valid_slice=stilde.analyze,
                 )
-                t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
 
                 if len(ids_local) > 0:
+                    t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
                     seg_ids_local.append(ids_local)
                     seg_t_idxs.append(t_idxs)
                     seg_snr_sqs.append(snrs)
                     seg_fine_mappings.append(fine_indices)
 
- 
+                t2 = time.time()
+                tperf = (stilde.analyze.stop - stilde.analyze.start) * stilde.delta_t / (t2 - t1) * len(taps)
+                logging.info(f"batch perf: {tperf} templates s/s")
         logging.info(f"Grouping triggers...")
         
         triggers_by_template = {}
