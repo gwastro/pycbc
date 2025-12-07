@@ -225,4 +225,4 @@ class RatioMatchedFilterControl(object):
 
         return (np.array(all_f_idxs, dtype=np.int32), 
                 np.array(all_t_idxs, dtype=np.int64), 
-                np.array(all_snrs, dtype=np.float32))
+                np.array(all_snrs, dtype=np.complex64))
