@@ -1,0 +1,258 @@
+#!/usr/bin/env python
+"""
+pycbc_inspiral_ratio: A pipeline-compatible script for inspiral analysis 
+using the Ratio Matched Filter method.
+"""
+
+import argparse
+import logging
+import numpy as np
+import h5py
+import time
+import sys
+
+import pycbc
+import pycbc.strain
+import pycbc.psd
+import pycbc.events
+import pycbc.scheme
+import pycbc.fft
+import pycbc.inject
+from pycbc.types import complex64, float32, zeros
+
+# --- Imports for Ratio Logic ---
+from pycbc.filter.matched_ratio import RatioMatchedFilterControl
+from pycbc.waveform.bank import RatioFilterBank
+
+def get_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    
+    # --- Standard PyCBC Data/Segment Options ---
+    pycbc.strain.insert_strain_option_group(parser)
+    pycbc.strain.StrainSegments.insert_segment_option_group(parser)
+    pycbc.psd.insert_psd_option_group(parser)
+    pycbc.scheme.insert_processing_option_group(parser)
+    pycbc.fft.insert_fft_option_group(parser)
+    pycbc.inject.insert_injfilterrejector_option_group(parser)
+    
+    # --- Analysis Options ---
+    parser.add_argument('--output', required=True, 
+                        help="Path to output HDF5 file.")
+    
+    parser.add_argument("--bank-file", type=str, required=True,
+                        help="Path to the HDF5 Ratio Bank file.")
+
+    parser.add_argument('--snr-threshold', type=float, default=5.5,
+                       help="SNR threshold for trigger generation.")
+    
+    parser.add_argument("--low-frequency-cutoff", type=float,
+                        help="The low frequency cutoff to use for filtering (Hz)")
+
+    # --- Ratio Specific ---
+    group = parser.add_argument_group("Ratio Filter Options")
+    group.add_argument('--high-frequency-cutoff', type=float,
+                       help="High frequency cutoff (defaults to Nyquist).")
+    group.add_argument('--batch-size', type=int, default=64,
+                       help="Number of filters to process in one FFT batch.")
+    
+    # Clustering
+    parser.add_argument("--cluster-window", type=float, default=0,
+                       help="Length of clustering window in seconds.")
+    
+    parser.add_argument('--verbose', action='store_true')
+
+    return parser, parser.parse_args()
+
+def main():
+    parser, args = get_args()
+    pycbc.init_logging(args.verbose)
+    
+    # --- 1. Fake/Default Arguments for EventManager Compatibility ---
+    # EventManager expects these to exist in 'args', even if None/False
+    defaults = {
+        'chisq_bins': 0,
+        'chisq_threshold': 0,
+        'chisq_delta': 0,
+        'newsnr_threshold': None,
+        'keep_loudest_interval': None,
+        'keep_loudest_num': 0,
+        'keep_loudest_stat': None,
+        'injection_window': None,
+        'trig_start_time': None,
+        'trig_end_time': None,
+        'psdvar_segment': None, # Used in write_to_hdf
+        'channel_name': 'H1:TEST', # Fallback if strain group didn't set it (unlikely)
+        'autochi_number_points': 0,
+        'autochi_onesided':False,
+        'autochi_two_phase':False,
+        'autochi_max_valued_dof':False,
+        
+    }
+    for k, v in defaults.items():
+        if not hasattr(args, k):
+            setattr(args, k, v)
+
+    # --- 2. Verification ---
+    pycbc.strain.verify_strain_options(args, parser)
+    pycbc.strain.StrainSegments.verify_segment_options(args, parser)
+    pycbc.psd.verify_psd_options(args, parser)
+    pycbc.fft.verify_fft_options(args, parser)
+
+    with pycbc.scheme.from_cli(args):
+        
+        # --- 3. Data Generation ---
+        inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(args)
+        
+        gwstrain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC,
+                                         inj_filter_rejector=inj_filter_rejector)
+        
+        strain_segments = pycbc.strain.StrainSegments.from_cli(args, gwstrain)
+        
+        tlen = strain_segments.time_len
+        flen = strain_segments.freq_len
+        delta_f = strain_segments.delta_f
+        flow = args.low_frequency_cutoff
+
+        # --- 4. Initialize Classes ---
+        logging.info("Initializing Ratio Filter Bank...")
+        bank = RatioFilterBank(
+            args.bank_file,
+            filter_length=flen,
+            delta_f=delta_f,
+            dtype=np.complex64,
+        )
+        
+        logging.info("Initializing Ratio Filter Engine...")
+        engine = RatioMatchedFilterControl(
+            snr_threshold=args.snr_threshold,
+            delta_f=delta_f,
+            high_frequency_cutoff=args.high_frequency_cutoff,
+            fir_fft_length=4096,
+            batch_size=args.batch_size
+        )
+        
+        # --- 5. Event Manager Setup ---
+        out_types = {
+            'time_index': int,
+            'snr': complex64, 
+            'sigmasq': float32,
+            'chisq': float32,
+            'chisq_dof': int,
+            'new_snr': float32,
+            'bank_chisq': float32,
+            'bank_chisq_dof': int,
+            'cont_chisq': float32,
+            'psd_var_val': float32
+        }
+        
+        out_vals_ref = {key: None for key in out_types}
+        names = sorted(out_vals_ref.keys())
+        
+        # Pass strain gating info if available
+        gating_info = getattr(gwstrain, 'gating_info', None)
+        
+        event_mgr = pycbc.events.EventManager(
+            args, names, [out_types[n] for n in names], 
+            psd=None, gating_info=gating_info
+        )
+
+        cluster_window = int(args.cluster_window * gwstrain.sample_rate)
+        
+        # --- 6. Analysis Loop ---
+        logging.info("Making frequency-domain data segments")
+        segments = strain_segments.fourier_segments()
+        
+        pycbc.psd.associate_psds_to_segments(args, segments, gwstrain, flen, delta_f,
+                  flow, dyn_range_factor=pycbc.DYN_RANGE_FAC, precision='single')
+
+        n_coarse = len(bank.coarse_indices)
+        
+        seg_ids_local = []
+        seg_t_idxs = []
+        seg_snr_sqs = []
+        seg_fine_mappings = []
+        
+        for s_num, stilde in enumerate(segments):
+            logging.info(f"Processing Segment {s_num}")
+
+
+            # A. Filter
+            for i, coarse_idx in enumerate(bank.coarse_indices):
+                logging.info(f"  Ratio Batch {i}/{n_coarse}")
+                
+                ref_template = bank.get_coarse_template(coarse_idx)
+                taps, counts, fine_indices = bank.get_firs(coarse_idx)
+                
+                filters_f, n_taps_max = engine.prepare_filters(taps, counts)
+                
+                ids_local, t_idxs, snrs = engine.process_segment(
+                    stilde, stilde.psd, ref_template, filters_f, n_taps_max, 
+                    np.arange(len(fine_indices)),
+                    valid_slice=stilde.analyze,
+                )
+                t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
+
+                if len(ids_local) > 0:
+                    seg_ids_local.append(ids_local)
+                    seg_t_idxs.append(t_idxs)
+                    seg_snr_sqs.append(snrs)
+                    seg_fine_mappings.append(fine_indices)
+
+ 
+        logging.info(f"Grouping triggers...")
+        
+        triggers_by_template = {}
+        for k in range(len(seg_ids_local)):
+            ids = seg_ids_local[k]
+            times = seg_t_idxs[k]
+            snrs = seg_snr_sqs[k]
+            mapping = seg_fine_mappings[k]
+            
+            for j in range(len(ids)):
+                local_idx = ids[j]
+                global_idx = mapping[local_idx]
+                
+                if global_idx not in triggers_by_template:
+                    triggers_by_template[global_idx] = ([], [])
+                
+                triggers_by_template[global_idx][0].append(snrs[j])
+                triggers_by_template[global_idx][1].append(times[j])
+
+        # C. Store
+        for global_id, (snr_sq_list, time_list) in triggers_by_template.items():
+            
+            rhos = np.array(snr_sq_list)
+            t_idxs = np.array(time_list)
+            snr_complex = rhos.astype(complex64)
+            
+            out_vals = out_vals_ref.copy()
+            out_vals['time_index'] = t_idxs
+            out_vals['snr'] = snr_complex
+            
+            # Zero-fill, these are all just dummy values for now
+            out_vals['chisq'] = zeros(len(rhos), dtype=float32)
+            out_vals['chisq_dof'] = zeros(len(rhos), dtype=np.int32)
+            out_vals['new_snr'] = rhos.astype(float32)
+            out_vals['bank_chisq'] = zeros(len(rhos), dtype=float32)
+            out_vals['cont_chisq'] = zeros(len(rhos), dtype=float32)
+            out_vals['psd_var_val'] = zeros(len(rhos), dtype=float32)
+            out_vals['sigmasq'] = zeros(len(rhos), dtype=float32)
+            
+            event_mgr.new_template(tmplt=bank.table[global_id])
+            event_mgr.add_template_events(names, [out_vals[n] for n in names])
+            
+        if cluster_window > 0:
+            event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+        
+        event_mgr.finalize_template_events()
+
+    # --- 7. Finalize ---
+    logging.info("Consolidating and writing events...")
+    event_mgr.consolidate_events(args, gwstrain=strain_segments)
+    event_mgr.finalize_events()
+    event_mgr.write_events(args.output)
+    
+    logging.info("Finished.")
+
+if __name__ == "__main__":
+    main()
