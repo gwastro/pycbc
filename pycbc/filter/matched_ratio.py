@@ -11,17 +11,13 @@ class RatioMatchedFilterControl(object):
     Uses mkl_fft for ALL FFT operations to maximize throughput and consistency.
     """
 
-    def __init__(self, snr_threshold, tlen, delta_f, 
+    def __init__(self, snr_threshold, delta_f, 
                  high_frequency_cutoff=None, fir_fft_length=4096, batch_size=64):
-        self.tlen = tlen
         self.delta_f = delta_f
         self.snr_threshold = snr_threshold
         self.f_high = high_frequency_cutoff
         
         self.threshold_sq = float(snr_threshold**2)
-        
-        # --- Buffers ---
-        self.ref_snr_mem = zeros(tlen, dtype=complex64)
         
         self.fir_fft_len = fir_fft_length
         self.batch_size = batch_size
@@ -73,7 +69,6 @@ class RatioMatchedFilterControl(object):
             ref_template, stilde, psd=psd,
             low_frequency_cutoff=ref_template.f_lower,
             high_frequency_cutoff=self.f_high,
-            out=self.ref_snr_mem,
             h_norm=h_norm 
         )
         
@@ -165,7 +160,6 @@ class RatioMatchedFilterControl(object):
         
         # --- OUTER LOOP: Time Blocks ---
         for t_start in range(loop_start, n_samples, STEP):
-
             block_valid_t0 = t_start + bad_start
             
             if block_valid_t0 >= v_stop:
