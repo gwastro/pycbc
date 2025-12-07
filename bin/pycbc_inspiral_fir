@@ -222,22 +222,19 @@ def main():
         # C. Store
         for global_id, (snr_sq_list, time_list) in triggers_by_template.items():
             
-            rhos = np.array(snr_sq_list)
-            t_idxs = np.array(time_list)
-            snr_complex = rhos.astype(complex64)
-            
             out_vals = out_vals_ref.copy()
-            out_vals['time_index'] = t_idxs
-            out_vals['snr'] = snr_complex
+            out_vals['time_index'] = np.array(time_list)
+            out_vals['snr'] = np.array(snr_sq_list)
             
             # Zero-fill, these are all just dummy values for now
-            out_vals['chisq'] = zeros(len(rhos), dtype=float32)
-            out_vals['chisq_dof'] = zeros(len(rhos), dtype=np.int32)
-            out_vals['new_snr'] = rhos.astype(float32)
-            out_vals['bank_chisq'] = zeros(len(rhos), dtype=float32)
-            out_vals['cont_chisq'] = zeros(len(rhos), dtype=float32)
-            out_vals['psd_var_val'] = zeros(len(rhos), dtype=float32)
-            out_vals['sigmasq'] = zeros(len(rhos), dtype=float32)
+            dummy =  zeros(len(rhos), dtype=float32)
+            out_vals['chisq'] = dummy
+            out_vals['chisq_dof'] = dummy
+            out_vals['new_snr'] = dummy
+            out_vals['bank_chisq'] = dummy
+            out_vals['cont_chisq'] = dummy
+            out_vals['psd_var_val'] = dummy
+            out_vals['sigmasq'] = dummy
             
             event_mgr.new_template(tmplt=bank.table[global_id])
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
