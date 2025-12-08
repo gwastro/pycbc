@@ -80,7 +80,7 @@ class RatioMatchedFilterControl(object):
         # 4. Map indices
         if len(local_idxs) > 0:
             global_ids = indices[local_idxs]
-            return global_ids, t_idxs, snr_vals
+            return global_ids, t_idxs, snr_vals, h_norm
         else:
             return [], [], []
 
@@ -213,7 +213,6 @@ class RatioMatchedFilterControl(object):
                     roi_start,          
                     roi_len,            
                     self.threshold_sq, 
-                    0, 
                     f_start,
                     input_offset=buf_slice_start
                 )

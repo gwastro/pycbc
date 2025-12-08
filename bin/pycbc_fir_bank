@@ -34,7 +34,7 @@ def init_worker(coarse_waveforms, fine_waveforms, psd, args_namespace):
     logging.getLogger('pycbc').setLevel(logging.CRITICAL + 1)
 
 # --- 1. Filter Designer (Double Precision) ---
-def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None, reg_type='ridge', reg_val=1e-2):
+def design_optimal_real_filter(H_target_pos, valid_mask_pos, K_taps, weights_pos=None, reg_type='ridge', reg_val=1e-4):
     """
     Designs a filter using regularized least squares.
     reg_type='ridge'      -> Minimizes energy (Standard)
@@ -177,7 +177,9 @@ def process_template(i):
 
     while current_taps <= g_args.max_taps:
         taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
-                                          current_taps, weights_pos=weights_snr)
+                                          current_taps, weights_pos=weights_snr,
+                                          reg_type=g_args.regularization_type,
+                                          reg_val=g_args.regularization_magnitude)
         qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
         
         if qa_match > best_qa_match:
@@ -208,6 +210,8 @@ def main():
     parser.add_argument('--min-match', type=float, default=0.99)
     parser.add_argument('--n-processes', '-n', type=int, default=1)
     parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument('--regularization-type', default='ridge', type=str)
+    parser.add_argument('--regularization-magnitude', default=1e-2, type=float)
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 

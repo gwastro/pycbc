@@ -125,10 +125,6 @@ def fast_multiply_analytic_cython(
         for j in range(n_half_plus_one):
             # Direct C-level complex multiplication
             out_batch[i, j] = data_f[j] * filter_batch_f[i, j]
-            
-    # We are modifying 'out_batch' in-place, but we
-    # return it to be a drop-in replacement.
-    return out_batch
 
 # ... (Previous imports and fast_multiply remain the same) ...
 
@@ -140,9 +136,8 @@ def find_peaks_in_block_cython(
     long t_start,
     long n_valid,
     float threshold_sq,
-    long window_size, 
     long f_start_offset,
-    long input_offset=0 # <--- NEW ARGUMENT
+    long input_offset=0
 ):
     """
     Cython version of the manually vectorized "max-reduction" kernel.
@@ -153,11 +148,11 @@ def find_peaks_in_block_cython(
     cdef list f_idx_list = []
     cdef list t_idx_list = []
     cdef list snr_list = []
-    cdef int VEC_WIDTH = 16
+    cdef int VEC_WIDTH = 8
     
-    cdef float32_t current_max_snr_sq_vec[16]
-    cdef int64_t current_max_idx_vec[16]
-    cdef complex64_t current_max_z_vec[16]
+    cdef float32_t current_max_snr_sq_vec[8]
+    cdef int64_t current_max_idx_vec[8]
+    cdef complex64_t current_max_z_vec[8]
     
     cdef long f_batch_idx, i, idx, read_idx
     cdef int v_lane
