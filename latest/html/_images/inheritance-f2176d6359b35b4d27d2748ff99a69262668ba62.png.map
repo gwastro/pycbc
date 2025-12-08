@@ -1,0 +1,5 @@
+<map id="inheritance8a275fe97a" name="inheritance8a275fe97a">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler" target="_top" title="Sampler for kde drawn refinement of existing posterior estimate" alt="" coords="16,152,231,177"/>
+</map>
