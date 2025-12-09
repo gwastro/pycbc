@@ -18,12 +18,65 @@ import pycbc.events
 import pycbc.scheme
 import pycbc.fft
 import pycbc.inject
+import pycbc.vetoes
 from pycbc.types import complex64, float32, zeros
 from pycbc.conversions import mchirp_from_mass1_mass2
 
 # --- Imports for Ratio Logic ---
 from pycbc.filter.matched_ratio import RatioMatchedFilterControl
 from pycbc.waveform.bank import RatioFilterBank
+
+def compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
+                        fine_indices, stilde, bank, chisq_estimator, args):
+    chisq_window_samp = int(args.chisq_window * stilde.sample_rate)
+    max_iterations = args.chisq_iterations
+    
+    # 1. Map Local Batch IDs to Global Bank IDs
+    global_ids = fine_indices[ids_local]
+   
+    # 3. Setup Outputs
+    snr_amp = abs(snrs)
+    num_trigs = len(snrs)
+    chisq_vals = np.zeros(num_trigs, dtype=float32)
+    chisq_dof_vals = np.zeros(num_trigs, dtype=np.int32) - 100
+    assigned_mask = np.zeros(num_trigs, dtype=bool)
+    
+    # 4. Iterative Chi-Squared Calculation
+    # Only process if we have candidates above threshold
+    cthresh = 0 if args.chisq_snr_threshold is None else args.chisq_snr_threshold
+    if np.any(snr_amp > cthresh):
+        sort_order = np.argsort(snr_amp)[::-1]
+        iterations = 0
+        for idx in sort_order:
+            # Termination Conditions
+            if iterations >= max_iterations: 
+                break
+            if snr_amp[idx] < cthresh: 
+                break
+            if assigned_mask[idx]: 
+                continue 
+                    
+            snrv = snrs[idx]
+            t_idx = t_idxs[idx]
+            target_global_id = global_ids[idx]
+            
+            # This is super slow and wasteful, but might be good enough for right now...
+            template = bank[target_global_id]
+            corr = template.conj() * stilde / stilde.psd * (4 * stilde.delta_f / h_norm ** 0.5)
+            corr.resize((len(stilde) - 1)*2)
+            chi, dof = chisq_estimator.values(corr, np.array([snrv], ndmin=1), 1, stilde.psd,
+                                              np.array([t_idx], ndmin=1), template)     
+            
+            window_mask = (abs(t_idxs - t_idx) <= chisq_window_samp)
+            update_mask = window_mask & (~assigned_mask)
+            
+            chisq_vals[update_mask] = chi
+            chisq_dof_vals[update_mask] = dof
+            assigned_mask[update_mask] = True
+            num_assigned = update_mask.sum()
+            iterations += 1
+            logging.info(f'... assigning {chi/dof} to {num_assigned} triggers, peak SNR of {snr_amp[idx]}')
+    return chisq_vals, chisq_dof_vals
 
 def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -57,6 +110,22 @@ def get_args():
                        help="Number of filters to process in one FFT batch.")
     group.add_argument('--fir-length', type=int, default=4096,
                        help="")
+
+    # power chisq related
+    parser.add_argument("--chisq-snr-threshold", type=float,
+                        help="Minimum SNR to calculate the power chisq")
+    parser.add_argument("--chisq-bins", default=0, help=
+                        "Number of frequency bins to use for power chisq. Specify"
+                        " an integer for a constant number of bins, or a function "
+                        "of template attributes.  Math functions are "
+                        "allowed, ex. "
+                        "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
+                        "Non-integer values will be rounded down.")
+    parser.add_argument("--chisq-threshold", type=float, default=0,
+                        help="FIXME: ADD")
+    parser.add_argument("--chisq-window", type=float, default=1.0)
+    parser.add_argument("--chisq-iterations", type=int, default=10)
+    parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
     
     # Clustering
     parser.add_argument("--cluster-window", type=float, default=0,
@@ -73,18 +142,11 @@ def main():
     # --- 1. Fake/Default Arguments for EventManager Compatibility ---
     # EventManager expects these to exist in 'args', even if None/False
     defaults = {
-        'chisq_bins': 0,
-        'chisq_threshold': 0,
-        'chisq_delta': 0,
         'newsnr_threshold': None,
         'keep_loudest_interval': None,
         'keep_loudest_num': 0,
         'keep_loudest_stat': None,
-        'injection_window': None,
-        'trig_start_time': None,
-        'trig_end_time': None,
         'psdvar_segment': None, # Used in write_to_hdf
-        'channel_name': 'H1:TEST', # Fallback if strain group didn't set it (unlikely)
         'autochi_number_points': 0,
         'autochi_onesided':False,
         'autochi_two_phase':False,
@@ -105,7 +167,6 @@ def main():
         
         # --- 3. Data Generation ---
         inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(args)
-        
         gwstrain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC,
                                          inj_filter_rejector=inj_filter_rejector)
         
@@ -134,6 +195,9 @@ def main():
             batch_size=args.batch_size
         )
         
+        power_chisq = pycbc.vetoes.SingleDetPowerChisq(args.chisq_bins,
+                                                       args.chisq_snr_threshold)
+        
         # --- 5. Event Manager Setup ---
         out_types = {
             'time_index': int,
@@ -141,7 +205,6 @@ def main():
             'sigmasq': float32,
             'chisq': float32,
             'chisq_dof': int,
-            'new_snr': float32,
             'bank_chisq': float32,
             'bank_chisq_dof': int,
             'cont_chisq': float32,
@@ -176,6 +239,8 @@ def main():
         seg_fine_mappings = []
         seg_h_norms = []
         seg_coarse_ids = []
+        seg_chi = []
+        seg_chi_dof = []
         
         for i, coarse_idx in enumerate(bank.coarse_indices):
             ref_template = bank.get_coarse_template(coarse_idx)
@@ -195,6 +260,9 @@ def main():
 
 
                 if len(ids_local) > 0:
+                    chi, chi_dof = compute_batch_chisq(ids_local, t_idxs, snrs, h_norm,
+                        fine_indices, stilde, bank, power_chisq, args)
+                    
                     t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
                     seg_ids_local.append(ids_local)
                     seg_t_idxs.append(t_idxs)
@@ -202,10 +270,15 @@ def main():
                     seg_fine_mappings.append(fine_indices)
                     seg_h_norms.append(h_norm)
                     seg_coarse_ids.append(i)
+                    seg_chi.append(chi)
+                    seg_chi_dof.append(chi_dof)
+
 
                 t2 = time.time()
                 tperf = (stilde.analyze.stop - stilde.analyze.start) * stilde.delta_t / (t2 - t1) * len(taps)
                 logging.info(f"batch perf: {tperf} templates s/s")
+               
+                
         logging.info(f"Grouping triggers...")
         
         triggers_by_template = {}
@@ -216,40 +289,44 @@ def main():
             coarse_id = seg_coarse_ids[k]
             norms = seg_h_norms[k]
             mapping = seg_fine_mappings[k]
+            chi = seg_chi[k]
+            chi_dof = seg_chi_dof[k]
             
             for j in range(len(ids)):
                 local_idx = ids[j]
                 global_idx = mapping[local_idx]
                 
                 if global_idx not in triggers_by_template:
-                    triggers_by_template[global_idx] = ([], [], [], [])
+                    triggers_by_template[global_idx] = ([], [], [], [], [], [])
                 
                 triggers_by_template[global_idx][0].append(snrs[j])
                 triggers_by_template[global_idx][1].append(times[j])
                 triggers_by_template[global_idx][2].append(norms)
                 triggers_by_template[global_idx][3].append(coarse_id)
+                triggers_by_template[global_idx][4].append(chi[j])
+                triggers_by_template[global_idx][5].append(chi_dof[j])
 
         mc_bank = mchirp_from_mass1_mass2(bank.table['mass1'], bank.table['mass2']) 
         mc_coarse = mchirp_from_mass1_mass2(bank.coarse_bank.table['mass1'],
                                             bank.coarse_bank.table['mass2'])
 
         # C. Store
-        for global_id, (snr_sq_list, time_list, norm, coarse_id) in triggers_by_template.items():
+        for global_id, (snr, time_list, norm, coarse_id, chi, chi_dof) in triggers_by_template.items():
             
             out_vals = out_vals_ref.copy()
             out_vals['time_index'] = np.array(time_list)
             
             # Renorm snr
             norm_rescale = (mc_bank[global_id] / mc_coarse[coarse_id]) ** (5.0/6.0)
-            out_vals['snr'] = np.array(snr_sq_list) / norm_rescale
+            out_vals['snr'] = np.array(snr) / norm_rescale
             out_vals['sigmasq'] = np.ones(len(time_list)) * norm * norm_rescale ** 2.0
-            
+            out_vals['chisq'] = chi
+            out_vals['chisq_dof'] = chi_dof
+                        
             # Zero-fill, these are all just dummy values for now
             dummy =  zeros(len(time_list), dtype=float32)
-            out_vals['chisq'] = dummy
-            out_vals['chisq_dof'] = dummy
-            out_vals['new_snr'] = dummy
             out_vals['bank_chisq'] = dummy
+            out_vals['bank_chisq_dof'] = dummy
             out_vals['cont_chisq'] = dummy
             out_vals['psd_var_val'] = dummy
             
