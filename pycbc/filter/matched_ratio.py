@@ -65,7 +65,7 @@ class RatioMatchedFilterControl(object):
             ref_template, stilde, psd=psd,
             low_frequency_cutoff=ref_template.f_lower,
             high_frequency_cutoff=self.f_high,
-            h_norm=h_norm 
+            h_norm=h_norm
         )
 
         # 3. Execute Blocked Kernel
@@ -78,7 +78,7 @@ class RatioMatchedFilterControl(object):
             global_ids = indices[local_idxs]
             return global_ids, t_idxs, snr_vals, h_norm
         else:
-            return [], [], []
+            return [], [], [], h_norm
 
     def _fft_all_filters(self, taps, counts):
         """Helper to FFT all filters using mkl_fft."""
