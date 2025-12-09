@@ -67,7 +67,7 @@ class RatioMatchedFilterControl(object):
             high_frequency_cutoff=self.f_high,
             h_norm=h_norm 
         )
-        
+
         # 3. Execute Blocked Kernel
         local_idxs, t_idxs, snr_vals = self._execute_blocked_kernel(
             snr.numpy() * (norm * stilde.delta_t), filters_f, n_taps, valid_slice
@@ -121,6 +121,8 @@ class RatioMatchedFilterControl(object):
         """
         Inner loop: Time-Blocking + Filter-Batching using mkl_fft.
         """
+        tap_groups = 3
+        nsizes = np.quantile(n_taps, np.linspace(0, 1, tap_groups+1)[1:]).astype(int)
         n_samples = len(data)
         n_filters = len(filters_f)
         
@@ -142,15 +144,20 @@ class RatioMatchedFilterControl(object):
             v_stop = n_samples
  
         block_f_cache = {}
-        
         # --- OUTER LOOP: Time Blocks ---
         for f_start in range(0, n_filters, self.batch_size):  
         
             f_end = min(f_start + self.batch_size, n_filters)
             actual_batch_size = f_end - f_start
+ 
+            current_mult_view = freq_mult_view[:actual_batch_size]
+            current_corr_view = corr_out_view[:actual_batch_size]
             
             # Valid output samples per block (Overlap-Save)
             n_taps_max = n_taps[f_start:f_end].max()
+            i = np.searchsorted(nsizes, n_taps_max)
+            n_taps_max = nsizes[i]
+            
             N_VALID = N_FFT - n_taps_max + 1
             STEP = N_VALID
             bad_start = n_taps_max // 2
@@ -158,7 +165,7 @@ class RatioMatchedFilterControl(object):
             # Determine Loop Bounds
             first_block_idx = (v_start - bad_start) // STEP
             loop_start = first_block_idx * STEP
-         
+
             for t_start in range(loop_start, n_samples, STEP):
 
                 block_valid_t0 = t_start + bad_start
@@ -179,8 +186,8 @@ class RatioMatchedFilterControl(object):
 
                 buf_slice_start = roi_start - t_start
 
+                t_end = min(t_start + N_FFT, n_samples)
                 if t_start not in block_f_cache:
-                    t_end = min(t_start + N_FFT, n_samples)
                     block_in_view = np.zeros(self.fir_fft_len, dtype=complex64)
                     block_in_view[0:t_end-t_start] = data[t_start:t_end]
                     block_f_view = self.fft_lib.fft(block_in_view)
@@ -189,19 +196,15 @@ class RatioMatchedFilterControl(object):
                 block_f_view = block_f_cache[t_start]
                 filter_batch_f = filters_f[f_start:f_end]
                 
-                current_mult_view = freq_mult_view[:actual_batch_size]
-                current_corr_view = corr_out_view[:actual_batch_size]
-                
                 fast_multiply_analytic_cython(
                     block_f_view, filter_batch_f, current_mult_view
                 )
-                
+
                 self.fft_lib.ifft(
                     current_mult_view, 
                     axis=-1, 
                     out=current_corr_view
                 )
-                
                 f_list, t_list, s_list = find_peaks_in_block_cython(
                     current_corr_view, 
                     roi_start,          
@@ -215,7 +218,7 @@ class RatioMatchedFilterControl(object):
                     all_f_idxs.extend(f_list)
                     all_t_idxs.extend(t_list)
                     all_snrs.extend(s_list)
-
+                    
         return (np.array(all_f_idxs, dtype=np.int32), 
                 np.array(all_t_idxs, dtype=np.int64), 
                 np.array(all_snrs, dtype=np.complex64))
