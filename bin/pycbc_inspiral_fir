@@ -188,7 +188,7 @@ def main():
                 t1 = time.time()
                 
                 ids_local, t_idxs, snrs, h_norm = engine.process_segment(
-                    stilde, stilde.psd, ref_template, filters_f, n_taps_max, 
+                    stilde, stilde.psd, ref_template, filters_f, counts, 
                     np.arange(len(fine_indices)),
                     valid_slice=stilde.analyze,
                 )
