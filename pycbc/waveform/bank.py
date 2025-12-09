@@ -1153,22 +1153,54 @@ class RatioFilterBank(FilterBank):
         self.coarse_indices = np.array([int(k) for k in self.coarse_keys], dtype=int)
         self.coarse_indices.sort()
 
-    def get_coarse_template(self, coarse_index):
-            """Wrapper to get the frequency-domain waveform from the internal coarse bank.
-            
-            Parameters
-            ----------
-            coarse_index : int
-                The index of the template in the *coarse* bank.
+    def template_thinning(self, inj_filter_rejector):
+        """Remove templates from bank that are far from all injections."""
+        if not inj_filter_rejector.enabled or \
+                inj_filter_rejector.chirp_time_window is None:
+            # Do nothing!
+            return
 
-            Returns
-            -------
-            htilde : FrequencySeries
-                The reference waveform.
-            """
-            # FIX: Use bracket access instead of .get_template()
-            # FilterBank uses __getitem__ to handle waveform generation/decompression
-            return self.coarse_bank[coarse_index]
+        import pycbc.pnutils
+        injection_parameters = inj_filter_rejector.injection_params.table
+        fref = inj_filter_rejector.f_lower
+        threshold = inj_filter_rejector.chirp_time_window
+        m1 = self.coarse_bank.table['mass1']
+        m2 = self.coarse_bank.table['mass2']
+        tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
+        indices = []
+
+        sort = tau0_temp.argsort()
+        tau0_temp = tau0_temp[sort]
+
+        for inj in injection_parameters:
+            tau0_inj, _ = \
+                pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
+                                                       fref)
+            lid = np.searchsorted(tau0_temp, tau0_inj - threshold)
+            rid = np.searchsorted(tau0_temp, tau0_inj + threshold)
+            inj_indices = sort[lid:rid]
+            indices.append(inj_indices)
+
+        indices_combined = np.concatenate(indices)
+        indices_unique= np.unique(indices_combined)
+        self.coarse_indices = indices_unique
+
+    def get_coarse_template(self, coarse_index):
+        """Wrapper to get the frequency-domain waveform from the internal coarse bank.
+        
+        Parameters
+        ----------
+        coarse_index : int
+            The index of the template in the *coarse* bank.
+
+        Returns
+        -------
+        htilde : FrequencySeries
+            The reference waveform.
+        """
+        # FIX: Use bracket access instead of .get_template()
+        # FilterBank uses __getitem__ to handle waveform generation/decompression
+        return self.coarse_bank[coarse_index]
 
     def get_firs(self, coarse_index):
         """Retrieve the FIR tap information for the batch of fine templates

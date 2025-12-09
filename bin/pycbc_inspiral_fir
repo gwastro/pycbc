@@ -100,7 +100,8 @@ def get_args():
 
     parser.add_argument('--snr-threshold', type=float, default=5.5,
                        help="SNR threshold for trigger generation.")
-    
+    parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
+                            help="Cut triggers with NewSNR less than THRESHOLD")    
     parser.add_argument("--low-frequency-cutoff", type=float,
                         help="The low frequency cutoff to use for filtering (Hz)")
 
@@ -142,8 +143,9 @@ def get_args():
     parser.add_argument("--keep-loudest-num", type=int,
                         help="Number of triggers to keep from each maximization interval")
     parser.add_argument("--keep-loudest-stat", default="newsnr",
-                        choices=events.ranking.sngls_ranking_function_dict.keys(),
+                        choices=pycbc.events.ranking.sngls_ranking_function_dict.keys(),
                         help="Statistic used to determine loudest to keep")
+    
 
     return parser, parser.parse_args()
 
@@ -154,10 +156,6 @@ def main():
     # --- 1. Fake/Default Arguments for EventManager Compatibility ---
     # EventManager expects these to exist in 'args', even if None/False
     defaults = {
-        'newsnr_threshold': None,
-        'keep_loudest_interval': None,
-        'keep_loudest_num': 0,
-        'keep_loudest_stat': None,
         'psdvar_segment': None, # Used in write_to_hdf
         'autochi_number_points': 0,
         'autochi_onesided':False,
@@ -197,6 +195,7 @@ def main():
             delta_f=delta_f,
             dtype=np.complex64,
         )
+        bank.template_thinning(inj_filter_rejector)
         
         logging.info("Initializing Ratio Filter Engine...")
         engine = RatioMatchedFilterControl(
