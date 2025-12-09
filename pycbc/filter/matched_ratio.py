@@ -22,10 +22,6 @@ class RatioMatchedFilterControl(object):
         self.fir_fft_len = fir_fft_length
         self.batch_size = batch_size
         
-        # 1. Input Block Buffers
-        self.block_data_in = zeros(fir_fft_length, dtype=complex64)
-        self.block_data_f = zeros(fir_fft_length, dtype=complex64)
-        
         # 2. Intermediate Buffers (Batch x Block)
         total_batch_size = batch_size * fir_fft_length
         self.temp_freq_mult = zeros(total_batch_size, dtype=complex64)
@@ -129,11 +125,6 @@ class RatioMatchedFilterControl(object):
         n_filters = len(filters_f)
         
         N_FFT = self.fir_fft_len
-        # Valid output samples per block (Overlap-Save)
-        N_VALID = N_FFT - n_taps + 1
-        STEP = N_VALID
-        
-        bad_start = n_taps // 2
         
         all_f_idxs = []
         all_t_idxs = []
@@ -142,10 +133,6 @@ class RatioMatchedFilterControl(object):
         # Reshape views for Cython kernel
         freq_mult_view = self.temp_freq_mult.data.reshape(self.batch_size, N_FFT)
         corr_out_view = self.corr_output_buffer.data.reshape(self.batch_size, N_FFT)
-        
-        # Get raw numpy views for input/output blocks to pass to MKL
-        block_in_view = self.block_data_in.data
-        block_f_view = self.block_data_f.data
 
         if valid_slice:
             v_start = valid_slice.start
@@ -153,46 +140,53 @@ class RatioMatchedFilterControl(object):
         else:
             v_start = 0
             v_stop = n_samples
-
-        # Determine Loop Bounds
-        first_block_idx = (v_start - bad_start) // STEP
-        loop_start = first_block_idx * STEP
+ 
+        block_f_cache = {}
         
         # --- OUTER LOOP: Time Blocks ---
-        for t_start in range(loop_start, n_samples, STEP):
-            block_valid_t0 = t_start + bad_start
+        for f_start in range(0, n_filters, self.batch_size):  
+        
+            f_end = min(f_start + self.batch_size, n_filters)
+            actual_batch_size = f_end - f_start
             
-            if block_valid_t0 >= v_stop:
-                break
-            
-            if block_valid_t0 + N_VALID <= v_start:
-                continue
+            # Valid output samples per block (Overlap-Save)
+            n_taps_max = n_taps[f_start:f_end].max()
+            N_VALID = N_FFT - n_taps_max + 1
+            STEP = N_VALID
+            bad_start = n_taps_max // 2
 
-            roi_start = max(v_start, block_valid_t0)
-            roi_stop = min(v_stop, block_valid_t0 + N_VALID)
-            
-            roi_len = roi_stop - roi_start
-            
-            if roi_len <= 0: 
-                continue
+            # Determine Loop Bounds
+            first_block_idx = (v_start - bad_start) // STEP
+            loop_start = first_block_idx * STEP
+         
+            for t_start in range(loop_start, n_samples, STEP):
 
-            buf_slice_start = roi_start - t_start
-            
-            # Load Data
-            t_end = min(t_start + N_FFT, n_samples)
-            
-            # Clear input buffer
-            block_in_view[:] = 0
-            block_in_view[0:t_end-t_start] = data[t_start:t_end]
-            
-            # --- FFT Data (Single block) via MKL ---
-            self.fft_lib.fft(block_in_view, out=block_f_view)
-
-            # Filter Batches
-            for f_start in range(0, n_filters, self.batch_size):
-                f_end = min(f_start + self.batch_size, n_filters)
-                actual_batch_size = f_end - f_start
+                block_valid_t0 = t_start + bad_start
                 
+                if block_valid_t0 >= v_stop:
+                    break
+                
+                if block_valid_t0 + N_VALID <= v_start:
+                    continue
+
+                roi_start = max(v_start, block_valid_t0)
+                roi_stop = min(v_stop, block_valid_t0 + N_VALID)
+                
+                roi_len = roi_stop - roi_start
+                
+                if roi_len <= 0: 
+                    continue
+
+                buf_slice_start = roi_start - t_start
+
+                if t_start not in block_f_cache:
+                    t_end = min(t_start + N_FFT, n_samples)
+                    block_in_view = np.zeros(self.fir_fft_len, dtype=complex64)
+                    block_in_view[0:t_end-t_start] = data[t_start:t_end]
+                    block_f_view = self.fft_lib.fft(block_in_view)
+                    block_f_cache[t_start] = block_f_view
+                
+                block_f_view = block_f_cache[t_start]
                 filter_batch_f = filters_f[f_start:f_end]
                 
                 current_mult_view = freq_mult_view[:actual_batch_size]

@@ -1202,7 +1202,9 @@ class RatioFilterBank(FilterBank):
         actual_tap_counts = c_group['actual_tap_count'][:]
         fine_indices = c_group['fine_bank_index'][:]
         
-        return taps, actual_tap_counts, fine_indices
+        # --- NEW: Sort by tap count ---
+        sort_idx = np.argsort(actual_tap_counts)
+        return taps[sort_idx], actual_tap_counts[sort_idx], fine_indices[sort_idx]
 
     @property
     def coarse_size(self):
