@@ -187,20 +187,12 @@ def main():
                 logging.info(f"Processing Segment {s_num}")
                 t1 = time.time()
 
-                try:
-                    ids_local, t_idxs, snrs, h_norm = engine.process_segment(
-                        stilde, stilde.psd, ref_template, filters_f, counts,
-                        np.arange(len(fine_indices)),
-                        valid_slice=stilde.analyze,
-                    )
-                except ValueError as e:
-                    if "not enough values to unpack" in str(e):
-                        # Assume zero triggers were found and skip processing this segment
-                        logging.info("Segment returned fewer than 4 values; assuming zero triggers and skipping.")
-                        continue
-                    else:
-                        # TO FIX: Re-raise the error if it's for another reason
-                        raise
+                ids_local, t_idxs, snrs, h_norm = engine.process_segment(
+                    stilde, stilde.psd, ref_template, filters_f, counts,
+                    np.arange(len(fine_indices)),
+                    valid_slice=stilde.analyze,
+                )
+
 
                 if len(ids_local) > 0:
                     t_idxs += (-stilde.analyze.start + stilde.cumulative_index)
