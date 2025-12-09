@@ -233,7 +233,6 @@ def main():
     logging.info("Loading coarse bank references...")
     coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f,
                              dtype=np.complex128, 
-                             low_frequency_cutoff=args.f_low,
                              approximant=args.approximant,
                              enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
@@ -243,8 +242,7 @@ def main():
 
     logging.info("Opening fine bank...")
     fine_bank = FilterBank(args.fine_bank, flen, args.delta_f,
-                           dtype=np.complex128, 
-                           low_frequency_cutoff=args.f_low,
+                           dtype=np.complex128,
                            approximant=args.approximant,
                            enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
