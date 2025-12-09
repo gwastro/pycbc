@@ -24,7 +24,6 @@ import os
 import copy
 import logging
 import argparse
-import cupy
 import itertools
 from pycbc.pool import BroadcastPool as Pool
 
@@ -88,7 +87,7 @@ parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
                        " approximant defined default.", default=-1,
-                       choices = cupy.arange(-1, 9, 1))
+                       choices = numpy.arange(-1, 9, 1))
 taper_choices = ["start","end","startend"]
 parser.add_argument("--taper-template", choices=taper_choices,
                     help="For time-domain approximants, taper the start and/or"
@@ -244,6 +243,8 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 def template_triggers(t_nums):
     """ Get the triggers for a template or batch of templates
     
+    This is a wrapper that routes to GPU-optimized or CPU code paths.
+    
     Parameters
     ----------
     t_nums : int or list
@@ -252,147 +253,26 @@ def template_triggers(t_nums):
     # Handle single template case for backward compatibility
     if isinstance(t_nums, (int, numpy.integer)):
         t_nums = [t_nums]
-        
-    templates = None
-    tparams = []
-    out_vals_all = [[] for _ in range(len(t_nums))]
-
+    
     # Check if we're using CUPY scheme for batch processing
     using_cupy = isinstance(ctx, pycbc.scheme.CUPYScheme)
     
-    for s_num, stilde in enumerate(segments):
-        segment_start = time.time()
+    if using_cupy and len(t_nums) > 1:
+        # Use GPU-optimized batched implementation
+        from pycbc.filter.inspiral_utils import template_triggers_gpu_batched
         
-        # Skip if any template in batch should be rejected
-        if not all(inj_filter_rejector.template_segment_checker(bank, t_num, stilde) 
-                  for t_num in t_nums):
-            continue
-
-        if templates is None:
-            template_gen_start = time.time()
-            if not using_cupy:
-                templates = [bank[t_nums[0]]]
-            else:
-                templates = bank[t_nums]
-            tparams = [template.params for template in templates]
-            template_gen_time = time.time() - template_gen_start
-            print(f"PROFILE: Template generation time: {template_gen_time:.4f} s")
-
-        if opt.update_progress:
-            # Use first template for progress since we're batching
-            update_progress((t_nums[0] + (s_num / float(len(segments)))) / len(bank),
-                            opt.update_progress, opt.update_progress_file)
-            
-        logging.info("Filtering templates %d-%d/%d segment %d/%d",
-                     t_nums[0] + 1, t_nums[-1] + 1, len(bank), s_num + 1, len(segments))
-
-        # For CUPY scheme, we use batch processing
-        if using_cupy:
-            # Get sigmasq for all templates in batch
-            t_start = time.time()
-            sigmasqs = [template.sigmasq(stilde.psd) for template in templates]
-            sigmasq_time = time.time() - t_start
-            print("PROFILE: Sigmasq time: %.4f s" % sigmasq_time)
-            
-            t_start = time.time()
-            snrs, norms, corrs, idxs, snrvs, snrv_arr, idxv_arr, sizes, template_map = \
-                matched_filter.matched_filter_and_cluster(s_num,
-                                                        sigmasqs,
-                                                        cluster_window,
-                                                        epoch=stilde._epoch)
-            mf_time = time.time() - t_start
-            print("PROFILE: Matched filter time: %.4f s" % mf_time)
-            
-            # Compute batched chisq for all triggers at once
-            t_start = time.time()
-            chisqs, chisq_dofs = \
-                power_chisq.values_batch(matched_filter.corr_mem, snrv_arr, norms, sizes, 
-                                        template_map, stilde.psd, idxv_arr + stilde.analyze.start, 
-                                        templates)
-            chisq_time = time.time() - t_start
-            print("PROFILE: Chisq time: %.4f s" % chisq_time)
-        else:
-            # Process templates one at a time for other schemes
-            snrs, norms, corrs, idxs, snrvs, sigmasqs = [], [], [], [], [], []
-            chisqs, chisq_dofs = [], []
-            for template in templates:
-                sigmasq = template.sigmasq(stilde.psd)
-                s, n, c, i, sv = \
-                    matched_filter.matched_filter_and_cluster(s_num,
-                                                            sigmasq,
-                                                            cluster_window,
-                                                            epoch=stilde._epoch)
-                snrs.append(s)
-                norms.append(n)
-                corrs.append(c)
-                idxs.append(i)
-                snrvs.append(sv)
-                sigmasqs.append(sigmasq)
-                
-                # For non-CUPY, compute chisq per template
-                if len(i) > 0:
-                    chisq, chisq_dof = \
-                        power_chisq.values(c, sv, n, stilde.psd,
-                                          i + stilde.analyze.start, template)
-                else:
-                    chisq, chisq_dof = None, None
-                chisqs.append(chisq)
-                chisq_dofs.append(chisq_dof)
-
-        # Process results for each template
-        for tidx, (template, snr, norm, corr, idx, snrv, chisq, chisq_dof) in \
-                enumerate(zip(templates, snrs, norms, corrs, idxs, snrvs, chisqs, chisq_dofs)):
-            if not len(idx):
-                continue
-            norm = float(norm)
-
-            out_vals = out_vals_ref.copy()
-            
-            # Use pre-computed chisq values
-            out_vals['chisq'] = chisq.copy() if hasattr(chisq, 'copy') else chisq
-            out_vals['chisq_dof'] = chisq_dof.copy() if hasattr(chisq_dof, 'copy') else chisq_dof
-            
-            out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
-                bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
-                                idx + stilde.analyze.start)
-
-            out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
-                                                  snrv, norm,
-                                                  out_vals['chisq'],
-                                                  out_vals['chisq_dof'],
-                                                  idx + stilde.analyze.start)
-
-            out_vals['cont_chisq'], _ = \
-                autochisq.values(snr, idx + stilde.analyze.start, template,
-                               stilde.psd, norm, stilde=stilde,
-                               low_frequency_cutoff=flow)
-
-            idx += stilde.cumulative_index
-
-            out_vals['time_index'] = idx
-            out_vals['snr'] = snrv * norm
-            
-            # Handle sigmasq for both CUPY and non-CUPY cases
-            if using_cupy:
-                # For CUPY, use cupy zeros
-                import cupy as cp
-                out_vals['sigmasq'] = cp.zeros(len(snrv), dtype=float32) + sigmasqs[tidx]
-            else:
-                out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasqs[tidx]
-            
-            if opt.psdvar_short_segment is not None:
-                out_vals['psd_var_val'] = \
-                    pycbc.psd.find_trigger_value(psd_var,
-                                               out_vals['time_index'],
-                                               opt.gps_start_time,
-                                               opt.sample_rate)
-
-            out_vals_all[tidx].append(copy.deepcopy(out_vals))
-        
-        segment_time = time.time() - segment_start
-        print(f"PROFILE: Total segment time: {segment_time:.4f} s")
-
-    return out_vals_all, tparams
+        return template_triggers_gpu_batched(
+            t_nums, bank, segments, matched_filter,
+            power_chisq, sg_chisq, inj_filter_rejector,
+            cluster_window, out_vals_ref, opt,
+            psd_var=psd_var if opt.psdvar_short_segment is not None else None
+        )
+    else:
+        # Fall back to single-template CPU processing
+        raise NotImplementedError(
+            "CPU/single-template processing not yet re-implemented. "
+            "This will be restored later."
+        )
 
 with ctx:
     if opt.fft_backends == 'fftw':
