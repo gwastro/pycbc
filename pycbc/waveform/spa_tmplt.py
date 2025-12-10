@@ -266,7 +266,7 @@ def spa_tmplt(**kwds):
     return htilde
 
 
-def spa_tmplt_batch(templates_params, filter_length, out, **common_kwds):
+def spa_tmplt_batch(templates_params, filter_length, **common_kwds):
     """
     Generate multiple TaylorF2 templates in a single batched operation.
     
@@ -277,15 +277,13 @@ def spa_tmplt_batch(templates_params, filter_length, out, **common_kwds):
         mass1, mass2, spin1z, spin2z, and optionally distance.
     filter_length : int
         Length of the output frequency series
-    out : list of FrequencySeries
-        Pre-allocated output arrays to write templates into
     **common_kwds : dict
         Common parameters for all templates (delta_f, f_lower, etc.)
         
     Returns
     -------
     list of FrequencySeries
-        List of generated templates (same as out parameter)
+        List of generated templates
     """
     import cupy as cp
     from pycbc.types import FrequencySeries, zeros
@@ -380,18 +378,10 @@ def spa_tmplt_batch(templates_params, filter_length, out, **common_kwds):
         pfa7_list.append(pfa7)
         amp_list.append(amp_factor)
         phase_order_list.append(phase_order)
-    
-    # Use the provided filter_length for output size
-    n = filter_length
-    
-    # Find the common frequency length for the batch kernel
-    # Each template needs different kmax-kmin, so we use the maximum span
-    freq_spans = [kmax_list[i] - kmin_list[i] for i in range(num_templates)]
-    freq_length = max(freq_spans)
-    
+
     # Transfer parameters to GPU
     kmin_gpu = cp.asarray(kmin_list, dtype=cp.int64)
-    freq_spans_gpu = cp.asarray(freq_spans, dtype=cp.int32)
+    kmax_gpu = cp.asarray(kmax_list, dtype=cp.int64)
     phase_order_gpu = cp.asarray(phase_order_list, dtype=cp.int64)
     piM_gpu = cp.asarray(piM_list, dtype=cp.float32)
     pfaN_gpu = cp.asarray(pfaN_list, dtype=cp.float32)
@@ -406,33 +396,26 @@ def spa_tmplt_batch(templates_params, filter_length, out, **common_kwds):
     amp_gpu = cp.asarray(amp_list, dtype=cp.float32)
     
     # Allocate output array on GPU
-    htilde_batch_gpu = cp.zeros(num_templates * freq_length, dtype=cp.complex64)
+    htilde_batch_gpu = cp.zeros(num_templates * filter_length, dtype=cp.complex64)
     
     # Call batched kernel
     spa_tmplt_engine_batch(
-        htilde_batch_gpu, kmin_gpu, freq_spans_gpu, phase_order_gpu,
+        htilde_batch_gpu, kmin_gpu, kmax_gpu, phase_order_gpu,
         delta_f, piM_gpu, pfaN_gpu,
         pfa2_gpu, pfa3_gpu, pfa4_gpu, pfa5_gpu, pfl5_gpu,
         pfa6_gpu, pfl6_gpu, pfa7_gpu, amp_gpu,
-        num_templates, freq_length
+        num_templates, filter_length
     )
     
     # Extract individual templates from batch result
     templates = []
     for i, params in enumerate(templates_params):
-        # Use pre-allocated output memory
-        htilde_data = out[i]
-        htilde = FrequencySeries(htilde_data, delta_f=delta_f, copy=False)
-        
-        # Clear the output array
-        htilde_data.clear()
-        
         # Copy the relevant portion from GPU batch to this template
-        # Each template occupies freq_length elements in the batch array
-        start_idx = i * freq_length
-        end_idx = start_idx + freq_spans[i]
+        # Each template occupies filter_length elements in the batch array
+        start_idx = i * filter_length
+        end_idx = (i+1) * filter_length
         # Extract the slice from GPU and assign to the PyCBC array
-        htilde_data._data[kmin_list[i]:kmax_list[i]] = htilde_batch_gpu[start_idx:end_idx]
+        htilde = FrequencySeries(htilde_batch_gpu[start_idx:end_idx], delta_f=delta_f, copy=False)
         
         # Set metadata
         htilde.chirp_length = get_waveform_filter_length_in_time(
@@ -444,6 +427,8 @@ def spa_tmplt_batch(templates_params, filter_length, out, **common_kwds):
         htilde.length_in_time = htilde.chirp_length
         
         templates.append(htilde)
+
+    htilde_batch_gpu = htilde_batch_gpu.reshape(num_templates, filter_length)
     
-    return templates
+    return htilde_batch_gpu, templates
 

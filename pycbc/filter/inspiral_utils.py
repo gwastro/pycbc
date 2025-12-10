@@ -181,12 +181,6 @@ def _generate_templates_gpu(t_nums, bank):
     import logging
     import types
     
-    # Allocate output arrays - use bank's pre-allocated if available
-    if bank.out is None:
-        tempout = [zeros(bank.filter_length, dtype=bank.dtype) for _ in range(len(t_nums))]
-    else:
-        tempout = bank.out
-    
     # Prepare common parameters
     distance = 1.0 / DYN_RANGE_FAC
     common_kwds = {
@@ -200,7 +194,7 @@ def _generate_templates_gpu(t_nums, bank):
     templates_params = []
     f_end_list = []
     f_low_list = []
-    
+
     for idx in t_nums:
         f_end = bank.end_frequency(idx)
         if f_end is None or f_end >= (bank.filter_length * bank.delta_f):
@@ -228,7 +222,7 @@ def _generate_templates_gpu(t_nums, bank):
                 (t_nums[0], t_nums[-1], len(t_nums), min(f_low_list)))
     
     # Generate all templates in one batch
-    htilde_list = spa_tmplt_batch(templates_params, bank.filter_length, tempout, **common_kwds)
+    htilde_batch, htilde_list = spa_tmplt_batch(templates_params, bank.filter_length, **common_kwds)
     
     # Process each template and extract data
     for i, (idx, htilde) in enumerate(zip(t_nums, htilde_list)):
@@ -251,7 +245,6 @@ def _generate_templates_gpu(t_nums, bank):
         htilde_list[i] = htilde
     
     # Extract underlying cupy data into 2D array
-    htilde_batch = cp.stack([t._data for t in htilde_list])
     
     return htilde_batch, htilde_list
 
@@ -322,20 +315,19 @@ def _matched_filter_gpu(htilde_batch, stilde_data, kmin, kmax):
     freq_length = htilde_batch.shape[1]
     
     # Allocate output arrays
-    corr_batch = cp.zeros((num_templates, freq_length), dtype=cp.complex64)
+    corr_batch = cp.zeros((num_templates, (freq_length-1)*2), dtype=cp.complex64)
     
     # Ensure stilde_data length matches
     stilde_len = min(len(stilde_data), freq_length)
     
     # Batched correlation: corr = conj(h) * s
     corr_batch[:, kmin:kmax] = cp.conj(htilde_batch[:, kmin:kmax]) * stilde_data[kmin:kmax]
-    corr_batch *= 524288 # I haven't figured out why this is necessary yet
 
     # Batched IFFT to get SNR time series
     snr_batch = cp.fft.ifft(corr_batch, axis=1)
     delta_f = 1./256
     norm = (4.0 * delta_f)
-    snr_batch *= norm
+    snr_batch *= norm * 524288
     
     return snr_batch, corr_batch
 
@@ -522,40 +514,29 @@ def _compute_chisq_gpu(corr_batch, trigger_indices, trigger_snrs, sigmasqs,
     import logging
     if len(templates) > 0:
         psd_len = len(psd)
-        logging.info(f'DEBUG chisq: template[0] length = {len(templates[0])}, PSD length = {psd_len}')
-        logging.info(f'DEBUG chisq: corr_batch shape = {corr_batch.shape}')
         
         # Fix template lengths to match PSD (RFFT length)
         # Templates have full FFT length but chisq code expects RFFT length
         for template in templates:
             if len(template) != psd_len:
-                logging.info(f'DEBUG chisq: Fixing template length from {len(template)} to {psd_len}')
                 # Resize the template data to RFFT length
                 template.resize(psd_len)
-        logging.info("DEBUG VALUES", max(corr_batch), max(unnormalized_snrs), max(snr_norms))
     
     chisq_list, chisq_dof_list = power_chisq.values_batch(
         corr_batch, unnormalized_snrs, snr_norms, sizes, template_map, psd, time_indices, templates
     )
     
-    # DEBUG: Check what was returned
-    logging.info(f'DEBUG chisq result: chisq_list type={type(chisq_list)}, len={len(chisq_list) if chisq_list is not None else "None"}')
-    if chisq_list is not None and len(chisq_list) > 0:
-        logging.info(f'DEBUG chisq_list[0]: len={len(chisq_list[0])}, values={chisq_list[0][:min(3,len(chisq_list[0]))]}')
     
     # Check if chisq was actually computed (or disabled)
     if chisq_list is None:
         # Chi-squared was disabled, return dummy values
         chisq_dofs = cp.full(num_triggers, 10, dtype=cp.int32)
         chisqs = chisq_dofs.astype(cp.float32)
-        logging.info(f'DEBUG chisq was None, returning dummy values')
         return chisqs, chisq_dofs
     
     # Concatenate results back into single arrays
     chisqs = cp.concatenate(chisq_list) if len(chisq_list) > 0 else cp.array([], dtype=cp.float32)
     chisq_dofs = cp.concatenate(chisq_dof_list) if len(chisq_dof_list) > 0 else cp.array([], dtype=cp.int32)
-    
-    logging.info(f'DEBUG final chisqs: len={len(chisqs)}, min={chisqs.min() if len(chisqs)>0 else "N/A"}, max={chisqs.max() if len(chisqs)>0 else "N/A"}')
     
     return chisqs, chisq_dofs
 

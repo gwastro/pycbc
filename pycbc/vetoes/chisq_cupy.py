@@ -463,6 +463,120 @@ def get_pchisq_fn_pow2_batch():
     return fn, nt
 
 
+# Batched chisq for non-power-of-2 FFT lengths
+chisqkernel_batch = Template("""
+#include <cstdint>
+extern "C" __global__ void power_chisq_at_points_batch(
+    float2* corr, // 2D: num_templates X N
+    float2* outc, // 1D: num_points X max_bin_length 
+    unsigned int N, // Scalar
+    float* phases, // 1D: num_points (phase multiplier for each point)
+    uint32_t* kmin, // 2D: num_templates X max_bin_size
+    uint32_t* kmax, // 2D: num_templates X max_bin_size
+    uint32_t* bv, // 2D: num_templates X max_bin_size
+    uint32_t* nbins, // 1D: num_templates (per-template bin counts)
+    uint32_t* mapping, // 1D: num_points
+    uint32_t* nb, // 1D: num_templates
+    unsigned int max_nbins, // scalar: max number of bins across templates
+    unsigned int num_points, // scalar
+    unsigned int num_templates, // scalar
+    unsigned int max_bin_size // scalar
+)
+{
+    const unsigned int pnum = blockIdx.y;
+    const unsigned int binnum = blockIdx.x;
+    
+    // Early exit check
+    if (pnum >= num_points) return;
+    
+    const unsigned int tempnum = mapping[pnum];
+    if (binnum >= nb[tempnum]) return;
+    
+    // Load bin parameters
+    const unsigned int idx_base = tempnum * max_bin_size + binnum;
+    const unsigned int s = kmin[idx_base];
+    const unsigned int e = kmax[idx_base];
+    
+    if (s >= e) return;  // Empty bin
+    
+    const unsigned int bin_idx = bv[idx_base];
+    const float phase = phases[pnum];
+    const unsigned int corr_base = tempnum * N;
+    
+    // Each thread accumulates independently
+    float accum_x = 0.0f;
+    float accum_y = 0.0f;
+    
+    // Main loop - coalesced memory access
+    #pragma unroll 4
+    for (unsigned int i = s + threadIdx.x; i < e; i += blockDim.x){
+        const float2 qt = corr[corr_base + i];
+        
+        // Compute phase using sincosf for non-power-of-2
+        float re, im;
+        sincosf(phase * i, &im, &re);
+        
+        // Accumulate
+        accum_x += re * qt.x - im * qt.y;
+        accum_y += im * qt.x + re * qt.y;
+    }
+    
+    // Warp shuffle reduction
+    #pragma unroll
+    for (int offset = 16; offset > 0; offset >>= 1) {
+        accum_x += __shfl_down_sync(0xffffffff, accum_x, offset);
+        accum_y += __shfl_down_sync(0xffffffff, accum_y, offset);
+    }
+    
+    // Shared memory for cross-warp reduction
+    __shared__ float2 warp_sums[16];
+    const unsigned int warp_id = threadIdx.x / 32;
+    const unsigned int lane_id = threadIdx.x % 32;
+    
+    if (lane_id == 0) {
+        warp_sums[warp_id].x = accum_x;
+        warp_sums[warp_id].y = accum_y;
+    }
+    __syncthreads();
+    
+    // Final reduction by first warp
+    if (warp_id == 0) {
+        float2 sum;
+        if (lane_id < (${NT} / 32)) {
+            sum = warp_sums[lane_id];
+        } else {
+            sum.x = 0.0f;
+            sum.y = 0.0f;
+        }
+        
+        #pragma unroll
+        for (int offset = 8; offset > 0; offset >>= 1) {
+            sum.x += __shfl_down_sync(0xffffffff, sum.x, offset);
+            sum.y += __shfl_down_sync(0xffffffff, sum.y, offset);
+        }
+        
+        if (lane_id == 0) {
+            const unsigned int out_idx = pnum * max_nbins + bin_idx;
+            atomicAdd(&outc[out_idx].x, sum.x);
+            atomicAdd(&outc[out_idx].y, sum.y);
+        }
+    }
+}
+""")
+
+
+@functools.lru_cache(maxsize=None)
+def get_pchisq_fn_batch():
+    nt = 512
+    fn = cp.RawKernel(
+        chisqkernel_batch.render(NT=nt, **LALARGS),
+        f'power_chisq_at_points_batch',
+        backend='nvcc',
+        options=('--use_fast_math',)
+    )
+    return fn, nt
+
+
 _bin_layout_cache = {}
 
 def get_cached_bin_layout_batch(bins, bin_lengths):
@@ -571,6 +685,25 @@ def shift_sum_batch(corr, points, bins, bin_lengths, mapping):
         grid_size = (max_nb, len(points))
         fn(grid_size, (nt,), args)
     else:
-        raise NotImplementedError("Non-power-of-2 FFT lengths not yet supported for batched chisq")
+        # Non-power-of-2 case using sincosf
+        fn, nt = get_pchisq_fn_batch()
+        
+        # Flatten corr array if needed
+        if corr.ndim == 1:
+            corr_flat = corr
+        else:
+            corr_flat = corr.reshape(-1)
+        
+        # Calculate phase multipliers for each point
+        phases = cp.float32(2 * cp.pi / float(N)) * points.astype(cp.float32)
+        
+        max_bin_size = bv.shape[1]
+        args = (corr_flat, outc.reshape(-1), N, phases, kmin.reshape(-1),
+            kmax.reshape(-1), bv.reshape(-1), nbins, mapping, nb,
+            cp.uint32(max_nbins), cp.uint32(len(points)), cp.uint32(len(bins)), cp.uint32(max_bin_size))
+        
+        max_nb = int(nb.max().get())
+        grid_size = (max_nb, len(points))
+        fn(grid_size, (nt,), args)
 
     return (outc.conj() * outc).sum(axis=1).real

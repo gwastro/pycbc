@@ -465,13 +465,6 @@ class SingleDetPowerChisq(object):
                 bin_lengths = cp.array([len(cbin) for cbin in bins], dtype=cp.uint32)
                 dof = (bin_lengths - 1) * 2 - 2
 
-                # DEBUG: Log first few trigger indices and template mapping
-                if len(above_indices) > 0:
-                    logging.info(f'DEBUG batch chisq: first 5 indices: {above_indices[:min(5,len(above_indices))]}')
-                    logging.info(f'DEBUG batch chisq: first 5 template_map: {above_template_map[:min(5,len(above_template_map))]}')
-                    logging.info(f'DEBUG batch chisq: bin_lengths: {bin_lengths}')
-                    logging.info(f'DEBUG batch chisq: len(corrs)={len(corrs)}, corrs[0] shape={corrs[0].shape if hasattr(corrs[0], "shape") else len(corrs[0])}')
-
                 # Compute chisq for all above-threshold triggers at once
                 chisq = shift_sum_batch(corrs, above_indices, bins, bin_lengths, above_template_map)
                 

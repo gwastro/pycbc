@@ -110,12 +110,16 @@ taylorf2_batch_text = mako.template.Template("""
     
     // Check if this frequency index is valid for this template
     // freq_idx corresponds to the index within the template's frequency range
-    // The actual frequency is (freq_idx + kmin) * delta_f
-    // But we only want frequencies up to kmax
-    const float f = (freq_idx + kmin[template_idx]) * delta_f;
+    const float f = (freq_idx) * delta_f;
     
     // Set output to zero if outside the template's frequency range
-    if (freq_idx >= freq_spans[template_idx]) {
+    if (freq_idx < kmin[template_idx]) {
+        htilde.real(0.0f);
+        htilde.imag(0.0f);
+        return;
+    }
+
+    if (freq_idx >= kmax[template_idx]) {
         htilde.real(0.0f);
         htilde.imag(0.0f);
         return;
@@ -174,7 +178,7 @@ taylorf2_batch_text = mako.template.Template("""
 
 taylorf2_batch_kernel = cp.ElementwiseKernel(
     """
-        raw int64 kmin, raw int32 freq_spans, raw int64 phase_order, float32 delta_f,
+        raw int64 kmin, raw int64 kmax, raw int64 phase_order, float32 delta_f,
         raw float32 piM, raw float32 pfaN, raw float32 pfa2, raw float32 pfa3,
         raw float32 pfa4, raw float32 pfa5, raw float32 pfl5, raw float32 pfa6,
         raw float32 pfl6, raw float32 pfa7, raw float32 amp,
@@ -186,7 +190,7 @@ taylorf2_batch_kernel = cp.ElementwiseKernel(
 )
 
 
-def spa_tmplt_engine_batch(htilde_batch, kmin_arr, freq_spans_arr, phase_order_arr,
+def spa_tmplt_engine_batch(htilde_batch, kmin_arr, kmax_arr, phase_order_arr,
                           delta_f, piM_arr, pfaN_arr,
                           pfa2_arr, pfa3_arr, pfa4_arr, pfa5_arr, pfl5_arr,
                           pfa6_arr, pfl6_arr, pfa7_arr, amp_arr,
@@ -200,8 +204,8 @@ def spa_tmplt_engine_batch(htilde_batch, kmin_arr, freq_spans_arr, phase_order_a
         Output array of shape (num_templates * freq_length,)
     kmin_arr : cupy array of int64
         Starting frequency index for each template
-    freq_spans_arr : cupy array of int32
-        Frequency span (kmax - kmin) for each template
+    kmax_arr : cupy array of int64
+        Ending frequency index for each template
     phase_order_arr : cupy array of int64
         Phase order for each template
     delta_f : float
@@ -215,7 +219,7 @@ def spa_tmplt_engine_batch(htilde_batch, kmin_arr, freq_spans_arr, phase_order_a
     freq_length : int
         Maximum frequency span across all templates
     """
-    taylorf2_batch_kernel(kmin_arr, freq_spans_arr, phase_order_arr,
+    taylorf2_batch_kernel(kmin_arr, kmax_arr, phase_order_arr,
                          delta_f,
                          piM_arr, pfaN_arr,
                          pfa2_arr, pfa3_arr, pfa4_arr, pfa5_arr, pfl5_arr,
