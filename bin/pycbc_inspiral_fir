@@ -219,7 +219,7 @@ def main():
             'bank_chisq': float32,
             'bank_chisq_dof': int,
             'cont_chisq': float32,
-            'psd_var_val': float32
+            'psd_var_val': float32,
         }
         
         out_vals_ref = {key: None for key in out_types}
@@ -241,6 +241,14 @@ def main():
         
         pycbc.psd.associate_psds_to_segments(args, segments, gwstrain, flen, delta_f,
                   flow, dyn_range_factor=pycbc.DYN_RANGE_FAC, precision='single')
+
+        # FIXME: Maybe we should use the PSD corresponding to each trigger
+        if args.psdvar_segment is not None:
+            logging.info("Calculating PSD variation")
+            psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, args.psdvar_segment,
+                    args.psdvar_short_segment, args.psdvar_long_segment,
+                    args.psdvar_psd_duration, args.psdvar_psd_stride,
+                    args.psd_estimation, args.psdvar_low_freq, args.psdvar_high_freq)
 
         n_coarse = len(bank.coarse_indices)
         
@@ -335,13 +343,18 @@ def main():
             out_vals['sigmasq'] = np.ones(len(time_list)) * norm * norm_rescale ** 2.0
             out_vals['chisq'] = chi
             out_vals['chisq_dof'] = chi_dof
+
+            if args.psdvar_short_segment is not None:
+                out_vals['psd_var_val'] = \
+                        pycbc.psd.find_trigger_value(psd_var,
+                                      out_vals['time_index'],
+                                      args.gps_start_time, args.sample_rate)
                         
             # Zero-fill, these are all just dummy values for now
             dummy =  zeros(len(time_list), dtype=float32)
             out_vals['bank_chisq'] = dummy
             out_vals['bank_chisq_dof'] = dummy
             out_vals['cont_chisq'] = dummy
-            out_vals['psd_var_val'] = dummy
             
             event_mgr.new_template(tmplt=bank.table[global_id])
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
