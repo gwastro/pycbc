@@ -21,6 +21,7 @@ import pycbc.inject
 import pycbc.vetoes
 from pycbc.types import complex64, float32, zeros
 from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
 # --- Imports for Ratio Logic ---
 from pycbc.filter.matched_ratio import RatioMatchedFilterControl
@@ -90,6 +91,7 @@ def get_args():
     pycbc.scheme.insert_processing_option_group(parser)
     pycbc.fft.insert_fft_option_group(parser)
     pycbc.inject.insert_injfilterrejector_option_group(parser)
+    SingleDetSGChisq.insert_option_group(parser)
     
     # --- Analysis Options ---
     parser.add_argument('--output', required=True, 
@@ -219,6 +221,7 @@ def main():
             'bank_chisq': float32,
             'bank_chisq_dof': int,
             'cont_chisq': float32,
+            'sg_chisq' : float32,
             'psd_var_val': float32,
         }
         
@@ -355,6 +358,7 @@ def main():
             out_vals['bank_chisq'] = dummy
             out_vals['bank_chisq_dof'] = dummy
             out_vals['cont_chisq'] = dummy
+            out_vals['sg_chisq'] = dummy
             
             event_mgr.new_template(tmplt=bank.table[global_id])
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
