@@ -46,7 +46,7 @@ outl = None
 outv = None
 count = None
 def threshold_inline(series, value):
-    arr = numpy.array(series.data, copy=False, dtype=numpy.complex64)
+    arr = numpy.array(series.data, dtype=numpy.complex64)
     global outl, outv, count
     if outl is None or len(outl) < len(series):
         outl = numpy.zeros(len(series), dtype=numpy.uint32)
@@ -70,7 +70,7 @@ threshold_only = threshold_inline
 
 class CPUThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
-        self.series = numpy.array(series.data, copy=False,
+        self.series = numpy.array(series.data,
                                   dtype=numpy.complex64)
         self.slen = numpy.uint32(len(series))
         self.outv = numpy.zeros(self.slen, numpy.complex64)
