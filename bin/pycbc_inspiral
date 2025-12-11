@@ -38,6 +38,11 @@ from pycbc.scheme import CUPYScheme
 last_progress_update = -1.0
 import numpy
 
+try:
+    import cupy as cp
+except ImportError:
+    cp = None
+
 print(f"PROFILE: Import time: {time.time() - t_very_start:.2f} s", flush=True)
 
 def update_progress(p,u,n):
@@ -463,22 +468,54 @@ with ctx:
         data_time = time.time() - chunk_start
         print(f"PROFILE: template_triggers call time: {data_time:.4f} s")
             
-        # Rest of the event processing remains the same
-        event_proc_start = time.time()
-        for elem in data:
-            for idx in range(len(elem[0])):
-                out_vals_all, tparam = elem[0][idx], elem[1][idx]
-                if len(out_vals_all) > 0:
-                    event_mgr.new_template(tmplt=tparam)
-
-                    for edata in out_vals_all:
-                        event_mgr.add_template_events(names, [edata[n] for n in names])
+        # Process events with new output format
+        # FIXME: Doesn't work yet!
+        #event_proc_start = time.time()
+        #for elem in data:
+        #    out_vals, tparams = elem
+            
+        #    # Check if we have any triggers
+        #    if len(out_vals['template_id']) == 0:
+        #        continue
+            
+        #    # Get unique template IDs and process each template
+        #    # Convert to numpy for easier manipulation
+        #    template_ids_array = numpy.array(out_vals['template_id'])
+        #    unique_template_ids = numpy.unique(template_ids_array)
+            
+        #    for template_id in unique_template_ids:
+        #        template_id_int = int(template_id)
                 
-                    event_mgr.cluster_template_events("time_index", "snr", cluster_window)
-                    event_mgr.finalize_template_events()
+        #        # Find the index in tparams (which corresponds to position in tchunk)
+        #        # template_id is the global template index, find its position in the batch
+        #        batch_idx = tchunk.index(template_id_int)
+        #        tparam = tparams[batch_idx]
+                
+        #        # Mask for this template's triggers
+        #        mask = template_ids_array == template_id
+                
+        #        # Extract events for this template
+        #        template_out_vals = {}
+        #        for key in out_vals.keys():
+        #            if key == 'template_id':
+        #                continue  # Skip template_id, it's not in names
+        #            # Convert to numpy array, apply mask, convert back to PyCBC array
+        #            data_array = numpy.array(out_vals[key])
+        #            template_out_vals[key] = out_vals[key].__class__(data_array[mask], copy=False)
+                
+        #        # Fill in missing keys with None
+        #        for key in names:
+        #            if key not in template_out_vals:
+        #                template_out_vals[key] = None
+                
+        #        # Add to event manager
+        #        event_mgr.new_template(tmplt=tparam)
+        #        event_mgr.add_template_events(names, [template_out_vals[n] for n in names])
+        #        event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+        #        event_mgr.finalize_template_events()
         
-        event_proc_time = time.time() - event_proc_start
-        print(f"PROFILE: Event processing time: {event_proc_time:.4f} s")
+        #event_proc_time = time.time() - event_proc_start
+        #print(f"PROFILE: Event processing time: {event_proc_time:.4f} s")
                 
         if opt.finalize_events_template_rate is not None:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)      
@@ -515,6 +552,15 @@ event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
 finalize_time = time.time() - finalize_start
 logging.info("PROFILE: Event finalization time: %.2f sec", finalize_time)
+
+# Print detailed GPU profiling if using batched GPU mode
+if hasattr(opt, 'processing_scheme') and opt.processing_scheme == 'cupy':
+    try:
+        from pycbc.filter.inspiral_utils import print_profile
+        print_profile()
+    except (ImportError, AttributeError):
+        pass
+
 logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
 
 tstop = time.time()

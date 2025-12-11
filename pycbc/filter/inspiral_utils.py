@@ -9,6 +9,80 @@ import cupy as cp
 import numpy as np
 from pycbc.types import Array, FrequencySeries, float32, complex64
 from pycbc import DYN_RANGE_FAC
+import time
+
+# Global timing accumulators
+_profile_times = {
+    'template_generation': 0.0,
+    'sigmasq_computation': 0.0,
+    'matched_filter': 0.0,
+    'snr_normalization': 0.0,
+    'threshold_cluster': 0.0,
+    'chisq_computation': 0.0,
+    'sg_chisq': 0.0,
+    'newsnr_cut': 0.0,
+    'output_preparation': 0.0,
+    'total_function': 0.0,
+    'gpu_sync': 0.0
+}
+_profile_counts = {
+    'batches_processed': 0,
+    'segments_processed': 0,
+    'templates_processed': 0,
+    'triggers_found': 0
+}
+
+def reset_profile():
+    """Reset profiling counters"""
+    global _profile_times, _profile_counts
+    for key in _profile_times:
+        _profile_times[key] = 0.0
+    for key in _profile_counts:
+        _profile_counts[key] = 0
+
+def print_profile():
+    """Print detailed profiling information"""
+    import logging
+    logger = logging.getLogger('py.pycbc')
+    
+    total = _profile_times['total_function']
+    if total == 0:
+        logger.info("No profiling data collected")
+        return
+    
+    logger.info("=" * 80)
+    logger.info("GPU BATCHED INSPIRAL DETAILED PROFILE")
+    logger.info("=" * 80)
+    logger.info(f"Batches processed: {_profile_counts['batches_processed']}")
+    logger.info(f"Segments processed: {_profile_counts['segments_processed']}")
+    logger.info(f"Templates processed: {_profile_counts['templates_processed']}")
+    logger.info(f"Triggers found: {_profile_counts['triggers_found']}")
+    logger.info("")
+    logger.info(f"{'Operation':<30} {'Time (s)':<12} {'% Total':<10} {'Avg/call (ms)':<15}")
+    logger.info("-" * 80)
+    
+    items = [
+        ('Template Generation', 'template_generation', _profile_counts['batches_processed']),
+        ('Sigmasq Computation', 'sigmasq_computation', _profile_counts['segments_processed']),
+        ('Matched Filtering', 'matched_filter', _profile_counts['segments_processed']),
+        ('SNR Normalization', 'snr_normalization', _profile_counts['segments_processed']),
+        ('Threshold & Cluster', 'threshold_cluster', _profile_counts['segments_processed']),
+        ('Chi-squared', 'chisq_computation', _profile_counts['segments_processed']),
+        ('SG Chi-squared', 'sg_chisq', _profile_counts['segments_processed']),
+        ('NewSNR Cut', 'newsnr_cut', _profile_counts['segments_processed']),
+        ('Output Preparation', 'output_preparation', _profile_counts['segments_processed']),
+        ('GPU Synchronization', 'gpu_sync', _profile_counts['segments_processed']),
+    ]
+    
+    for name, key, count in items:
+        t = _profile_times[key]
+        pct = 100.0 * t / total if total > 0 else 0
+        avg = 1000.0 * t / count if count > 0 else 0
+        logger.info(f"{name:<30} {t:<12.4f} {pct:<10.2f} {avg:<15.2f}")
+    
+    logger.info("-" * 80)
+    logger.info(f"{'TOTAL':<30} {total:<12.4f} {100.0:<10.2f}")
+    logger.info("=" * 80)
 
 
 def template_triggers_gpu_batched(t_nums, bank, segments, matched_filter,
@@ -53,27 +127,49 @@ def template_triggers_gpu_batched(t_nums, bank, segments, matched_filter,
         
     Returns
     -------
-    out_vals_all : list of list of dict
-        Trigger data for each template
+    out_vals : dict
+        Dictionary with trigger data arrays:
+        - 'template_id': template indices (from t_nums)
+        - 'time_index': time indices
+        - 'snr': SNR values
+        - 'chisq': chi-squared values
+        - 'chisq_dof': chi-squared degrees of freedom
+        - 'sigmasq': sigmasq values
     tparams : list of dict
         Template parameters for each template
     """
     import copy
     
+    t_start_func = time.time()
+    _profile_counts['batches_processed'] += 1
+    _profile_counts['templates_processed'] += len(t_nums)
+    
     num_templates = len(t_nums)
     tparams = []
-    out_vals_all = [[] for _ in range(num_templates)]
+    
+    # Accumulators for all triggers across all segments
+    all_template_ids = []
+    all_time_indices = []
+    all_snrs = []
+    all_chisqs = []
+    all_chisq_dofs = []
+    all_sigmasqs = []
     
     # Get template data as 2D cupy array (batch_size x freq_length)
     # This calls directly into batched template generation, bypassing PyCBC array overhead
-    htilde_batch, templates = _generate_templates_gpu(t_nums, bank)
+    t0 = time.time()
+    htilde_batch, templates, kmin_array, kmax_array = _generate_templates_gpu(t_nums, bank)
+    cp.cuda.Stream.null.synchronize()
+    _profile_times['template_generation'] += time.time() - t0
+    
     tparams = [bank.table[i] for i in t_nums]
     
-    # Get filter parameters for each template
+    # Get filter parameters for each template (kept for compatibility, but kmin/kmax are better)
     template_flow = cp.array([t.f_lower for t in templates], dtype=cp.float32)
     
     # Process each segment
     for s_num, stilde in enumerate(segments):
+        _profile_counts['segments_processed'] += 1
         # Skip if any template in batch should be rejected
         if not all(inj_filter_rejector.template_segment_checker(bank, t_num, stilde) 
                   for t_num in t_nums):
@@ -84,75 +180,109 @@ def template_triggers_gpu_batched(t_nums, bank, segments, matched_filter,
         psd_data = stilde.psd._data  # Underlying cupy array
         
         # Compute sigmasq for all templates
-        sigmasqs = _compute_sigmasqs_gpu(htilde_batch, psd_data, template_flow,
-                                          stilde.delta_f, templates)
+        t0 = time.time()
+        sigmasqs = _compute_sigmasqs_gpu(htilde_batch, psd_data, kmin_array, kmax_array, stilde.delta_f)
+        cp.cuda.Stream.null.synchronize()
+        _profile_times['sigmasq_computation'] += time.time() - t0
         
         # Batched matched filtering - direct kernel call
         # Note: stilde is already overwhitened (divided by PSD)
+        t0 = time.time()
         snr_batch, corr_batch = _matched_filter_gpu(htilde_batch, stilde_data, 
                                                      matched_filter.kmin, 
                                                      matched_filter.kmax)
+        cp.cuda.Stream.null.synchronize()
+        _profile_times['matched_filter'] += time.time() - t0
         
         # The SNR normalization for overwhitened data
         # SNR = IFFT(conj(h) * s) / sqrt(sigmasq / (4 * delta_f))
         # Simplifying: SNR = IFFT_result * sqrt(4 * delta_f) / sqrt(sigmasq)
         # But let's match what PyCBC does: just divide by sqrt(sigmasq)
+        t0 = time.time()
         snr_batch = snr_batch / cp.sqrt(sigmasqs[:, cp.newaxis])
+        cp.cuda.Stream.null.synchronize()
+        _profile_times['snr_normalization'] += time.time() - t0
         
         # Threshold and cluster - operates on 2D arrays
+        t0 = time.time()
         trigger_indices, trigger_snrs = _threshold_and_cluster_gpu(
             snr_batch, opt.snr_threshold, cluster_window, stilde.analyze)
+        cp.cuda.Stream.null.synchronize()
+        _profile_times['threshold_cluster'] += time.time() - t0
         
         # Compute chi-squared for triggers
+        t0 = time.time()
         chisqs_batch, chisq_dofs_batch = _compute_chisq_gpu(
             corr_batch, trigger_indices, trigger_snrs, sigmasqs,
             stilde.psd, power_chisq, templates, t_nums)
+        cp.cuda.Stream.null.synchronize()
+        _profile_times['chisq_computation'] += time.time() - t0
         
         # Extract results for each template
-        for tidx in range(num_templates):
-            # Get triggers for this template
-            tidx_mask = trigger_indices[:, 0] == tidx
-            if not cp.any(tidx_mask):
-                continue
-                
-            # Time indices are currently relative to full snr_batch
-            # We need to add cumulative_index to get GPS time indices
-            idx = trigger_indices[tidx_mask, 1]
-            snrv = trigger_snrs[tidx_mask]
-            chisq = chisqs_batch[tidx_mask]
-            chisq_dof = chisq_dofs_batch[tidx_mask]
-            
-            # Build output dictionary
-            # Convert cupy arrays to PyCBC Arrays
-            out_vals = out_vals_ref.copy()
-            out_vals['chisq'] = Array(chisq, copy=False)
-            out_vals['chisq_dof'] = Array(chisq_dof, copy=False)
-            
-            # TODO: Implement GPU SG chisq
-            # For now, create dummy values
-            out_vals['sg_chisq'] = Array(cp.zeros(len(idx), dtype=float32), copy=False)
-            
-            # Convert time indices to GPS sample indices
-            # idx is currently relative to the start of snr_batch (which starts at seg_slice.start)
-            # cumulative_index = seg_slice.start + ana.start
-            # Our idx already includes ana.start offset (added in threshold function)
-            # So we add (cumulative_index - ana.start) = seg_slice.start
-            idx = idx + (stilde.cumulative_index - stilde.analyze.start)
-            
-            out_vals['time_index'] = Array(idx, copy=False)
-            out_vals['snr'] = Array(snrv, copy=False)
-            out_vals['sigmasq'] = Array(cp.zeros(len(snrv), dtype=float32) + sigmasqs[tidx], copy=False)
-            
-            if opt.psdvar_short_segment is not None:
-                import pycbc.psd
-                out_vals['psd_var_val'] = \
-                    pycbc.psd.find_trigger_value(psd_var, idx,
-                                               opt.gps_start_time,
-                                               opt.sample_rate)
-            
-            out_vals_all[tidx].append(copy.deepcopy(out_vals))
+        t0 = time.time()
+        
+        # Early exit if no triggers
+        n_triggers_total = len(trigger_indices)
+        if n_triggers_total == 0:
+            _profile_times['output_preparation'] += time.time() - t0
+            continue
+        
+        # Move constant calculations outside the loop
+        time_offset = stilde.cumulative_index - stilde.analyze.start
+        
+        # Apply time offset to all triggers at once (before splitting by template)
+        trigger_indices[:, 1] += time_offset
+        
+        # Get template ID for each trigger (this is the index within the batch, 0 to num_templates-1)
+        template_batch_ids = trigger_indices[:, 0]
+        
+        # Total triggers for profiling
+        _profile_counts['triggers_found'] += n_triggers_total
+        
+        # Map batch indices to actual template IDs from t_nums
+        # template_batch_ids are indices 0, 1, 2, ... num_templates-1
+        # We need to convert them to actual template indices from t_nums
+        template_ids_actual = cp.array([t_nums[i] for i in template_batch_ids.get()], dtype=cp.int32)
+        
+        # Collect arrays for this segment
+        time_indices = trigger_indices[:, 1]
+        
+        # Get sigmasq for each trigger
+        sigmasq_vals = sigmasqs[template_batch_ids]
+        
+        # Append to accumulators
+        all_template_ids.append(template_ids_actual)
+        all_time_indices.append(time_indices)
+        all_snrs.append(trigger_snrs)
+        all_chisqs.append(chisqs_batch)
+        all_chisq_dofs.append(chisq_dofs_batch)
+        all_sigmasqs.append(sigmasq_vals)
+        
+        _profile_times['output_preparation'] += time.time() - t0
     
-    return out_vals_all, tparams
+    # Concatenate all results
+    if len(all_template_ids) > 0:
+        out_vals = {
+            'template_id': Array(cp.concatenate(all_template_ids), copy=False),
+            'time_index': Array(cp.concatenate(all_time_indices), copy=False),
+            'snr': Array(cp.concatenate(all_snrs), copy=False),
+            'chisq': Array(cp.concatenate(all_chisqs), copy=False),
+            'chisq_dof': Array(cp.concatenate(all_chisq_dofs), copy=False),
+            'sigmasq': Array(cp.concatenate(all_sigmasqs), copy=False)
+        }
+    else:
+        # No triggers found
+        out_vals = {
+            'template_id': Array(cp.array([], dtype=cp.int32), copy=False),
+            'time_index': Array(cp.array([], dtype=cp.int32), copy=False),
+            'snr': Array(cp.array([], dtype=cp.complex64), copy=False),
+            'chisq': Array(cp.array([], dtype=cp.float32), copy=False),
+            'chisq_dof': Array(cp.array([], dtype=cp.int32), copy=False),
+            'sigmasq': Array(cp.array([], dtype=cp.float32), copy=False)
+        }
+    
+    _profile_times['total_function'] += time.time() - t_start_func
+    return out_vals, tparams
 
 
 def _generate_templates_gpu(t_nums, bank):
@@ -222,7 +352,7 @@ def _generate_templates_gpu(t_nums, bank):
                 (t_nums[0], t_nums[-1], len(t_nums), min(f_low_list)))
     
     # Generate all templates in one batch
-    htilde_batch, htilde_list = spa_tmplt_batch(templates_params, bank.filter_length, **common_kwds)
+    htilde_batch, htilde_list, kmin_array, kmax_array = spa_tmplt_batch(templates_params, bank.filter_length, **common_kwds)
     
     # Process each template and extract data
     for i, (idx, htilde) in enumerate(zip(t_nums, htilde_list)):
@@ -246,46 +376,56 @@ def _generate_templates_gpu(t_nums, bank):
     
     # Extract underlying cupy data into 2D array
     
-    return htilde_batch, htilde_list
+    return htilde_batch, htilde_list, kmin_array, kmax_array
 
 
-def _compute_sigmasqs_gpu(htilde_batch, psd_data, template_flow, delta_f, templates):
-    """Compute sigmasq for batch of templates using GPU
+def _compute_sigmasqs_gpu(htilde_batch, psd_data, kmin_array, kmax_array, delta_f):
+    """Compute sigmasq for batch of templates using fully batched GPU computation
+    
+    Computes: sigmasq[i] = 4 * delta_f * sum(|h[i,k]|^2 / S[k]) for k in [kmin[i], kmax[i])
+    
+    Uses broadcasting to create a mask and compute all sigmasqs in parallel.
     
     Parameters
     ----------
     htilde_batch : cupy.ndarray
         2D array of templates (num_templates x freq_length)
     psd_data : cupy.ndarray
-        PSD array
-    template_flow : cupy.ndarray
-        Lower frequency cutoff for each template
+        PSD array (freq_length,)
+    kmin_array : cupy.ndarray
+        Start frequency index for each template (num_templates,)
+    kmax_array : cupy.ndarray
+        End frequency index for each template (num_templates,)
     delta_f : float
         Frequency spacing
-    templates : list
-        List of template FrequencySeries objects (for metadata)
         
     Returns
     -------
     cupy.ndarray
-        Array of sigmasq values for each template
+        Array of sigmasq values for each template (num_templates,)
     """
     num_templates = htilde_batch.shape[0]
     freq_length = min(htilde_batch.shape[1], len(psd_data))
-    sigmasqs = cp.zeros(num_templates, dtype=cp.float32)
     
-    # Compute sigmasq for each template
-    # sigmasq = 4 * delta_f * sum(|h[k]|^2 / S[k]) for k in [kmin, kmax)
-    for i in range(num_templates):
-        # Get frequency range from template metadata
-        kmin = int(templates[i].f_lower / delta_f)
-        kmax = templates[i].end_idx if hasattr(templates[i], 'end_idx') else freq_length
-        kmax = min(kmax, freq_length)
-        
-        # Compute integrand
-        htilde = htilde_batch[i, :freq_length]
-        integrand = cp.abs(htilde[kmin:kmax])**2 / psd_data[kmin:kmax]
-        sigmasqs[i] = 4.0 * delta_f * cp.sum(integrand)
+    # Compute |h|^2 / PSD for all templates and frequencies at once
+    # Shape: (num_templates, freq_length)
+    power_spectrum = (htilde_batch[:, :freq_length].real**2 + htilde_batch[:, :freq_length].imag**2) / psd_data[:freq_length]
+    
+    # Create frequency index array: shape (freq_length,)
+    k_indices = cp.arange(freq_length, dtype=cp.int64)
+    
+    # Broadcast to create mask: shape (num_templates, freq_length)
+    # mask[i, k] = True if kmin[i] <= k < kmax[i]
+    kmin_broadcast = kmin_array[:, cp.newaxis]  # shape: (num_templates, 1)
+    kmax_broadcast = kmax_array[:, cp.newaxis]  # shape: (num_templates, 1)
+    mask = (k_indices >= kmin_broadcast) & (k_indices < kmax_broadcast)  # shape: (num_templates, freq_length)
+    
+    # Apply mask and sum across frequency axis
+    # This computes the sum for all templates in parallel
+    sigmasqs = cp.sum(power_spectrum * mask, axis=1)  # shape: (num_templates,)
+    
+    # Apply the 4 * delta_f factor
+    sigmasqs *= 4.0 * delta_f
     
     return sigmasqs
 

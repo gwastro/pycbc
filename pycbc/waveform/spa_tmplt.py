@@ -430,5 +430,5 @@ def spa_tmplt_batch(templates_params, filter_length, **common_kwds):
 
     htilde_batch_gpu = htilde_batch_gpu.reshape(num_templates, filter_length)
     
-    return htilde_batch_gpu, templates
+    return htilde_batch_gpu, templates, kmin_gpu, kmax_gpu
 
