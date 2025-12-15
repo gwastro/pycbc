@@ -47,6 +47,9 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 # =============================================================================
 # Functions
 # =============================================================================
+def ra_to_ra_mollweide(ra):
+    return (ra + np.pi) % (2*np.pi) - np.pi
+
 def process_var_strings(qty):
     """Add underscores to match HDF column name conventions"""
 
@@ -455,7 +458,12 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2z': "Spin z-component of 2nd binary component",
                     'chi_p': "Effective precession spin"}
 fig = plt.figure()
-ax = fig.gca()
+if 'dec' in y_qty and 'ra' in x_qty:
+    ax = fig.add_subplot(111, projection="mollweide")
+    missed_inj['ra'] = ra_to_ra_mollweide(missed_inj['ra'])
+    found_inj['ra'] = ra_to_ra_mollweide(found_inj['ra'])
+else:
+    ax = fig.add_subplot(111)
 ax.set_xscale("log" if opts.x_log else "linear")
 ax.set_yscale("log" if opts.y_log else "linear")
 ax.set_xlabel(axis_labels_dict[x_qty])
