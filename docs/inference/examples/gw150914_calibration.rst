@@ -1,3 +1,5 @@
+.. _example_calibration:
+
 ----------------------------------------------------------------------------
 Example: Generating calibration configuration file for GW150914 and GW170817
 ----------------------------------------------------------------------------
@@ -14,10 +16,11 @@ GW170817.
 Downloading calibration uncertainty files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Calibration uncertainty files are provided by the LIGO–Virgo Collaboration and 
-are available from the LIGO DCC:
+First, we need to download the data from the `Gravitational Wave Open Science
+Center <https://www.gwosc.org>`_. Run:
 
-https://dcc.ligo.org/T2100313/public
+Calibration uncertainty files are provided by the LIGO–Virgo KAGRA Collaboration
+and are available from the `LIGO DCC<https://dcc.ligo.org/T2100313/public>`.
 
 First, create a directory to store the calibration files:
 
