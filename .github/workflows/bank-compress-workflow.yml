@@ -48,7 +48,6 @@ jobs:
         cp examples/tmpltbank/compress_workflow/*.ini ./
         bash -e examples/tmpltbank/compress_workflow/gen.sh
         cd output
-        bash -e ../examples/search/submit.sh
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
