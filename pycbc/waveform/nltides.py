@@ -1,8 +1,9 @@
 """ Utilities for introducing nonlinear tidal effects into waveform approximants
 """
-import pycbc.conversions
 import numpy
-import lal
+
+import pycbc.conversions
+from pycbc.constants import PI
 
 def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
     """Calculate the change to the Fourier phase change due
@@ -48,11 +49,11 @@ def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
     delta_psi_f_gt_f0 = - phi_of_f_factor * (f[kmin:kmax]/f_ref)**(n-3.)
 
     # Fourier phase shift below f0 from 2 pi f \Delta t(f)
-    delta_psi_f_le_f0 += 2.0 * lal.lal.PI * f[0:kmin] * t_of_f_factor * \
+    delta_psi_f_le_f0 += 2.0 * PI * f[0:kmin] * t_of_f_factor * \
         (f0/f_ref)**(n-4.)
 
     # Fourier phase shift above f0 from 2 pi f \Delta t(f)
-    delta_psi_f_gt_f0 += 2.0 * lal.lal.PI * f[kmin:kmax] * t_of_f_factor * \
+    delta_psi_f_gt_f0 += 2.0 * PI * f[kmin:kmax] * t_of_f_factor * \
         (f[kmin:kmax]/f_ref)**(n-4.)
 
     # Return the shift to the Fourier phase
