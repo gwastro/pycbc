@@ -1,44 +1,122 @@
-------------------------------------------------------------------------
-GW150914 example with gaussian noise model and calibration configuration
-------------------------------------------------------------------------
+----------------------------------------------------------------------------
+Example: Generating calibration configuration file for GW150914 and GW170817
+----------------------------------------------------------------------------
 
-To run on GW150914 with detector calibration, we can use the same 
-:download:`sampler
-<../../../examples/inference/samplers/emcee_pt-gw150914_like.ini>`, :download:
-`prior
-and model <../../../examples/inference/priors/gw150914_like.ini>` configuration
- files as was :ref:`used for the simulated BBH example<inference_example_bbh>`.
- We only need to change the data configuration file, so that we will run on real gravitational-wave data.
+When analyzing real gravitational-wave data, it is often desirable to 
+marginalize over detector calibration uncertainties. PyCBC supports this through
+a calibration configuration file that specifies frequency-dependent amplitude 
+and phase uncertainties for each interferometer.
 
-First, we need to download the data from the `Gravitational Wave Open Science
-Center <https://www.gwosc.org>`_. Run:
+This section describes how to download the official LIGO–Virgo calibration
+uncertainty files and generate a calibration configuration file for GW150914 and
+GW170817.
 
-  .. code-block:: bash
+Downloading calibration uncertainty files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-     wget https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
-     wget https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+Calibration uncertainty files are provided by the LIGO–Virgo Collaboration and 
+are available from the LIGO DCC:
 
-This will download the appropriate data ("frame") files to your current working
-directory.  You can now use the following data configuration file:
+https://dcc.ligo.org/T2100313/public
 
-.. literalinclude:: ../../../examples/inference/gw150914/data.ini
-   :language: ini
+First, create a directory to store the calibration files:
 
-:download:`Download <../../../examples/inference/gw150914/data.ini>`
+.. code-block:: bash
 
-The ``frame-files`` argument points to the data files that we just downloaded
-from GWOSC. If you downloaded the files to a different directory, modify this
-argument accordingly to point to the correct location.
+   OUT_DIR=calibration_uncertainty_files
+   mkdir -p ${OUT_DIR}
+   cd ${OUT_DIR}
+
+Download the LIGO calibration uncertainty files. You need to do it once and then
+use them for generation of any calibration configuration file in O1, O2, or O3 
+observation run of LIGO and Virgo detector network:
+
+.. code-block:: bash
+
+   wget https://dcc.ligo.org/public/0177/T2100313/003/LIGO_O1_cal_uncertainty.tgz
+   wget https://dcc.ligo.org/public/0177/T2100313/003/LIGO_O2_cal_uncertainty.tgz
+   wget https://dcc.ligo.org/public/0177/T2100313/003/LIGO_O3_cal_uncertainty.tgz
+
+Download the Virgo calibration uncertainty files:
+
+.. code-block:: bash
+
+   wget https://dcc.ligo.org/public/0177/T2100313/003/Virgo_O2_cal_uncertainty.tgz
+   wget https://dcc.ligo.org/public/0177/T2100313/003/Virgo_O3_cal_uncertainty.tgz
+
+Extract all downloaded archives:
+
+.. code-block:: bash
+
+   tar -xzvf LIGO_O1_cal_uncertainty.tgz
+   tar -xzvf LIGO_O2_cal_uncertainty.tgz
+   tar -xzvf LIGO_O3_cal_uncertainty.tgz
+
+   tar -xzvf Virgo_O2_cal_uncertainty.tgz
+   tar -xzvf Virgo_O3_cal_uncertainty.tgz
+
+After extraction, the directory will contain subdirectories for each observing 
+run and interferometer, with frequency-dependent calibration uncertainty
+envelopes.
+
+Generating a calibration configuration file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once the calibration uncertainty files are available locally, use
+``pycbc_inference_create_calibration_config`` to generate a calibration
+configuration file for GW150914.
+
+Set the path to the extracted calibration files:
+
+.. code-block:: bash
+
+   CALIB_ENV_FILE_PATH=./calibration_uncertainty_files
+
+Generate the calibration configuration file for the Hanford (H1) and Livingston
+(L1) detectors:
+
+.. code-block:: bash
+
+   pycbc_inference_create_calibration_config \
+       --calibration-files-path ${CALIB_ENV_FILE_PATH} \
+       --ifos H1 L1 \
+       --minimum-frequency H1:20 L1:20 \
+       --maximum-frequency H1:1000 L1:1000 \
+       --gps-time 1126259462.43 \
+       --correction-type H1:data L1:data \
+       --tag GW150914_095045
+
+This command produces a calibration configuration file that can be supplied to
+``pycbc_inference`` to enable calibration marginalization.
 
 .. note::
-   If you are running on a cluster that has a ``LIGO_DATAFIND_SERVER`` (e.g.,
-   LIGO Data Grid clusters, Atlas) you do not need to copy frame
-   files. Instead, replace the ``frame-files`` argument with ``frame-type``,
-   and set it to ``H1:H1_LOSC_16_V1 L1:L1_LOSC_16_V1``.
+   The calibration uncertainty files and frequency ranges should match the
+   observing run, detectors, and frequency range used in the analysis.
 
-Now run:
+Example: GW170817 (H1–L1–V1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. literalinclude:: ../../../examples/inference/gw150914/run.sh
-   :language: bash
+For GW170817, calibration uncertainties are included for the Hanford (H1),
+Livingston (L1), and Virgo (V1) detectors. The calibration configuration file 
+can be generated as follows:
 
-:download:`Download <../../../examples/inference/gw150914/run.sh>`
+.. code-block:: bash
+
+   pycbc_inference_create_calibration_config \
+       --calibration-files-path ${CALIB_ENV_FILE_PATH} \
+       --ifos H1 L1 V1 \
+       --minimum-frequency H1:21.6 L1:21.6 V1:21.6 \
+       --maximum-frequency H1:2048 L1:2048 V1:2048 \
+       --gps-time 1187008882.42 \
+       --correction-type H1:data L1:data V1:template \
+       --tag GW170817_124104
+
+.. note::
+
+   Unlike the GW150914 example, the Virgo (V1) detector for GW170817 uses
+   ``template`` calibration corrections, meaning that calibration uncertainties
+   are applied to the waveform model or template rather than directly to the 
+   data stream. The Hanford (H1) and Livingston (L1) detectors continue to use 
+   ``data`` calibration type.
+
+
