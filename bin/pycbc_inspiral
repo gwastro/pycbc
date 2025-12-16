@@ -66,6 +66,8 @@ parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
+parser.add_argument("--high-frequency-cutoff", type=float, default=None,
+                  help="The high frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--enable-bank-start-frequency", action='store_true',
                   help="Read the starting frequency of template waveforms"
                        " from the template bank.")
@@ -287,7 +289,8 @@ def template_triggers(t_num):
         out_vals['cont_chisq'], _ = \
               autochisq.values(snr, idx+stilde.analyze.start, template,
                                stilde.psd, norm, stilde=stilde,
-                               low_frequency_cutoff=flow)
+                               low_frequency_cutoff=flow,
+                               high_frequency_cutoff=fhigh)
 
         idx += stilde.cumulative_index
 
@@ -323,6 +326,7 @@ with ctx:
             fft.fftw.import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
 
     flow = opt.low_frequency_cutoff
+    fhigh = opt.high_frequency_cutoff
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
@@ -385,7 +389,7 @@ with ctx:
             tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
             checkpoint_exists = True
         except Exception as e:
-            if args.require_valid_checkpoint:
+            if opt.require_valid_checkpoint:
                 logging.info("Failed to load checkpoint file")
                 raise(e)
 
@@ -413,7 +417,7 @@ with ctx:
         ncores *= opt.multiprocessing_nprocesses
 
 
-    matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
+    matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, opt.high_frequency_cutoff,
                                    opt.snr_threshold, tlen, delta_f, complex64,
                                    segments, template_mem, use_cluster,
                                    downsample_factor=opt.downsample_factor,
