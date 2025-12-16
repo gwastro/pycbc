@@ -154,9 +154,11 @@ if opts.plot_title is None:
     else:
         opts.plot_title += f" vs {snr_type.capitalize()} SNR"
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: background triggers. ")
     if found_missed_file:
-        opts.plot_caption += "Red crosses: injections triggers. "
+        opts.plot_caption = "Blue crosses: background triggers. "\
+            "Red crosses: injections triggers. "
+    else:
+        opts.plot_caption = "Distribution of background triggers. "
     if veto_type == 'network':
         opts.plot_caption += ("Gray shaded region: area cut by the " +
                               "reweighted SNR threshold. " +
