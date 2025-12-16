@@ -1,4 +1,4 @@
-.. _example_calibration:
+.. _generate_calibration_config:
 
 ----------------------------------------------------------------------------
 Example: Generating calibration configuration file for GW150914 and GW170817

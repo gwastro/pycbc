@@ -421,7 +421,7 @@ configuration files can be created using the executable
 ``pycbc_inference_create_calibration_config``. 
 
 For a complete working example, see the :ref:`GW150914 calibration example
-<example_calibration>`. You can also run:
+<generate_calibration_config>`. You can also run:
 
 .. code-block:: bash
 
@@ -529,7 +529,7 @@ Examples
     inference/examples/lisa_smbhb_inj_pe.rst
     inference/examples/sampler_platter.rst
     inference/models.rst
-    inference/examples/gw150914_calibration.rst
+    inference/examples/generate_calibration_config.rst
 
 ----------------------------
 Visualizing the Posteriors

@@ -44,7 +44,7 @@ Now run:
 You can optionally include marginalization over detector calibration 
 uncertainties. For detailed instructions on generating a calibration 
 configuration file, see the 
-:ref:`GW150914 calibration instructions<example_calibration>`.
+:ref:`GW150914 calibration instructions<generate_calibration_config>`.
 
 Once you have generated a calibration configuration file for a network of 
 detectors, you can pass it to the ``pycbc_inference`` command. The example 
