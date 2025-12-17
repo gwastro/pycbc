@@ -97,7 +97,7 @@ This command produces a calibration configuration file that can be supplied to
    observing run, detectors, and frequency range used in the analysis.
 
 Example: GW170817 (H1–L1–V1)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For GW170817, calibration uncertainties are included for the Hanford (H1),
 Livingston (L1), and Virgo (V1) detectors. The calibration configuration file
