@@ -413,7 +413,6 @@ Calibration configuration files can be generated from the detector calibration
  uncertainty estimates provided by the LIGO–Virgo–KAGRA (LVK) Collaboration. For
 example, the calibration uncertainty estimates for the O1–O3 observing runs can
 be downloaded from the following DCC page:
-
 `LIGO DCC T2100313 <https://dcc.ligo.org/T2100313/public>`_
 
 Once the calibration uncertainty files are downloaded to a local directory, the
