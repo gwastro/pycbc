@@ -411,14 +411,14 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 
 Calibration configuration files can be generated from the detector calibration
  uncertainty estimates provided by the LIGO–Virgo–KAGRA (LVK) Collaboration. For
-example, the calibration uncertainty estimates for the O1–O3 observing runs can 
+example, the calibration uncertainty estimates for the O1–O3 observing runs can
 be downloaded from the following DCC page:
 
 `LIGO DCC T2100313 <https://dcc.ligo.org/T2100313/public>`_
 
 Once the calibration uncertainty files are downloaded to a local directory, the
 configuration files can be created using the executable
-``pycbc_inference_create_calibration_config``. 
+``pycbc_inference_create_calibration_config``.
 
 For a complete working example, see the :ref:`GW150914 calibration example
 <generate_calibration_config>`. You can also run:

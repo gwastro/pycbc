@@ -41,14 +41,14 @@ Now run:
 
 :download:`Download <../../../examples/inference/gw150914/run.sh>`
 
-You can optionally include marginalization over detector calibration 
-uncertainties. For detailed instructions on generating a calibration 
-configuration file, see the 
+You can optionally include marginalization over detector calibration
+uncertainties. For detailed instructions on generating a calibration
+configuration file, see the
 :ref:`GW150914 calibration instructions<generate_calibration_config>`.
 
-Once you have generated a calibration configuration file for a network of 
-detectors, you can pass it to the ``pycbc_inference`` command. The example 
-calibration configuration file for GW150914 can be downloaded from 
+Once you have generated a calibration configuration file for a network of
+detectors, you can pass it to the ``pycbc_inference`` command. The example
+calibration configuration file for GW150914 can be downloaded from
 :download:`Download <../../../examples/inference/gw150914/calibration-GW150914.ini>`
 
 You can run the following command include detector calibration uncertainties in

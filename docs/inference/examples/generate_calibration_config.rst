@@ -4,9 +4,9 @@
 Example: Generating calibration configuration file for GW150914 and GW170817
 ----------------------------------------------------------------------------
 
-When analyzing real gravitational-wave data, it is often desirable to 
+When analyzing real gravitational-wave data, it is often desirable to
 marginalize over detector calibration uncertainties. PyCBC supports this through
-a calibration configuration file that specifies frequency-dependent amplitude 
+a calibration configuration file that specifies frequency-dependent amplitude
 and phase uncertainties for each interferometer.
 
 This section describes how to download the official LIGO–Virgo calibration
@@ -31,7 +31,7 @@ First, create a directory to store the calibration files:
    cd ${OUT_DIR}
 
 Download the LIGO calibration uncertainty files. You need to do it once and then
-use them for generation of any calibration configuration file in O1, O2, or O3 
+use them for generation of any calibration configuration file in O1, O2, or O3
 observation run of LIGO and Virgo detector network:
 
 .. code-block:: bash
@@ -58,7 +58,7 @@ Extract all downloaded archives:
    tar -xzvf Virgo_O2_cal_uncertainty.tgz
    tar -xzvf Virgo_O3_cal_uncertainty.tgz
 
-After extraction, the directory will contain subdirectories for each observing 
+After extraction, the directory will contain subdirectories for each observing
 run and interferometer, with frequency-dependent calibration uncertainty
 envelopes.
 
@@ -100,7 +100,7 @@ Example: GW170817 (H1–L1–V1)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For GW170817, calibration uncertainties are included for the Hanford (H1),
-Livingston (L1), and Virgo (V1) detectors. The calibration configuration file 
+Livingston (L1), and Virgo (V1) detectors. The calibration configuration file
 can be generated as follows:
 
 .. code-block:: bash
@@ -118,8 +118,8 @@ can be generated as follows:
 
    Unlike the GW150914 example, the Virgo (V1) detector for GW170817 uses
    ``template`` calibration corrections, meaning that calibration uncertainties
-   are applied to the waveform model or template rather than directly to the 
-   data stream. The Hanford (H1) and Livingston (L1) detectors continue to use 
+   are applied to the waveform model or template rather than directly to the
+   data stream. The Hanford (H1) and Livingston (L1) detectors continue to use
    ``data`` calibration type.
 
 
