@@ -21,45 +21,104 @@ other modules and packages may use in addition to some optimized utilities.
 import os, sys
 import logging
 from collections import OrderedDict
+from pycbc.libutils import get_lscpu_caches
 
 logger = logging.getLogger('pycbc.opt')
-
+caches_backend = 'lscpu'
 # Work around different Python versions to get runtime
 # info on hardware cache sizes
 _USE_SUBPROCESS = False
-HAVE_GETCONF = False
-if os.environ.get("LEVEL2_CACHE_SIZE", None) or os.environ.get("NO_GETCONF", None):
-    HAVE_GETCONF = False
-elif sys.platform == 'darwin':
-    # Mac has getconf, but we can do nothing useful with it
-    HAVE_GETCONF = False
-else:
-    import subprocess
-    _USE_SUBPROCESS = True
-    HAVE_GETCONF = True
+# nix OS?
+nix=False
 
-if os.environ.get("LEVEL2_CACHE_SIZE", None):
+if sys.platform=='darwin' or sys.platform=='linux':
+    nix=True
+
+#print(f"opt: OS is nix? {nix}")
+
+if not nix:
+    # If Windows, get L2 cache size from env
+    # Ignore other vars
     LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
     logger.info("opt: using LEVEL2_CACHE_SIZE %d from environment",
                 LEVEL2_CACHE_SIZE)
-elif HAVE_GETCONF:
+else:
+    # darwin or linux
+    # If python3, subprocess can be used
+    try:
+        import subprocess
+        _USE_SUBPROCESS = True
+    except ModuleNotFoundError:
+        import commands
+        _USE_SUBPROCESS = False
+
+    #print(f"subprocess module found? {_USE_SUBPROCESS}")
     if _USE_SUBPROCESS:
-        def getconf(confvar):
-            return int(subprocess.check_output(['getconf', confvar]))
+        # Get cache sizes from lscpu, linesize from getconf
+        # getconf does not return the correct cache size
+        # on modern CPUs
+        if sys.platform!='darwin':
+            # Flag for later
+            LEVEL2_CACHE_LINESIZE=None
+
+            def getconf(confvar):
+                """ getconf for cache line sizes """
+                return int(subprocess.check_output(['getconf', confvar]))
+        
+            if caches_backend=='lscpu':
+                """ lscpu for caches and their assoc """
+                cache_info = get_lscpu_caches()
+
+                def get_lscpu_val(confvar, caches_info=cache_info):
+                    """ lscpu overload of getval """
+                    return caches_info[confvar]
+            
+                getval = get_lscpu_val
+                
+            elif caches_backend=='getconf':
+                # getconf overload of getval
+                getval = getconf
+                caches_info=None
+            else:
+                raise KeyError(f"Unknown cache backend {caches_backend}")
+        
     else:
         def getconf(confvar):
+            """ getconf overload, but with older commands module """
             retlist = commands.getstatusoutput('getconf ' + confvar)
             return int(retlist[1])
+        
+        getval=getconf
+    
+    if sys.platform!='darwin':
+        LEVEL1_DCACHE_SIZE = getval('LEVEL1_DCACHE_SIZE')
+        LEVEL2_CACHE_SIZE = getval('LEVEL2_CACHE_SIZE')
+        LEVEL3_CACHE_SIZE = getval('LEVEL3_CACHE_SIZE')
 
-    LEVEL1_DCACHE_SIZE = getconf('LEVEL1_DCACHE_SIZE')
-    LEVEL1_DCACHE_ASSOC = getconf('LEVEL1_DCACHE_ASSOC')
-    LEVEL1_DCACHE_LINESIZE = getconf('LEVEL1_DCACHE_LINESIZE')
-    LEVEL2_CACHE_SIZE = getconf('LEVEL2_CACHE_SIZE')
-    LEVEL2_CACHE_ASSOC = getconf('LEVEL2_CACHE_ASSOC')
-    LEVEL2_CACHE_LINESIZE = getconf('LEVEL2_CACHE_LINESIZE')
-    LEVEL3_CACHE_SIZE = getconf('LEVEL3_CACHE_SIZE')
-    LEVEL3_CACHE_ASSOC = getconf('LEVEL3_CACHE_ASSOC')
-    LEVEL3_CACHE_LINESIZE = getconf('LEVEL3_CACHE_LINESIZE')
+        LEVEL1_DCACHE_ASSOC = getval('LEVEL1_DCACHE_ASSOC')
+        LEVEL2_CACHE_ASSOC = getval('LEVEL2_CACHE_ASSOC')
+        LEVEL3_CACHE_ASSOC = getval('LEVEL3_CACHE_ASSOC')
+
+        # Can use getconf for cache line sizes
+        # but it fails to fetch it for L3
+        LEVEL1_DCACHE_LINESIZE = getval('LEVEL1_DCACHE_LINESIZE')
+        LEVEL2_CACHE_LINESIZE = getval('LEVEL2_CACHE_LINESIZE')
+        LEVEL3_CACHE_LINESIZE = getval('LEVEL3_CACHE_LINESIZE')
+    else:
+        # Get cache linesize from sysctl
+        # On Apple M chips, different Lev cache linesizes can be different!
+        # Also different cores (P vs E) can have different cache sizes!
+        # Cache assocs are are not usually exposed! 
+        # So get only sys reported lev2 size here instead
+        LEVEL2_CACHE_LINESIZE=int(subprocess.check_output(['sysctl', '-n', 'hw.cachelinesize']))
+
+    # Left here for testing. 
+    #print("Cache sizes")
+    #print(LEVEL1_DCACHE_SIZE,LEVEL2_CACHE_SIZE, LEVEL3_CACHE_SIZE)
+    #print("Cache assoc")
+    #print(LEVEL1_DCACHE_ASSOC, LEVEL2_CACHE_ASSOC, LEVEL3_CACHE_ASSOC)
+    #print("Cache linesizes")
+    #print(LEVEL1_DCACHE_LINESIZE, LEVEL2_CACHE_LINESIZE, LEVEL3_CACHE_LINESIZE)
 
 
 def insert_optimization_option_group(parser):
@@ -101,27 +160,19 @@ def verify_optimization_options(opt, parser):
 
     if opt.cpu_affinity_from_env is not None:
         if opt.cpu_affinity is not None:
-            logger.error(
-                "Both --cpu_affinity_from_env and --cpu_affinity specified"
-            )
+            logging.error("Both --cpu_affinity_from_env and --cpu_affinity specified")
             sys.exit(1)
 
         requested_cpus = os.environ.get(opt.cpu_affinity_from_env)
 
         if requested_cpus is None:
-            logger.error(
-                "CPU affinity requested from environment variable %s "
-                "but this variable is not defined",
-                opt.cpu_affinity_from_env
-            )
+            logging.error("CPU affinity requested from environment variable %s "
+                          "but this variable is not defined" % opt.cpu_affinity_from_env)
             sys.exit(1)
 
         if requested_cpus == '':
-            logger.error(
-                "CPU affinity requested from environment variable %s "
-                "but this variable is empty",
-                opt.cpu_affinity_from_env
-            )
+            logging.error("CPU affinity requested from environment variable %s "
+                          "but this variable is empty" % opt.cpu_affinity_from_env)
             sys.exit(1)
 
     if requested_cpus is None:
@@ -132,13 +183,11 @@ def verify_optimization_options(opt, parser):
         retcode = os.system(command)
 
         if retcode != 0:
-            logger.error(
-                'taskset command <%s> failed with return code %d',
-                command, retcode
-            )
+            logging.error('taskset command <%s> failed with return code %d' % \
+                          (command, retcode))
             sys.exit(1)
 
-        logger.info("Pinned to CPUs %s ", requested_cpus)
+        logging.info("Pinned to CPUs %s " % requested_cpus)
 
 class LimitedSizeDict(OrderedDict):
     """ Fixed sized dict for FIFO caching"""
