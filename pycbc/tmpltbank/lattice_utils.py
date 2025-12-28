@@ -18,7 +18,6 @@ import logging
 import copy
 import numpy
 
-import lal
 
 logger = logging.getLogger('pycbc.tmpltbank.lattice_utils')
 
@@ -121,12 +120,16 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     v3s : numpy.array
         Array of positions in the second dimension
     """
-    # Lalpulsar not a requirement for the rest of pycbc, so check if we have it
+    # Lal/Lalpulsar are not a requirement for the rest of pycbc, so check if we have it
     # here in this function.
     try:
+        import lal
         import lalpulsar
     except:
-        raise ImportError("A SWIG-wrapped install of lalpulsar is needed to use the anstar tiling functionality.")
+        raise ImportError(
+            "A SWIG-wrapped install of lalpulsar is needed to use "
+            "the anstar tiling functionality."
+        )
 
     tiling = lalpulsar.CreateLatticeTiling(3)
     lalpulsar.SetLatticeTilingConstantBound(tiling, 0, minv1, maxv1)

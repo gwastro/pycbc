@@ -23,13 +23,15 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-import lal, numpy, logging, h5py, time
-from pycbc import filter
+import numpy, logging, h5py, time
 from scipy import interpolate
+
+from pycbc import filter
 from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc.waveform import utils
 from pycbc.scheme import schemed
 from pycbc.io.hdf import HFile
+from pycbc.constants import MTSUN_SI
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """ A very rough estimate of the duration of the waveform.
@@ -60,7 +62,7 @@ def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
         Time from flow untill the end of the waveform
     """
     m = m1 + m2
-    msun = m * lal.MTSUN_SI
+    msun = m * MTSUN_SI
     t =  5.0 / 256.0 * m * m * msun / (m1 * m2) / \
         (numpy.pi * msun * flow) ** (8.0 / 3.0)
 
