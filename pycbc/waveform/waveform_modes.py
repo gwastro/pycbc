@@ -21,6 +21,7 @@ import lal
 
 from pycbc import libutils, pnutils
 from pycbc.types import (TimeSeries, FrequencySeries)
+from pycbc.constants import MSUN_SI, PC_SI
 from .waveform import (props, _check_lal_pars, check_args)
 from . import parameters
 
@@ -166,12 +167,12 @@ def get_nrsur_modes(**params):
     laldict = _check_lal_pars(params)
     ret = lalsimulation.SimInspiralPrecessingNRSurModes(
         params['delta_t'],
-        params['mass1']*lal.MSUN_SI,
-        params['mass2']*lal.MSUN_SI,
+        params['mass1']*MSUN_SI,
+        params['mass2']*MSUN_SI,
         params['spin1x'], params['spin1y'], params['spin1z'],
         params['spin2x'], params['spin2y'], params['spin2z'],
         params['f_lower'], params['f_ref'],
-        params['distance']*1e6*lal.PC_SI, laldict,
+        params['distance']*1e6*PC_SI, laldict,
         getattr(lalsimulation, params['approximant'])
     )
     hlms = {}
@@ -213,12 +214,12 @@ def get_nrhybsur_modes(**params):
     laldict = _check_lal_pars(params)
     ret = lalsimulation.SimIMRNRHybSur3dq8Modes(
         params['delta_t'],
-        params['mass1']*lal.MSUN_SI,
-        params['mass2']*lal.MSUN_SI,
+        params['mass1']*MSUN_SI,
+        params['mass2']*MSUN_SI,
         params['spin1z'],
         params['spin2z'],
         params['f_lower'], params['f_ref'],
-        params['distance']*1e6*lal.PC_SI, laldict
+        params['distance']*1e6*PC_SI, laldict
     )
     hlms = {}
     while ret:
@@ -295,8 +296,8 @@ def get_lalsimulation_modes(**params):
     ret = lalsimulation.SimInspiralChooseTDModes(
         params['coa_phase'],
         params['delta_t'],
-        params['mass1']*lal.MSUN_SI,
-        params['mass2']*lal.MSUN_SI,
+        params['mass1']*MSUN_SI,
+        params['mass2']*MSUN_SI,
         params['spin1x'],
         params['spin1y'],
         params['spin1z'],
@@ -304,7 +305,7 @@ def get_lalsimulation_modes(**params):
         params['spin2y'],
         params['spin2z'],
         params['f_lower'], params['f_ref'],
-        params['distance']*1e6*lal.PC_SI, laldict,
+        params['distance']*1e6*PC_SI, laldict,
         ell_max,
         get_lalsimulation_approximant(params['approximant'])
     )

@@ -25,15 +25,16 @@
 """Generate ringdown templates in the time and frequency domain.
 """
 
-import numpy, lal
-try:
-    import pykerr
-except ImportError:
-    pykerr = None
+import numpy
+
+from pycbc.libutils import import_optional
+pykerr = import_optional('pykerr')
+lal = import_optional('lal')
 from pycbc.types import (TimeSeries, FrequencySeries, float64, complex128,
                          zeros)
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import get_lm_f0tau_allmodes
+from pycbc.constants import MSUN_SI, G_SI, C_SI, PC_SI
 
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
@@ -431,6 +432,11 @@ def spher_harms(harmonics='spherical', l=None, m=None, n=0,
         The harmonic of the -m mode.
     """
     if harmonics == 'spherical':
+        if lal is None:
+            raise ImportError(
+                "lal must be installed for spherical "
+                "harmonics"
+            )
         xlm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
                                                 l, m)
         xlnm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
@@ -460,9 +466,9 @@ def Kerr_factor(final_mass, distance):
     ringdowns
     """
     # Convert solar masses to meters
-    mass = final_mass * lal.MSUN_SI * lal.G_SI / lal.C_SI**2
+    mass = final_mass * MSUN_SI * G_SI / C_SI**2
     # Convert Mpc to meters
-    dist = distance * 1e6 * lal.PC_SI
+    dist = distance * 1e6 * PC_SI
     return mass / dist
 
 
