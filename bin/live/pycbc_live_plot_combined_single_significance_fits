@@ -23,8 +23,8 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
 import pycbc
-from pycbc.live import strip_time
 from pycbc.io.hdf import HFile
+from pycbc.time import strip_time_from_gps
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -115,7 +115,7 @@ t = min_start
 while t < max_end + 86400:
     # Strip off the time information, ticks are at midnight
 
-    time_midnight, str_date = strip_time(t)
+    time_midnight, str_date = strip_time_from_gps(t)
     xtix_labels.append(str_date)
     xtix.append(time_midnight)
     t += 86400
