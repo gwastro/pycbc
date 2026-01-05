@@ -25,12 +25,12 @@ import logging
 import sys
 
 import igwn_segments as _segments
-from astropy.time import Time
 
 import pycbc
 import pycbc.workflow
 from pycbc.results import save_fig_with_metadata, two_column_layout
 import pycbc.workflow
+from pycbc.time import gps_to_utc_str
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -58,8 +58,8 @@ result_plots = []
 # put start / end time at top of summary page
 time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
-s_utc = Time(s, format='gps').to_datetime().strftime('%Y-%m-%d %H:%M:%S')
-e_utc = Time(e, format='gps').to_datetime().strftime('%Y-%m-%d %H:%M:%S')
+s_utc = gps_to_utc_str(s)
+e_utc = gps_to_utc_str(e)
 time_str = '<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>' % (s, e, s_utc, e_utc, float(e-s)/86400.0)
 time_file = pycbc.workflow.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',

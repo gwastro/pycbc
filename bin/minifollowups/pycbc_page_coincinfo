@@ -23,14 +23,14 @@ import matplotlib
 matplotlib.use('Agg')
 import numpy
 
-from astropy.time import Time
-
 from pycbc import add_common_pycbc_options
 import pycbc.results
 import pycbc.pnutils
 from pycbc.io.hdf import HFile
 from pycbc.events import stat as pystat
 from pycbc.results import followup
+from pycbc.time import gps_to_utc_datetime
+
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
@@ -174,7 +174,7 @@ for ifo in files.keys():
                                                       bank['mass2'][tid]))[0]
 
     time = d['end_time'][i]
-    utc = Time(time, format='gps').to_datetime()
+    utc = gps_to_utc_datetime(time)
 
     trig_dict = {
         k: numpy.array([d[k][i]])

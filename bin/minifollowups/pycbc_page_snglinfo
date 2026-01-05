@@ -22,13 +22,12 @@ import argparse
 import matplotlib
 matplotlib.use('Agg')
 
-from astropy.time import Time
-
 import pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.results import followup
 from pycbc.events import stat as pystat
 from pycbc.io import hdf
 from pycbc import init_logging, add_common_pycbc_options
+from pycbc.time import gps_to_utc_datetime
 
 
 parser = argparse.ArgumentParser()
@@ -118,7 +117,7 @@ if args.n_loudest is not None:
 
 # make a table for the single detector information ############################
 time = sngl_file.end_time[0]
-utc = Time(time, format='gps').to_datetime()
+utc = gps_to_utc_datetime(time)
 
 # Headers here will contain the list of headers that will appear in the
 # resulting single-detector summary table.
