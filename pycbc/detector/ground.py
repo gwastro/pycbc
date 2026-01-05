@@ -34,7 +34,6 @@ import numpy as np
 from numpy import cos, sin
 
 import lal
-from astropy.time import Time
 from astropy import constants, coordinates, units
 from astropy.coordinates.matrix_utilities import rotation_matrix
 from astropy.units.si import sday, meter
@@ -42,16 +41,12 @@ from astropy.units.si import sday, meter
 import pycbc.libutils
 from pycbc.types import TimeSeries
 from pycbc.types.config import InterpolatingConfigParser
+from pycbc.time import gmst_accurate
 
 logger = logging.getLogger('pycbc.detector')
 
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
-
-def gmst_accurate(gps_time):
-    gmst = Time(gps_time, format='gps', scale='utc',
-                location=(0, 0)).sidereal_time('mean').rad
-    return gmst
 
 def get_available_detectors():
     """ List the available detectors """
@@ -702,9 +697,14 @@ def ppdets(ifos, separator=', '):
         return separator.join(sorted(ifos))
     return 'no detectors'
 
-__all__ = ['Detector', 'get_available_detectors',
-           'get_available_lal_detectors',
-           'gmst_accurate', 'add_detector_on_earth',
-           'single_arm_frequency_response', 'ppdets',
-           'overhead_antenna_pattern', 'load_detector_config',
-           '_ground_detectors',]
+__all__ = [
+    'Detector',
+    'get_available_detectors',
+    'get_available_lal_detectors',
+    'add_detector_on_earth',
+    'single_arm_frequency_response',
+    'ppdets',
+    'overhead_antenna_pattern',
+    'load_detector_config',
+    '_ground_detectors',
+]
