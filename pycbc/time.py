@@ -3,6 +3,19 @@ Module to contain time conversions used in pycbc
 """
 
 from astropy.time import Time
+from datetime import timezone
+
+
+def _ensure_utc_datetime(date):
+    """
+    Ensure a datetime is timezone-aware in UTC.
+
+    - If `date` is naive, assume it represents UTC and attach UTC tzinfo.
+    - If `date` is timezone-aware, convert it to UTC.
+    """
+    if date.tzinfo is None:
+        return date.replace(tzinfo=timezone.utc)
+    return date.astimezone(timezone.utc)
 
 
 def gps_to_utc_datetime(gps):
@@ -18,7 +31,8 @@ def gps_to_utc_datetime(gps):
     -------
     datetime
     """
-    return Time(gps, format='gps', scale='utc').to_datetime()
+    dt = Time(gps, format='gps', scale='utc').to_datetime()
+    return _ensure_utc_datetime(dt)
 
 
 def datetime_to_str(date, format="%Y-%m-%d %H:%M:%S"):
@@ -71,7 +85,8 @@ def strip_time_from_date(date):
     -------
     datetime
     """
-    return date.replace(hour=0, minute=0, second=0, microsecond=0)
+    stripped = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    return _ensure_utc_datetime(stripped)
 
 
 def strip_time_from_gps(gps, format="%Y-%m-%d"):
@@ -105,7 +120,8 @@ def utc_datetime_to_gps(date):
     -------
     float
     """
-    return float(Time(date, format='datetime', scale='utc').gps)
+    date_utc = _ensure_utc_datetime(date)
+    return float(Time(date_utc, format='datetime', scale='utc').gps)
 
 
 def gps_now():
