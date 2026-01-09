@@ -178,7 +178,7 @@ class TestTimeConversionsFull(unittest.TestCase):
 
         # difference in seconds
         delta_secs = abs((dt_from_gps - now_dt).total_seconds())
-        self.assertLessEqual(delta_secs, 2.0)
+        self.assertLessEqual(delta_secs, 0.9)
 
 
 
