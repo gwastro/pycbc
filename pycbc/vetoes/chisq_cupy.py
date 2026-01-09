@@ -585,29 +585,37 @@ def get_cached_bin_layout_batch(bins, bin_lengths):
     Returns pre-allocated GPU arrays bv, kmin, kmax, nb that are cached
     based on the bin configuration.
     """
-    # Create cache key from bins
-    # Use tuple of tuples for hashability
-    cache_key = tuple(tuple(map(int, b)) for b in bins)
+    import time
+    t_cache_key_start = time.time()
+    # Create cache key from bins - OPTIMIZED
+    # Instead of converting to nested tuples, use array hashes which is much faster
+    # Hash each bin array and combine them
+    import cupy as cp
+    cache_key = tuple(
+        (len(b), int(b[0]) if len(b) > 0 else 0, int(b[-1]) if len(b) > 0 else 0, 
+         hash(b.data.tobytes()) if hasattr(b, 'data') else hash(bytes(b)))
+        for b in bins
+    )
+    t_cache_key = time.time() - t_cache_key_start
     
     if cache_key in _bin_layout_cache:
-        print(f"CACHE HIT: Reusing bin layout for {len(bins)} templates", flush=True)
+        print(f"CACHE HIT: Reusing bin layout for {len(bins)} templates (cache_key: {t_cache_key:.4f}s)", flush=True)
         return _bin_layout_cache[cache_key]
     
-    print(f"CACHE MISS: Computing bin layout for {len(bins)} templates", flush=True)
+    print(f"CACHE MISS: Computing bin layout for {len(bins)} templates (cache_key: {t_cache_key:.4f}s)", flush=True)
+    
+    t_alloc_start = time.time()
     # Convert bins list to batch-friendly format
-    # OPTIMIZED: Pre-compute on CPU then transfer to GPU once
+    # OPTIMIZED: Single pass - build ranges and track max values simultaneously
     BS = 4096
-    max_bin_size = int(bin_lengths.max().get()) * 4
     
-    bv = cp.zeros([len(bins), max_bin_size], dtype=cp.uint32)
-    kmin = cp.zeros([len(bins), max_bin_size], dtype=cp.uint32)
-    kmax = cp.zeros([len(bins), max_bin_size], dtype=cp.uint32)
-    nb = cp.zeros(len(bins), dtype=cp.uint32)
+    # Pre-compute all bin_ranges for all templates
+    all_bin_ranges = []
+    max_num_ranges = 0
+    max_nbins = 0
     
-    for idx1, cbins in enumerate(bins):
+    for cbins in bins:
         bin_ranges = []
-        
-        # Collect all ranges first (CPU-only)
         for i in range(len(cbins)-1):
             s, e = int(cbins[i]), int(cbins[i+1])
             if (e - s) < BS:
@@ -619,7 +627,20 @@ def get_cached_bin_layout_batch(bins, bin_lengths):
                     chunk_s = s + j * (BS//2)
                     chunk_e = min(s + (j + 1) * (BS//2), e)
                     bin_ranges.append((i, chunk_s, chunk_e))
-        
+        all_bin_ranges.append(bin_ranges)
+        max_num_ranges = max(max_num_ranges, len(bin_ranges))
+        max_nbins = max(max_nbins, len(cbins) - 1)
+    
+    max_bin_size = max_num_ranges
+    
+    bv = cp.zeros([len(bins), max_bin_size], dtype=cp.uint32)
+    kmin = cp.zeros([len(bins), max_bin_size], dtype=cp.uint32)
+    kmax = cp.zeros([len(bins), max_bin_size], dtype=cp.uint32)
+    nb = cp.zeros(len(bins), dtype=cp.uint32)
+    t_alloc = time.time() - t_alloc_start
+    
+    t_loop_start = time.time()
+    for idx1, bin_ranges in enumerate(all_bin_ranges):
         # Bulk copy to GPU (much faster than individual assignments)
         if bin_ranges:
             bin_arr = cp.array(bin_ranges, dtype=cp.uint32)
@@ -628,9 +649,18 @@ def get_cached_bin_layout_batch(bins, bin_lengths):
             kmax[idx1, :len(bin_ranges)] = bin_arr[:, 2]
         
         nb[idx1] = len(bin_ranges)
+    t_loop = time.time() - t_loop_start
     
-    # Cache the result
-    result = (bv, kmin, kmax, nb)
+    print(f"  Bin layout breakdown - alloc: {t_alloc:.4f}s, loop: {t_loop:.4f}s", flush=True)
+    
+    # No need to compute max values - we already have them from the first pass
+    max_nb_val = max_num_ranges
+    max_nbins_val = max_nbins
+    
+    print(f"  Max values from CPU: max_nb={max_nb_val}, max_nbins={max_nbins_val}", flush=True)
+    
+    # Cache the result with precomputed max values
+    result = (bv, kmin, kmax, nb, max_nb_val, max_nbins_val)
     _bin_layout_cache[cache_key] = result
     return result
 
@@ -656,17 +686,23 @@ def shift_sum_batch(corr, points, bins, bin_lengths, mapping):
     cupy array
         Chisq values for each point
     """
-    # Get cached bin layout (avoids recomputation)
-    bv, kmin, kmax, nb = get_cached_bin_layout_batch(bins, bin_lengths)
+    import time
+    t_layout_start = time.time()
+    # Get cached bin layout (avoids recomputation) - now includes precomputed max values
+    bv, kmin, kmax, nb, max_nb_val, max_nbins_val = get_cached_bin_layout_batch(bins, bin_lengths)
+    t_layout = time.time() - t_layout_start
     
+    t_setup_start = time.time()
     N = cp.uint32(len(corr[0]))
     is_pow2 = get_cached_pow2(int(N))
     nbins = bin_lengths - 1
     
     # Allocate output with maximum possible size (uniform row width)
-    max_nbins = int(nbins.max().get())
-    outc = cp.zeros((len(points), max_nbins), dtype=cp.complex64)
+    # Use precomputed max_nbins_val to avoid GPU->CPU sync
+    outc = cp.zeros((len(points), max_nbins_val), dtype=cp.complex64)
+    t_setup = time.time() - t_setup_start
 
+    t_kernel_start = time.time()
     if is_pow2:
         fn, nt = get_pchisq_fn_pow2_batch()
         # Flatten corr array if needed
@@ -679,10 +715,10 @@ def shift_sum_batch(corr, points, bins, bin_lengths, mapping):
         max_bin_size = bv.shape[1]
         args = (corr_flat, outc.reshape(-1), N, points, kmin.reshape(-1), 
             kmax.reshape(-1), bv.reshape(-1), nbins, mapping, nb,
-            cp.uint32(max_nbins), cp.uint32(len(points)), cp.uint32(len(bins)), cp.uint32(max_bin_size))
+            cp.uint32(max_nbins_val), cp.uint32(len(points)), cp.uint32(len(bins)), cp.uint32(max_bin_size))
         
-        max_nb = int(nb.max().get())
-        grid_size = (max_nb, len(points))
+        # Use precomputed max_nb_val to avoid GPU->CPU sync
+        grid_size = (max_nb_val, len(points))
         fn(grid_size, (nt,), args)
     else:
         # Non-power-of-2 case using sincosf
@@ -700,10 +736,20 @@ def shift_sum_batch(corr, points, bins, bin_lengths, mapping):
         max_bin_size = bv.shape[1]
         args = (corr_flat, outc.reshape(-1), N, phases, kmin.reshape(-1),
             kmax.reshape(-1), bv.reshape(-1), nbins, mapping, nb,
-            cp.uint32(max_nbins), cp.uint32(len(points)), cp.uint32(len(bins)), cp.uint32(max_bin_size))
+            cp.uint32(max_nbins_val), cp.uint32(len(points)), cp.uint32(len(bins)), cp.uint32(max_bin_size))
         
-        max_nb = int(nb.max().get())
-        grid_size = (max_nb, len(points))
+        # Use precomputed max_nb_val to avoid GPU->CPU sync
+        grid_size = (max_nb_val, len(points))
         fn(grid_size, (nt,), args)
-
-    return (outc.conj() * outc).sum(axis=1).real
+    
+    cp.cuda.Stream.null.synchronize()
+    t_kernel = time.time() - t_kernel_start
+    
+    t_reduce_start = time.time()
+    result = (outc.conj() * outc).sum(axis=1).real
+    cp.cuda.Stream.null.synchronize()
+    t_reduce = time.time() - t_reduce_start
+    
+    print(f"    shift_sum_batch - layout: {t_layout:.4f}s, setup: {t_setup:.4f}s, kernel: {t_kernel:.4f}s, reduce: {t_reduce:.4f}s, triggers: {len(points)}", flush=True)
+    
+    return result

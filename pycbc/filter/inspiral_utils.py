@@ -602,6 +602,11 @@ def _compute_chisq_gpu(corr_batch, trigger_indices, trigger_snrs, sigmasqs,
     chisq_dofs : cupy.ndarray
         Chi-squared degrees of freedom
     """
+    import logging
+    logger = logging.getLogger('py.pycbc')
+    
+    t_total_start = time.time()
+    
     num_triggers = len(trigger_indices)
     
     if num_triggers == 0:
@@ -614,6 +619,7 @@ def _compute_chisq_gpu(corr_batch, trigger_indices, trigger_snrs, sigmasqs,
         chisqs = chisq_dofs.astype(cp.float32)
         return chisqs, chisq_dofs.astype(cp.int32)
     
+    t_setup_start = time.time()
     # Extract data needed for values_batch
     template_map = trigger_indices[:, 0]  # Which template each trigger belongs to
     time_indices = trigger_indices[:, 1]  # Time index for each trigger
@@ -646,12 +652,14 @@ def _compute_chisq_gpu(corr_batch, trigger_indices, trigger_snrs, sigmasqs,
     num_templates = len(templates)
     sizes = cp.array([cp.sum(template_map == i) for i in range(num_templates)], dtype=cp.int32)
     
+    t_setup = time.time() - t_setup_start
+    
+    t_template_prep_start = time.time()
     # Call the batched chisq computation
     # Note: corr_batch has full FFT length (power of 2), which shift_sum_batch requires
     # The chisq code will only use the relevant frequency bins anyway
     
     # DEBUG: Check template and PSD lengths
-    import logging
     if len(templates) > 0:
         psd_len = len(psd)
         
@@ -662,11 +670,17 @@ def _compute_chisq_gpu(corr_batch, trigger_indices, trigger_snrs, sigmasqs,
                 # Resize the template data to RFFT length
                 template.resize(psd_len)
     
+    t_template_prep = time.time() - t_template_prep_start
+    
+    t_values_batch_start = time.time()
     chisq_list, chisq_dof_list = power_chisq.values_batch(
         corr_batch, unnormalized_snrs, snr_norms, sizes, template_map, psd, time_indices, templates
     )
+    cp.cuda.Stream.null.synchronize()
+    t_values_batch = time.time() - t_values_batch_start
     
     
+    t_postprocess_start = time.time()
     # Check if chisq was actually computed (or disabled)
     if chisq_list is None:
         # Chi-squared was disabled, return dummy values
@@ -677,6 +691,13 @@ def _compute_chisq_gpu(corr_batch, trigger_indices, trigger_snrs, sigmasqs,
     # Concatenate results back into single arrays
     chisqs = cp.concatenate(chisq_list) if len(chisq_list) > 0 else cp.array([], dtype=cp.float32)
     chisq_dofs = cp.concatenate(chisq_dof_list) if len(chisq_dof_list) > 0 else cp.array([], dtype=cp.int32)
+    t_postprocess = time.time() - t_postprocess_start
+    
+    t_total = time.time() - t_total_start
+    
+    logger.info(f"  Chisq breakdown - setup: {t_setup:.4f}s, template_prep: {t_template_prep:.4f}s, "
+                f"values_batch: {t_values_batch:.4f}s, postprocess: {t_postprocess:.4f}s, "
+                f"total: {t_total:.4f}s, triggers: {num_triggers}")
     
     return chisqs, chisq_dofs
 
