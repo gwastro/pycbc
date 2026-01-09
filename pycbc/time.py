@@ -1,5 +1,5 @@
 """
-Module to contain time conversions use in pycbc
+Module to contain time conversions used in pycbc
 """
 
 from astropy.time import Time
@@ -74,7 +74,7 @@ def strip_time_from_date(date):
     return date.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def strip_time_from_gps(gps, format="%Y-%m-%d %H:%M:%S"):
+def strip_time_from_gps(gps, format="%Y-%m-%d"):
     """
     Round a GPS time to the midnight of the same UTC day, and return the date of that day as a string.
 
@@ -89,7 +89,7 @@ def strip_time_from_gps(gps, format="%Y-%m-%d %H:%M:%S"):
     """
     gps_datetime = gps_to_utc_datetime(gps)
     midnight_datetime = strip_time_from_date(gps_datetime)
-    return utc_datetime_to_gps(midnight_datetime), datetime_to_str(midnight_datetime, format="%Y-%m-%d")
+    return utc_datetime_to_gps(midnight_datetime), datetime_to_str(midnight_datetime, format=format)
 
 
 def utc_datetime_to_gps(date):
