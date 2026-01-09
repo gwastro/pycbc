@@ -228,3 +228,12 @@ def load_source(modname, filename):
     # sys.modules[module.__name__] = module
     loader.exec_module(module)
     return module
+
+# Expose some convenience functions at package level for backwards
+# compatibility and convenience: allow `pycbc.gps_now()` as well as
+# `pycbc.time.gps_now()`.
+try:
+    from .time import gps_now  # noqa: F401
+except Exception:
+    # If pycbc imported during build this may fail; silently ignore.
+    gps_now = None
