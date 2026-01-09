@@ -76,7 +76,7 @@ def strip_time_from_date(date):
 
 def strip_time_from_gps(gps, format="%Y-%m-%d %H:%M:%S"):
     """
-    Return the GPS time at the start of the day.
+    Round a GPS time to the midnight of the same UTC day, and return the date of that day as a string.
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ def strip_time_from_gps(gps, format="%Y-%m-%d %H:%M:%S"):
 
     Returns
     -------
-    float
+    float, str
     """
     gps_datetime = gps_to_utc_datetime(gps)
     midnight_datetime = strip_time_from_date(gps_datetime)
