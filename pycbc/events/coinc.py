@@ -958,7 +958,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # apply trials factor for the best coinc
         if mresult:
-            mresult['foreground/ifar'] = mifar / float(trials)
+            mresult['foreground/ifar'] = float(mifar / float(trials))
+            mresult['foreground/stat'] = float(mstat)
             logger.info('Found %s coinc with ifar %s',
                         mresult['foreground/type'],
                         mresult['foreground/ifar'])
