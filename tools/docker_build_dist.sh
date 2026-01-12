@@ -50,7 +50,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${SOURCE_TAG}
-  python -m venv ${VENV_PATH}
+  python -m venv --copies ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo "export XDG_CACHE_HOME=\${HOME}/cvmfs-pycbc-${SOURCE_TAG}/.cache" >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate

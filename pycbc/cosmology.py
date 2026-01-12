@@ -34,8 +34,7 @@ import numpy
 from scipy import interpolate
 import astropy.cosmology
 from astropy import units
-from astropy.cosmology.core import CosmologyError
-from astropy.cosmology import parameters
+from astropy.cosmology import CosmologyError, parameters
 import pycbc.conversions
 
 logger = logging.getLogger('pycbc.cosmology')

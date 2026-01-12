@@ -126,7 +126,7 @@ echo
 rm -f submitdir
 ln -sf $SUBMIT_DIR submitdir
 
-echo "pegasus-status --verbose --long $SUBMIT_DIR/work \$@" > status
+echo "pegasus-status --long $SUBMIT_DIR/work \$@" > status
 chmod 755 status
 
 echo "pegasus-analyzer -r -v $SUBMIT_DIR/work \$@" > debug

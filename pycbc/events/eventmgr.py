@@ -198,19 +198,34 @@ class H5FileSyntSugar(object):
 
 
 class EventManager(object):
-    def __init__(self, opt, column, column_types, **kwds):
+    def __init__(
+        self,
+        opt,
+        column,
+        column_types,
+        array_minsize=10000,
+        **kwds
+    ):
         self.opt = opt
         self.global_params = kwds
+        self.array_minsize=array_minsize
 
         self.event_dtype = [('template_id', int)]
         for col, coltype in zip(column, column_types):
             self.event_dtype.append((col, coltype))
 
-        self.events = numpy.array([], dtype=self.event_dtype)
-        self.accumulate = [self.events]
+        self._events = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.event_dtype
+        )
+        self._events_size = 0
         self.template_params = []
         self.template_index = -1
-        self.template_events = numpy.array([], dtype=self.event_dtype)
+        self.template_events = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.event_dtype
+        )
+        self.template_event_size = 0
         self.write_performance = False
 
     def save_state(self, tnum_finished, filename):
@@ -222,6 +237,10 @@ class EventManager(object):
         fp = h5py.File(filename, 'w')
         dump_state(self, fp, protocol=pickle.HIGHEST_PROTOCOL)
         fp.close()
+
+    @property
+    def events(self):
+        return self._events[:self._events_size]
 
     @staticmethod
     def restore_state(filename):
@@ -253,14 +272,26 @@ class EventManager(object):
                 setattr(opt, arg, getattr(opt, arg)[ifo])
         return cls(opt, column, column_types, **kwds)
 
+    def cut_events_via_mask(self, keep):
+        # keep should be a boolean array of len self._events_size
+        num_keep = keep.sum()
+        self._events[:num_keep] = self._events[:self._events_size][keep]
+        self._events_size = num_keep
+
+    def cut_events_via_indices(self, indices):
+        # indices should be a list of indices to keep
+        num_keep = len(indices)
+        self._events[:num_keep] = self._events[:self._events_size][indices]
+        self._events_size = num_keep
+
     def chisq_threshold(self, value, num_bins, delta=0):
-        remove = []
+        keep = numpy.ones(self._events_size, dtype=bool)
         for i, event in enumerate(self.events):
             xi = event['chisq'] / (event['chisq_dof'] +
                                    delta * event['snr'].conj() * event['snr'])
             if xi > value:
-                remove.append(i)
-        self.events = numpy.delete(self.events, remove)
+                keep[i] = 0
+        self.cut_events_via_mask(keep)
 
     def newsnr_threshold(self, threshold):
         """ Remove events with newsnr smaller than given threshold
@@ -271,8 +302,7 @@ class EventManager(object):
 
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
-        remove_idxs = numpy.where(nsnrs < threshold)[0]
-        self.events = numpy.delete(self.events, remove_idxs)
+        self.cut_events_via_mask(nsnrs >= threshold)
 
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
@@ -283,7 +313,7 @@ class EventManager(object):
         gpstime = self.events['time_index'].astype(numpy.float64)
         gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
-        self.events = self.events[i]
+        self.cut_events_via_indices(i)
 
     def keep_loudest_in_interval(self, window, num_keep, statname="newsnr",
                                  log_chirp_width=None):
@@ -327,7 +357,7 @@ class EventManager(object):
                 keep.append(bloc[bloudest])
 
         keep = numpy.concatenate(keep)
-        self.events = self.events[keep]
+        self.cut_events_via_indices(keep)
 
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
@@ -347,18 +377,24 @@ class EventManager(object):
                     new_events[c] = v.numpy()
                 else:
                     new_events[c] = v
-        self.template_events = numpy.append(self.template_events, new_events)
+        new_size = self.template_event_size+len(new_events)
+        if new_size > len(self.template_events):
+            self.template_events.resize(
+                new_size + self.array_minsize,
+                refcheck=False
+            )
+        self.template_events[self.template_event_size:new_size] = new_events
+        self.template_event_size += len(new_events)
 
     def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
         """
-        cvec = self.template_events[column]
-        tvec = self.template_events[tcolumn]
-        if window_size == 0:
-            indices = numpy.arange(len(tvec))
-        else:
+        if window_size > 0:
+            cvec = self.template_events[column][:self.template_event_size]
+            tvec = self.template_events[tcolumn][:self.template_event_size]
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        self.template_events = numpy.take(self.template_events, indices)
+            self.template_events[:len(indices)] = self.template_events[indices]
+            self.template_event_size = len(indices)
 
     def new_template(self, **kwds):
         self.template_params.append(kwds)
@@ -368,11 +404,21 @@ class EventManager(object):
         self.template_params[-1].update(kwds)
 
     def finalize_template_events(self):
-        self.accumulate.append(self.template_events)
-        self.template_events = numpy.array([], dtype=self.event_dtype)
+        new_event_size = self.template_event_size + self._events_size
+        if new_event_size > len(self._events):
+            self._events.resize(
+                (new_event_size//self.array_minsize + 1) * self.array_minsize,
+                refcheck=False
+            )
+
+        self._events[self._events_size:new_event_size] = (
+            self.template_events[:self.template_event_size]
+        )
+        self._events_size = new_event_size
+
+        self.template_event_size = 0
 
     def consolidate_events(self, opt, gwstrain=None):
-        self.events = numpy.concatenate(self.accumulate)
         logger.info("We currently have %d triggers", len(self.events))
         if opt.chisq_threshold and opt.chisq_bins:
             logger.info("Removing triggers with poor chisq")
@@ -403,10 +449,12 @@ class EventManager(object):
                                      gwstrain.injections)
             logger.info("%d remaining triggers", len(self.events))
 
-        self.accumulate = [self.events]
 
     def finalize_events(self):
-        self.events = numpy.concatenate(self.accumulate)
+        # At the moment this method does nothing, but it is called by all
+        # front-end codes using this, and may have stuff added to it in the
+        # future. So for now, this is not being considered deprecated.
+        pass
 
     def make_output_dir(self, outname):
         path = os.path.dirname(outname)
@@ -569,10 +617,20 @@ class EventManager(object):
 
 
 class EventManagerMultiDetBase(EventManager):
-    def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
+    def __init__(
+        self,
+        opt,
+        ifos,
+        column,
+        column_types,
+        psd=None,
+        array_minsize=10000,
+        **kwargs
+    ):
         self.opt = opt
         self.ifos = ifos
         self.global_params = kwargs
+        self.array_minsize = array_minsize
         if psd is not None:
             self.global_params['psd'] = psd[ifos[0]]
 
@@ -588,24 +646,36 @@ class EventManagerMultiDetBase(EventManager):
         for col, coltype in zip(column, column_types):
             self.event_dtype.append((col, coltype))
 
-        self.events = numpy.array([], dtype=self.event_dtype)
+        self._events = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.event_dtype
+        )
+        self._events_size = 0
+
         self.event_id_map = {}
         self.template_params = []
         self.template_index = -1
         self.template_event_dict = {}
+        self.template_event_size_dict = {}
         self.coinc_list = []
         self.write_performance = False
         for ifo in ifos:
-            self.template_event_dict[ifo] = \
-                numpy.array([], dtype=self.event_dtype)
+            self.template_event_dict[ifo] = numpy.zeros(
+                [self.array_minsize],
+                dtype=self.event_dtype
+            )
+            self.template_event_size_dict[ifo] = 0
 
     def add_template_events_to_ifo(self, ifo, columns, vectors):
         """ Add a vector indexed """
         # Just call through to the standard function
         self.template_events = self.template_event_dict[ifo]
+        self.template_event_size = self.template_event_size_dict[ifo]
         self.add_template_events(columns, vectors)
         self.template_event_dict[ifo] = self.template_events
+        self.template_event_size_dict[ifo] = self.template_event_size
         self.template_events = None
+        self.template_event_size = None
 
     def write_gating_info_to_hdf(self, hf):
         """Write per-detector gating information to an h5py file object.
@@ -645,13 +715,20 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.network_event_dtype.append(('event_id', int))
         for col, coltype in zip(network_column, network_column_types):
             self.network_event_dtype.append((col, coltype))
-        self.network_events = numpy.array([], dtype=self.network_event_dtype)
+        self.network_events = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.network_event_dtype
+        )
+        self.network_events_size = 0
         self.event_index = {}
         for ifo in self.ifos:
             self.event_index[ifo] = 0
         self.event_index['network'] = 0
-        self.template_event_dict['network'] = numpy.array(
-            [], dtype=self.network_event_dtype)
+        self.template_event_dict['network'] = numpy.zeros(
+            [self.array_minsize],
+            dtype=self.network_event_dtype
+        )
+        self.template_event_size_dict['network'] = 0
         self.segments = segments
         self.time_slides = time_slides
 
@@ -669,13 +746,25 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         slide
             Default is 0.
         """
+        net_event_size = self.template_event_size_dict['network']
+        net_event_dict = self.template_event_dict['network']
         slide_indices = (
-            self.template_event_dict['network']['slide_id'] == slide)
-        cvec = self.template_event_dict['network'][column][slide_indices]
-        tvec = self.template_event_dict['network'][tcolumn][slide_indices]
+            net_event_dict[:net_event_size]['slide_id'] == slide
+        )
+        cvec = net_event_dict[:net_event_size][column][slide_indices]
+        tvec = net_event_dict[:net_event_size][tcolumn][slide_indices]
         if not window_size == 0:
             # cluster events over the window
+
+            # findchirp_cluster_over_window requires the input to be time
+            # sorted.
+            time_sorting = tvec.argsort()
+            cvec = cvec[time_sorting]
+            tvec = tvec[time_sorting]
+
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+            indices = time_sorting[indices]
+
             # if a slide_indices = 0
             if any(~slide_indices):
                 indices = numpy.concatenate((
@@ -684,8 +773,9 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 indices.sort()
             # get value of key for where you have indicies
             for key in self.template_event_dict:
-                self.template_event_dict[key] = \
-                    self.template_event_dict[key][indices]
+                curr_ted = self.template_event_dict[key]
+                curr_ted[:len(indices)] = curr_ted[indices]
+                self.template_event_size_dict[key] = len(indices)
 
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
@@ -704,26 +794,36 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     new_events[c] = v.numpy()
                 else:
                     new_events[c] = v
-        self.template_events = numpy.append(self.template_events, new_events)
+        new_size = self.template_event_size+len(new_events)
+        if new_size > len(self.template_events):
+            self.template_events.resize(
+                new_size + self.array_minsize,
+                refcheck=False
+            )
+        self.template_events[self.template_event_size:new_size] = new_events
+        self.template_event_size += len(new_events)
 
     def add_template_events_to_network(self, columns, vectors):
         """ Add a vector indexed """
         # Just call through to the standard function
         self.template_events = self.template_event_dict['network']
+        self.template_event_size = self.template_event_size_dict['network']
         self.add_template_network_events(columns, vectors)
         self.template_event_dict['network'] = self.template_events
+        self.template_event_size_dict['network'] = self.template_event_size
         self.template_events = None
+        self.template_event_size = None
 
     def write_to_hdf(self, outname):
-        self.events.sort(order='template_id')
+        sort_order = self.events.argsort(order='template_id')
+        self._events[:self._events_size] = self.events[sort_order]
         th = numpy.array(
             [p['tmplt'].template_hash for p in self.template_params])
         f = H5FileSyntSugar(outname)
         self.write_gating_info_to_hdf(f)
         # Output network stuff
         f.prefix = 'network'
-        network_events = numpy.array(
-            [e for e in self.network_events], dtype=self.network_event_dtype)
+        network_events = self.network_events[:self.network_events_size]
         for col in network_events.dtype.names:
             if col == 'time_index':
                 f['end_time_gc'] = (
@@ -855,9 +955,11 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         for i, ifo in enumerate(self.ifos):
             ifo_events = numpy.where(self.events['ifo'] == i)
             existing_times[ifo] = self.events['time_index'][ifo_events]
-            new_times[ifo] = self.template_event_dict[ifo]['time_index']
+            curr_ev_dict = self.template_event_dict[ifo]
+            curr_ev_size = self.template_event_size_dict[ifo]
+            new_times[ifo] = curr_ev_dict[:curr_ev_size]['time_index']
             existing_template_id[ifo] = self.events['template_id'][ifo_events]
-            new_template_id[ifo] = self.template_event_dict[ifo]['template_id']
+            new_template_id[ifo] = curr_ev_dict[:curr_ev_size]['template_id']
             # This is true for each existing event that has the same time index
             # and template id as a template trigger.
             existing_events_mask[ifo] = numpy.argwhere(
@@ -886,37 +988,50 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                          self.event_index[ifo] + num_events)
             # Every template event that corresponds to a new trigger gets a new
             # id. Triggers that have been found before are not saved.
-            self.template_event_dict[ifo]['event_id'][
-                new_template_event_mask[ifo]] = new_event_ids
-            self.template_event_dict['network'][ifo + '_event_id'][
-                new_template_event_mask[ifo]] = new_event_ids
+            curr_ev_dict[:curr_ev_size]['event_id'][new_template_event_mask[ifo]] = new_event_ids
+            net_ev_dict = self.template_event_dict['network']
+            net_ev_size = self.template_event_size_dict['network']
+            net_ev_dict[:net_ev_size][ifo + '_event_id'][new_template_event_mask[ifo]] = new_event_ids
             # Template events that have been found before get the event id of
             # the first time they were found.
-            self.template_event_dict['network'][ifo + '_event_id'][
+            net_ev_dict[:net_ev_size][ifo + '_event_id'][
                   existing_template_event_mask[ifo]] = \
                 self.events[self.events['ifo'] == i][
                   existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo] + num_events
 
         # Add the network event ids for the events with this template.
-        num_events = len(self.template_event_dict['network'])
+        num_events = self.template_event_size_dict['network']
         new_event_ids = numpy.arange(self.event_index['network'],
                                      self.event_index['network'] + num_events)
         self.event_index['network'] = self.event_index['network'] + num_events
-        self.template_event_dict['network']['event_id'] = new_event_ids
+        self.template_event_dict['network'][:num_events]['event_id'] = new_event_ids
         # Move template events for each ifo to the events list
         for ifo in self.ifos:
-            self.events = numpy.append(
-                self.events,
-                self.template_event_dict[ifo][new_template_event_mask[ifo]]
+            new_event_size = len(new_template_event_mask[ifo]) + self._events_size
+            if new_event_size > len(self._events):
+                new_chunk_size = (new_event_size//self.array_minsize + 1)
+                self._events.resize(
+                    new_chunk_size * self.array_minsize,
+                    refcheck=False
+                )
+            self._events[self._events_size:new_event_size] = (
+                self.template_event_dict[ifo][:self.template_event_size_dict[ifo]][new_template_event_mask[ifo]]
             )
-            self.template_event_dict[ifo] = \
-                                        numpy.array([], dtype=self.event_dtype)
+            self._events_size = new_event_size
+            self.template_event_size_dict[ifo] = 0
         # Move the template events for the network to the network events list
-        self.network_events = numpy.append(self.network_events,
-                                   self.template_event_dict['network'])
-        self.template_event_dict['network'] = \
-                                numpy.array([], dtype=self.network_event_dtype)
+        new_network_size = self.template_event_size_dict['network'] + self.network_events_size
+        while new_network_size > len(self.network_events):
+            self.network_events.resize(
+                len(self.network_events) + self.array_minsize,
+                refcheck=False
+            )
+        self.network_events[self.network_events_size:new_network_size] = (
+            self.template_event_dict['network'][:self.template_event_size_dict['network']]
+        )
+        self.network_events_size = new_network_size
+        self.template_event_size_dict['network'] = 0
 
 
 class EventManagerMultiDet(EventManagerMultiDetBase):
@@ -931,18 +1046,23 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
         """
         # Just call through to the standard function
         self.template_events = self.template_event_dict[ifo]
+        self.template_event_size = self.template_event_size_dict[ifo]
         self.cluster_template_events(tcolumn, column, window_size)
         self.template_event_dict[ifo] = self.template_events
+        self.template_event_size_dict[ifo] = self.template_event_size
         self.template_events = None
+        self.template_event_size = None
 
     def finalize_template_events(self, perform_coincidence=True,
                                  coinc_window=0.0):
         # Set ids
         for ifo in self.ifos:
-            num_events = len(self.template_event_dict[ifo])
+            temp_ev_dict = self.template_event_dict[ifo]
+            temp_ev_size = self.template_event_size_dict[ifo]
+            num_events = len(temp_ev_dict[:temp_ev_size])
             new_event_ids = numpy.arange(self.event_index,
                                          self.event_index+num_events)
-            self.template_event_dict[ifo]['event_id'] = new_event_ids
+            temp_ev_dict[:temp_ev_size]['event_id'] = new_event_ids
             self.event_index = self.event_index+num_events
 
         if perform_coincidence:
@@ -951,9 +1071,13 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 raise ValueError(err_msg)
             ifo1 = self.ifos[0]
             ifo2 = self.ifos[1]
-            end_times1 = self.template_event_dict[ifo1]['time_index'] /\
+            curr_tev_dict1 = self.template_event_dict[ifo1]
+            curr_tev_dict2 = self.template_event_dict[ifo2]
+            curr_tev_size1 = self.template_event_size_dict[ifo1]
+            curr_tev_size2 = self.template_event_size_dict[ifo2]
+            end_times1 = curr_tev_dict1[:curr_tev_size1]['time_index'] /\
               float(self.opt.sample_rate[ifo1]) + self.opt.gps_start_time[ifo1]
-            end_times2 = self.template_event_dict[ifo2]['time_index'] /\
+            end_times2 = curr_tev_dict2[:curr_tev_size2]['time_index'] /\
               float(self.opt.sample_rate[ifo2]) + self.opt.gps_start_time[ifo2]
             light_travel_time = Detector(ifo1).light_travel_time_to_detector(
                                                                 Detector(ifo2))
@@ -966,17 +1090,26 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                                                         coinc_window)
                 if len(idx_list1):
                     for idx1, idx2 in zip(idx_list1, idx_list2):
-                        event1 = self.template_event_dict[ifo1][idx1]
-                        event2 = self.template_event_dict[ifo2][idx2]
+                        event1 = curr_tev_dict1[:curr_tev_size1][idx1]
+                        event2 = curr_tev_dict2[:curr_tev_size2][idx2]
                         self.coinc_list.append((event1, event2))
         for ifo in self.ifos:
-            self.events = numpy.append(self.events,
-                                       self.template_event_dict[ifo])
-            self.template_event_dict[ifo] = numpy.array([],
-                                                        dtype=self.event_dtype)
+            new_event_size = self.template_event_size_dict[ifo] + self._events_size
+            if new_event_size > len(self._events):
+                new_chunk_size = (new_event_size//self.array_minsize + 1)
+                self._events.resize(
+                    new_chunk_size * self.array_minsize,
+                    refcheck=False
+                )
+            self._events[self._events_size:new_event_size] = (
+                self.template_event_dict[ifo][:self.template_event_size_dict[ifo]]
+            )
+            self.template_event_size_dict[ifo] = 0
+            self._events_size = new_event_size
 
     def write_to_hdf(self, outname):
-        self.events.sort(order='template_id')
+        sort_order = self.events.argsort(order='template_id')
+        self._events[:self._events_size] = self.events[sort_order]
         th = numpy.array([p['tmplt'].template_hash for p in
                                                          self.template_params])
         tid = self.events['template_id']

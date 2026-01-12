@@ -409,6 +409,25 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``,
 ``h1-transfer-function-d``.
 
+Calibration configuration files can be generated from the detector calibration
+uncertainty estimates provided by the LIGO–Virgo–KAGRA (LVK) Collaboration. For
+example, the calibration uncertainty estimates for the O1–O3 observing runs can
+be downloaded from the following DCC page:
+`LIGO DCC T2100313 <https://dcc.ligo.org/T2100313/public>`_
+
+Once the calibration uncertainty files are downloaded to a local directory, the
+configuration files can be created using the executable
+``pycbc_inference_create_calibration_config``.
+
+For a complete working example, see the :ref:`GW150914 calibration example
+<generate_calibration_config>`. You can also run:
+
+.. code-block:: bash
+
+   pycbc_inference_create_calibration_config --help
+
+to view all available options and usage details.
+
 ^^^^^^^^^^^
 Constraints
 ^^^^^^^^^^^
@@ -509,6 +528,7 @@ Examples
     inference/examples/lisa_smbhb_inj_pe.rst
     inference/examples/sampler_platter.rst
     inference/models.rst
+    inference/examples/generate_calibration_config.rst
 
 ----------------------------
 Visualizing the Posteriors

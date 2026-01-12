@@ -46,27 +46,34 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
+    def to_uniform_patch(self, coverage):
+        if coverage < 1:
+            logging.warning(
+                'Attempt to convert UniformSky to a '
+                'uniform patch assumes 100% coverage'
+            )
+        return self
+
 
 class UniformDiskSky:
     """A distribution that represents a uniform disk on the sky. The declination
     varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
-             
+
     Parameters
     ----------
     mean_ra: float or str
         RA of the center of the distribution. Use the rad or deg suffix to
         specify units, otherwise radians are assumed.
     mean_dec: float or str
-        Declination of the center of the distribution. Use the rad or deg   
+        Declination of the center of the distribution. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
     radius: float or str
-        Radius of the disk. Use the rad or deg suffix to specify units, 
+        Radius of the disk. Use the rad or deg suffix to specify units,
         otherwise radians are assumed.
-        
     """
     name = 'uniform_disk_sky'
     _params = ['ra', 'dec']
-    
+
     def __init__(self, **params):
         mean_ra = angle_as_radians(params['mean_ra'])
         mean_dec = angle_as_radians(params['mean_dec'])
@@ -141,6 +148,13 @@ class UniformDiskSky:
         rot_radec['dec'] = numpy.arcsin(rot_cart[:, 2])
         return rot_radec
 
+    def to_uniform_patch(self, coverage):
+        if coverage < 1:
+            logging.warning(
+                'Attempt to convert UniformDiskSky to a '
+                'uniform patch assumes 100% coverage'
+            )
+        return self
 
 
 class FisherSky:
@@ -170,14 +184,13 @@ class FisherSky:
         RA of the center of the distribution. Use the rad or deg suffix to
         specify units, otherwise radians are assumed.
     mean_dec: float or str
-        Declination of the center of the distribution. Use the rad or deg 
+        Declination of the center of the distribution. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
     sigma: float or str
         Spread of the distribution. For the precise interpretation, see Eq 8
         of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
-        about 20 deg for the approximation to be valid. Use the rad or deg 
+        about 20 deg for the approximation to be valid. Use the rad or deg
         suffix to specify units, otherwise radians are assumed.
-
     """
 
     name = 'fisher_sky'
@@ -236,7 +249,7 @@ class FisherSky:
             mean_dec=mean_dec,
             sigma=sigma,
         )
-    
+
     def get_max_prob_point(self):
         return (self.mean_ra, self.mean_dec)
 
@@ -337,7 +350,7 @@ class HealpixSky:
                 numpy.where(self.pix_probs==self.pix_probs.max())[0],
                 lonlat=True
         )
-        return (numpy.deg2rad(coords[0]), numpy.deg2rad(coords[1]))
+        return (numpy.deg2rad(coords[0][0]), numpy.deg2rad(coords[1][0]))
 
     def pixel_corners(self, indices):
         """Return the Cartesian vectors corresponding to the corners of one or

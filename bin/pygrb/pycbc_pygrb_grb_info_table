@@ -55,7 +55,7 @@ add_common_pycbc_options(parser)
 parser.add_argument("--trigger-time", type=int,
                     required=True,
                     help="GPS time of the GRB.")
-parser.add_argument("--input-distribution", type=str,
+parser.add_argument("--input-dist", type=str,
                     help="Input Distribution of the GRB. Use distribution "
                     "functions in pycbc.distributions.sky_location code.")
 parser.add_argument("--ra", type=angle_as_radians,
@@ -91,9 +91,12 @@ data[0].append(utc_time)
 headers.append('UTC Time')
 
 if opts.input_dist is not None:
+    if opts.ra is not None or opts.dec is not None:
+        parser.error(
+            "You can't use input-dist argument and (ra,dec) at the same, please choose one"
+        ) 
     input_dist = eval('pycbc.distributions.' + opts.input_dist)
-    ra = input_dist.get_max_prob_point()[0]
-    dec = input_dist.get_max_prob_point()[1]
+    ra, dec = input_dist.get_max_prob_point()
     sky_error = None
 
 else:
@@ -117,7 +120,7 @@ headers.append('IFOs')
 for ifo in opts.ifos:
     antenna = Detector(ifo)
     factor = get_antenna_dist_factor(
-        antenna, opts.ra, opts.dec, float(opts.trigger_time)
+        antenna, ra, dec, float(opts.trigger_time)
     )
     data[0].append(f'{factor:.3f}')
     headers.append(ifo + ' Antenna Factor')

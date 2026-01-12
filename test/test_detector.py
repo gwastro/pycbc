@@ -117,7 +117,42 @@ class TestDetector(unittest.TestCase):
 
             self.assertAlmostEqual(ra, ra1, 3)
             self.assertAlmostEqual(dec, dec1, 7)
-
+            
+    def test_det_tc_conversion(self):
+        """Test that the convert_tc method functions properly. The same times
+        should be returned in all frames regardless of the reference.
+        """
+        vals = list(zip(self.ra, self.dec, self.time))
+        ref_frames = ['geocentric', 'H1', 'L1', 'V1']
+        target_frames = ['H1', 'L1', 'V1']
+        # convert the times from geocentric using time_delay_from_earth_center
+        test_times = {'geocentric': self.time}
+        for ifo in target_frames:
+            d = det.Detector(ifo)
+            det_times = []
+            for ra1, dec1, time1 in vals:
+                tc = time1 + d.time_delay_from_earth_center(ra1, dec1, time1)
+                det_times.append(tc)
+            test_times[ifo] = det_times
+        # convert the nominal times to each of the other detectors
+        for target_ifo in target_frames:
+            # set up the target detector
+            d = det.Detector(target_ifo)
+            target_times = test_times[target_ifo]
+            for ref_ifo in ref_frames:
+                ref_times = test_times[ref_ifo]
+                converted_times = []
+                for i in range(len(vals)):
+                    ra1, dec1, _ = vals[i]
+                    ref_tc = ref_times[i]
+                    # convert the reference time to the target detector
+                    tc = d.arrival_time(ref_tc, ra1, dec1, ref_frame = ref_ifo)
+                    converted_times.append(tc)
+                # check that the times converted to target match nominal
+                print(f"Testing conversion from {ref_ifo} to {target_ifo}")
+                for i in range(len(converted_times)):
+                    self.assertAlmostEqual(converted_times[i], target_times[i], 
+                                           places=6)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDetector))

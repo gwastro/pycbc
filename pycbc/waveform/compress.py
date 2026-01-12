@@ -16,20 +16,22 @@
 #
 # =============================================================================
 #
-#                                   Preamble
+#                           Preamble
 #
 # =============================================================================
 #
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-import lal, numpy, logging, h5py
-from pycbc import filter
+import numpy, logging, h5py, time
 from scipy import interpolate
+
+from pycbc import filter
 from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc.waveform import utils
 from pycbc.scheme import schemed
 from pycbc.io.hdf import HFile
+from pycbc.constants import MTSUN_SI
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """ A very rough estimate of the duration of the waveform.
@@ -60,14 +62,17 @@ def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
         Time from flow untill the end of the waveform
     """
     m = m1 + m2
-    msun = m * lal.MTSUN_SI
+    msun = m * MTSUN_SI
     t =  5.0 / 256.0 * m * m * msun / (m1 * m2) / \
-        (numpy.pi * msun * flow) **  (8.0 / 3.0)
+        (numpy.pi * msun * flow) ** (8.0 / 3.0)
 
     # fudge factoriness
     return .022 if t < 0 else (t + fudge_min) * fudge_length
 
-def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
+def mchirp_compression(m1, m2, fmin, fmax,
+                       min_seglen=0.02, 
+                       df_multiple=None,
+                       scale=1):
     """Return the frequencies needed to compress a waveform with the given
     chirp mass. This is based on the estimate in rough_time_estimate.
 
@@ -87,6 +92,8 @@ def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
         Make the compressed sampling frequencies a multiple of the given value.
         If None provided, the returned sample points can have any floating
         point value.
+    scale: float
+        Factor to scale the initial frequency step size by.
 
     Returns
     -------
@@ -99,14 +106,14 @@ def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
         if df_multiple is not None:
             f = int(f/df_multiple)*df_multiple
         sample_points.append(f)
-        f += 1.0 / rough_time_estimate(m1, m2, f, fudge_min=min_seglen)
+        f += 1.0 / rough_time_estimate(m1, m2, f, fudge_min=min_seglen) * scale
     # add the last point
     if sample_points[-1] < fmax:
         sample_points.append(fmax)
     return numpy.array(sample_points)
 
 def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
-        sample_frequencies=None):
+        sample_frequencies=None, scale=1):
     """Returns the frequencies needed to compress the given frequency domain
     waveform. This is done by estimating t(f) of the waveform using the
     stationary phase approximation.
@@ -125,6 +132,8 @@ def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
         The frequencies that the waveform is evaluated at. If None, will
         retrieve the frequencies from the waveform's sample_frequencies
         attribute.
+    scale: float
+        Factor to scale the initial frequency step size by.
 
     Returns
     -------
@@ -136,7 +145,7 @@ def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
     kmin = int(fmin/htilde.delta_f)
     kmax = int(fmax/htilde.delta_f)
     tf = abs(utils.time_from_frequencyseries(htilde,
-            sample_frequencies=sample_frequencies).data[kmin:kmax])
+        sample_frequencies=sample_frequencies).data[kmin:kmax])
     sample_frequencies = sample_frequencies[kmin:kmax]
     sample_points = []
     f = fmin
@@ -144,7 +153,7 @@ def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
         f = int(f/htilde.delta_f)*htilde.delta_f
         sample_points.append(f)
         jj = numpy.searchsorted(sample_frequencies, f)
-        f += 1./(tf[jj:].max()+min_seglen)
+        f += 1./(tf[jj:].max()+min_seglen) * scale
     # add the last point
     if sample_points[-1] < fmax:
         sample_points.append(fmax)
@@ -160,7 +169,7 @@ def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
                           normalized=False, psd=psd)
-                - filter.overlap_cplx(htilde, hinterp,
+               - filter.overlap_cplx(htilde, hinterp,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
                           normalized=False, psd=psd))
@@ -234,14 +243,20 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         outdf = df
     else:
         outdf = None
+    
+    t1 = time.time()
     hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                             out=decomp_scratch, df=outdf, f_lower=fmin,
                             interpolation=interpolation)
+    htime = time.time() - t1
     kmax = min(len(htilde), len(hdecomp))
     htilde = htilde[:kmax]
     hdecomp = hdecomp[:kmax]
-    mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
-                                   low_frequency_cutoff=fmin)
+    s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)    
+    s2 = filter.sigma(htilde, psd=psd, low_frequency_cutoff=fmin)
+    htilde2 = htilde / psd / s2
+    mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
+                                  low_frequency_cutoff=fmin, normalized=False))
     if mismatch > tolerance:
         # we'll need the difference in the waveforms as a function of frequency
         vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
@@ -275,13 +290,17 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         sample_index = new_index
         sample_points = (sample_index * df).astype(
             real_same_precision_as(htilde))
+            
         # get the new compressed points
         comp_amp = amp.take(sample_index)
         comp_phase = phase.take(sample_index)
         # update the vecdiffs and mismatch
+        
+        t1 = time.time()
         hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                                 out=decomp_scratch, df=outdf,
                                 f_lower=fmin, interpolation=interpolation)
+        htime = time.time() - t1
         hdecomp = hdecomp[:kmax]
         new_vecdiffs = numpy.zeros(vecdiffs.size+1)
         new_vecdiffs[:minpt] = vecdiffs[:minpt]
@@ -290,16 +309,27 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                                               sample_points[minpt:minpt+2],
                                               psd=psd)
         vecdiffs = new_vecdiffs
-        mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
-                                       low_frequency_cutoff=fmin)
+  
+        mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s2, htilde2,
+                                            low_frequency_cutoff=fmin,
+                                            normalized=False,
+                                           ))
+        
+        if mismatch <= tolerance:
+            s1 = filter.sigma(hdecomp, psd=psd, low_frequency_cutoff=fmin)
+            mismatch = 1. - abs(filter.overlap_cplx(hdecomp / s1, htilde2,
+                                            low_frequency_cutoff=fmin,
+                                            normalized=False,
+                                           ))
         added_points.append(addidx)
     compression_factor = len(htilde) / len(sample_points)
     logging.info(
-        "mismatch: %f, N points: %i (%i added), compression:%.3e",
+        "mismatch: %f, N points: %i (%i added), compression:%.3e, time %.2f ms",
         mismatch,
         len(comp_amp),
         len(added_points),
-        compression_factor
+        compression_factor,
+        htime * 1000,
     )
 
     return CompressedWaveform(sample_points, comp_amp, comp_phase,
@@ -326,6 +356,102 @@ _real_dtypes = {
 }
 
 @schemed("pycbc.waveform.decompress_")
+def inline_cubic_interp(amp, phase, sample_frequencies, output,
+                         df, f_lower, imin, start_index):
+    """Generate a frequency-domain waveform via cubic interpolation
+    from sampled amplitude and phase. The sample frequency locations
+    for the amplitude and phase must be the same. This function may
+    be less accurate than scipy's linear interpolation, but should be
+    much faster.  Additionally, it is 'schemed' and so may run under
+    either CPU or GPU schemes.
+
+    This function is not ordinarily called directly, but rather by
+    giving the argument 'interpolation' the value 'inline_linear'
+    when calling the function 'fd_decompress' below.
+
+    Parameters
+    ----------
+    amp : array
+        The amplitude of the waveform at the sample frequencies.
+    phase : array
+        The phase of the waveform at the sample frequencies.
+    sample_frequencies : array
+        The frequency (in Hz) of the waveform at the sample frequencies.
+    output : {None, FrequencySeries}
+        The output array to save the decompressed waveform to. If this contains
+        slots for frequencies > the maximum frequency in sample_frequencies,
+        the rest of the values are zeroed. If not provided, must provide a df.
+    df : {None, float}
+        The frequency step to use for the decompressed waveform. Must be
+        provided if out is None.
+    f_lower : float
+        The frequency to start the decompression at. All values at
+        frequencies less than this will be 0 in the decompressed waveform.
+    imin : int
+        The index at which to start in the sampled frequency series. Must
+        therefore be 0 <= imin < len(sample_frequencies)
+    start_index : int
+        The index at which to start in the output frequency;
+        i.e., ceil(f_lower/df).
+
+    Returns
+    -------
+    output : FrequencySeries
+        If out was provided, writes to that array. Otherwise, a new
+        FrequencySeries with the decompressed waveform.
+
+    """
+    return
+    
+@schemed("pycbc.waveform.decompress_")
+def inline_quadratic_interp(amp, phase, sample_frequencies, output,
+                         df, f_lower, imin, start_index):
+    """Generate a frequency-domain waveform via quadratic interpolation
+    from sampled amplitude and phase. The sample frequency locations
+    for the amplitude and phase must be the same. This function may
+    be less accurate than scipy's linear interpolation, but should be
+    much faster.  Additionally, it is 'schemed' and so may run under
+    either CPU or GPU schemes.
+
+    This function is not ordinarily called directly, but rather by
+    giving the argument 'interpolation' the value 'inline_linear'
+    when calling the function 'fd_decompress' below.
+
+    Parameters
+    ----------
+    amp : array
+        The amplitude of the waveform at the sample frequencies.
+    phase : array
+        The phase of the waveform at the sample frequencies.
+    sample_frequencies : array
+        The frequency (in Hz) of the waveform at the sample frequencies.
+    output : {None, FrequencySeries}
+        The output array to save the decompressed waveform to. If this contains
+        slots for frequencies > the maximum frequency in sample_frequencies,
+        the rest of the values are zeroed. If not provided, must provide a df.
+    df : {None, float}
+        The frequency step to use for the decompressed waveform. Must be
+        provided if out is None.
+    f_lower : float
+        The frequency to start the decompression at. All values at
+        frequencies less than this will be 0 in the decompressed waveform.
+    imin : int
+        The index at which to start in the sampled frequency series. Must
+        therefore be 0 <= imin < len(sample_frequencies)
+    start_index : int
+        The index at which to start in the output frequency;
+        i.e., ceil(f_lower/df).
+
+    Returns
+    -------
+    output : FrequencySeries
+        If out was provided, writes to that array. Otherwise, a new
+        FrequencySeries with the decompressed waveform.
+
+    """
+    return
+
+@schemed("pycbc.waveform.decompress_")
 def inline_linear_interp(amp, phase, sample_frequencies, output,
                          df, f_lower, imin, start_index):
     """Generate a frequency-domain waveform via linear interpolation
@@ -337,6 +463,57 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
 
     This function is not ordinarily called directly, but rather by
     giving the argument 'interpolation' the value 'inline_linear'
+    when calling the function 'fd_decompress' below.
+
+    Parameters
+    ----------
+    amp : array
+        The amplitude of the waveform at the sample frequencies.
+    phase : array
+        The phase of the waveform at the sample frequencies.
+    sample_frequencies : array
+        The frequency (in Hz) of the waveform at the sample frequencies.
+    output : {None, FrequencySeries}
+        The output array to save the decompressed waveform to. If this contains
+        slots for frequencies > the maximum frequency in sample_frequencies,
+        the rest of the values are zeroed. If not provided, must provide a df.
+    df : {None, float}
+        The frequency step to use for the decompressed waveform. Must be
+        provided if out is None.
+    f_lower : float
+        The frequency to start the decompression at. All values at
+        frequencies less than this will be 0 in the decompressed waveform.
+    imin : int
+        The index at which to start in the sampled frequency series. Must
+        therefore be 0 <= imin < len(sample_frequencies)
+    start_index : int
+        The index at which to start in the output frequency;
+        i.e., ceil(f_lower/df).
+
+    Returns
+    -------
+    output : FrequencySeries
+        If out was provided, writes to that array. Otherwise, a new
+        FrequencySeries with the decompressed waveform.
+
+    """
+    return
+
+@schemed("pycbc.waveform.decompress_")
+def inline_quartic_interp(amp, phase, sample_frequencies, output,
+                            df, f_lower, imin, start_index):
+    """Generate a frequency-domain waveform via quartic interpolation
+    from sampled amplitude and phase. The sample frequency locations
+    for the amplitude and phase must be the same. This function may
+    be less accurate than scipy's quadratic interpolation, but should be
+    much faster.  Additionally, it is 'schemed' and so may run under
+    either CPU or GPU schemes.
+
+    The first segment is interpolated linearly, as there are not enough
+    points for a centered quadratic.
+
+    This function is not ordinarily called directly, but rather by
+    giving the argument 'interpolation' the value 'inline_quadratic'
     when calling the function 'fd_decompress' below.
 
     Parameters
@@ -397,9 +574,10 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         The frequency to start the decompression at. If None, will use whatever
         the lowest frequency is in sample_frequencies. All values at
         frequencies less than this will be 0 in the decompressed waveform.
-    interpolation : {'inline_linear', str}
+    interpolation : {'inline_linear', 'inline_quadratic', str}
         The interpolation to use for the amplitude and phase. Default is
-        'inline_linear'. If 'inline_linear' a custom interpolater is used.
+        'inline_linear'. If 'inline_linear' or 'inline_quadratic' a custom
+        interpolater is used.
         Otherwise, ``scipy.interpolate.interp1d`` is used; for other options,
         see possible values for that function's ``kind`` argument.
 
@@ -447,6 +625,18 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         # Call the scheme-dependent function
         inline_linear_interp(amp, phase, sample_frequencies, out,
                              df, f_lower, imin, start_index)
+    elif interpolation == "inline_quadratic":
+        # Call the scheme-dependent function
+        inline_quadratic_interp(amp, phase, sample_frequencies, out,
+                                df, f_lower, imin, start_index)
+    elif interpolation == "inline_cubic":
+        # Call the scheme-dependent function
+        inline_cubic_interp(amp, phase, sample_frequencies, out,
+                                df, f_lower, imin, start_index)
+    elif interpolation == "inline_quartic":
+        # Call the scheme-dependent function
+        inline_quartic_interp(amp, phase, sample_frequencies, out,
+                                df, f_lower, imin, start_index)
     else:
         # use scipy for fancier interpolation
         sample_frequencies = numpy.array(sample_frequencies)
@@ -741,4 +931,3 @@ class CompressedWaveform(object):
             mismatch=fp_group.attrs['mismatch'],
             precision=fp_group.attrs['precision'],
             load_to_memory=load_to_memory)
-
