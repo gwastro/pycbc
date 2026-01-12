@@ -69,6 +69,8 @@ fi
 cat_output=false
 
 if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
+    # Fail immediately in this case
+    set -e
     # run pycbc inspiral test
     pushd examples/inspiral
     bash -e run.sh
@@ -99,6 +101,8 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
+    # Fail immediately in this case
+    set -e
     # Run Inference Scripts
     ## Run inference on 2D-normal analytic likelihood function
     pushd examples/inference/analytic-normal2d
