@@ -63,15 +63,18 @@ def coinc_color(coinc):
     """ Return a color for the coincidence type
 
     Parameters
-    coinc: string
-        A strings for the IFOs in the coincidence.
+    coinc : string
+        A string for the IFOs in the coincidence.
         This will be in alphabetical order, i.e. H1L1V1.
 
     Returns
-    string
-        The RGB color for the corresponding coinc
+    string : The RGB color for the corresponding coinc
     """
-    if len(coinc) == 1 and coinc in _ifo_color_map:
-        return _ifo_color_map[coinc]
-    else:
+    if len(coinc) == 1:
+        if coinc in _ifo_color_map:
+            return _ifo_color_map[coinc]
+        raise KeyError(f"Unknown IFO coincidence '{coinc}'")
+    try:
         return _coinc_color_map[coinc]
+    except KeyError:
+        raise KeyError(f"Unknown coincidence type '{coinc}'") from None
