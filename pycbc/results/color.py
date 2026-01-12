@@ -47,6 +47,37 @@ _coinc_color_map = {
     'H1I1K1V1': '#ce5dff',  # medium orchid
     'I1K1L1V1': '#00927d',  # dark cyan
     'H1I1K1L1V1': '#00ae31',  # forest green
+    'G1H1': '#0000aa',  # navy
+    'G1L1': '#650400',  # maroon
+    'G1H1L1': '#550075',  # plum
+    'G1V1': '#004900',  # deep green
+    'G1H1V1': '#615d61',  # slate gray
+    'G1L1V1': '#a69a96',  # taupe
+    'G1H1L1V1': '#ebe3eb',  # lavender blush
+    'G1K1': '#593d00',  # sienna
+    'G1H1K1': '#00495d',  # deep teal
+    'G1K1L1': '#4d498e',  # indigo
+    'G1H1K1L1': '#28614d',  # pine
+    'G1K1V1': '#1035ff',  # electric blue
+    'G1H1K1V1': '#efbe9e',  # peach
+    'G1K1L1V1': '#824539',  # russet
+    'G1H1K1L1V1': '#a61400',  # scarlet
+    'G1I1': '#201c49',  # midnight
+    'G1H1I1': '#aac6be',  # seafoam
+    'G1I1L1': '#8200e7',  # violet
+    'G1H1I1L1': '#496900',  # olive drab
+    'G1I1V1': '#718269',  # sage
+    'G1H1I1V1': '#86a2b6',  # steel blue
+    'G1I1L1V1': '#493951',  # dusty mauve
+    'G1H1I1L1V1': '#a2aa6d',  # khaki
+    'G1I1K1': '#391804',  # espresso
+    'G1H1I1K1': '#aa7165',  # rosy brown
+    'G1I1K1L1': '#657196',  # slate blue
+    'G1H1I1K1L1': '#00392d',  # forest teal
+    'G1I1K1V1': '#c6b2ce',  # thistle
+    'G1H1I1K1V1': '#c2f7db',  # mint cream
+    'G1I1K1L1V1': '#414535',  # dark olive
+    'G1H1I1K1L1V1': '#242800',  # dark olive (deep)
 }
 
 def ifo_color(ifo):
