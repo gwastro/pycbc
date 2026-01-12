@@ -315,13 +315,11 @@ create the workflow from within the run directory using::
     workflow:end-time:$(( GRB_TIME + 4096 )) \
     workflow:html-dir:${HTML_DIR}
 
-You can submit to the job pool immediately by adding the option
-.. code-block::
+You can submit to the job pool immediately by adding the option::
 
     --submit-now
 
-or after generating, change to the working directory and run
-.. code-block::
+or after generating, change to the working directory and run::
     
     ./start
 

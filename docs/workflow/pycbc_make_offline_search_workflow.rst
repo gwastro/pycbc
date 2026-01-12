@@ -24,14 +24,24 @@ can be used to understand the results of the analysis
 Configuration file
 ==================
 
-The behavior of the workflow is controlled by a configuration file (also known as an ``ini`` file) that is made up of three types of sections: workflow, the pegasus profile and the executable options. The workflow sections control how different parts of the the workflow hang together. The pegasus profile sections are equivalent to lines you would have in a condor_submit file (e.g. requirements, storage size etc). Anything you would do in condor you would do here. The third section type maps the options to an executable.
+The behavior of the workflow is controlled by a configuration file (also known
+as an ``ini`` file) that is made up of three types of sections: workflow, the
+pegasus profile and the executable options. The workflow sections control how
+different parts of the the workflow hang together. The pegasus profile sections
+are equivalent to lines you would have in a condor_submit file (e.g. requirements,
+storage size etc). Anything you would do in condor you would do here.
+The third section type maps the options to an executable.
 
 ::
 
   [pegasus_profile]
   condor|accounting_group=ligo.dev.o1.cbc.bns_spin.pycbcoffline
 
-This is used for keeping an account of the pycbc usage
+In this example, we are running on a resource that mandates accounting, so we
+will also need to add a valid tag with the ``condor|accounting_group`` option. Please see, e.g.,
+`the LDG accounting page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user>`_. to
+determine the correct tags. Once you know what `accounting_group`` tag to use, add it 
+to your config files. ``request_disk`` and ``request_memory`` may also be required.
 
 ::
 
@@ -489,21 +499,15 @@ set the output web page location.
 Planning and Submitting the Workflow
 ====================================
 
-Pegasus is used to plan and submit the workflow. To involve Pegasus to submit a
-PyCBC workflow, you can use the argument ``--submit-now``. The workflow is planned
-by default, and is submitted later using the 
-.. code-block::
+Pegasus is used to plan and submit the workflow. To invoke Pegasus to submit a
+PyCBC workflow, you can use the argument ``--submit-now``. To generate the workflow
+without submitting, omit this option, and then run::
 
     ./start
 
 executable which is made in the ``--output-dir`` directory you defined earlier.
 
-Note that if you are running on a resource that mandates accounting, then you
-will also need to add a valid tag with the ``--accounting-tag`` command line
-argument. Please see
-`the LDG accounting page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user>`_. to
-determine the correct tags. Once you know what accounting-group tag to use, add it 
-to your config files. ``request_disk`` and ``request_memory`` may also be required.
+
 
 .. code-block::
 
@@ -819,7 +823,7 @@ Then create the cache file as follows:
   * ``png`` to remove any output plots generated.
   * ``dax`` to remove any follow-up workflows generated.
 
-This can be acomplished with the following command::
+This can be accomplished with the following command::
 
     egrep -v '(VETOTIME|LIGOLW_COMBINE_SEGMENTS|CUMULATIVE_CAT_12H_VETO_SEGMENTS|COINC|FIT|STATMAP|INJFIND|PAGE|FOREGROUND_CENSOR|html|png|dax)' /path/to/main.map > /path/to/reuse_cache.map
 
@@ -976,4 +980,31 @@ follwing lines to your ``executables.ini`` file::
 --------------------
 Running the workflow
 --------------------
-FIXME: Add instructions here
+There are two main ways to run your workflow on the OSG:
+1. **Immediate Submission with `--submit-now`**
+   You can use the `--submit-now` flag with `pycbc_make_offline_search_workflow`
+   to generate and immediately submit your workflow to the OSG. For example:
+   ::
+       pycbc_make_offline_search_workflow \
+           --config-files <your_config_files> \
+           --workflow-name <name> \
+           --output-dir <output_dir> \
+           --submit-now
+    
+   This will create the workflow directory, and
+   automatically submit the workflow to the grid using Pegasus.
+2. **Manual Submission Using the `./start` Script**
+   If you prefer to generate the workflow first and submit it later,
+   simply omit the `--submit-now` flag:
+   ::
+       pycbc_make_offline_search_workflow \
+           --config-files <your_config_files> \
+           --workflow-name <name> \
+           --output-dir <output_dir>
+
+   This will set up the workflow in the specified output directory.
+   To submit the workflow at a later time, navigate to the workflow
+   directory and run:
+   ::
+       ./start
+   This script will submit the workflow to the OSG using Pegasus.

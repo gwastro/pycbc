@@ -186,7 +186,6 @@ Then after the workflow is generated, move to
 ::
     ./start
 
-where again ``RUN_NAME`` and ``ACCOUNTING_TAG`` should be given meaningful
-values. When the workflow completes, the average PSDs should be available in
+When the workflow completes, the average PSDs should be available in
 ``/path/to/run/directory/psds`` and diagnostic plots should be in
 ``/path/to/run/directory/plots``.
