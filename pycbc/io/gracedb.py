@@ -159,6 +159,8 @@ class CandidateForGraceDB(object):
                      if f'foreground/{ifo}' in n]
             for name in names:
                 val = coinc_results[f'foreground/{ifo}/{name}']
+                if isinstance(val, (numpy.ndarray, numpy.generic)):
+                    val = val.item()
                 if name == 'end_time':
                     val += self.time_offset
                     sngl.end = lal.LIGOTimeGPS(val)
