@@ -172,9 +172,6 @@ class TestTimeConversionsFull(unittest.TestCase):
         now_dt = datetime.now(timezone.utc)
 
         dt_from_gps = pycbc.time.gps_to_utc_datetime(gps_now)
-        # Ensure dt_from_gps is timezone-aware in UTC for a fair comparison
-        if dt_from_gps.tzinfo is None:
-            dt_from_gps = dt_from_gps.replace(tzinfo=timezone.utc)
 
         # difference in seconds
         delta_secs = abs((dt_from_gps - now_dt).total_seconds())
