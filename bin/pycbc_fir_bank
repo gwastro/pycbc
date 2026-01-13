@@ -10,7 +10,6 @@ from collections import defaultdict
 import pycbc
 import pycbc.psd
 from pycbc.filter import match, overlap, sigmasq
-from pycbc.waveform import get_fd_waveform
 from pycbc.waveform.bank import FilterBank
 from pycbc.types import TimeSeries, FrequencySeries
 
