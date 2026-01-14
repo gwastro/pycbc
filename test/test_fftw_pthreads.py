@@ -22,31 +22,35 @@
 # =============================================================================
 #
 """
-These are the unit-tests for the pycbc.fft.fftw subpackage, testing only the pthreads
-threading backend.
+These are the unit-tests for the pycbc.fft.fftw subpackage, testing only the
+pthreads threading backend.
 """
 
 import pycbc.fft
 from pycbc.scheme import CPUScheme
 import unittest
-from sys import exit as _exit
 from utils import parse_args_cpu_only, simple_exit
 from fft_base import _BaseTestFFTClass
 
+
 parse_args_cpu_only("FFTW pthreads backend")
 
-# See if we can get set the FFTW backend to 'pthreads'; if not, say so and exit.
+# See if we can set the FFTW backend to 'pthreads'; if not, say so and exit.
 
-if 'fftw' in pycbc.fft.get_backend_names():
-    import pycbc.fft.fftw
-    try:
-        pycbc.fft.fftw.set_threads_backend('pthreads')
-    except:
-        print("Unable to import pthreads threads backend to FFTW; skipping pthreads thread tests")
-        _exit(0)
-else:
-    print("FFTW does not seem to be an available CPU backend; skipping pthreads thread tests")
-    _exit(0)
+if 'fftw' not in pycbc.fft.get_backend_names():
+    raise unittest.SkipTest(
+        "FFTW does not seem to be an available CPU backend; "
+        "skipping pthreads thread tests"
+    )
+
+import pycbc.fft.fftw
+try:
+    pycbc.fft.fftw.set_threads_backend('pthreads')
+except:
+    raise unittest.SkipTest(
+        "Unable to import pthreads threads backend to FFTW; "
+        "skipping pthreads thread tests"
+    )
 
 # Most of the work is now done in fft_base.
 
