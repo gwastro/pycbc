@@ -1063,15 +1063,14 @@ class FDomainDetFrameTwoPhaseGenerator(BaseFDomainDetFrameGenerator):
         rfparams = {param: self.current_params[param]
             for param in kwargs if param not in self.location_args}
         # generate the cosine term: ref_phase = 0
-        rp = rfparams[ref_phase]
-        cos_params = rfparams.copy()
-        for i in phases:
-            cos_params[i] -= rp
-        hpc, hcc = self.rframe_generator.generate(**cos_params)
+        if rfparams[ref_phase] != 0.:
+            raise ValueError(f'Reference phase {ref_phase}={rfparams[ref_phase]} is '
+                              'not zero')
+        hpc, hcc = self.rframe_generator.generate(**rfparams)
         # generate the sine term: shift all phases by pi/2
-        sin_params = cos_params.copy()
+        sin_params = rfparams.copy()
         for i in phases:
-            sin_params[i] += pi/2
+            sin_params[i] = rfparams[i] + pi/2
         hps, hcs = self.rframe_generator.generate(**sin_params)
         if isinstance(hpc, TimeSeries):
             df = self.current_params['delta_f']
