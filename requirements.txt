@@ -1,7 +1,7 @@
 # requirements for most basic library use
 astropy>=2.0.3,!=4.2.1,!=4.0.5
 Mako>=1.0.1
-scipy>=0.16.0
+scipy>=0.16.0,<1.17.0
 matplotlib>=2.0.0
 numpy>=1.16.0,!=1.19.0,!=2.2.2,<2.4
 pillow
