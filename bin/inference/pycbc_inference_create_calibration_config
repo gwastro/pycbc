@@ -24,18 +24,13 @@ import os, argparse
 import pycbc
 import numpy
 import matplotlib.pyplot as plt
+import logging
 
 from pycbc.types import MultiDetOptionAction
 from pycbc.strain.recalibrate import get_calibration_files_O1_O2_O3, read_calibration_envelop_file
 
 
 parser = argparse.ArgumentParser()
-
-# command line usage
-#parser = argparse.ArgumentParser(
-#            usage="pycbc_inference_create_calibration_config [--options]",
-#            description="Generate the calibration configuration files "
-#                        "to be used woth pycbc_inference.")
 
 pycbc.add_common_pycbc_options(parser)
 
@@ -119,7 +114,7 @@ else:
     tag = opts.tag
 
 for ifo in opts.ifos:
-  logging.info("Minimum %s frequency: %.3f", ifs, min_freq_list[ifo])
+  logging.info("Minimum %s frequency: %.3f", ifo, min_freq_list[ifo])
 
 # Read calibration files
 if opts.calibration_files:
