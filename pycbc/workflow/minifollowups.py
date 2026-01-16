@@ -793,7 +793,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
                     data_segments=None, time_window=100, tags=None):
     """ Generate a make_qscan node and add it to workflow.
 
-    This function generates a single node of the singles_timefreq executable
+    This function generates a single node of the plot_qscan executable
     and adds it to the current workflow. Parent/child relationships are set by
     the input/output files automatically.
 
@@ -812,7 +812,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         plot.
     data_segments: igwn_segments.segmentlist (optional, default=None)
         The list of segments for which data exists and can be read in. If given
-        the start/end times given to singles_timefreq will be adjusted if
+        the start/end times given to plot_qscan will be adjusted if
         [trig_time - time_window, trig_time + time_window] does not completely
         lie within a valid data segment. A ValueError will be raised if the
         trig_time is not within a valid segment, or if it is not possible to
@@ -820,7 +820,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         trigger. This **must** be coalesced.
     time_window: int (optional, default=None)
         The amount of data (not including padding) that will be read in by the
-        singles_timefreq job. The default value of 100s should be fine for most
+        plot_qscan job. The default value of 100s should be fine for most
         cases.
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
