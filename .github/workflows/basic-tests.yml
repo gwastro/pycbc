@@ -47,8 +47,11 @@ jobs:
       with:
         key: example-gw-data
         path: |
-          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
+          docs/_include/*_TDI_v2.gwf
+          docs/_include/*_GWOSC_4KHZ_R1-1126257415-4096.gwf
+          docs/_include/*_LOSC_CLN_4_V1-1187007040-2048.gwf
           examples/inference/lisa_smbhb_ldc/*_psd.txt
+          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
           examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
           examples/inference/margtime/*.gwf
           examples/inference/multisignal/*.gwf
