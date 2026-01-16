@@ -12,6 +12,10 @@ import validation_code.old_coinc as old_coinc
 
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
+from numpy.random import seed
+
+seed(0)
+
 class SingleDetTrigSimulator:
     """An object that simulates single-detector triggers in the same format
     as produced by the matched-filtering processes of PyCBC Live.
@@ -140,8 +144,17 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                     self.assertTrue(key not in oldout)
                 else:
                     self.assertTrue(key in oldout)
+                    # print(i, key)
                     if type(newout[key]) is np.ndarray:
+                        # print(len(newout[key]), len(oldout[key]))
                         self.assertTrue(len(newout[key]) == len(oldout[key]))
+                        diff = newout[key] - oldout[key]
+                        # print(diff.mean(), diff.std())
+                        not_close = np.logical_not(np.isclose(newout[key], oldout[key]))
+                        # print(sum(not_close), np.flatnonzero(not_close))
+                        # print(newout[key][not_close], oldout[key][not_close])
+
+
                         self.assertTrue(
                             np.isclose(newout[key], oldout[key]).all()
                         )
