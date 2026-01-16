@@ -78,12 +78,6 @@ jobs:
       with:
         name: documentation-page
         path: _gh-pages
-    - name: List GW data files
-      run: |
-        echo "Current working directory:"
-        pwd
-        echo "GW data files:"
-        find . -type f -name \*.gwf
   deploy_documentation:
     runs-on: ubuntu-latest
     needs: build
