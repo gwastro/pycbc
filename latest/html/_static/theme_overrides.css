@@ -1,0 +1,14 @@
+/* Override table width restrictions:
+   The RTD theme causes tables rows to all be single line, even if the row
+   spans multiple lines in the rst formatting. This overrides that, causing
+   RTD to use the text wrapping specified in the RST. For more details, see
+   https://github.com/readthedocs/sphinx_rtd_theme/issues/117 */
+@media screen and (min-width: 767px) {
+
+   .wy-table-responsive table td {
+      /* !important prevents the common CSS stylesheets from overriding
+         this as on RTD they are loaded after this stylesheet */
+      white-space: normal !important;
+   }
+
+}
