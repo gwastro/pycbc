@@ -215,12 +215,6 @@ def random_string(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
-def gps_now():
-    """Return the current GPS time as a float using Astropy.
-    """
-    from astropy.time import Time
-
-    return float(Time.now().gps)
 
 # This is needed as a backwards compatibility. The function was removed in
 # python 3.12.
@@ -234,3 +228,12 @@ def load_source(modname, filename):
     # sys.modules[module.__name__] = module
     loader.exec_module(module)
     return module
+
+# Expose some convenience functions at package level for backwards
+# compatibility and convenience: allow `pycbc.gps_now()` as well as
+# `pycbc.time.gps_now()`.
+try:
+    from .time import gps_now  # noqa: F401
+except Exception:
+    # If pycbc imported during build this may fail; silently ignore.
+    gps_now = None

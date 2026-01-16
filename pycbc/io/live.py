@@ -4,7 +4,8 @@ import pathlib
 import datetime
 import numpy
 
-from lal import gpstime as lalgps
+from pycbc.time import gps_to_utc_datetime
+
 
 logger = logging.getLogger('pycbc.io.live')
 
@@ -138,8 +139,8 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
         # Add a day on either side to ensure we get files which straddle
         # the boundary
         one_day = datetime.timedelta(days=1)
-        date_check = lalgps.gps_to_utc(gps_start_time) - one_day
-        date_end = lalgps.gps_to_utc(gps_end_time) + one_day
+        date_check = gps_to_utc_datetime(gps_start_time) - one_day
+        date_end = gps_to_utc_datetime(gps_end_time) + one_day
         matching_files = []
         while date_check < date_end:
             date_dir = date_check.strftime(date_directory_format)
