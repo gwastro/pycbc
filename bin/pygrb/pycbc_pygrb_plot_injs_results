@@ -47,6 +47,9 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 # =============================================================================
 # Functions
 # =============================================================================
+def ra_to_ra_mollweide(ra):
+    return (ra + np.pi) % (2*np.pi) - np.pi
+
 def process_var_strings(qty):
     """Add underscores to match HDF column name conventions"""
 
@@ -169,18 +172,19 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
                 data_dict[key] = complete_incl_data(injs, key, tag)
             elif key == 'sky_error':
                 data_dict[key] = complete_sky_error_data(injs, tag)
-            elif key == 'eff_dist':
-                eff_dists = np.empty((injs[tag + '/tc'].size, len(ifos)))
+            elif key.startswith('eff_dist'):
+                eff_dist = 0
                 for i, ifo in enumerate(ifos):
-                    eff_dists[:, i] = Detector(ifo).effective_distance(
+                    antenna = Detector(ifo)
+                    data_dict['eff_dist_'+ifo] = antenna.effective_distance(
                         injs[tag + '/distance'],
                         injs[tag + '/ra'],
                         injs[tag + '/dec'],
                         injs[tag + '/polarization'],
                         injs[tag + '/tc'],
-                        injs[tag + '/inclination'],
-                    )
-                data_dict[key] = 1 / (1 / eff_dists).sum(axis=1)
+                        injs[tag + '/inclination'])
+                    eff_dist += 1.0 / data_dict['eff_dist_'+ifo]
+                data_dict['eff_dist'] = 1.0 / eff_dist
             else:
                 data_dict[key] = injs[tag+'/'+key]
         except KeyError:
@@ -212,7 +216,8 @@ admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
                              'cosincl', 'absincl', 'cosabsincl',
                              'sky_error', 'skyerror', 'end_time', 'endtime',
                              'dec', 'ra', 'coaphase', 'coa_phase',
-                             'eff_site_dist', 'eff_dist',
+                             'eff_site_dist', 'eff_dist', 'eff_dist_H1',
+                             'eff_dist_L1', 'eff_dist_V1', 'eff_dist_sqr_quadsum',
                              'effsitedist', 'effdist', 'chip', 'chi_p']
 admitted_vars = sorted(set(admitted_vars))
 
@@ -427,6 +432,10 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'distance': "Distance (Mpc)",
                     'eff_site_dist': f"{opts.ifo} effective distance (Mpc)",
                     'eff_dist': "Inverse sum of inverse effective distances (Mpc)",
+                    'eff_dist_H1': "Eff. dist. Hanford (Mpc)",
+                    'eff_dist_L1': "Eff. dist. Livingston (Mpc)",
+                    'eff_dist_V1': "Eff. dist. Virgo (Mpc)",
+                    'eff_dist_sqr_quadsum': "sqrt of quadrature sum of effective distances (Mpc)",
                     'end_time': "GPS time (s)",
                     'sky_error': "Rec. sky error (rad)",
                     'coa_phase': "Phase of complex SNR (rad)",
@@ -448,9 +457,13 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'spin2y': "Spin y-component of 2nd binary component",
                     'spin2z': "Spin z-component of 2nd binary component",
                     'chi_p': "Effective precession spin"}
-
 fig = plt.figure()
-ax = fig.gca()
+if 'dec' in y_qty and 'ra' in x_qty:
+    ax = fig.add_subplot(111, projection="mollweide")
+    missed_inj['ra'] = ra_to_ra_mollweide(missed_inj['ra'])
+    found_inj['ra'] = ra_to_ra_mollweide(found_inj['ra'])
+else:
+    ax = fig.add_subplot(111)
 ax.set_xscale("log" if opts.x_log else "linear")
 ax.set_yscale("log" if opts.y_log else "linear")
 ax.set_xlabel(axis_labels_dict[x_qty])
@@ -607,6 +620,10 @@ if plot_title is None:
                   'distance': "distance (Mpc)",
                   'eff_dist': "inverse sum of inverse effective distances",
                   'eff_site_dist': "site specific effective distance",
+                  'eff_dist_H1': "Eff. dist. Hanford (Mpc)",
+                  'eff_dist_L1': "Eff. dist. Livingston (Mpc)",
+                  'eff_dist_V1': "Eff. dist. Virgo (Mpc)",
+                  'eff_dist_sqr_quadsum': "sqrt of quadrature sum of effective distances (Mpc)",
                   'end_time': "time",
                   'coa_phase': "phase of complex SNR",
                   'dec': "declination",
