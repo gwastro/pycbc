@@ -192,6 +192,7 @@ for ifo in files.keys():
         headers.append("Detector&nbsp;status")
 
     # End times
+    data[-1].append(str(utc))
     data[-1].append('%.3f' % time)
     headers.append("UTC&nbsp;End&nbsp;Time")
     headers.append("GPS&nbsp;End&nbsp;time")

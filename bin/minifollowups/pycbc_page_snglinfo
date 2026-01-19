@@ -136,6 +136,7 @@ if args.include_summary_page_link:
     headers.append("Detector&nbsp;status")
 
 # End times
+data[0].append(str(utc))
 data[0].append('%.3f' % time)
 headers.append("UTC")
 headers.append("End&nbsp;time")
