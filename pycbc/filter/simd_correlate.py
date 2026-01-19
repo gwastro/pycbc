@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 from pycbc.types import float32, complex64
 import numpy as _np
-from .. import opt
+import os
 from .simd_correlate_cython import ccorrf_simd, ccorrf_parallel
 
 """
@@ -52,11 +52,12 @@ def correlate_simd(ht, st, qt):
 # is that the vectors should fit in L2 cache.  Figuring out cache topology dynamically
 # is a harder problem than we attempt to solve here.
 
-if opt.HAVE_GETCONF:
+if os.environ.get("_PYCBC_L2_CACHE_SIZE", None):
     # Since we need 3 vectors fitting in L2 cache, divide by 3
     # We find the nearest power-of-two that fits, and the length
     # of the single-precision complex array that fits into that size.
-    pow2 = int(_np.log(opt.LEVEL2_CACHE_SIZE/3.0)/_np.log(2.0))
+    l2_cache_size = int(os.environ["_PYCBC_L2_CACHE_SIZE"])
+    pow2 = int(_np.log(l2_cache_size/3.0)/_np.log(2.0))
     default_segsize = pow(2, pow2)/_np.dtype(_np.complex64).itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?

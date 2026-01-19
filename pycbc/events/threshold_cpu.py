@@ -23,14 +23,15 @@
 #
 import logging
 import numpy
+import os
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 from .eventmgr import _BaseThresholdCluster
-from .. import opt
 
 logger = logging.getLogger('pycbc.events.threshold_cpu')
 
-if opt.HAVE_GETCONF:
-    default_segsize = opt.LEVEL2_CACHE_SIZE / numpy.dtype('complex64').itemsize
+if os.environ.get("_PYCBC_L2_CACHE_SIZE", None):
+    l2_cache_size = int(os.environ["_PYCBC_L2_CACHE_SIZE"])
+    default_segsize = l2_cache_size / numpy.dtype('complex64').itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
     default_segsize = 32768
