@@ -981,10 +981,12 @@ follwing lines to your ``executables.ini`` file::
 Running the workflow
 --------------------
 There are two main ways to run your workflow on the OSG:
+
 1. **Immediate Submission with `--submit-now`**
+
    You can use the `--submit-now` flag with `pycbc_make_offline_search_workflow`
-   to generate and immediately submit your workflow to the OSG. For example:
-   ::
+   to generate and immediately submit your workflow to the OSG. For example::
+
        pycbc_make_offline_search_workflow \
            --config-files <your_config_files> \
            --workflow-name <name> \
@@ -993,10 +995,11 @@ There are two main ways to run your workflow on the OSG:
     
    This will create the workflow directory, and
    automatically submit the workflow to the grid using Pegasus.
+   
 2. **Manual Submission Using the `./start` Script**
    If you prefer to generate the workflow first and submit it later,
-   simply omit the `--submit-now` flag:
-   ::
+   simply omit the `--submit-now` flag::
+
        pycbc_make_offline_search_workflow \
            --config-files <your_config_files> \
            --workflow-name <name> \
