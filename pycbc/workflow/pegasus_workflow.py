@@ -668,18 +668,8 @@ class Workflow(object):
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
-        """ Plan and submit the workflow now.
+        """ Plan and optionally submit the workflow now.
         """
-        # New functionality, this might still need some work. Here's things
-        # that this might want to do, that submit_dax did:
-        # * Checks proxy (ignore this, user should already have this done)
-        # * Pulls properties file in (DONE)
-        # * Send necessary options to the planner (DONE)
-        # * Some logging about hostnames (NOT DONE, needed?)
-        # * Setup the helper scripts (start/debug/stop/status) .. (DONE)
-        # * Copy some of the interesting files into workflow/ (DONE)
-        # * Checks for dashboard URL (NOT DONE)
-        # * Does something with condor_reschedule (NOT DONE, needed?)
 
         planner_args = {}
         planner_args['submit'] = submit_now
