@@ -58,7 +58,7 @@ if os.environ.get("_PYCBC_L2_CACHE_SIZE", None):
     # of the single-precision complex array that fits into that size.
     l2_cache_size = int(os.environ["_PYCBC_L2_CACHE_SIZE"])
     pow2 = int(_np.log(l2_cache_size/3.0)/_np.log(2.0))
-    default_segsize = pow(2, pow2)/_np.dtype(_np.complex64).itemsize
+    default_segsize = pow(2, pow2) // _np.dtype(_np.complex64).itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
     default_segsize = 8192

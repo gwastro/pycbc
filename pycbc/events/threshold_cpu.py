@@ -31,7 +31,7 @@ logger = logging.getLogger('pycbc.events.threshold_cpu')
 
 if os.environ.get("_PYCBC_L2_CACHE_SIZE", None):
     l2_cache_size = int(os.environ["_PYCBC_L2_CACHE_SIZE"])
-    default_segsize = l2_cache_size / numpy.dtype('complex64').itemsize
+    default_segsize = l2_cache_size // numpy.dtype('complex64').itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
     default_segsize = 32768
