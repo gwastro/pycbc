@@ -12,10 +12,6 @@ import validation_code.old_coinc as old_coinc
 
 OriginalCoincer = old_coinc.LiveCoincTimeslideBackgroundEstimator
 
-from numpy.random import seed
-
-seed(0)
-
 class SingleDetTrigSimulator:
     """An object that simulates single-detector triggers in the same format
     as produced by the matched-filtering processes of PyCBC Live.
@@ -144,22 +140,29 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                     self.assertTrue(key not in oldout)
                 else:
                     self.assertTrue(key in oldout)
-                    # print(i, key)
-                    if type(newout[key]) is np.ndarray:
-                        # print(len(newout[key]), len(oldout[key]))
-                        self.assertTrue(len(newout[key]) == len(oldout[key]))
-                        diff = newout[key] - oldout[key]
-                        # print(diff.mean(), diff.std())
-                        not_close = np.logical_not(np.isclose(newout[key], oldout[key]))
-                        # print(sum(not_close), np.flatnonzero(not_close))
-                        # print(newout[key][not_close], oldout[key][not_close])
 
+                    a = newout[key]
+                    b = oldout[key]
 
-                        self.assertTrue(
-                            np.isclose(newout[key], oldout[key]).all()
-                        )
+                    if isinstance(a, np.ndarray):
+                        # compare shapes and values
+                        self.assertEqual(len(a), len(b))
+
+                        a_comp = a
+                        b_comp = b
+
+                        # For background/stat, order by time as the sort is not stable
+                        if key == 'background/stat' and len(a) > 1:
+                            tnew = newout.get('background/time', None)
+                            told = oldout.get('background/time', None)
+                            idx_new = np.argsort(tnew, kind='stable')
+                            idx_old = np.argsort(told, kind='stable')
+                            a_comp = a[idx_new]
+                            b_comp = b[idx_old]
+
+                        self.assertTrue(np.isclose(a_comp, b_comp).all())
                     else:
-                        self.assertTrue(newout[key] == oldout[key])
+                        self.assertEqual(a,b)
 
         for i in range(self.num_iterations):
             logging.info("Iteration %d", i)
