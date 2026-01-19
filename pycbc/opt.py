@@ -24,6 +24,21 @@ from collections import OrderedDict
 logger = logging.getLogger('pycbc.opt')
 
 
+def get_l2_cache_size():
+    """
+    Get the L2 cache size from the environment variable _PYCBC_L2_CACHE_SIZE.
+
+    Returns
+    -------
+    int or None
+        The L2 cache size in bytes if the environment variable is set, None otherwise.
+    """
+    cache_size_str = os.environ.get("_PYCBC_L2_CACHE_SIZE", None)
+    if cache_size_str is not None:
+        return int(cache_size_str)
+    return None
+
+
 def insert_optimization_option_group(parser):
     """
     Adds the options used to specify optimization-specific options.
