@@ -22,7 +22,6 @@ portion of strain data."""
 import os.path
 import argparse
 import logging
-import datetime
 import sys
 
 import igwn_segments as _segments

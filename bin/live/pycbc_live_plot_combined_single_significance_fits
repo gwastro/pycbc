@@ -22,8 +22,6 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-from lal import gpstime
-
 import pycbc
 from pycbc.io.hdf import HFile
 from pycbc.time import strip_time_from_gps

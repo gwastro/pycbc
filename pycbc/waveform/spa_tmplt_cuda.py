@@ -25,9 +25,7 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pycbc.constants import TWOPI, PI_4
 
-preamble = """
-#include <lal/LALConstants.h>
-"""
+preamble = ""
 
 taylorf2_text = """
     const float f = (i + kmin ) * delta_f;
@@ -82,7 +80,7 @@ taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin,
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
                                        float pfa6, float pfl6, float pfa7, float amp""",
                     taylorf2_text, "SPAtmplt",
-                    preamble=preamble, options=pkg_config_header_strings(['lal']))
+                    preamble=preamble)
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order,
                     delta_f,  piM,  pfaN,

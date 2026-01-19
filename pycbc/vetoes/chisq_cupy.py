@@ -25,7 +25,6 @@
 import functools
 import numpy
 import cupy as cp
-import lal
 from mako.template import Template
 
 from pycbc.constants import TWOPI

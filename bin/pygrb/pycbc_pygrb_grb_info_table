@@ -27,7 +27,6 @@ configuration file syntax for angle arguments.
 # =============================================================================
 import sys
 import argparse
-from datetime import datetime
 import math
 
 from pycbc import add_common_pycbc_options, init_logging
