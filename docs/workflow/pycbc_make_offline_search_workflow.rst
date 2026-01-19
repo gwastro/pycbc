@@ -1007,7 +1007,8 @@ There are two main ways to run your workflow on the OSG:
 
    This will set up the workflow in the specified output directory.
    To submit the workflow at a later time, navigate to the workflow
-   directory and run:
-   ::
+   directory and run::
+
        ./start
+       
    This script will submit the workflow to the OSG using Pegasus.
