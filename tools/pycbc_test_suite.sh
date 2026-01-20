@@ -49,7 +49,7 @@ if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
         echo -e ">> [`date`] running $prog --help"
         $prog --help &> $LOG_FILE
         test_result
-        if [[ `echo $prog | egrep '(pycbc_copy_output_map|pycbc_submit_dax|pycbc_stageout_failed_workflow)'` ]] ; then
+        if [[ `echo $prog | egrep '(pycbc_copy_output_map|pycbc_stageout_failed_workflow)'` ]] ; then
             continue
         fi
         echo -e ">> [`date`] running $prog --version"

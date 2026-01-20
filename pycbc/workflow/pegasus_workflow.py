@@ -647,12 +647,11 @@ class Workflow(object):
                 with open('additional_planner_args.dat', 'w') as f:
                     stage_site_str = self.staging_site_str
                     exec_sites = self.exec_sites_str
-                    # For now we don't include --config as this can be added to
-                    # in submit_dax. We should add an option to add additional
+                    # We should add an option to add additional
                     # pegasus properties (through the config files?) here.
-                    #prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
-                    #                         'pegasus-properties.conf')
-                    #f.write('--conf {} '.format(prop_file))
+                    prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                                            'pegasus-properties.conf')
+                    f.write('--conf {} '.format(prop_file))
                     if self.cache_file is not None:
                         f.write('--cache {} '.format(self.cache_file))
 
@@ -669,18 +668,8 @@ class Workflow(object):
         os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
-        """ Plan and submit the workflow now.
+        """ Plan and optionally submit the workflow now.
         """
-        # New functionality, this might still need some work. Here's things
-        # that this might want to do, that submit_dax does:
-        # * Checks proxy (ignore this, user should already have this done)
-        # * Pulls properties file in (DONE)
-        # * Send necessary options to the planner (DONE)
-        # * Some logging about hostnames (NOT DONE, needed?)
-        # * Setup the helper scripts (start/debug/stop/status) .. (DONE)
-        # * Copy some of the interesting files into workflow/ (DONE)
-        # * Checks for dashboard URL (NOT DONE)
-        # * Does something with condor_reschedule (NOT DONE, needed?)
 
         planner_args = {}
         planner_args['submit'] = submit_now

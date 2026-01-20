@@ -123,21 +123,19 @@ to run the workflow.
 Plan and execute the workflow
 -----------------------------
 
-Change directory into the ``${WORKFLOW_NAME}-output`` directory::
-
-    cd ${WORKFLOW_NAME}-output
+You can either submit the workflow immediately using the ``--submit-now`` option
+or generate it, and then use the ``./start`` executable generated in the output directory.
 
 If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
 need to define an accounting group tag (talk to your cluster admins if you do
-not know what this is). Once you know what accounting-group tag to use, plan
-and submit the workflow with::
+not know what this is). Once you know what accounting-group tag to use, add it 
+to your config files. ``request_disk`` and ``request_memory`` may also be required.
 
-    # submit workflow
-    pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
-        --no-grid \
-        --no-create-proxy \
-        --enable-shared-filesystem \
-        --accounting-group ${ACCOUNTING_GROUP}
+.. code-block::
+
+    [pegasus_profile]
+    condor|accounting_group = accounting.tag
+    condor|request_disk = 1024
 
 Here, ``${ACCOUNTING_GROUP}`` is the appropriate tag for your workflow.
 
