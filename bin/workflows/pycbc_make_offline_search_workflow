@@ -28,15 +28,14 @@ import socket
 import os
 import argparse
 import logging
-import datetime
 import itertools
 
 import igwn_segments as segments
-import lal
 
 import pycbc.events
 import pycbc.workflow as wf
 from pycbc.results import layout, save_fig_with_metadata
+from pycbc.time import gps_to_utc_str
 
 
 def symlink_path(f, path):
@@ -189,8 +188,8 @@ logging.info("Created log file %s" % wf_log_file.storage_path)
 # put start / end time at top of summary page
 time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
-s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
-e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
+s_utc = gps_to_utc_str(s)
+e_utc = gps_to_utc_str(e)
 time_str = '<center><p><b>GPS Interval [%s,%s). ' %(s,e)
 time_str += 'UTC Interval %s - %s. ' %(s_utc, e_utc)
 time_str += 'Interval duration = %.3f days.</b></p></center>'\

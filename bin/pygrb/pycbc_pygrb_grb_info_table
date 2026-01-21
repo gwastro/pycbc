@@ -27,10 +27,7 @@ configuration file syntax for angle arguments.
 # =============================================================================
 import sys
 import argparse
-from datetime import datetime
 import math
-
-import lal
 
 from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version
@@ -39,6 +36,7 @@ import pycbc.distributions
 from pycbc.detector import Detector, ppdets
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor
 from pycbc.types import angle_as_radians
+from pycbc.time import gps_to_utc_str
 
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
@@ -86,8 +84,8 @@ data = [[]]
 data[0].append(str(opts.trigger_time))
 headers.append('GPS Time')
 
-utc_time = datetime(*lal.GPSToUTC(opts.trigger_time)[0:6]).strftime("%Y-%m-%d %H:%M:%S")
-data[0].append(utc_time)
+utc_time_str = gps_to_utc_str(float(opts.trigger_time))
+data[0].append(utc_time_str)
 headers.append('UTC Time')
 
 if opts.input_dist is not None:

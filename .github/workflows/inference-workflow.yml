@@ -42,7 +42,6 @@ jobs:
         bash -e examples/workflow/inference/small_test/gen.sh
         condor_status
         cd gw_output
-        bash -e ../examples/search/submit.sh
         ./status
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete

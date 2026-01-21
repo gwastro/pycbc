@@ -41,6 +41,23 @@ jobs:
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
           --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
         popd
+    - name: Cache example GW data
+      id: cache-example-gw-data
+      uses: actions/cache@v4
+      with:
+        key: example-gw-data
+        path: |
+          docs/_include/*_TDI_v2.gwf
+          docs/_include/*_GWOSC_4KHZ_R1-1126257415-4096.gwf
+          docs/_include/*_LOSC_CLN_4_V1-1187007040-2048.gwf
+          examples/inference/lisa_smbhb_ldc/*_psd.txt
+          examples/inference/lisa_smbhb_ldc/*_TDI_v2.gwf
+          examples/inference/lisa_smbhb_ldc/MBHB_params_v2_LISA_frame.pkl
+          examples/inference/margtime/*.gwf
+          examples/inference/multisignal/*.gwf
+          examples/inference/relative/*.gwf
+          examples/inference/relmarg/*.gwf
+          examples/inference/single/*.gwf
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$HOME/lal_aux_data

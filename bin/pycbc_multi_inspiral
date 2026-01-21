@@ -397,6 +397,9 @@ strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
 # Context manager to handle the various possible processing schemes
 ctx = scheme.from_cli(args)
 with ctx:
+    num_cpu_cores = 1
+    if hasattr(ctx, "num_threads"):
+        num_cpu_cores = ctx.num_threads
     fft.from_cli(args)
     # Set some convenience variables: number of IFOs, lower frequency,
     # GRB time, sky positions to search (either a grid or single sky point)
@@ -627,6 +630,9 @@ with ctx:
 
     logging.info("Calculating antenna pattern functions at every sky position")
     antenna_pattern = sky_positions.calculate_antenna_patterns()
+
+    # Record the time at which we finished setting things up
+    time_setup = time.time() - time_init
 
     logging.info("Starting the filtering...")
     # Loop over templates
@@ -1149,8 +1155,19 @@ with ctx:
     # Left loop over templates
     logging.info("Filtering completed")
 
+# Record some stats about performance
+time_stop = time.time()
+run_time = time_stop - time_init
+event_mgr.save_performance(
+    num_cpu_cores,
+    len(segments[args.instruments[0]]),
+    n_bank,
+    run_time,
+    time_setup
+)
+
 logging.info("Writing output")
 event_mgr.write_events(args.output)
 
 logging.info("Finished")
-logging.info("Time to complete analysis: %d", int(time.time() - time_init))
+logging.info("Time to complete analysis: %.0f s", time.time() - time_init)

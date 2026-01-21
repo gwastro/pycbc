@@ -15,8 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-This module defines optimization flags and determines hardware features that some
-other modules and packages may use in addition to some optimized utilities.
+This module defines optimization flags and some optimized utilities.
 """
 import os, sys
 import logging
@@ -24,42 +23,20 @@ from collections import OrderedDict
 
 logger = logging.getLogger('pycbc.opt')
 
-# Work around different Python versions to get runtime
-# info on hardware cache sizes
-_USE_SUBPROCESS = False
-HAVE_GETCONF = False
-if os.environ.get("LEVEL2_CACHE_SIZE", None) or os.environ.get("NO_GETCONF", None):
-    HAVE_GETCONF = False
-elif sys.platform == 'darwin':
-    # Mac has getconf, but we can do nothing useful with it
-    HAVE_GETCONF = False
-else:
-    import subprocess
-    _USE_SUBPROCESS = True
-    HAVE_GETCONF = True
 
-if os.environ.get("LEVEL2_CACHE_SIZE", None):
-    LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
-    logger.info("opt: using LEVEL2_CACHE_SIZE %d from environment",
-                LEVEL2_CACHE_SIZE)
-elif HAVE_GETCONF:
-    if _USE_SUBPROCESS:
-        def getconf(confvar):
-            return int(subprocess.check_output(['getconf', confvar]))
-    else:
-        def getconf(confvar):
-            retlist = commands.getstatusoutput('getconf ' + confvar)
-            return int(retlist[1])
+def get_l2_cache_size():
+    """
+    Get the L2 cache size from the environment variable _PYCBC_L2_CACHE_SIZE.
 
-    LEVEL1_DCACHE_SIZE = getconf('LEVEL1_DCACHE_SIZE')
-    LEVEL1_DCACHE_ASSOC = getconf('LEVEL1_DCACHE_ASSOC')
-    LEVEL1_DCACHE_LINESIZE = getconf('LEVEL1_DCACHE_LINESIZE')
-    LEVEL2_CACHE_SIZE = getconf('LEVEL2_CACHE_SIZE')
-    LEVEL2_CACHE_ASSOC = getconf('LEVEL2_CACHE_ASSOC')
-    LEVEL2_CACHE_LINESIZE = getconf('LEVEL2_CACHE_LINESIZE')
-    LEVEL3_CACHE_SIZE = getconf('LEVEL3_CACHE_SIZE')
-    LEVEL3_CACHE_ASSOC = getconf('LEVEL3_CACHE_ASSOC')
-    LEVEL3_CACHE_LINESIZE = getconf('LEVEL3_CACHE_LINESIZE')
+    Returns
+    -------
+    int or None
+        The L2 cache size in bytes if the environment variable is set, None otherwise.
+    """
+    cache_size_str = os.environ.get("_PYCBC_L2_CACHE_SIZE", None)
+    if cache_size_str is not None:
+        return int(cache_size_str)
+    return None
 
 
 def insert_optimization_option_group(parser):

@@ -224,19 +224,21 @@ where ``accounting.tag`` should be replaced with one of the valid accounting
 tags. On non-LDG clusters, ``--supplement-config-file supplement.ini`` can be
 omitted if there are no extra options to give.
 
-After running ``pycbc_geom_aligned_bank``, submit the workflow with
+You can either submit the ``pycbc_geom_aligned_bank`` workflow immediately,
+using 
 
 .. code-block:: bash
 
-    pycbc_submit_dax
-
-Run
+    pycbc_geom_aligned_bank --submit-now
+    
+    
+or submit the workflow after generation with the 
 
 .. code-block:: bash
 
-    pycbc_submit_dax --help
+    ./start
 
-for more details on options for submitting an abstract workflow to condor.
+executable supplied in the output folder
 
 --------------------------
 Command line options
