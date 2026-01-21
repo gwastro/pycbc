@@ -140,13 +140,29 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
                     self.assertTrue(key not in oldout)
                 else:
                     self.assertTrue(key in oldout)
-                    if type(newout[key]) is np.ndarray:
-                        self.assertTrue(len(newout[key]) == len(oldout[key]))
-                        self.assertTrue(
-                            np.isclose(newout[key], oldout[key]).all()
-                        )
+
+                    a = newout[key]
+                    b = oldout[key]
+
+                    if isinstance(a, np.ndarray):
+                        # compare shapes and values
+                        self.assertEqual(len(a), len(b))
+
+                        a_comp = a
+                        b_comp = b
+
+                        # For background/stat, order by time as the sort is not stable
+                        if key == 'background/stat' and len(a) > 1:
+                            tnew = newout.get('background/time', None)
+                            told = oldout.get('background/time', None)
+                            idx_new = np.argsort(tnew, kind='stable')
+                            idx_old = np.argsort(told, kind='stable')
+                            a_comp = a[idx_new]
+                            b_comp = b[idx_old]
+
+                        self.assertTrue(np.isclose(a_comp, b_comp).all())
                     else:
-                        self.assertTrue(newout[key] == oldout[key])
+                        self.assertEqual(a,b)
 
         for i in range(self.num_iterations):
             logging.info("Iteration %d", i)
