@@ -1,7 +1,7 @@
-name: Flake8 check
+name: Code quality checks
 on: [pull_request]
 jobs:
-    flake8_unused_imports:
+    linters:
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
