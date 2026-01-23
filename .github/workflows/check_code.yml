@@ -17,23 +17,23 @@ jobs:
       - name: Install linters
         run: pip install flake8 vulture pylint
 
-      - name: Check executables for unused imports (fail)
+      - name: Check executables for unused imports
         run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
-      - name: Check executables for unused variables (report)
+      - name: Check executables for unused variables (report only)
         run: flake8 --select=F841 $(find bin -type f -name pycbc_*) || true
-      - name: Check modules for unused imports (fail)
+      - name: Check modules for unused imports
         run: |
           flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
-      - name: Check modules for unused variables (report)
+      - name: Check modules for unused variables (report only)
         run: |
           flake8 --select=F841 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py') || true
-      - name: Check tests for unused imports (fail)
+      - name: Check tests for unused imports
         run: |
           flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
-      - name: Check tests for unused variables (report)
+      - name: Check tests for unused variables (report only)
         run: |
           flake8 --select=F841 $(find test | grep '\.py$' | grep -v test_schemes) || true
-      - name: Check for unreachable code (fail)
+      - name: Check for unreachable code
         run: |
           # Run pylint only for unreachable code. Disable all other messages.
           python -m pylint --disable=all --enable=unreachable pycbc || true
@@ -42,5 +42,5 @@ jobs:
             echo "Unreachable code found by pylint"; exit 1
           fi
 
-      - name: Checking for unused codes
+      - name: Checking for unused codes (report only)
         run: vulture pycbc --min-confidence 100 || true
