@@ -59,7 +59,7 @@ google_table_template = mako.template.Template("""
 """)
 
 def html_table(columns, names, page_size=None, format_strings=None):
-    """ Return an html table of this data
+    """ Return an HTML table of this data.
 
     Parameters
     ----------
@@ -69,14 +69,27 @@ def html_table(columns, names, page_size=None, format_strings=None):
     page_size : {int, None}, optional
         The number of items to show on each page of the table
     format_strings : {lists of strings, None}, optional
-        The ICU format string for this column, None for no formatting. All
-    columns must have a format string if provided.
+        The ICU format string for this column, None for no formatting.
+        All columns must have a format string if provided.
 
     Returns
     -------
     html_table : str
         A str containing the html code to display a table of this data
     """
+    if len(columns) != len(names):
+        raise ValueError(
+            'I need the same number of columns and names, '
+            f'got {len(columns)} and {len(names)} instead'
+        )
+    if format_strings is not None and len(format_strings) != len(columns):
+        raise ValueError(
+            'I need the same number of columns and format strings, '
+            f'got {len(columns)} and {len(names)} instead'
+        )
+    if len({len(column) for column in columns}) != 1:
+        raise ValueError('All columns must have the same length')
+
     if page_size is None:
         page = 'disable'
     else:
@@ -205,4 +218,3 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
         n_rows=n_rows,
         row_labels=row_labels,
     )
-
