@@ -30,17 +30,23 @@ jobs:
       - name: Check tests for unused variables (report only)
         run: |
           flake8 --select=F841 $(find test | grep '\.py$' | grep -v test_schemes) || true
-      - name: Run pylint
+      - name: Run pylint (this step should always pass)
+        id: pylint
         run: |
-          PYLINT_OUTPUT=$(python -m pylint --disable=all --enable=unreachable,unused-argument pycbc 2>&1 || true)
-      - name: Check for any unused function arguments (report only)
+          python -m pylint --disable=all --enable=unreachable,unused-argument pycbc > pylint.output 2>&1 || true
+          echo "Wrote pylint.output (size $(wc -c < pylint.output) bytes)"
+
+      - name: Report unused-arguments (report only)
+        run: grep unused-argument pylint.txt
+
+      - name: Fail on unreachable code
         run: |
-          echo $PYLINT_OUTPUT | grep unused-argument
-      - name: Fail on any unreachable pylint output
-        if: $PYLINT_OUTPUT | grep unreachable
-        run:
-          echo $PYLINT_OUTPUT | grep unreachable
-          exit 1
+          if grep -q "unreachable" pylint.output; then
+            echo "Unreachable found:"
+            grep -n "unreachable" pylint.output
+            exit 1
+          fi
+
 
 
 
