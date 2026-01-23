@@ -9,7 +9,6 @@ concurrency:
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
-    # explicit python version for reproducible builds
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -38,7 +37,7 @@ jobs:
   deploy_pypi:
     name: Package and publish to PyPI
     runs-on: ubuntu-24.04
-    needs: [build_wheels]
+    needs: build_wheels
     steps:
       - uses: actions/checkout@v4
         with:
