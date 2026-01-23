@@ -1,7 +1,7 @@
-name: Flake8 check
+name: Code quality checks
 on: [pull_request]
 jobs:
-    flake8_unused_imports:
+    linters:
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
@@ -10,14 +10,13 @@ jobs:
               uses: actions/setup-python@v4
               with:
                   python-version: 3.11
-            - name: Install flake8
-              run: pip install flake8
-            - name: Checking executables for unused imports
-              run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
-            - name: Checking modules for unused imports
-              run: |
-                flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
-            - name: Checking tests for unused imports
-              run: |
-                flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
-
+            - name: Install linters
+              run: pip install flake8 vulture
+            - name: Checking executables for unused imports and variables
+              run: find bin -type f -name "pycbc_*" | xargs flake8 --select=F401,F841
+            - name: Checking modules for unused imports and variables
+              run: flake8 pycbc --select=F401,F841 --exclude="__init__.py,version.py"
+            - name: Checking tests for unused imports and variables
+              run: flake8 test --select=F401,F841 --exclude="*test_schemes*"
+            - name: Checking for unused code
+              run: vulture pycbc --min-confidence 100
