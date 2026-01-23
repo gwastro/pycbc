@@ -1,11 +1,8 @@
 name: Code quality checks
 on: [pull_request]
 jobs:
-  workflow_defaults:
-    uses: ./.github/workflows/workflow-defaults.yml
 
   linters:
-    needs: workflow_defaults
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -13,7 +10,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ needs.workflow_defaults.outputs.python_version }}
+          python-version: 3.11
       - name: Install linters
         run: pip install flake8 vulture pylint
 
