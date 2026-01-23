@@ -13,7 +13,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ needs.workflow_defaults.outputs.python-version }}
+          python-version: ${{ needs.workflow_defaults.outputs.python_version }}
       - name: Install linters
         run: pip install flake8 vulture pylint
 
