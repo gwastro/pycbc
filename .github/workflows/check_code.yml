@@ -18,25 +18,21 @@ jobs:
         run: pip install flake8 vulture pylint
 
       - name: Check executables for unused imports (fail)
-        run: |
-          find bin -type f -name 'pycbc_*' -print0 | xargs -0 flake8 --select=F401
-
+        run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
       - name: Check executables for unused variables (report)
-        run: |
-          find bin -type f -name 'pycbc_*' -print0 | xargs -0 flake8 --select=F841 || true
-
+        run: flake8 --select=F841 $(find bin -type f -name pycbc_*) || true
       - name: Check modules for unused imports (fail)
-        run: flake8 pycbc --select=F401 --exclude="__init__.py,version.py"
-
+        run: |
+          flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
       - name: Check modules for unused variables (report)
-        run: flake8 pycbc --select=F841 --exclude="__init__.py,version.py" || true
-
+        run: |
+          flake8 --select=F841 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py') || true
       - name: Check tests for unused imports (fail)
-        run: flake8 test --select=F401 --exclude="*test_schemes*"
-
+        run: |
+          flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
       - name: Check tests for unused variables (report)
-        run: flake8 test --select=F841 --exclude="*test_schemes*" || true
-
+        run: |
+          flake8 --select=F841 $(find test | grep '\.py$' | grep -v test_schemes) || true
       - name: Check for unreachable code (fail)
         run: |
           # Run pylint only for unreachable code. Disable all other messages.
