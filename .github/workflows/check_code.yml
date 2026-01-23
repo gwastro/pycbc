@@ -1,22 +1,26 @@
 name: Code quality checks
 on: [pull_request]
 jobs:
-    linters:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Check out repository
-              uses: actions/checkout@v3
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: 3.11
-            - name: Install linters
-              run: pip install flake8 vulture
-            - name: Checking executables for unused imports and variables
-              run: find bin -type f -name "pycbc_*" | xargs flake8 --select=F401,F841
-            - name: Checking modules for unused imports and variables
-              run: flake8 pycbc --select=F401,F841 --exclude="__init__.py,version.py"
-            - name: Checking tests for unused imports and variables
-              run: flake8 test --select=F401,F841 --exclude="*test_schemes*"
-            - name: Checking for unused code
-              run: vulture pycbc --min-confidence 100
+  workflow_defaults:
+    uses: ./.github/workflows/workflow-defaults.yml
+
+  linters:
+    needs: workflow_defaults
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.workflow_defaults.outputs.python-version }}
+      - name: Install linters
+        run: pip install flake8 vulture
+      - name: Checking executables for unused imports and variables
+        run: find bin -type f -name "pycbc_*" | xargs flake8 --select=F401,F841
+      - name: Checking modules for unused imports and variables
+        run: flake8 pycbc --select=F401,F841 --exclude="__init__.py,version.py"
+      - name: Checking tests for unused imports and variables
+        run: flake8 test --select=F401,F841 --exclude="*test_schemes*"
+      - name: Checking for unused code
+        run: vulture pycbc --min-confidence 100
