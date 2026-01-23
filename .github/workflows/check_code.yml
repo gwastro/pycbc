@@ -100,7 +100,7 @@ jobs:
           echo "Wrote pylint.output (size $(wc -c < pylint.output) bytes)"
 
       - name: Report unused-arguments (report only)
-        run: grep unused-argument pylint.txt
+        run: grep unused-argument pylint.output
 
       - name: Fail on unreachable code
         run: |
@@ -109,7 +109,6 @@ jobs:
             grep -n "unreachable" pylint.output
             exit 1
           fi
-
 
 
 
