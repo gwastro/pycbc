@@ -8,33 +8,20 @@ on:
         description: 'Default Python version for workflows'
         required: false
         default: '3.11'
-      runner:
-        description: 'Default runner for jobs'
-        required: false
-        default: 'ubuntu-latest'
-      cache-deps:
-        description: 'Enable dependency caching ("true"/"false")'
-        required: false
-        default: 'true'
     outputs:
       python-version:
         description: 'Python version string to use in workflows'
-      runner:
-        description: 'Runner to use for jobs'
-      cache-deps:
-        description: 'Whether dependency caching is enabled'
+      
 
 jobs:
   provide:
     runs-on: ubuntu-latest
     outputs:
       python-version: ${{ steps.set.outputs.python-version }}
-      runner: ${{ steps.set.outputs.runner }}
-      cache-deps: ${{ steps.set.outputs.cache-deps }}
+      
     steps:
       - id: set
         run: |
           # Export inputs as outputs via GITHUB_OUTPUT so other jobs can use them
           echo "python-version=${{ inputs.python-version }}" >> $GITHUB_OUTPUT
-          echo "runner=${{ inputs.runner }}" >> $GITHUB_OUTPUT
-          echo "cache-deps=${{ inputs.cache-deps }}" >> $GITHUB_OUTPUT
+          
