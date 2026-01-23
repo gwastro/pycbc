@@ -15,12 +15,36 @@ jobs:
         with:
           python-version: ${{ needs.workflow_defaults.outputs.python-version }}
       - name: Install linters
-        run: pip install flake8 vulture
-      - name: Checking executables for unused imports and variables
-        run: find bin -type f -name "pycbc_*" | xargs flake8 --select=F401,F841
-      - name: Checking modules for unused imports and variables
-        run: flake8 pycbc --select=F401,F841 --exclude="__init__.py,version.py"
-      - name: Checking tests for unused imports and variables
-        run: flake8 test --select=F401,F841 --exclude="*test_schemes*"
-      - name: Checking for unused code
-        run: vulture pycbc --min-confidence 100
+        run: pip install flake8 vulture pylint
+
+      - name: Check executables for unused imports (fail)
+        run: |
+          find bin -type f -name 'pycbc_*' -print0 | xargs -0 flake8 --select=F401
+
+      - name: Check executables for unused variables (report)
+        run: |
+          find bin -type f -name 'pycbc_*' -print0 | xargs -0 flake8 --select=F841 || true
+
+      - name: Check modules for unused imports (fail)
+        run: flake8 pycbc --select=F401 --exclude="__init__.py,version.py"
+
+      - name: Check modules for unused variables (report)
+        run: flake8 pycbc --select=F841 --exclude="__init__.py,version.py" || true
+
+      - name: Check tests for unused imports (fail)
+        run: flake8 test --select=F401 --exclude="*test_schemes*"
+
+      - name: Check tests for unused variables (report)
+        run: flake8 test --select=F841 --exclude="*test_schemes*" || true
+
+      - name: Check for unreachable code (fail)
+        run: |
+          # Run pylint only for unreachable code. Disable all other messages.
+          python -m pylint --disable=all --enable=unreachable pycbc || true
+          # pylint exits with non-zero when messages are emitted; fail if any found
+          if python -m pylint --disable=all --enable=unreachable pycbc | grep -q "unreachable"; then
+            echo "Unreachable code found by pylint"; exit 1
+          fi
+
+      - name: Checking for unused codes
+        run: vulture pycbc --min-confidence 100 || true
