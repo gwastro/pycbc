@@ -579,7 +579,7 @@ if onsource_file:
 
     # Table data: assemble human readable message when no trigger is recovered
     if not loud_on_bestnr_trigs:
-        td = [list("-" * len(format_strings))]
+        td = [["-"] for _ in format_strings]
         td[0][0] = "There are no events"
     td = [np.asarray(d) for d in td]
     html_table = pycbc.results.html_table(td, th,
