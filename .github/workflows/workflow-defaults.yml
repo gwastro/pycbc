@@ -7,10 +7,12 @@ on:
       python-version:
         description: 'Default Python version for workflows'
         required: false
+        type: string
         default: '3.11'
     outputs:
       python-version:
         description: 'Python version string to use in workflows'
+        value: ${{ jobs.provide.outputs.python-version }}
       
 
 jobs:
