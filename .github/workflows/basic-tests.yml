@@ -7,11 +7,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  workflow_defaults:
-    uses: ./.github/workflows/workflow-defaults.yml
-
   build:
-    needs: workflow_defaults
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 60

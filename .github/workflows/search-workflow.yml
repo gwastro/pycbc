@@ -7,10 +7,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  workflow_defaults:
-    uses: ./.github/workflows/workflow-defaults.yml
   build:
-    needs: workflow_defaults
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
@@ -20,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ needs.workflow_defaults.outputs.python_version }}
+        python-version: '3.11'
     - name: install condor
       run: |
         wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
