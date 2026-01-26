@@ -13,8 +13,7 @@ dnf -y update ca-certificates
 update-ca-trust
 
 # Install cvmfs with fallback to HTTP if HTTPS fails
-dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm || \
-dnf -y install http://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
+dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
 
 dnf -y install cvmfs cvmfs-config-default
 dnf makecache
