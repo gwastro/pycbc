@@ -176,8 +176,8 @@ def process_template(i):
 
     while current_taps <= g_args.max_taps:
         try:
-            taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor], this_valid_mask[::g_args.dec_factor], 
-                                          current_taps, weights_pos=weights_snr[::g_args.dec_factor],
+            taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
+                                          current_taps, weights_pos=weights_snr,
                                           reg_type=g_args.regularization_type,
                                           reg_val=g_args.regularization_magnitude)
         except Exception as e:
@@ -228,10 +228,12 @@ def main():
             log.handlers[0].stream = sys.stdout
 
     f_final = args.sample_rate / 2.0
+    df = args.delta_f * args.dec_factor
     flen = int(f_final / args.delta_f) + 1
+    flen_small = int(f_final / df) + 1
     logging.info(f"Setup: Rate={args.sample_rate}, df={args.delta_f}, flen={flen}")
 
-    psd = pycbc.psd.from_cli(args, length=flen, delta_f=args.delta_f, 
+    psd = pycbc.psd.from_cli(args, length=flen_small, delta_f=df, 
                              low_frequency_cutoff=args.f_low)
 
     logging.info("Loading coarse bank references...")
@@ -240,7 +242,7 @@ def main():
                              approximant=args.approximant,
                              enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
-    coarse_waveforms = [h.copy() for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
+    coarse_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
 
     if not coarse_waveforms: sys.exit("ERROR: Coarse bank empty!")
 
@@ -252,7 +254,7 @@ def main():
     n_fine = len(fine_bank)
     
     logging.info("Preparing fine bank (pre-loading all waveforms to RAM)...")
-    fine_waveforms = [h.copy() for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
+    fine_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(fine_bank, desc="Generating Fine Waveforms", disable=not show_progress, file=sys.stderr)]
     
     # --- PHASE 1: Write File Headers via TemplateBank reuse ---
     logging.info("Writing bank parameters to output file...")
