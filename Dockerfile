@@ -10,7 +10,7 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 RUN <<EOF
 # Update CA certificates to fix SSL issues
 dnf -y update ca-certificates
-update-ca-trust
+update-ca-trust force-enable
 dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
 dnf -y install cvmfs cvmfs-config-default
 dnf makecache
