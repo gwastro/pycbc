@@ -8,10 +8,11 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 
 # Set up extra repositories
 RUN <<EOF
-# Update CA certificates to fix SSL issues
+# Update CA certificates
 dnf -y update ca-certificates
 update-ca-trust force-enable
-dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
+# Temporarily disable SSL verification for CVMFS repo install only
+dnf -y install --setopt=sslverify=false https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
 dnf -y install cvmfs cvmfs-config-default
 dnf makecache
 dnf -y groupinstall "Development Tools" "Scientific Support"
