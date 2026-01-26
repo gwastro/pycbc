@@ -17,6 +17,26 @@ jobs:
       PEGASUS_METRICS: 'false'
     steps:
     - uses: actions/checkout@v1
+    - name: Restore LAL auxiliary data cache
+      id: restore-lal
+      uses: actions/cache@v4
+      with:
+        key: lal-aux-data
+        path: |
+          ~/lal_aux_data
+
+    - name: Restore example GW data cache for search example
+      id: restore-example-gw
+      uses: actions/cache@v4
+      with:
+        key: ${{ needs.workflow_defaults.outputs.example_gw_cache_key }}
+        path: |
+          examples/search
+
+    - name: list restored example files
+      run: |
+        echo "Restored files in examples/search:"
+        ls -la examples/search || true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
