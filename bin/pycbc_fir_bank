@@ -175,10 +175,14 @@ def process_template(i):
     final_taps_data = np.array([], dtype=np.float64)
 
     while current_taps <= g_args.max_taps:
-        taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
-                                          current_taps, weights_pos=weights_snr,
+        try:
+            taps = design_optimal_real_filter(H_target_raw[::g_args.dec_factor], this_valid_mask[::g_args.dec_factor], 
+                                          current_taps, weights_pos=weights_snr[::g_args.dec_factor],
                                           reg_type=g_args.regularization_type,
                                           reg_val=g_args.regularization_magnitude)
+        except Exception as e:
+            print(e)
+            continue
         qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
         
         if qa_match > best_qa_match:
@@ -211,6 +215,7 @@ def main():
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--regularization-type', default='ridge', type=str)
     parser.add_argument('--regularization-magnitude', default=1e-2, type=float)
+    parser.add_argument('--decimation-factor', default=1, type=int, dest='dec_factor')
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
