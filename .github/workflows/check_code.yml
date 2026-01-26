@@ -5,8 +5,11 @@ on:
       - master
   pull_request:
     types: [opened, reopened, synchronize, labeled]
+
 jobs:
     flake8_unused_imports:
+        # Run these checks for pull_request actions except when a label is added
+        if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' }}
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
@@ -32,12 +35,14 @@ jobs:
       # Run on push to master OR on pull_request when the PR has the 'coverage' label
       if: >
         (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'coverage'))
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'coverage') && (needs.flake8_unused_imports.result == 'success' || needs.flake8_unused_imports.result == 'skipped'))
+
+      needs: flake8_unused_imports
       steps:
         - name: Check out repository
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: Set up Python
-          uses: actions/setup-python@v4
+          uses: actions/setup-python@v5
           with:
             python-version: '3.11'
         - name: Install test deps
@@ -49,7 +54,7 @@ jobs:
             pip install coverage pytest
         - name: Run tests with coverage
           run: |
-            python -m coverage run -m pytest test
+            python -m coverage run --source=pycbc -m pytest test
         - name: Generate HTML report
           run: python -m coverage html -d htmlcov
         - name: Print coverage report
