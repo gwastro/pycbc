@@ -605,7 +605,7 @@ class TimeSeries(Array):
             _numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper}
 
         tsdata = self
-
+        
         if location is None:
             raise ValueError("Must specify a tapering method (function was called"
                             "with location=None)")

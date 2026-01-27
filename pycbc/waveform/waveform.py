@@ -674,9 +674,8 @@ def get_fd_waveform_from_td(**params):
     hc: pycbc.types.FrequencySeries
         Cross polarization time series
     """
-
     nparams = params.copy()
-    if not taper_method in params:
+    if not 'taper_method' in params:
         # determine the duration to use for an automatic tapering choice.
         # If taper method specified, assume they have set f_lower as they
         # want exactly.
@@ -713,7 +712,7 @@ def get_fd_waveform_from_td(**params):
     hp.resize(tsamples)
     hc.resize(tsamples)
 
-    if not taper_method in params:
+    if not 'taper_method' in params:
         # apply the tapering, we will use a safety factor here to allow for
         # somewhat innacurate duration difference estimation.
         window = (full_duration - duration) * 0.8
@@ -1165,7 +1164,7 @@ def td_fd_waveform_transform(approximant):
         # We can make a fd version of td approximants
         cpu_fd[approximant] = get_fd_waveform_from_td
 
-    if approximant in fd_apx:
+    if approximant in fd_apx and (approximant in _filter_time_lengths):
         # We can do interpolation for waveforms that have a time length
         apx_int = approximant + '_INTERP'
         cpu_fd[apx_int] = get_interpolated_fd_waveform
@@ -1176,9 +1175,8 @@ def td_fd_waveform_transform(approximant):
         # (ex. IMRPhenomXX)
         cpu_td[approximant] = get_td_waveform_from_fd
 
-for apx in copy.copy(_filter_time_lengths):
+for apx in list(_filter_time_lengths.keys()) + list(cpu_fd.keys()):
     td_fd_waveform_transform(apx)
-
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
