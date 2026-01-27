@@ -1,4 +1,3 @@
----
 name: tutorial tests
 
 on: [push, pull_request]
@@ -21,10 +20,10 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
-    - name: installing packages
+    - name: Install system dependencies
+      uses: ./.github/actions/install-system-deps
+    - name: installing python packages
       run: |
-        sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl*
         pip install tox pip setuptools notebook --upgrade
         pip install .
     - name: retrieving pycbc tutorials

@@ -7,56 +7,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  workflow_defaults:
-    uses: ./.github/workflows/workflow-defaults.yml
   build:
-    needs: workflow_defaults
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       PEGASUS_METRICS: 'false'
     steps:
     - uses: actions/checkout@v1
-    - name: Restore LAL auxiliary data cache
-      id: restore-lal
-      uses: actions/cache@v4
-      with:
-        key: lal-aux-data
-        path: |
-          $HOME/lal_aux_data
-
-    - name: Restore example GW data cache for search example
-      id: restore-example-gw
-      uses: actions/cache@v4
-      with:
-        key: ${{ needs.workflow_defaults.outputs.example_gw_cache_key }}
-        path: |
-          examples/search
-
-    - name: list restored example files
-      run: |
-        echo "Restored files in examples/search:"
-        ls -la examples/search || true
+    - name: Load defaults
+      id: defaults
+      uses: ./.github/actions/defaults
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ needs.workflow_defaults.outputs.python_version }}
-    - name: install condor
-      run: |
-        wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
-        echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
-        echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
-        sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install minihtcondor
-        sudo systemctl start condor
-        sudo systemctl enable condor
-    - name: install pegasus
-      run: |
-        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
-        echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu noble main" | sudo tee -a /etc/apt/sources.list
-        sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install pegasus=5.1.1-1+ubuntu24
-    - run: sudo apt-get -o Acquire::Retries=3 install *fftw3* intel-mkl*
+        python-version: ${{ steps.defaults.outputs.python_version }}
+    - name: Install condor & pegasus
+      uses: ./.github/actions/install-htcondor-pegasus
+    - name: installing system packages
+      uses: .github/actions/install-system-deps
     - name: Install pycbc
       run: |
         python -m pip install --upgrade pip setuptools

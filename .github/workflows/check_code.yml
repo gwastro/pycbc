@@ -1,19 +1,18 @@
----
 name: Flake8 check
 on: [pull_request]
 jobs:
-  workflow_defaults:
-    uses: ./.github/workflows/workflow-defaults.yml
-
     flake8_unused_imports:
         runs-on: ubuntu-latest
         steps:
             - name: Check out repository
               uses: actions/checkout@v3
+            - name: Load defaults
+              id: defaults
+              uses: ./.github/actions/defaults
             - name: Set up Python
               uses: actions/setup-python@v4
               with:
-                  python-version: ${{ needs.workflow_defaults.outputs.python_version }}
+                  python-version: ${{ steps.defaults.outputs.python_version }}
             - name: Install flake8
               run: pip install flake8
             - name: Checking executables for unused imports
