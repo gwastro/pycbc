@@ -186,6 +186,7 @@ class JointDistribution(object):
             return True
         elif isinstance(params, numpy.ndarray):
             return False
+            params = params.view(type=FieldArray)
         elif isinstance(params, FieldArray):
             return False
         else:

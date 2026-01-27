@@ -60,7 +60,7 @@ class LogFormatter(logging.Formatter):
     """
     converter = dt.fromtimestamp
 
-    def formatTime(self, record, datefmt=None):  # pylint: disable=unused-argument
+    def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
         s = f"{t}.{int(record.msecs):03d}"
