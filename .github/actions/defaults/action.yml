@@ -13,6 +13,7 @@ runs:
     - id: set
       run: |
         echo "python_version=${{ inputs.python-version }}" >> $GITHUB_OUTPUT
+      shell: bash
 
 outputs:
   python_version:
