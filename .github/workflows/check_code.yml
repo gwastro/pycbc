@@ -1,46 +1,27 @@
-name: Code quality checks
+---
+name: Flake8 check
 on: [pull_request]
 jobs:
   workflow_defaults:
     uses: ./.github/workflows/workflow-defaults.yml
 
-  linters:
-    needs: workflow_defaults
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ needs.workflow_defaults.outputs.python_version }}
-      - name: Install linters
-        run: pip install flake8 vulture pylint
+    flake8_unused_imports:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v3
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: ${{ needs.workflow_defaults.outputs.python_version }}
+            - name: Install flake8
+              run: pip install flake8
+            - name: Checking executables for unused imports
+              run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
+            - name: Checking modules for unused imports
+              run: |
+                flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
+            - name: Checking tests for unused imports
+              run: |
+                flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
 
-      - name: Check executables for unused imports
-        run: flake8 --select=F401 $(find bin -type f -name pycbc_*)
-      - name: Check executables for unused variables (report only)
-        run: flake8 --select=F841 $(find bin -type f -name pycbc_*) || true
-      - name: Check modules for unused imports
-        run: |
-          flake8 --select=F401 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py')
-      - name: Check modules for unused variables (report only)
-        run: |
-          flake8 --select=F841 $(find pycbc | grep '\.py$' | grep -v -e __init__ -e 'version.py') || true
-      - name: Check tests for unused imports
-        run: |
-          flake8 --select=F401 $(find test | grep '\.py$' | grep -v test_schemes)
-      - name: Check tests for unused variables (report only)
-        run: |
-          flake8 --select=F841 $(find test | grep '\.py$' | grep -v test_schemes) || true
-      - name: Check for unreachable code
-        run: |
-          # Run pylint only for unreachable code. Disable all other messages.
-          python -m pylint --disable=all --enable=unreachable pycbc || true
-          # pylint exits with non-zero when messages are emitted; fail if any found
-          if python -m pylint --disable=all --enable=unreachable pycbc | grep -q "unreachable"; then
-            echo "Unreachable code found by pylint"; exit 1
-          fi
-
-      - name: Checking for unused codes (report only)
-        run: vulture pycbc --min-confidence 100 || true

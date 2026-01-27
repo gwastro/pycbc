@@ -1,3 +1,4 @@
+---
 name: docker build
 
 on: [push, pull_request]

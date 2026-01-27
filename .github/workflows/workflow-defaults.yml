@@ -1,3 +1,4 @@
+---
 # Provide default values used across workflows.
 # Add new defaults (inputs) here and expose them as outputs so other
 # workflows can consume them via `needs.<job>.outputs.<name>`.
@@ -19,7 +20,7 @@ on:
       example_gw_cache_key:
         description: 'Cache key used for example GW data (useful when restoring cache)'
         value: ${{ jobs.provide.outputs.example_gw_cache_key }}
-      
+
 
 jobs:
   provide:
@@ -28,26 +29,30 @@ jobs:
       python_version: ${{ steps.set.outputs.python_version }}
       lal_data_path: ${{ steps.set_paths.outputs.lal_data_path }}
       example_gw_cache_key: ${{ steps.set_paths.outputs.example_gw_cache_key }}
-      
+
     steps:
       - id: set
         run: |
           # Export inputs as outputs via GITHUB_OUTPUT so other jobs can use them
           echo "python_version=${{ inputs.python-version }}" >> $GITHUB_OUTPUT
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Cache LAL auxiliary data files
         id: cache-lal-aux-data
         uses: actions/cache@v4
         with:
           key: lal-aux-data
-          path: ~/lal_aux_data
+          path: $HOME/lal_aux_data
 
       - if: ${{ steps.cache-lal-aux-data.outputs.cache-hit != 'true' }}
         name: Download LAL auxiliary data files
         run: |
-          mkdir -p ~/lal_aux_data
-          pushd ~/lal_aux_data
-          curl --show-error --silent \
+          mkdir -p $HOME/lal_aux_data
+          pushd $HOME/lal_aux_data
+          # Retry transient network errors up to 3 times with a short delay
+          curl --show-error --silent --fail --retry 3 --retry-delay 5 --retry-connrefused \
             --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v2.0.hdf5 \
             --remote-name https://zenodo.org/records/14999310/files/SEOBNRv4ROM_v3.0.hdf5
           popd
@@ -77,4 +82,4 @@ jobs:
           # Expose the LAL data path and cache key so callers can reference them
           echo "lal_data_path=$HOME/lal_aux_data" >> $GITHUB_OUTPUT
           echo "example_gw_cache_key=example-gw-data" >> $GITHUB_OUTPUT
-          
+

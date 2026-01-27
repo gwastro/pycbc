@@ -23,7 +23,7 @@ jobs:
       with:
         key: lal-aux-data
         path: |
-          ~/lal_aux_data
+          $HOME/lal_aux_data
 
     - name: Restore example GW data cache for search example
       id: restore-example-gw

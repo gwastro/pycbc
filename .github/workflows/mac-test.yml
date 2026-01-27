@@ -13,7 +13,7 @@ jobs:
       max-parallel: 4
       matrix:
         os: [macos-latest]
-        python-version:
+        python_version:
           - '3.11'
           - '3.12'
           - '3.13'
@@ -24,35 +24,35 @@ jobs:
         shell: bash -el {0}
 
     steps:
-      - uses: actions/checkout@v1
+    - uses: actions/checkout@v1
 
-      - name: Cache conda packages
-        uses: actions/cache@v4
-        env:
-          # increment to reset cache
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ matrix.python-version}}-${{ env.CACHE_NUMBER }}
+    - name: Cache conda packages
+      uses: actions/cache@v4
+      env:
+        # increment to reset cache
+        CACHE_NUMBER: 0
+      with:
+        path: $HOME/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ matrix.python_version}}-${{ env.CACHE_NUMBER }}
 
-      - name: Configure conda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: test
-          channels: conda-forge
-          miniforge-version: latest
-          python-version: ${{ matrix.python-version }}
+    - name: Configure conda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: test
+        channels: conda-forge
+        miniforge-version: latest
+        python-version: ${{ matrix.python_version }}
 
-      - name: Conda info
-        run: conda info --all
+    - name: Conda info
+      run: conda info --all
 
-      - name: Install tox
-        run: |
-          conda install \
-              pip \
-              setuptools \
-              tox
+    - name: Install tox
+      run: |
+        conda install \
+            pip \
+            setuptools \
+            tox
 
-      - name: Run basic pycbc test suite
-        run: |
-          tox -e py-unittest
+    - name: Run basic pycbc test suite
+      run: |
+        tox -e py-unittest

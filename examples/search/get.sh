@@ -25,4 +25,6 @@ for f in "${FILES[@]}"; do
 	# Otherwise, download from the DCC
 	echo "Downloading $f from DCC..."
 	wget -nv "https://dcc.ligo.org/public/0146/P1700341/001/$f"
+	# Copy into the cache folder
+	cp $f examples/search/
 done

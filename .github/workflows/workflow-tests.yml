@@ -1,3 +1,4 @@
+---
 name: run generic example workflow tests
 
 on: [push, pull_request]

@@ -1,3 +1,4 @@
+---
 name: tutorial tests
 
 on: [push, pull_request]
@@ -13,13 +14,13 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-24.04]
-        python-version: ['3.11', '3.12', '3.13']
+        python_version: ['3.11', '3.12', '3.13']
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python_version }}
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
     - name: installing packages
       run: |
         sudo apt-get -o Acquire::Retries=3 update
