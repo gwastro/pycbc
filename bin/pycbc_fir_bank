@@ -133,69 +133,88 @@ def process_template(i):
     if sigmasq(h_fine, psd=g_psd, low_frequency_cutoff=g_args.f_low) <= 0:
         return i, 0.0, -1, 0.0, np.array([], dtype=np.float64)
 
-    best_match = 0.0
-    best_c_idx = -1
+    
+#    best_match = 0.0
+#    best_c_idx = -1
+#    for c_idx, h_ref in enumerate(g_coarse_waveforms):
+#        m, _ = match(h_fine, h_ref, psd=g_psd, low_frequency_cutoff=g_args.f_low)
+#        if m > best_match:
+#            best_match = m
+#            best_c_idx = c_idx
+
+    matches = []
     for c_idx, h_ref in enumerate(g_coarse_waveforms):
         m, _ = match(h_fine, h_ref, psd=g_psd, low_frequency_cutoff=g_args.f_low)
-        if m > best_match:
-            best_match = m
-            best_c_idx = c_idx
+        matches.append(m)
     
-    if best_c_idx == -1:
-        return i, 0.0, -1, 0.0, np.array([], dtype=np.float64)
+    matches = np.array(matches)
+    morder = np.argsort(matches)[::-1]
 
-    h_ref = g_coarse_waveforms[best_c_idx]
-    h_ref_np = h_ref.numpy()
-
-    ref_mag = np.abs(h_ref_np)
-    safe_threshold = np.max(ref_mag) * 1e-9
-    good_ref = (ref_mag > safe_threshold)
-
-    ratio = np.zeros_like(h_fine.numpy(), dtype=np.complex128)
-    np.divide(h_fine.numpy(), h_ref_np, out=ratio, where=good_ref)
-    
-    psd_np = g_psd.numpy()
-    freqs = h_fine.sample_frequencies.numpy()
-    band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
-    valid_psd = (psd_np > 0)
-    
-    weights_snr = np.zeros_like(psd_np, dtype=np.float64)
-    np.divide(ref_mag**2, psd_np, out=weights_snr, where=(band_mask & valid_psd))
-    
-    ratio = np.nan_to_num(ratio, copy=False)
-    weights_snr = np.nan_to_num(weights_snr, copy=False)
-    this_valid_mask = band_mask & good_ref
-
-    if np.sum(this_valid_mask) < g_args.n_taps:
-         return i, 0.0, best_c_idx, best_match, np.array([], dtype=np.float64)
-
-    H_target_raw = ratio * g_args.sample_rate
     current_taps = g_args.n_taps
-    best_qa_match = best_match
-    final_taps_data = np.array([], dtype=np.float64)
-
     while current_taps <= g_args.max_taps:
-        try:
-            taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
-                                          current_taps, weights_pos=weights_snr,
-                                          reg_type=g_args.regularization_type,
-                                          reg_val=g_args.regularization_magnitude)
-        except Exception as e:
-            print(e)
-            continue
-        qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
-        
-        if qa_match > best_qa_match:
-            best_qa_match = qa_match
-            final_taps_data = taps
+        best_qa_match = -1
+        best_qa_idx = -1
+        coarse_match = -1
+        for best_c_idx in morder[0:g_args.search_depth]:
+            best_match = matches[best_c_idx]
 
-        if g_args.verbose >= 2: 
-             print(f"[Worker {i}] Taps={current_taps}, Match={qa_match:.5f}")
+            h_ref = g_coarse_waveforms[best_c_idx]
+            h_ref_np = h_ref.numpy()
 
-        if qa_match >= g_args.min_match: break
+            ref_mag = np.abs(h_ref_np)
+            safe_threshold = np.max(ref_mag) * 1e-9
+            good_ref = (ref_mag > safe_threshold)
+
+            ratio = np.zeros_like(h_fine.numpy(), dtype=np.complex128)
+            np.divide(h_fine.numpy(), h_ref_np, out=ratio, where=good_ref)
+            
+            psd_np = g_psd.numpy()
+            freqs = h_fine.sample_frequencies.numpy()
+            band_mask = (freqs >= g_args.f_low) & (freqs < g_args.sample_rate / 2.0)
+            valid_psd = (psd_np > 0)
+            
+            weights_snr = np.zeros_like(psd_np, dtype=np.float64)
+            np.divide(ref_mag**2, psd_np, out=weights_snr, where=(band_mask & valid_psd))
+            
+            ratio = np.nan_to_num(ratio, copy=False)
+            weights_snr = np.nan_to_num(weights_snr, copy=False)
+            this_valid_mask = band_mask & good_ref
+
+            if np.sum(this_valid_mask) < g_args.n_taps:
+                 return i, 0.0, best_c_idx, best_match, np.array([], dtype=np.float64)
+
+            H_target_raw = ratio * g_args.sample_rate
+            final_taps_data = np.array([], dtype=np.float64)
+             
+     
+            try:
+                taps = design_optimal_real_filter(H_target_raw, this_valid_mask, 
+                                              current_taps, weights_pos=weights_snr,
+                                              reg_type=g_args.regularization_type,
+                                              reg_val=g_args.regularization_magnitude)
+            except Exception as e:
+                print(e)
+                continue
+                
+            qa_match = verify_filter_match(taps, h_ref, h_fine, g_psd, g_args.f_low)
+            
+            if qa_match > best_qa_match:
+                best_qa_match = qa_match
+                final_taps_data = taps
+                best_qa_idx = best_c_idx
+                coarse_match = best_match
+
+            if g_args.verbose >= 2: 
+                 print(f"[Worker {i}] Taps={current_taps}, Match={qa_match:.5f}")
+
+            print(best_match, qa_match, len(taps))
+            
+            if best_qa_match >= g_args.min_match: break
+        if best_qa_match >= g_args.min_match: break
+            
         current_taps += g_args.tap_step
-    
-    return i, best_match, best_c_idx, best_qa_match, final_taps_data
+        
+    return i, coarse_match, best_qa_idx, best_qa_match, final_taps_data
 
 # --- 4. MAIN PROCESS ---
 def main():
@@ -216,6 +235,8 @@ def main():
     parser.add_argument('--regularization-type', default='ridge', type=str)
     parser.add_argument('--regularization-magnitude', default=1e-2, type=float)
     parser.add_argument('--decimation-factor', default=1, type=int, dest='dec_factor')
+    parser.add_argument('--search-depth', default=3, type=int,
+                        help="Number of coarse templates to check for a good FIR representation")
     pycbc.psd.insert_psd_option_group(parser)
     args = parser.parse_args()
 
@@ -319,6 +340,7 @@ def main():
             if c_idx != -1:
                 results_by_coarse_idx[c_idx].append(res + (i,))
         
+        tap_counts = []
         for c_idx, results_list in results_by_coarse_idx.items():
             c_group = fir_group.create_group(str(c_idx))
             n_group = len(results_list)
@@ -348,13 +370,17 @@ def main():
                 dset_fine_idx[j] = i
                 dset_match[j] = qa_match
                 dset_c_match[j] = coarse_match
+            tap_counts.append(dset_actual[:])
                 
         logging.info(f"Done. Saved to {args.output_file}")
         
     finally:
         f_out.close()
 
-    summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match})."
+    tap_ave = np.mean(np.concatenate(tap_counts))
+    summary_msg = f"Summary: {failed_count}/{n_fine} templates failed QA (<{args.min_match}).\n"
+    summary_msg += f"Average taps: {tap_ave}\n"
+    
     if failed_count > 0: logging.warning(summary_msg)
     else: logging.info(summary_msg)
 
