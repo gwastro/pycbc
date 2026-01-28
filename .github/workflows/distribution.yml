@@ -21,6 +21,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Set release version environment variable
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+      - name: Update version file for release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: ./.github/actions/update-version
+        with:
+          version: ${{ env.RELEASE_VERSION }}
+          release: 'true'
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
       - name: Build wheels
@@ -51,6 +60,15 @@ jobs:
         pattern: wheel-*
         merge-multiple: true
         path: dist/
+    - name: Set release version environment variable
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    - name: Update version file for release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: ./.github/actions/update-version
+      with:
+        version: ${{ env.RELEASE_VERSION }}
+        release: 'true'
     - name: Build source distribution
       run: |
         python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
@@ -62,3 +80,42 @@ jobs:
       uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
       with:
         password: ${{ secrets.pypi_password }}
+
+  bump_version:
+    name: Bump version to dev
+    needs: deploy_pypi
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Calculate and set next version
+        id: versioning
+        run: |
+          # Extract version from tag (e.g. v1.2.3 -> 1.2.3)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          IFS='.' read -r -a parts <<< "$VERSION"
+          MAJOR=${parts[0]}
+          MINOR=${parts[1]}
+          PATCH=${parts[2]}
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.dev${NEXT_PATCH}"
+          echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Update version to next dev
+        uses: ./.github/actions/update-version
+        with:
+          version: ${{ steps.versioning.outputs.next_version }}
+          release: 'false'
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add setup.py
+          git commit -m "Back to development: ${{ steps.versioning.outputs.next_version }}"
+          git push origin master

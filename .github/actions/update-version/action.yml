@@ -1,0 +1,30 @@
+name: Update Version in setup.py
+description: "Updates release flag and version string in setup.py."
+
+inputs:
+  version:
+    description: 'The version string to set.'
+    required: true
+  release:
+    description: 'The boolean state for the release flag (true/false).'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update setup.py
+      shell: bash
+      run: |
+        # Convert release input to Python boolean (True/False)
+        RELEASE_BOOL=$(echo "${{ inputs.release }}" | awk '{print toupper(substr($0,1,1))tolower(substr($0,2))}')
+        python3 -c "
+        import sys, re
+        version = sys.argv[1]
+        release_flag = sys.argv[2]
+        with open('setup.py', 'r') as f:
+            content = f.read()
+        content = re.sub(r'^release = .*', f'release = {release_flag}', content, flags=re.MULTILINE)
+        content = re.sub(r'^version = .*', f\"version = '{version}'\", content, flags=re.MULTILINE)
+        with open('setup.py', 'w') as f:
+            f.write(content)
+        " "${{ inputs.version }}" "$RELEASE_BOOL"
