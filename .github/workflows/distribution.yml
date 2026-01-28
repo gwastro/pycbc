@@ -98,10 +98,21 @@ jobs:
         run: |
           # Extract version from tag (e.g. v1.2.3 -> 1.2.3)
           VERSION=${GITHUB_REF#refs/tags/v}
+          # Ensure the version is in the expected MAJOR.MINOR.PATCH format with numeric components
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Tag '$GITHUB_REF' is not in the supported 'vMAJOR.MINOR.PATCH' format." >&2
+            echo "Got VERSION='$VERSION'. Example of a valid tag: v1.2.3" >&2
+            exit 1
+          fi
           IFS='.' read -r -a parts <<< "$VERSION"
           MAJOR=${parts[0]}
           MINOR=${parts[1]}
           PATCH=${parts[2]}
+          # PATCH is guaranteed numeric by the regex above, but we keep this guard for extra safety
+          if ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
+            echo "Error: Patch component '$PATCH' from tag '$GITHUB_REF' is not numeric." >&2
+            exit 1
+          fi
           NEXT_PATCH=$((PATCH + 1))
           NEXT_VERSION="${MAJOR}.${MINOR}.dev${NEXT_PATCH}"
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
