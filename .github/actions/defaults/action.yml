@@ -1,0 +1,21 @@
+name: Defaults
+description: "Composite action that exposes default values for workflows (e.g., python_version)."
+
+inputs:
+  python-version:
+    description: "Default Python version to use in workflows"
+    required: false
+    default: '3.11'
+
+runs:
+  using: composite
+  steps:
+    - id: set
+      run: |
+        echo "python_version=${{ inputs.python-version }}" >> $GITHUB_OUTPUT
+      shell: bash
+
+outputs:
+  python_version:
+    description: "Python version string"
+    value: ${{ steps.set.outputs.python_version }}
