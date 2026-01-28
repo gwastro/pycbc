@@ -23,8 +23,10 @@ runs:
         release_flag = sys.argv[2]
         with open('setup.py', 'r') as f:
             content = f.read()
-        content = re.sub(r'^release = .*', f'release = {release_flag}', content, flags=re.MULTILINE)
-        content = re.sub(r'^version = .*', f\"version = '{version}'\", content, flags=re.MULTILINE)
+        content, release_count = re.subn(r'^release = .*', f'release = {release_flag}', content, flags=re.MULTILINE)
+        content, version_count = re.subn(r'^version = .*', f\"version = '{version}'\", content, flags=re.MULTILINE)
+        if release_count != 1 or version_count != 1:
+            raise SystemExit(f\"Expected exactly 1 replacement for each of 'release' and 'version' lines, got release={release_count}, version={version_count}\")
         with open('setup.py', 'w') as f:
             f.write(content)
         " "${{ inputs.version }}" "$RELEASE_BOOL"
