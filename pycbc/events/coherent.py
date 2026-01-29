@@ -70,6 +70,11 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
         # Could cache an output array if needed
         idxarr1 = idx_dict[ifos[0]]
         idxarr2 = idx_dict[ifos[1]]
+        # If either detector has no above-threshold triggers, there can be
+        # no coincidences. Handle this explicitly to avoid passing a
+        # zero-length output array into the Cython helper.
+        if len(idxarr1) == 0 or len(idxarr2) == 0:
+            return np.array([], dtype=idxarr1.dtype)
         outarr = np.zeros(max(len(idxarr1), len(idxarr2)), dtype=idxarr1.dtype)
         num_idxs = get_coinc_indexes_twodet_twocoinc(
             idxarr1,

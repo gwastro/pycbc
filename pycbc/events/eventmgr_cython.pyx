@@ -331,8 +331,8 @@ def get_coinc_indexes_cython_twodet_twocoinc(
 
     while arr1pos < arr1_size and arr2pos < arr2_size:
         cpos1 = idxarr1[arr1pos] - offset1
-        cpos2 = idxarr2[arr2pos]-offset2
-        if (cpos1) == (cpos2):
+        cpos2 = idxarr2[arr2pos] - offset2
+        if cpos1 == cpos2:
             outputs[outpos] = cpos1
             outpos += 1
             arr1pos += 1
