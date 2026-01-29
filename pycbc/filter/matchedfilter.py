@@ -240,7 +240,7 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid downsample factor")
 
-    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window, epoch=""):
+    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window, epoch=None):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
@@ -285,7 +285,7 @@ class MatchedFilterControl(object):
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
-    def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window, epoch=""):
+    def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window, epoch=None):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
@@ -332,7 +332,7 @@ class MatchedFilterControl(object):
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
-    def full_matched_filter_thresh_only(self, segnum, template_norm, window=None, epoch=""):
+    def full_matched_filter_thresh_only(self, segnum, template_norm, window=None, epoch=None):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
