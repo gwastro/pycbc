@@ -23,9 +23,10 @@ while 1:
     post = int(stats[4])
     done = int(stats[5])
     failed = int(stats[6])
+    pc_done = float(stats[7])
 
     finished = (unready == 0 and ready == 0 and queued == 0 and post == 0)
-    passed = finished and failed == 0
+    passed = (finished and failed == 0) and pc_done == 100
 
     if passed:
         print("workflow has completed successfully")
