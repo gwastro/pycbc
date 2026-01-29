@@ -322,13 +322,13 @@ def get_coinc_indexes_cython_twodet_twocoinc(
     numeric_type offset2,
     numeric_type [::1] outputs
 ):
-    cdef int arr1pos = 0
-    cdef int arr2pos = 0
-    cdef int outpos = 0
-    cdef int arr1_size = idxarr1.size
-    cdef int arr2_size = idxarr2.size
-    cdef int cpos1
-    cdef int cpos2
+    cdef Py_ssize_t arr1pos = 0
+    cdef Py_ssize_t arr2pos = 0
+    cdef Py_ssize_t outpos = 0
+    cdef Py_ssize_t arr1_size = idxarr1.size
+    cdef Py_ssize_t arr2_size = idxarr2.size
+    cdef numeric_type cpos1
+    cdef numeric_type cpos2
 
     while arr1pos < arr1_size and arr2pos < arr2_size:
         cpos1 = idxarr1[arr1pos] - offset1
