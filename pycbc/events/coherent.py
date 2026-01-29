@@ -31,16 +31,6 @@ from .eventmgr_cython import get_coinc_indexes_cython_twodet_twocoinc
 
 logger = logging.getLogger('pycbc.events.coherent')
 
-def get_coinc_indexes_twodet_twocoinc(idxarr1, idxarr2, offset1, offset2, output):
-    num_idxs = get_coinc_indexes_cython_twodet_twocoinc(
-        idxarr1,
-        idxarr2,
-        offset1,
-        offset2,
-        output
-    )
-    return num_idxs
-
 
 def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
     """Return the indexes corresponding to coincident triggers. If only one
@@ -76,7 +66,7 @@ def get_coinc_indexes(idx_dict, time_delay_idx, min_nifos):
         if len(idxarr1) == 0 or len(idxarr2) == 0:
             return np.array([], dtype=idxarr1.dtype)
         outarr = np.zeros(max(len(idxarr1), len(idxarr2)), dtype=idxarr1.dtype)
-        num_idxs = get_coinc_indexes_twodet_twocoinc(
+        num_idxs = get_coinc_indexes_cython_twodet_twocoinc(
             idxarr1,
             idxarr2,
             time_delay_idx[ifos[0]],
