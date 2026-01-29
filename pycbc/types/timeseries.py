@@ -136,8 +136,8 @@ class TimeSeries(Array):
                     self.start_time, other.start_time))
 
     def _getslice(self, index):
-        # Set the new epoch---note that index.start may also be None
-        if index.start is None:
+        # Set the new epoch - index.start or self._epoch may be None
+        if index.start is None or self._epoch is None:
             new_epoch = self._epoch
         else:
             if index.start < 0:
