@@ -312,8 +312,9 @@ ctypedef fused numeric_type:
     cython.int
     cython.long
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
 def get_coinc_indexes_cython_twodet_twocoinc(
     numeric_type [::1] idxarr1,
     numeric_type [::1] idxarr2,
