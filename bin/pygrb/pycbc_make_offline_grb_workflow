@@ -53,16 +53,12 @@ tags = []
 logging.info("Generating %s workflow" % workflow_name)
 
 # Setup run directory
-if wflow.cp.has_option("workflow", "output-directory"):
-    base_dir = wflow.cp.get("workflow", "output-directory")
-else:
-    base_dir = os.getcwd()
 triggername = str(wflow.cp.get("workflow", "trigger-name"))
-run_dir = os.path.join(base_dir, "GRB%s" % triggername)
-logging.info("Workflow will be generated in %s" % run_dir)
-if not os.path.exists(run_dir):
-    os.makedirs(run_dir)
-os.chdir(run_dir)
+output_dir = os.path.abspath(args.output_dir)
+logging.info("Workflow will be generated in %s", output_dir)
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+os.chdir(output_dir)
 
 # SEGMENTS
 triggertime = int(wflow.cp.get("workflow", "trigger-time"))
@@ -350,7 +346,7 @@ if wflow.cp.has_section("workflow-injections"):
                               "injections-method")
     if inj_method == "IN_WORKFLOW" and \
             wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
-        tc_path = os.path.join(base_dir, "tc_prior.ini")
+        tc_path = os.path.join(output_dir, "tc_prior.ini")
         _workflow.generate_tc_prior(wflow, tc_path, bufferSeg)
 
     # Generate injection files
@@ -487,6 +483,7 @@ if post_proc_method == "PYGRB_OFFLINE":
         logging.info('Entering results module')
         results_files = _workflow.setup_pygrb_results_workflow(wflow, pp_dir,
                                                                clustered_files,
+                                                               inj_files,
                                                                inj_find_files,
                                                                full_bank_file,
                                                                seg_dir,
