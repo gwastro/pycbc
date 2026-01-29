@@ -136,6 +136,7 @@ class TriangleBank(object):
     def __init__(self, p=None):
         self.waveforms = p if p is not None else []
         self.tbins = {}
+        self.max_matches = []
 
     def __len__(self):
         return len(self.waveforms)
@@ -236,6 +237,7 @@ class TriangleBank(object):
                 logging.info("TADD MaxMatch:%0.3f Size:%i "
                              "AfterSigma:%i AfterTau0:%i Matches:%i"
                               % (mmax, len(self), msig, mtau, mnum))
+                self.max_matches.append(mmax)
                 return False
 
             hc = self[j]
@@ -580,8 +582,9 @@ while tau0s < args.tau0_end:
             params = cdraw('kde', tau0s, tau0e)
             blen = len(bank)
             bank, kconv = bank.check_params(gen, params, args.minimal_match)
-            logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s",
-                         region, kloop, r, len(bank), kconv, len(bank) - blen)
+            ave = numpy.mean(bank.max_matches[int(len(bank.max_matches)*0.9):])
+            logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s trailing ave: %s",
+                         region, kloop, r, len(bank), kconv, len(bank) - blen, ave)
 
 
             if uconv:
@@ -608,3 +611,4 @@ for k in bank.keys():
     if val.dtype.char == 'U':
         val = val.astype('bytes')
     o[k] = val
+o['max_matches'] = numpy.array(bank.max_matches)
