@@ -91,9 +91,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Check if tag is on default branch
+        id: check_branch
+        run: |
+          if git merge-base --is-ancestor ${{ github.sha }} HEAD; then
+            echo "is_default=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag ${{ github.ref }} is not on ${{ github.event.repository.default_branch }}. Skipping bump."
+            echo "is_default=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Calculate and set next version
+        if: steps.check_branch.outputs.is_default == 'true'
         id: versioning
         run: |
           # Extract version from tag (e.g. v1.2.3 -> 1.2.3)
@@ -118,15 +130,17 @@ jobs:
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Update version to next dev
+        if: steps.check_branch.outputs.is_default == 'true'
         uses: ./.github/actions/update-version
         with:
           version: ${{ steps.versioning.outputs.next_version }}
           release: 'false'
 
       - name: Commit and push version bump
+        if: steps.check_branch.outputs.is_default == 'true'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add setup.py
           git commit -m "Back to development: ${{ steps.versioning.outputs.next_version }}"
-          git push origin master
+          git push origin ${{ github.event.repository.default_branch }}
