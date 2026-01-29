@@ -38,4 +38,9 @@ while 1:
         subprocess.run(["bash", "./stop"])
         # Need to wait here to make sure it fully exits before uploading logs!
         time.sleep(30)
-        exit(1)
+
+    for linei in lines:
+        if linei.startswith('Summary') and '(Failure' in linei:
+            print('Job submission has failed')
+            exit(1)
+            
