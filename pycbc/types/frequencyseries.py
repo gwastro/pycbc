@@ -22,6 +22,7 @@ import h5py
 import numpy as _numpy
 
 from pycbc.types.array import Array, _convert, zeros, _noreal
+from pycbc.types.utils import determine_epoch
 from pycbc.types import float64
 from pycbc.libutils import import_optional
 
@@ -54,35 +55,10 @@ class FrequencySeries(Array):
                 raise TypeError('must provide either an initial_array with a delta_f attribute, or a value for delta_f')
         if not delta_f > 0:
             raise ValueError('delta_f must be a positive number')
-        # We gave a nonsensical default value to epoch so we can test if it's been set.
-        # If the user passes in an initial_array that has an 'epoch' attribute and doesn't
-        # pass in a value of epoch, then our new object's epoch comes from initial_array.
-        # But if the user passed in a value---even 'None'---that will take precedence over
-        # anything set in initial_array.  Finally, if the user passes in something without
-        # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
-
-        # If epoch is already a float64, we can directly add it, so
-        # don't do this conversion
-        if not isinstance(epoch, float64):
-            if epoch == "":
-                # epoch is not given
-                try:
-                    # inherit epoch from initial array
-                    epoch = initial_array._epoch
-                except AttributeError:
-                    # nothing given, and can't grab the epoch from initial
-                    # array - fall back to zero
-                    epoch = float64(0)
-            elif epoch is not None: # If it is passed None, we do allow this
-                # epoch is given but is not already a float64 - convert it
-                is_ltg = _lal is not None and isinstance(epoch, _lal.LIGOTimeGPS)
-                if not is_ltg and not _numpy.isscalar(epoch):
-                    raise TypeError("epoch must be a number, not array-like")
-                epoch = float64(epoch)
 
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
-        self._epoch = epoch
+        self._epoch = determine_epoch(epoch, initial_array)
 
     def _return(self, ary):
         return FrequencySeries(ary, self._delta_f, epoch=self._epoch, copy=False)

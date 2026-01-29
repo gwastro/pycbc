@@ -24,6 +24,7 @@ import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
 
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
+from pycbc.types.utils import determine_epoch
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
 from pycbc.types import float32, float64
@@ -60,29 +61,10 @@ class TimeSeries(Array):
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
 
-        # If epoch is already a float64, we can directly add it,
-        # so don't do this conversion
-        if not isinstance(epoch, float64):
-            if epoch == "":
-                # epoch is not given
-                try:
-                    # inherit epoch from initial array
-                    epoch = initial_array._epoch
-                except AttributeError:
-                    # nothing given, and can't grab the epoch from initial
-                    # array - fall back to zero
-                    epoch = float64(0)
-            elif epoch is not None: # If it is passed None, we do allow this
-                # epoch is given but is not already a float64 - convert it
-                is_ltg = _lal is not None and isinstance(epoch, _lal.LIGOTimeGPS)
-                if not is_ltg and not _numpy.isscalar(epoch):
-                    raise TypeError("epoch must be a number, not array-like")
-                epoch = float64(epoch)
-
+        self._epoch = determine_epoch(epoch, initial_array)
 
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
-        self._epoch = epoch
 
     def to_astropy(self, name='pycbc'):
         """ Return an astropy.timeseries.TimeSeries instance
