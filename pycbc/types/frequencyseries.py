@@ -54,6 +54,12 @@ class FrequencySeries(Array):
                 raise TypeError('must provide either an initial_array with a delta_f attribute, or a value for delta_f')
         if not delta_f > 0:
             raise ValueError('delta_f must be a positive number')
+        # We gave a nonsensical default value to epoch so we can test if it's been set.
+        # If the user passes in an initial_array that has an 'epoch' attribute and doesn't
+        # pass in a value of epoch, then our new object's epoch comes from initial_array.
+        # But if the user passed in a value---even 'None'---that will take precedence over
+        # anything set in initial_array.  Finally, if the user passes in something without
+        # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
 
         # If epoch is already a float64, we can directly add it, so
         # don't do this conversion
