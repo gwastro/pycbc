@@ -126,7 +126,7 @@ jobs:
             exit 1
           fi
           NEXT_PATCH=$((PATCH + 1))
-          NEXT_VERSION="${MAJOR}.${MINOR}.dev${NEXT_PATCH}"
+          NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}.dev0"
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Update version to next dev
