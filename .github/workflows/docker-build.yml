@@ -35,11 +35,9 @@ jobs:
           DOCKER_IMG: pycbc/pycbc-el8
         run: bash -e docker/etc/docker_commit.sh
 
-      - name: (optional) Push docker image
+      - name: Push docker image
         env:
           DOCKER_IMG: pycbc/pycbc-el8
           DOCKER_PASSWORD: "${{secrets.DOCKERHUB_PASSWORD}}"
           DOCKER_USERNAME: "${{secrets.DOCKERHUB_USERNAME}}"
-
-      - name: "Pushing docker image"
         run: "bash -e docker/etc/push_image.sh"
