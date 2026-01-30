@@ -21,6 +21,8 @@
 """
 import numpy
 import logging
+import signal
+import sys, os
 import argparse
 import numpy.random
 from scipy.stats import gaussian_kde
@@ -330,6 +332,24 @@ def decimate_frequency_domain(template, target_df):
     decimated_template = pycbc.types.FrequencySeries(decimated_signal, delta_f=target_df)
     return decimated_template
 
+def handle_exit_signal(signum, frame):
+    logging.warning(f"Signal {signum} received. Triggering emergency save...")
+    save_bank()
+    # Force exit so the script doesn't try to resume the loops
+    os._exit(0)
+
+def save_bank():
+    logging.info("Saving current bank to %s", args.output_file)
+    with HFile(args.output_file, 'w') as o:
+        o.attrs['minimal_match'] = args.minimal_match
+        for k in bank.keys():
+            val = bank.key(k)
+            if val.dtype.char == 'U':
+                val = val.astype('bytes')
+            o[k] = val
+        o['max_matches'] = numpy.array(bank.max_matches)
+    logging.info("Save complete.")
+
 class GenUniformWaveform(object):
     def __init__(self, buffer_length, sample_rate, f_lower):
         self.f_lower = f_lower
@@ -432,7 +452,14 @@ gen = GenUniformWaveform(args.buffer_length,
     args.sample_rate, args.low_frequency_cutoff)
 bank = TriangleBank()
 
+def silent_child_exit(signum, frame):
+    # The child workers execute this branch
+    # os._exit(0) ensures they die instantly and quietly
+    os._exit(0)
+
 def wf_wrapper(p):
+    signal.signal(signal.SIGINT, silent_child_exit)
+    signal.signal(signal.SIGTERM, silent_child_exit)
     try:
         hp = gen.generate(**p)
         return hp
@@ -447,7 +474,6 @@ if args.input_file:
                                 force_add=args.keep_entire_input_file)
 
 def draw(rtype):
-
     if rtype == 'uniform':
         if args.input_config is None:
             params = {name: numpy.random.uniform(pmin, pmax, size=size)
@@ -550,6 +576,9 @@ def cdraw(rtype, ts, te):
 
     return p
 
+signal.signal(signal.SIGINT, handle_exit_signal)
+signal.signal(signal.SIGTERM, handle_exit_signal)
+
 tau0s = args.tau0_start
 tau0e = tau0s + args.tau0_crawl
 
@@ -582,9 +611,11 @@ while tau0s < args.tau0_end:
             params = cdraw('kde', tau0s, tau0e)
             blen = len(bank)
             bank, kconv = bank.check_params(gen, params, args.minimal_match)
-            ave = numpy.mean(bank.max_matches[int(len(bank.max_matches)*0.9):])
-            logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s trailing ave: %s",
-                         region, kloop, r, len(bank), kconv, len(bank) - blen, ave)
+
+            trail_matches = numpy.array(bank.max_matches[int(len(bank.max_matches)*0.9):])
+            ave = numpy.mean(trail_matches)
+            logging.info("%s: Round (K) (%s): %s Size: %s conv: %0.4f added: %s Trail Ave: %0.4f Trail Min: %0.4f",
+                         region, kloop, r, len(bank), kconv, len(bank) - blen, ave, trail_matches.min())
 
 
             if uconv:
@@ -604,11 +635,4 @@ while tau0s < args.tau0_end:
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
 
-o = HFile(args.output_file, 'w')
-o.attrs['minimal_match'] = args.minimal_match
-for k in bank.keys():
-    val = bank.key(k)
-    if val.dtype.char == 'U':
-        val = val.astype('bytes')
-    o[k] = val
-o['max_matches'] = numpy.array(bank.max_matches)
+save_bank()
