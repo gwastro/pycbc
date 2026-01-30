@@ -240,7 +240,7 @@ class TriangleBank(object):
                 logging.info("TADD MaxMatch:%0.3f Size:%i "
                              "AfterSigma:%i AfterTau0:%i Matches:%i"
                               % (mmax, len(self), msig, mtau, mnum))
-                self.max_matches.append(mmax)
+                hp.max_match = mmax
                 return False
 
             hc = self[j]
@@ -282,7 +282,7 @@ class TriangleBank(object):
         pool = pycbc.pool.choose_pool(args.nprocesses)
         for return_wf in pool.imap_unordered(
                 wf_wrapper,
-                (({k: params[k][idx] for k in params}, parallel_check) for idx in range(total_num))
+                (({k: params[k][idx] for k in params}, parallel_check, threshold) for idx in range(total_num))
             ):
             waveform_cache += [return_wf]
 
@@ -291,11 +291,12 @@ class TriangleBank(object):
 
         for hp in waveform_cache:
             if hp is not None:
-                hp.gen = gen
-                hp.threshold = threshold
-                
                 if hp.checked is None:
+                    hp.gen = gen
                     hp.checked = hp not in self
+ 
+                if hp.checked:
+                    self.max_matches.append(hp.max_match)
                 
                 if hp.checked or force_add:
                     num_added += 1
@@ -463,16 +464,18 @@ def silent_child_exit(signum, frame):
     os._exit(0)
 
 def wf_wrapper(args):
-    p, parallel_check = args
+    p, parallel_check, threshold = args
     
     signal.signal(signal.SIGINT, silent_child_exit)
     signal.signal(signal.SIGTERM, silent_child_exit)
     try:
         hp = gen.generate(**p)
-        
         hp.checked = None
+        hp.threshold = threshold   
         if parallel_check:
+            hp.gen = gen
             hp.checked = hp not in bank    
+            hp.gen = None
         return hp
     except Exception as e:
         print(e)
@@ -609,7 +612,8 @@ while tau0s < args.tau0_end:
             break
 
         blen = len(bank)
-        bank, uconv = bank.check_params(gen, params, args.minimal_match)
+        bank, uconv = bank.check_params(gen, params, args.minimal_match,
+                                        parallel_check=args.parallel_check)
         logging.info("%s: Round (U): %s Size: %s conv: %s added: %s",
                      region, r, len(bank), uconv, len(bank) - blen)
         if r > 10:
