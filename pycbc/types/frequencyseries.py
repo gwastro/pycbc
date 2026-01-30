@@ -19,9 +19,14 @@ Provides a class representing a frequency series.
 """
 import os as _os
 import h5py
-from pycbc.types.array import Array, _convert, zeros, _noreal
-import lal as _lal
 import numpy as _numpy
+
+from pycbc.types.array import Array, _convert, zeros, _noreal
+from pycbc.types.utils import determine_epoch
+from pycbc.types import float64
+from pycbc.libutils import import_optional
+
+_lal = import_optional('lal')
 
 class FrequencySeries(Array):
     """Models a frequency series consisting of uniformly sampled scalar values.
@@ -32,7 +37,7 @@ class FrequencySeries(Array):
         Array containing sampled data.
     delta_f : float
         Frequency between consecutive samples in Hertz.
-    epoch : {None, lal.LIGOTimeGPS}, optional
+    epoch : {None, lal.LIGOTimeGPS, float64}, optional
         Start time of the associated time domain data in seconds.
     dtype : {None, data-type}, optional
         Sample data type.
@@ -50,33 +55,10 @@ class FrequencySeries(Array):
                 raise TypeError('must provide either an initial_array with a delta_f attribute, or a value for delta_f')
         if not delta_f > 0:
             raise ValueError('delta_f must be a positive number')
-        # We gave a nonsensical default value to epoch so we can test if it's been set.
-        # If the user passes in an initial_array that has an 'epoch' attribute and doesn't
-        # pass in a value of epoch, then our new object's epoch comes from initial_array.
-        # But if the user passed in a value---even 'None'---that will take precedence over
-        # anything set in initial_array.  Finally, if the user passes in something without
-        # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
-        if not isinstance(epoch,_lal.LIGOTimeGPS):
-            if epoch == "":
-                if isinstance(initial_array,FrequencySeries):
-                    epoch = initial_array._epoch
-                else:
-                    epoch = _lal.LIGOTimeGPS(0)
-            elif epoch is not None:
-                try:
-                    if isinstance(epoch, _numpy.generic):
-                        # In python3 lal LIGOTimeGPS will not work on numpy
-                        # types as input. A quick google on how to generically
-                        # convert numpy floats/ints to the python equivalent
-                        # https://stackoverflow.com/questions/9452775/
-                        epoch = _lal.LIGOTimeGPS(epoch.item())
-                    else:
-                        epoch = _lal.LIGOTimeGPS(epoch)
-                except:
-                    raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
-        self._epoch = epoch
+        self._epoch = determine_epoch(epoch, initial_array)
 
     def _return(self, ary):
         return FrequencySeries(ary, self._delta_f, epoch=self._epoch, copy=False)
@@ -100,11 +82,12 @@ class FrequencySeries(Array):
                        doc="Frequency between consecutive samples in Hertz.")
 
     def get_epoch(self):
-        """Return frequency series epoch as a LIGOTimeGPS.
+        """Return frequency series epoch
         """
         return self._epoch
+    
     epoch = property(get_epoch,
-                     doc="Frequency series epoch as a LIGOTimeGPS.")
+                     doc="Frequency series epoch.")
 
     def get_sample_frequencies(self):
         """Return an Array containing the sample frequencies.
@@ -138,7 +121,7 @@ class FrequencySeries(Array):
     def start_time(self, time):
         """ Set the start time
         """
-        self._epoch = _lal.LIGOTimeGPS(time)
+        self._epoch = float64(time)
 
     @property
     def end_time(self):
@@ -334,7 +317,7 @@ class FrequencySeries(Array):
             LAL frequency series object containing the same data as self.
             The actual type depends on the sample's dtype. If the epoch of
             self was 'None', the epoch of the returned LAL object will be
-            LIGOTimeGPS(0,0); otherwise, the same as that of self.
+            LIGOTimeGPS(0,0); otherwise, convert it to LIGOTimeGPS
 
         Raises
         ------
@@ -346,7 +329,7 @@ class FrequencySeries(Array):
         if self._epoch is None:
             ep = _lal.LIGOTimeGPS(0,0)
         else:
-            ep = self._epoch
+            ep = _lal.LIGOTimeGPS(self._epoch)
 
         if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
