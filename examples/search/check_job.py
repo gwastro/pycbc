@@ -43,4 +43,3 @@ while 1:
         if linei.startswith('Summary') and '(Failure' in linei:
             print('Job submission has failed')
             exit(1)
-            
