@@ -33,7 +33,7 @@ import os as _os
 from functools import wraps
 
 import h5py
-import lal as _lal
+
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones
 from numpy.linalg import norm
@@ -41,6 +41,9 @@ from numpy.linalg import norm
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.opt import LimitedSizeDict
+from pycbc.libutils import import_optional
+
+_lal = import_optional('lal')
 
 #! FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an

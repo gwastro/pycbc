@@ -26,14 +26,15 @@ These are the unittests for the pycbc frequencyseries type
 '''
 
 import unittest
+import numpy
+import os
+import tempfile
+
 from pycbc.types import (
     Array, FrequencySeries, float32, complex64, float64, complex128,
 )
 from pycbc.scheme import DefaultScheme
-import numpy
-import lal
-import os
-import tempfile
+
 from utils import array_base, parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("FrequencySeries")
@@ -99,16 +100,41 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
 
         # Finally, we want to have an array that we shouldn't be able to operate on,
         # because the precision is wrong, and one where the length is wrong.
-        self.bad = FrequencySeries([1,1,1], 0.1, epoch=self.epoch, dtype = self.other_precision[self.odtype])
-        self.bad2 = FrequencySeries([1,1,1,1], 0.1, epoch=self.epoch, dtype = self.dtype)
+        self.bad = FrequencySeries(
+            [1,1,1],
+            0.1,
+            epoch=self.epoch,
+            dtype = self.other_precision[self.odtype]
+        )
+        self.bad2 = FrequencySeries(
+            [1,1,1,1],
+            0.1,
+            epoch=self.epoch,
+            dtype = self.dtype
+        )
 
         # These are FrequencySeries that have problems specific to FrequencySeries
-        self.bad3 = FrequencySeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
+        self.bad3 = FrequencySeries(
+            [1,1,1],
+            0.2,
+            epoch=self.epoch,
+            dtype = self.dtype
+        )
         # This next one is actually okay for frequencyseries
         if self.epoch is None:
-            self.bad4 = FrequencySeries([1,1,1], 0.1, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
+            self.bad4 = FrequencySeries(
+                [1,1,1],
+                0.1,
+                epoch = (1000 + 1e-6),
+                dtype = self.dtype
+            )
         else:
-            self.bad4 = FrequencySeries([1,1,1], 0.1, epoch=None, dtype = self.dtype)
+            self.bad4 = FrequencySeries(
+                [1,1,1],
+                0.1,
+                epoch=None,
+                dtype = self.dtype
+            )
 
     def test_numpy_init(self):
         with self.context:
@@ -264,8 +290,8 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
                 in2-=1
             # Giving complex input and specifying a real dtype should raise an error
             else:
-                self.assertRaises(TypeError, FrequencySeries, in1,0.1, dtype = self.dtype)
-                self.assertRaises(TypeError, FrequencySeries, in2,0.1, dtype = self.dtype)
+                self.assertRaises(TypeError, FrequencySeries, in1, 0.1, dtype = self.dtype)
+                self.assertRaises(TypeError, FrequencySeries, in2, 0.1, dtype = self.dtype)
 
             # Also, when it is unspecified
             out3 = FrequencySeries(in1,0.1,epoch=self.epoch)
@@ -281,7 +307,12 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
             self.assertEqual(out3._epoch, self.epoch)
 
             # We should also be able to create from a CPU Array
-            out4 = FrequencySeries(cpuarray,0.1, dtype=self.dtype, epoch=self.epoch)
+            out4 = FrequencySeries(
+                cpuarray,
+                0.1,
+                dtype=self.dtype,
+                epoch=self.epoch
+            )
 
             self.assertTrue(type(out4._scheme) == type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
@@ -316,8 +347,18 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
 
         # Also checking that a cpu array can't be made out of another scheme without copying
         if self.scheme != 'cpu':
-            self.assertRaises(TypeError, FrequencySeries, out4, 0.1, copy=False)
-            out6 = FrequencySeries(out4, 0.1, dtype=self.dtype, epoch=self.epoch)
+            self.assertRaises(
+                TypeError,
+                FrequencySeries,
+                out4, 0.1,
+                copy=False
+            )
+            out6 = FrequencySeries(
+                out4,
+                0.1,
+                dtype=self.dtype,
+                epoch=self.epoch
+            )
             self.assertTrue(type(out6._scheme) == DefaultScheme)
             self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0],1)
@@ -330,7 +371,12 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
     def test_list_init(self):
         with self.context:
             # When specified
-            out1 = FrequencySeries([5,3,1],0.1, dtype=self.dtype, epoch=self.epoch)
+            out1 = FrequencySeries(
+                [5,3,1],
+                0.1,
+                dtype=self.dtype,
+                epoch=self.epoch
+            )
 
             self.assertTrue(type(out1._scheme) == type(self.context))
             self.assertTrue(type(out1._data) is SchemeArray)
@@ -535,7 +581,7 @@ types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
 suite = unittest.TestSuite()
 
 # Unlike the regular array tests, we will need to test with an epoch, and with none
-epochs = [lal.LIGOTimeGPS(1000, 1000),None]
+epochs = [(1000 + 1e-6),None]
 
 i = 0
 for t,otypes in types:
