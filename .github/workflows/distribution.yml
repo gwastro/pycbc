@@ -136,15 +136,43 @@ jobs:
           version: ${{ steps.versioning.outputs.next_version }}
           release: 'false'
 
-      - name: Commit and push version bump
+      - name: Create bump branch, commit, and push
+        id: create_branch
         if: steps.check_branch.outputs.is_default == 'true'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+          BRANCH="bump-version-${{ github.run_id }}-${{ github.sha::8 }}"
+          git checkout -b "${BRANCH}"
           git add setup.py
           if git diff --staged --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "Set back to development: ${{ steps.versioning.outputs.next_version }}"
-            git push origin ${{ github.event.repository.default_branch }}
+            # Export an empty branch_name so downstream steps can handle it
+            echo "branch_name=" >> $GITHUB_OUTPUT
+            exit 0
           fi
+          git commit -m "Set back to development: ${{ steps.versioning.outputs.next_version }}"
+          git push --set-upstream origin "${BRANCH}"
+          # Export the branch name as a step output so other steps can reference it
+          echo "branch_name=${BRANCH}" >> $GITHUB_OUTPUT
+      - name: Create Pull Request (github-script)
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branch = process.env.BUMP_BRANCH;
+            if (!branch) core.setFailed('BUMP_BRANCH not set');
+            const title = `Automated version bump to ${process.env.NEXT_VERSION}`;
+            const body = `This PR was created automatically by CI to set the project back to ${process.env.NEXT_VERSION}.`;
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              head: branch,
+              base: context.payload.repository.default_branch,
+              body,
+            });
+            core.setOutput('pr_number', pr.number);
+        env:
+          NEXT_VERSION: ${{ steps.versioning.outputs.next_version }}
+          BUMP_BRANCH: ${{ steps.create_branch.outputs.branch_name }}
