@@ -85,6 +85,7 @@ parser.add_argument('--tau0-end', type=float)
 parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
 parser.add_argument('--nprocesses', type=int, default=1,
     help='Number of processes to use for waveform generation parallelization. If not given then only a single core will be used.')
+parser.add_argument('--parallel-check', action='store_true', help="Do bank checking parallel, note that this means that proposals WILL NOT be checked against each other.")
 pycbc.psd.insert_psd_option_group(parser)
 parser.add_argument('--use-trimmed-buffer', action='store_true',
     help=('When specified, the match calculation will use only the first and last 100 samples '
@@ -271,7 +272,9 @@ class TriangleBank(object):
             if m > mmax:
                 mmax = m
 
-    def check_params(self, gen, params, threshold, force_add=False):
+    def check_params(self, gen, params, threshold,
+                           force_add=False,
+                           parallel_check=False):
         num_added = 0
         total_num = len(tuple(params.values())[0])
         waveform_cache = []
@@ -279,9 +282,10 @@ class TriangleBank(object):
         pool = pycbc.pool.choose_pool(args.nprocesses)
         for return_wf in pool.imap_unordered(
                 wf_wrapper,
-                ({k: params[k][idx] for k in params} for idx in range(total_num))
+                (({k: params[k][idx] for k in params}, parallel_check) for idx in range(total_num))
             ):
             waveform_cache += [return_wf]
+
         pool.close_pool()
         del pool
 
@@ -289,16 +293,17 @@ class TriangleBank(object):
             if hp is not None:
                 hp.gen = gen
                 hp.threshold = threshold
-                if hp not in self:
+                
+                if hp.checked is None:
+                    hp.checked = hp not in self
+                
+                if hp.checked or force_add:
                     num_added += 1
-                    self.insert(hp)
-                elif force_add:
-                    num_added += 1
-                    self.insert(hp)
+                    self.insert(hp)    
             else:
                 logging.info("Waveform generation failed!")
                 continue
-
+                
         return bank, num_added / total_num
 
 def decimate_frequency_domain(template, target_df):
@@ -457,11 +462,17 @@ def silent_child_exit(signum, frame):
     # os._exit(0) ensures they die instantly and quietly
     os._exit(0)
 
-def wf_wrapper(p):
+def wf_wrapper(args):
+    p, parallel_check = args
+    
     signal.signal(signal.SIGINT, silent_child_exit)
     signal.signal(signal.SIGTERM, silent_child_exit)
     try:
         hp = gen.generate(**p)
+        
+        hp.checked = None
+        if parallel_check:
+            hp.checked = hp not in bank    
         return hp
     except Exception as e:
         print(e)
@@ -610,7 +621,8 @@ while tau0s < args.tau0_end:
             kloop += 1
             params = cdraw('kde', tau0s, tau0e)
             blen = len(bank)
-            bank, kconv = bank.check_params(gen, params, args.minimal_match)
+            bank, kconv = bank.check_params(gen, params, args.minimal_match,
+                                            parallel_check=args.parallel_check)
 
             trail_matches = numpy.array(bank.max_matches[int(len(bank.max_matches)*0.9):])
             ave = numpy.mean(trail_matches)
