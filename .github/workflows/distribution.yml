@@ -142,7 +142,8 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          BRANCH="bump-version-${{ github.run_id }}-${{ github.sha::8 }}"
+          # Use runner environment variables and shell substring to get the short SHA
+          BRANCH="bump-version-${GITHUB_RUN_ID}-${GITHUB_SHA::8}"
           git checkout -b "${BRANCH}"
           git add setup.py
           if git diff --staged --quiet; then
@@ -161,7 +162,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const branch = process.env.BUMP_BRANCH;
-            if (!branch) core.setFailed('BUMP_BRANCH not set');
+            if (!branch) {
+              core.info('No branch was created (no changes). Skipping PR creation.');
+              return;
+            }
             const title = `Automated version bump to ${process.env.NEXT_VERSION}`;
             const body = `This PR was created automatically by CI to set the project back to ${process.env.NEXT_VERSION}.`;
             const { data: pr } = await github.rest.pulls.create({
