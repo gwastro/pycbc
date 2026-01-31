@@ -222,7 +222,6 @@ def main():
     parser.add_argument('--coarse-bank', required=True)
     parser.add_argument('--fine-bank', required=True)
     parser.add_argument('--output-file', required=True)
-    parser.add_argument('--approximant', type=str, default='IMRPhenomD')
     parser.add_argument('--f-low', type=float, default=20.0)
     parser.add_argument('--sample-rate', type=float, default=2048.0)
     parser.add_argument('--delta-f', type=float, default=None, required=True)
@@ -260,7 +259,6 @@ def main():
     logging.info("Loading coarse bank references...")
     coarse_bank = FilterBank(args.coarse_bank, flen, args.delta_f,
                              dtype=np.complex128, 
-                             approximant=args.approximant,
                              enable_compressed_waveforms=False)
     show_progress = (args.verbose == 0)
     coarse_waveforms = [h.copy()[::args.dec_factor] for h in tqdm(coarse_bank, desc="Generating References", disable=not show_progress, file=sys.stderr)]
@@ -270,7 +268,6 @@ def main():
     logging.info("Opening fine bank...")
     fine_bank = FilterBank(args.fine_bank, flen, args.delta_f,
                            dtype=np.complex128,
-                           approximant=args.approximant,
                            enable_compressed_waveforms=False)
     n_fine = len(fine_bank)
     
