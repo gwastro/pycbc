@@ -242,7 +242,8 @@ class TriangleBank(object):
                 rsorted = r[msort]
                 keep = numpy.ones(len(msorted), dtype=bool)
                 if args.max_connections < len(keep):
-                    keep[args.max_connections//2: -args.max_connections//2] = False
+                    #keep[args.max_connections//2: -args.max_connections//2] = False
+                    keep[args.max_connections:] = False
                 
                 hp.matches = msorted[keep].copy()
                 hp.indices = rsorted[keep].copy()
