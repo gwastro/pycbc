@@ -235,8 +235,8 @@ class TriangleBank(object):
         while 1:
             j = inc.pop()
             if j is None:
-                hp.matches = matches[r]
-                hp.indices = r
+                hp.matches = matches[r].copy()
+                hp.indices = r.copy()
                 logging.info("TADD MaxMatch:%0.3f Size:%i "
                              "AfterSigma:%i AfterTau0:%i Matches:%i"
                               % (mmax, len(self), msig, mtau, mnum))
@@ -245,21 +245,12 @@ class TriangleBank(object):
 
             hc = self[j]
 
-            # Defensive initialization if matches/indices are missing
-            if not hasattr(hc, 'matches'):
-                hc.matches = numpy.empty(len(self))
-                hc.matches[:] = numpy.nan
-
-            if not hasattr(hc, 'indices'):
-                hc.indices = numpy.arange(len(self))
-
-
             m = hp.gen.match(hp, hc)
             matches[j] = m
             mnum += 1
 
             # Update bounding match values, apply triangle inequality
-            maxmatches = hc.matches - m + 1.10
+            maxmatches = 1.10 - abs(hc.matches - m)
             update = numpy.where(maxmatches < matches[hc.indices])[0]
             matches[hc.indices[update]] = maxmatches[update]
 
