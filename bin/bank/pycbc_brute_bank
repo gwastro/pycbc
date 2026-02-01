@@ -260,7 +260,7 @@ class TriangleBank(object):
             mnum += 1
 
             # Update bounding match values, apply triangle inequality
-            maxmatches = 1.10 - abs(hc.matches - m)
+            maxmatches = hc.matches - m + 1.10
             update = numpy.where(maxmatches < matches[hc.indices])[0]
             matches[hc.indices[update]] = maxmatches[update]
 
