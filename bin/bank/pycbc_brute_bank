@@ -86,6 +86,7 @@ parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
 parser.add_argument('--nprocesses', type=int, default=1,
     help='Number of processes to use for waveform generation parallelization. If not given then only a single core will be used.')
 parser.add_argument('--parallel-check', action='store_true', help="Do bank checking parallel, note that this means that proposals WILL NOT be checked against each other.")
+parser.add_argument('--max-connections', type=int, help="Maximum number of matches to store with each template", default=numpy.inf)
 pycbc.psd.insert_psd_option_group(parser)
 parser.add_argument('--use-trimmed-buffer', action='store_true',
     help=('When specified, the match calculation will use only the first and last 100 samples '
@@ -235,8 +236,17 @@ class TriangleBank(object):
         while 1:
             j = inc.pop()
             if j is None:
-                hp.matches = matches[r].copy()
-                hp.indices = r.copy()
+                msort = matches[r].argsort()
+                
+                msorted = matches[r][msort]
+                rsorted = r[msort]
+                keep = numpy.ones(len(msorted), dtype=bool)
+                if args.max_connections < len(keep):
+                    keep[args.max_connections//2: -args.max_connections//2] = False
+                
+                hp.matches = msorted[keep].copy()
+                hp.indices = rsorted[keep].copy()
+
                 logging.info("TADD MaxMatch:%0.3f Size:%i "
                              "AfterSigma:%i AfterTau0:%i Matches:%i"
                               % (mmax, len(self), msig, mtau, mnum))
