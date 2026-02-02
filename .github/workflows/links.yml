@@ -22,7 +22,7 @@ jobs:
             --include-fragments
             -E
             --require-https
-            './examples/gw150914/PYCBCInspiral.ipynb' './*.md ./docs/**/*.rst ./descr.rst ./examples/cal/foton_filter_est_saturation/README.rst'
+            './examples/gw150914/PYCBCInspiral.ipynb' './*.md ./docs/**/*.rst ./descr.rst ./examples/cal/foton_filter_esd_saturation/README.rst'
 
       - name: Provide helpful failure message
         if: failure()
