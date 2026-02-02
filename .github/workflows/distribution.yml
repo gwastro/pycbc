@@ -21,6 +21,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Set release version environment variable
+        if: startsWith(github.ref, 'refs/tags')
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+      - name: Update version file for release
+        if: startsWith(github.ref, 'refs/tags')
+        uses: ./.github/actions/update-version
+        with:
+          version: ${{ env.RELEASE_VERSION }}
+          release: 'true'
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
       - name: Build wheels
@@ -51,6 +60,15 @@ jobs:
         pattern: wheel-*
         merge-multiple: true
         path: dist/
+    - name: Set release version environment variable
+      if: startsWith(github.ref, 'refs/tags')
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    - name: Update version file for release
+      if: startsWith(github.ref, 'refs/tags')
+      uses: ./.github/actions/update-version
+      with:
+        version: ${{ env.RELEASE_VERSION }}
+        release: 'true'
     - name: Build source distribution
       run: |
         python -c 'import setuptools ; print("setuptools version", setuptools.__version__)'
@@ -62,3 +80,104 @@ jobs:
       uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
       with:
         password: ${{ secrets.pypi_password }}
+
+  bump_version:
+    name: Bump version to development
+    needs: deploy_pypi
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Check if the tag is on the default branch
+        id: check_branch
+        run: |
+          if git merge-base --is-ancestor ${{ github.sha }} HEAD; then
+            echo "is_default=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag ${{ github.ref }} is not on ${{ github.event.repository.default_branch }}. Skipping bump."
+            echo "is_default=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate the next version
+        if: steps.check_branch.outputs.is_default == 'true'
+        id: versioning
+        run: |
+          # Extract version from tag (e.g. v1.2.3 -> 1.2.3)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          # Ensure the version is in the expected MAJOR.MINOR.PATCH format with numeric components
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Tag '$GITHUB_REF' is not in the supported 'vMAJOR.MINOR.PATCH' format." >&2
+            echo "Got VERSION='$VERSION'. Example of a valid tag: v1.2.3" >&2
+            exit 1
+          fi
+          IFS='.' read -r -a parts <<< "$VERSION"
+          MAJOR=${parts[0]}
+          MINOR=${parts[1]}
+          PATCH=${parts[2]}
+          # PATCH is guaranteed numeric by the regex above, but we keep this guard for extra safety
+          if ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
+            echo "Error: Patch component '$PATCH' from tag '$GITHUB_REF' is not numeric." >&2
+            exit 1
+          fi
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}.dev0"
+          echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Update version to next dev
+        if: steps.check_branch.outputs.is_default == 'true'
+        uses: ./.github/actions/update-version
+        with:
+          version: ${{ steps.versioning.outputs.next_version }}
+          release: 'false'
+
+      - name: Create bump branch, commit, and push
+        id: create_branch
+        if: steps.check_branch.outputs.is_default == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          # Use runner environment variables and shell substring to get the short SHA
+          BRANCH="bump-version-${GITHUB_RUN_ID}-${GITHUB_SHA::8}"
+          git checkout -b "${BRANCH}"
+          git add setup.py
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            # Export an empty branch_name so downstream steps can handle it
+            echo "branch_name=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          git commit -m "Set back to development: ${{ steps.versioning.outputs.next_version }}"
+          git push --set-upstream origin "${BRANCH}"
+          # Export the branch name as a step output so other steps can reference it
+          echo "branch_name=${BRANCH}" >> $GITHUB_OUTPUT
+      - name: Create Pull Request (github-script)
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branch = process.env.BUMP_BRANCH;
+            if (!branch) {
+              core.info('No branch was created (no changes). Skipping PR creation.');
+              return;
+            }
+            const title = `Automated version bump to ${process.env.NEXT_VERSION}`;
+            const body = `This PR was created automatically by CI to set the project back to ${process.env.NEXT_VERSION}.`;
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              head: branch,
+              base: context.payload.repository.default_branch,
+              body,
+            });
+            core.setOutput('pr_number', pr.number);
+        env:
+          NEXT_VERSION: ${{ steps.versioning.outputs.next_version }}
+          BUMP_BRANCH: ${{ steps.create_branch.outputs.branch_name }}
