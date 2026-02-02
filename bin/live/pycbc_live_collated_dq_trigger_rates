@@ -29,6 +29,7 @@ import gwdatafind
 from igwn_segments import segmentlist, segment
 
 import pycbc
+import pycbc.dq
 from pycbc.io import HFile
 from pycbc.frame.frame import read_frame
 
