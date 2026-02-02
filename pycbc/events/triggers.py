@@ -128,12 +128,8 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals = m1 + m2
     elif par == 'eta':
         parvals = conversions.eta_from_mass1_mass2(m1, m2)
-    elif par == 'q':
-        parvals = conversions.q_from_mass1_mass2(m1, m2)
     elif par in ['chi_eff', 'effective_spin']:
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
-    elif par == 'eccentricity':
-        parvals = bank['eccentricity'][:][tid]
     elif par == 'template_duration':
         # default to SEOBNRv4 duration function
         if not hasattr(args, 'approximant') or args.approximant is None:
