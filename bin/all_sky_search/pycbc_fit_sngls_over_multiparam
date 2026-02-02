@@ -500,9 +500,6 @@ else:
             **kwarg_dict
         )
 
-if not isinstance(nabove_smoothed, numpy.ndarray):
-    nabove_smoothed = numpy.array(nabove_smoothed)
-assert all(nabove_smoothed > 0), "Some nabove_smoothed values are not above zero"
 logging.info("Writing output")
 outfile = HFile(args.output, 'w')
 outfile['template_id'] = tid
