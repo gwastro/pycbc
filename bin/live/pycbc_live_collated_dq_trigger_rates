@@ -26,12 +26,11 @@ import glob
 import numpy as np
 
 import gwdatafind
+from igwn_segments import segmentlist, segment
 
 import pycbc
 from pycbc.io import HFile
-
-from gwpy.timeseries import TimeSeriesDict
-from gwpy.segments import Segment, DataQualityFlag
+from pycbc.frame.frame import read_frame
 
 
 def find_frames(ifo, frame_dir, frame_type, start, end):
@@ -55,6 +54,39 @@ def find_frames(ifo, frame_dir, frame_type, start, end):
         files += glob.glob(os.path.join(framedir, '*.gwf'))
 
     return files
+
+
+def timeseries_to_segmentlist(ts_bool, epoch=None):
+    """
+    Convert a boolean pycbc TimeSeries (True when condition holds) to
+    an igwn_segments.segmentlist of (start, end) in GPS seconds.
+    `ts_bool` may be a pycbc TimeSeries or numpy-like array with delta_t and epoch.
+    """
+    # Ensure we can read epoch/delta_t; pycbc.TimeSeries has .start_time and .delta_t
+    start_time = float(ts_bool.start_time)
+    dt = float(ts_bool.delta_t)
+
+    segs = segmentlist([])
+    in_seg = False
+    curr_start = None
+    n = len(ts_bool)
+    # iterate by index to avoid float index issues
+    for i in range(n):
+        if ts_bool[i]:  # True -> inside flagged region
+            if not in_seg:
+                in_seg = True
+                curr_start = start_time + i * dt
+        else:
+            if in_seg:
+                # close current seg; end is start of this index
+                curr_end = start_time + i * dt
+                segs.append(segment(curr_start, curr_end))
+                in_seg = False
+    # close at end
+    if in_seg:
+        curr_end = start_time + n * dt
+        segs.append(segment(curr_start, curr_end))
+    return segs.coalesce()
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -87,14 +119,15 @@ if not args.use_gwdatafind and args.frame_directory is None:
 
 # Get observing segs
 ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
-day_seg = Segment(args.gps_start_time, args.gps_end_time)
-observing_flag = DataQualityFlag.query(ar_flag_name, day_seg)
+observing_flag = pycbc.dq.query_flag(
+    args.ifo, ar_flag_name, args.gps_start_time, args.gps_end_time
+)
 
 # shift observing flag to current time
-observing_flag = observing_flag.pad(args.replay_offset, args.replay_offset)
+observing_flag.protract(args.replay_offset)
 
-observing_segs = observing_flag.active
-livetime = observing_flag.livetime
+observing_segs = observing_flag
+livetime = abs(observing_flag)
 logging.info(f'Found {livetime} seconds of observing time at {args.ifo}.')
 
 # for each segment, check how much time was dq flagged
@@ -119,24 +152,32 @@ for seg in observing_segs:
             seg[1],
         )
 
-    tsdict = TimeSeriesDict.read(
-        frames,
-        channels=[dq_channel, dq_ok_channel],
-        start=seg[0],
-        end=seg[1],
-        pad=0,
-    )
+    try:
+        ts_dq_channel, ts_dq_ok_channel = read_frame(
+            frames, [dq_channel, dq_ok_channel],
+            start_time=seg[0], end_time=seg[1]
+        )
+    except Exception:
+        raise
 
-    dq_ok_flag = (tsdict[dq_ok_channel] == 1).to_dqflag()
-    dq_flag = (tsdict[dq_channel] <= args.dq_thresh).to_dqflag()
+    # build segmentlists:
+    # Is the channel actually working?
+    dq_ok_mask = (ts_dq_ok_channel == 1)
+    dq_ok_segs = timeseries_to_segmentlist(dq_ok_mask)
 
-    valid_bad_dq = dq_flag & dq_ok_flag
+    # Is the channel above threshold?
+    dq_mask = (ts_dq_channel <= args.dq_thresh)
+    dq_segs = timeseries_to_segmentlist(dq_mask)
 
-    # pad flag outwards to match the padding used in the live script
+    valid_bad_dq = (dq_segs & dq_ok_segs)
+
+    # pad / expand segments outwards by dq_padding seconds
+    # use protract (pycbc uses protract in other parts of the code)
     valid_bad_dq.protract(args.dq_padding)
     valid_bad_dq.coalesce()
 
-    flagged_time += (valid_bad_dq & observing_flag).livetime
+    # intersection with observing_flag and add livetime
+    flagged_time += abs(valid_bad_dq & observing_flag)
 
 logging.info(f'Found {flagged_time} seconds of dq flagged time at {args.ifo}.')
 
