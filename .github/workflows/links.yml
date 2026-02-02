@@ -1,0 +1,46 @@
+name: Check Links In Pull Requests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-links:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == join('', ['refs/heads/', github.event.repository.default_branch])) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == github.event.repository.default_branch)
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: |
+            --no-progress
+            --include-fragments
+            -E
+            --require-https
+            './examples/gw150914/PYCBCInspiral.ipynb' './*.md ./docs/**/*.rst ./descr.rst ./examples/cal/foton_filter_est_saturation/README.rst'
+
+      - name: Provide helpful failure message
+        if: failure()
+        run: |
+          echo "::error::Link check failed! Please review the broken links reported above."
+          echo ""
+          echo "If certain links are valid but fail due to:"
+          echo "- CAPTCHA challenges"
+          echo "- IP blocking"
+          echo "- Authentication requirements"
+          echo "- Rate limiting"
+          echo ""
+          echo "Consider adding them to .lycheeignore to bypass future checks."
+          echo "Format: Add one URL pattern per line"
+          exit 1
