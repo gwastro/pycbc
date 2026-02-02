@@ -25,7 +25,7 @@ def effsnr(snr, reduced_x2, fac=250.,
 def newsnr(snr, reduced_x2, q=6., n=2.,
            **kwargs):  # pylint:disable=unused-argument
     """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
-    reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
+    reduced chi-squared values. See https://arxiv.org/abs/1208.3491 for
     definition. Previous implementation in glue/ligolw/lsctables.py
     """
     nsnr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
