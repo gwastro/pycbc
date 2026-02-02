@@ -537,7 +537,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         In addition to ``[model]``, a ``data_section`` (default ``[data]``)
         must be in the configuration file. The data section specifies settings
         for loading data and estimating PSDs. See the `online documentation
-        <http://pycbc.org/pycbc/latest/html/inference.html#setting-data>`_ for
+        <https://pycbc.org/pycbc/latest/html/inference.html#setting-data>`_ for
         more details.
 
         The following options are read from the ``[model]`` section, in

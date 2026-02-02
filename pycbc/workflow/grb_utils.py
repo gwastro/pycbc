@@ -25,7 +25,7 @@
 """
 This library code contains functions and classes that are used in the
 generation of pygrb workflows. For details about pycbc.workflow see here:
-http://pycbc.org/pycbc/latest/html/workflow.html
+https://pycbc.org/pycbc/latest/html/workflow.html
 """
 
 import os
