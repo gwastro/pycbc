@@ -419,7 +419,7 @@ def get_single_template_params(curr_idx, times, bank_data,
         params['inclination'] = bank_data['inclination'][bank_id]
     except KeyError:
         pass
-    # optional eccentric parameters, only present when using SEOBNRv4/5E
+    # optional eccentric parameters, present when using eccentric waveform models
     try:
         params['eccentricity'] = bank_data['eccentricity'][bank_id]
         params['rel_anomaly'] = bank_data['rel_anomaly'][bank_id]
@@ -524,7 +524,7 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
             except:
                 node.add_opt('--u-val',
                              "%.6f" % params['u_vals_%s' % ifo])
-        # If this is a eccentricity search
+        # If this is an eccentricity search
         if 'eccentricity' in params:
             node.add_opt('--eccentricity', "%.6f" % params['eccentricity'])
             node.add_opt('--rel-anomaly', "%.6f" % params['rel_anomaly'])
