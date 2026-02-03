@@ -478,6 +478,47 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     return mass2_from_mtotal_eta(mtotal, eta)
 
 
+def ecc_mchirp_from_mchirp_ecc(mchirp, ecc):
+    """ The effective eccentric mchirp parameter as defined in
+    the equation 8 in https://arxiv.org/pdf/2107.14736.
+    Eccentricity must be defined at the dominant (2,2) mode GW
+    frequency of 10 Hz.
+    """
+    # Constants from Table 1
+    xi = 0.06110974175360381
+    delta = -0.4193723077257345
+
+    Xi_beta = 0.00801015132110059
+    Delta_beta = -2.14807199936756e-5
+    kappa_beta = 1.12702400406416e-8
+    zeta_beta = -1.9753003183066e-12
+
+    Xi_gamma = 0.024204222771565382
+    Delta_gamma = -6.261945897154536e-6
+    kappa_gamma = 1.1175104924576945e-8
+    zeta_gamma = -3.681726165703978e-12
+
+    # Calculate coefficients (Eq 9)
+    alpha = xi * mchirp + delta
+
+    beta = (Xi_beta * mchirp**2 +
+            Delta_beta * mchirp**4 +
+            kappa_beta * mchirp**6 +
+            zeta_beta * mchirp**8)
+
+    gamma = (Xi_gamma * mchirp**2 +
+             Delta_gamma * mchirp**4 +
+             kappa_gamma * mchirp**6 +
+             zeta_gamma * mchirp**8)
+
+    e2 = ecc**2
+    e4 = e2**2
+    e6 = e4 * e2
+
+    ecc_mchirp = mchirp * (1 + alpha * e2 + beta * e4 + gamma * e6)
+
+    return ecc_mchirp
+
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
 
