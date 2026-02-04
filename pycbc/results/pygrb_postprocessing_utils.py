@@ -361,7 +361,13 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                 trigs_dict[path] = dset[above_thresh]
 
             if 'network/slide_id' in trigs.keys():
-                if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                # The slide selection is applied to datasets that contain
+                # properties of surviving triggers. These datasets are
+                # identified knowing that each trigger has a slide id, so
+                # they must have as many entries as the 'network/slide_id'
+                # dataset once triggers below threshold are removed from it.
+                if trigs_dict[path].size == \
+                        trigs['network/slide_id'][above_thresh].size:
                     trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
                                                      slide_id=slide_id)
 
