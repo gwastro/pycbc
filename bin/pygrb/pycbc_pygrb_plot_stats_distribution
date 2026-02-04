@@ -134,8 +134,8 @@ for slide_id in slide_dict:
         # Max BestNR
         time_veto_max_bestnr[slide_id][j] = \
             max(trig_data[keys[2]][slide_id][trial_cut])
-        # Max SNR for triggers passing SBVs
-        sbv_cut = trig_data[keys[2]][slide_id][:] != 0
+        # Max SNR for triggers passing the cut on reweighted SNR
+        sbv_cut = trig_data[keys[2]][slide_id][:] >= opts.newsnr_threshold
         if not (trial_cut & sbv_cut).any():
             continue
         time_veto_max_snr_uncut[slide_id][j] =\
