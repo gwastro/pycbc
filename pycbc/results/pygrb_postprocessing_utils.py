@@ -173,23 +173,9 @@ def pygrb_add_bestnr_cut_opt(parser):
 
 
 # =============================================================================
-# Wrapper to pick triggers with a given slide_id
-# =============================================================================
-# Underscore starts name of functions not called outside this file
-def _slide_filter(trig_file, data, slide_id=None):
-    """
-    This function adds the capability to select triggers with specific
-    slide_ids during the postprocessing stage of PyGRB.
-    """
-    if slide_id is None:
-        return data
-    mask = numpy.where(trig_file['network/slide_id'][:] == slide_id)[0]
-    return data[mask]
-
-
-# =============================================================================
 # Wrapper to read segments files
 # =============================================================================
+# An underscore at the name start flags a function called only in this file
 def _read_seg_files(seg_files):
     """Read segments txt files"""
 
@@ -333,18 +319,40 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     # Do not assume that IFO and network datasets are sorted the same way:
     # find where each surviving network/event_id is placed in the IFO/event_id
     ifo_ids_above_thresh_locations = {}
+    # 1. Determine once the IDs to be found
+    target_ids = net_ids[above_thresh]
     for ifo in ifos:
-        ifo_ids_above_thresh_locations[ifo] = \
-            numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
-                         for net_id in net_ids[above_thresh]])
+        input_ids = ifo_ids[ifo]
+        # 2. Do not assume ifo_ids are sorted and produce a sorting tracker
+        sorter = numpy.argsort(input_ids)
+        # 3. Find out where the target_ids are in the sorted ifo_ids[ifo]
+        insert_indices = numpy.searchsorted(
+            input_ids,
+            target_ids,
+            sorter=sorter)
+        # 4. Safety checks:
+        # a. searchsorted returns len(arr) when the element is not in the arr
+        # b. ensure that all target_ids were recovered in ifo_ids[ifo]
+        assert (insert_indices < len(input_ids)).all()
+        assert (input_ids[sorter[insert_indices]] == target_ids).all()
+        # 5. Extract valid original indices
+        ifo_ids_above_thresh_locations[ifo] = sorter[insert_indices]
 
-    # Apply the cut on all the data by removing points with reweighted SNR = 0
+    # Removing points with reweighted SNR below threshold and select
+    # a specific slide, if the user asked for this
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
+        # Prepare a default mask that will preserve all points after
+        # the ones below threshold have already been removed
+        mask = numpy.full(sum(above_thresh), True)
+        # When necessary and possible, update the mask so it selects a given
+        # slide id
+        if slide_id is not None and 'network/slide_id' in trigs.keys():
+            mask = numpy.where(trigs['network/slide_id'][above_thresh] ==
+                               slide_id)[0]
         for (path, dset) in _dataset_iterator(trigs):
-            # The dataset contains search information or missed injections
-            # information, not properties of triggers or found injections:
-            # just copy it
+            # The dataset contains search or missed injections information,
+            # not properties of triggers or found injections: just copy it
             if 'search' in path or 'missed' in path or 'gating' in path:
                 trigs_dict[path] = dset[:]
             # The dataset is trig/inj info at an IFO:
@@ -368,8 +376,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
                 # dataset once triggers below threshold are removed from it.
                 if trigs_dict[path].size == \
                         trigs['network/slide_id'][above_thresh].size:
-                    trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
-                                                     slide_id=slide_id)
+                    trigs_dict[path] = trigs_dict[path][mask]
 
     return trigs_dict
 
