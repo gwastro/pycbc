@@ -71,6 +71,8 @@ labels = {
     'spin2z': 's<sub>2z</sub>',
     'chieff': '&chi;<sub>eff</sub>',
     'chip': '&chi;<sub>p</sub>',
+    'eccentricity': 'eccentricity',
+    'rel_anomaly': 'relanomaly',
 }
 
 params += ['tc']
@@ -79,6 +81,10 @@ m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
 s1x, s2x = f['injections']['spin1x'][iidx], f['injections']['spin2x'][iidx]
 s1y, s2y = f['injections']['spin1y'][iidx], f['injections']['spin2y'][iidx]
 s1z, s2z = f['injections']['spin1z'][iidx], f['injections']['spin2z'][iidx]
+try:
+    eccentricity, rel_anomaly = f['injections']['eccentricity'][iidx], f['injections']['rel_anomaly'][iidx]
+except KeyError:
+    eccentricity, rel_anomaly = 0, 0
 
 derived = {}
 derived['mchirp'], derived['eta'] = \
@@ -109,7 +115,7 @@ else:
 
 params += ['mass1', 'mass2', 'mchirp', 'eta', 'ra', 'dec',
             'inclination', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
-            'spin2z', 'chieff', 'chip']
+            'spin2z', 'chieff', 'chip','eccentricity', 'rel_anomaly']
 
 for p in params:
 
