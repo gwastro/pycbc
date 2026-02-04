@@ -63,6 +63,10 @@ def ra_to_ra_mollweide(ra):
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("--sky-grid", required=True,
                     help="The location of the sky grid file")
+parser.add_argument("--num-density-bins", required=False, default=1200,
+                    help="Bins for the input distribution plotting")
+parser.add_argument("--num-density-samples", required=False, default=2000000,
+                    help="Samples for the sky grid plotting")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
@@ -85,7 +89,7 @@ with h5py.File(sky_grid, "r") as f:
     ra, dec = f['ra'][:], f['dec'][:]
     dist = f.attrs['input_distribution']
     input_dist = eval("pycbc.distributions."+dist)
-    samples = input_dist.rvs(1000000)
+    samples = input_dist.rvs(opts.num_density_samples)
     input_ra, input_dec = samples['ra'], samples['dec'] 
     ifos = f.attrs["detectors"]
     detectors = [Detector(d) for d in ifos]
@@ -94,7 +98,7 @@ with h5py.File(sky_grid, "r") as f:
 xlabel = "Right ascension [deg]"
 ylabel = "Declination [deg]"
 
-uni_points = pycbc.distributions.UniformSky().rvs(size=100000)
+uni_points = pycbc.distributions.UniformSky().rvs(size=opts.num_density_samples)
 
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = ra_to_ra_mollweide(uni_points["ra"])
@@ -108,7 +112,7 @@ num_points = len(grb_ra)
 
 #Generation of the input density for the mollweide plot 
 input_density, ra_edge, dec_edge = numpy.histogram2d(
-    in_ra,input_dec, bins=1200, 
+    in_ra,input_dec, bins=opts.num_density_bins, 
     range=[[-numpy.pi, numpy.pi], [-numpy.pi/2, numpy.pi/2]]
 )
 
