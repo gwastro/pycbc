@@ -22,7 +22,7 @@
 import numpy
 import logging
 import signal
-import sys, os
+import os
 import argparse
 import numpy.random
 from scipy.stats import gaussian_kde
