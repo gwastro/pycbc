@@ -108,7 +108,7 @@ num_points = len(grb_ra)
 
 #Generation of the input density for the mollweide plot 
 input_density, ra_edge, dec_edge = numpy.histogram2d(
-    in_ra,input_dec, bins=600, 
+    in_ra,input_dec, bins=1200, 
     range=[[-numpy.pi, numpy.pi], [-numpy.pi/2, numpy.pi/2]]
 )
 
