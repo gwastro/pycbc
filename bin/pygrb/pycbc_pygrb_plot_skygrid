@@ -63,10 +63,10 @@ def ra_to_ra_mollweide(ra):
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("--sky-grid", required=True,
                     help="The location of the sky grid file")
-parser.add_argument("--num-density-bins", required=False, default=1200,
+parser.add_argument("--num-density-bins", default=1200, type=int,
                     help="Bins for the input distribution plotting")
-parser.add_argument("--num-density-samples", required=False, default=2000000,
-                    help="Samples for the sky grid plotting")
+parser.add_argument("--num-density-samples", default=2000000, type=int,
+                    help="Samples for plotting the input distribution")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
@@ -98,7 +98,7 @@ with h5py.File(sky_grid, "r") as f:
 xlabel = "Right ascension [deg]"
 ylabel = "Declination [deg]"
 
-uni_points = pycbc.distributions.UniformSky().rvs(size=opts.num_density_samples)
+uni_points = pycbc.distributions.UniformSky().rvs(1000000)
 
 #Convert ra from [0,2*pi] to [-pi,pi] for the mollweide plot 
 uni_ra = ra_to_ra_mollweide(uni_points["ra"])
@@ -178,7 +178,7 @@ if len(detectors)+2 < rows*cols:
         ax[-1,-2].axis("Off")
 
 # Wrap up
-plot_caption = f'First panel: search sky grid points (in orange) associated to the input GRB skymap. Second panel: zoom on the GRB sky region. Other panels: sky grid points over the corresponding antenna pattern of the interferometers used for the search. Number of sky grid points: {num_points}'
+plot_caption = f'First panel: search sky grid points (in black) associated to the input external trigger skymap (color scale). Second panel: zoom on the external trigger sky region. Other panels: sky grid points over the corresponding antenna pattern of the interferometers used for the search. Number of sky grid points: {num_points}'
 
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=plot_caption)
