@@ -162,6 +162,34 @@ def hypertriangle(*params, bounds=(0, 1)):
         out_params = [out_params[i][0] for i in range(K)]
     return out_params
 
+def solve_root(f, a, b, tol=1e-6, max_iter=100):
+    """Simple bisection root solver."""
+    fa = f(a)
+    fb = f(b)
+
+    if fa * fb > 0:
+        raise ValueError(f"Root not bracketed: f({a})={fa}, f({b})={fb}")
+
+    if abs(fa) < tol: return a
+    if abs(fb) < tol: return b
+
+    for _ in range(max_iter):
+        c = (a + b) / 2
+        fc = f(c)
+
+        if abs(fc) < tol or (b - a) / 2 < tol:
+            return c
+
+        if fa * fc < 0:
+            b = c
+            fb = fc
+        else:
+            a = c
+            fa = fc
+
+    return (a + b) / 2
+
+
 #
 # =============================================================================
 #
@@ -518,6 +546,66 @@ def ecc_mchirp_from_mchirp_ecc(mchirp, ecc):
     ecc_mchirp = mchirp * (1 + alpha * e2 + beta * e4 + gamma * e6)
 
     return ecc_mchirp
+
+def _mchirp_from_ecc_mchirp_ecc(ecc_mchirp, ecc):
+    """
+    Inverse function to get mchirp from ecc_mchirp and ecc.
+    Solves ecc_mchirp_from_mchirp_ecc(mchirp, ecc) - ecc_mchirp = 0
+    """
+    def target(mchirp):
+        return ecc_mchirp_from_mchirp_ecc(mchirp, ecc) - ecc_mchirp
+
+    # Search strategy:
+    # We know mchirp ~ ecc_mchirp.
+    # We try to bracket the root starting from this guess.
+
+    guess = ecc_mchirp
+    # Initial bracket width factor
+    factor = 0.2
+
+    # Try finding a bracket
+    lower = guess * (1 - factor)
+    upper = guess * (1 + factor)
+
+    # Limit max iterations for bracket expansion
+    max_iter = 10
+
+    try:
+        f_lower = target(lower)
+        f_upper = target(upper)
+
+        # Expand if signs are the same
+        for _ in range(max_iter):
+            if f_lower * f_upper < 0:
+                break
+
+            if abs(f_lower) < abs(f_upper):
+                # Root is likely lower
+                lower /= 1.5
+                f_lower = target(lower)
+            else:
+                # Root is likely higher
+                upper *= 1.5
+                f_upper = target(upper)
+
+            # Safety checks for physical range (roughly 0 to 100 for this approx)
+            if upper > 100:
+                upper = 100
+                f_upper = target(upper)
+                if f_lower * f_upper > 0:
+                     # If still same sign at 100, we might be out of validity range
+                     # or function turns over.
+                     break
+
+            if lower < 0.1:
+                lower = 0.1
+                f_lower = target(lower)
+
+        return solve_root(target, lower, upper)
+    except Exception:
+        return numpy.nan
+
+mchirp_from_ecc_mchirp_ecc = numpy.vectorize(_mchirp_from_ecc_mchirp_ecc)
 
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
